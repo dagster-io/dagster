@@ -16,6 +16,7 @@ from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
@@ -299,7 +300,7 @@ def test_run_cancellation_batch(conn_string):
             ]
             assert record.end_time == logs[-1].timestamp
         with instance.run_storage.connect() as conn:
-            for (body,) in conn.execute(RunsTable.select().with_only_columns(RunsTable.c.run_body)):
+            for (body,) in conn.execute(db_select([RunsTable.c.run_body])):
                 assert deserialize_value(body, DagsterRun).status == DagsterRunStatus.CANCELED
 
 
@@ -388,7 +389,6 @@ def test_queued_state_and_events_are_not_visible_before_commit(conn_string):
         create_engine,
         event as sql_event,
         func,
-        select,
     )
 
     with _queued_cancellation_instance(conn_string) as instance:
@@ -400,10 +400,10 @@ def test_queued_state_and_events_are_not_visible_before_commit(conn_string):
             if statement.startswith("INSERT INTO event_logs"):
                 with engine.connect() as other:
                     status = other.execute(
-                        select(RunsTable.c.status).where(RunsTable.c.run_id == run.run_id)
+                        db_select([RunsTable.c.status]).where(RunsTable.c.run_id == run.run_id)
                     ).scalar()
                     count = other.execute(
-                        select(func.count()).select_from(SqlEventLogStorageTable)
+                        db_select([func.count()]).select_from(SqlEventLogStorageTable)
                     ).scalar()
                     observed.append((status, count))
 

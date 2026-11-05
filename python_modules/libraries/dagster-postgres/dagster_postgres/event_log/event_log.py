@@ -272,28 +272,25 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn = connection.execution_options(isolation_level="READ COMMITTED")
             with conn.begin():
                 for offset in range(0, len(run_ids), 500):
-                    rows = (
-                        conn.execute(
-                            db_select([RunsTable])
-                            .where(
-                                db.and_(
-                                    RunsTable.c.run_id.in_(run_ids[offset : offset + 500]),
-                                    RunsTable.c.status == DagsterRunStatus.QUEUED.value,
-                                )
+                    # Tuple rows keep this compatible with SQLAlchemy 1.3, which lacks mappings().
+                    rows = conn.execute(
+                        db_select([RunsTable.c.run_body])
+                        .where(
+                            db.and_(
+                                RunsTable.c.run_id.in_(run_ids[offset : offset + 500]),
+                                RunsTable.c.status == DagsterRunStatus.QUEUED.value,
                             )
-                            .order_by(RunsTable.c.run_id.asc())
-                            .with_for_update()
                         )
-                        .mappings()
-                        .all()
-                    )
+                        .order_by(RunsTable.c.run_id.asc())
+                        .with_for_update()
+                    ).fetchall()
                     if not rows:
                         continue
                     timestamp = get_current_timestamp()
                     events: list[EventLogEntry] = []
                     run_bodies: dict[str, str] = {}
-                    for row in rows:
-                        run = deserialize_value(row["run_body"], DagsterRun)
+                    for (run_body,) in rows:
+                        run = deserialize_value(run_body, DagsterRun)
                         canceled_ids.append(run.run_id)
                         run_bodies[run.run_id] = serialize_value(
                             run.with_status(DagsterRunStatus.CANCELED)
