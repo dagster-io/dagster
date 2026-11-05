@@ -1,7 +1,7 @@
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Union
 
-from dagster import DefaultSensorStatus
+from dagster import DefaultSensorStatus, EnvVar
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
@@ -9,6 +9,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.warnings import normalize_renamed_param
 from slack_sdk.web.client import WebClient
 
@@ -18,6 +19,20 @@ if TYPE_CHECKING:
         JobSelector,
         RepositorySelector,
     )
+
+
+def _get_slack_client(slack_token: str) -> WebClient:
+    # EnvVar is a str subclass whose raw value is the variable *name*, so it must be resolved
+    # explicitly. Resolve it at sensor evaluation time so the variable only needs to be set in
+    # the environment where the sensor runs.
+    if isinstance(slack_token, EnvVar):
+        token = slack_token.get_value()
+        if token is None:
+            raise DagsterInvariantViolationError(
+                f"Environment variable '{slack_token.env_var_name}' for the Slack token is not set."
+            )
+        return WebClient(token=token)
+    return WebClient(token=slack_token)
 
 
 def _build_slack_blocks_and_text(
@@ -127,7 +142,8 @@ def make_slack_on_run_failure_sensor(
 
     Args:
         channel (str): The channel to send the message to (e.g. "#my_channel")
-        slack_token (str): The slack token.
+        slack_token (str): The slack token. May also be an ``EnvVar``, in which case the
+            environment variable is resolved when the sensor is evaluated.
             Tokens are typically either user tokens or bot tokens. More in the Slack API
             documentation here: https://api.slack.com/docs/token-types
         text_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
@@ -195,7 +211,6 @@ def make_slack_on_run_failure_sensor(
     webserver_base_url = normalize_renamed_param(
         webserver_base_url, "webserver_base_url", dagit_base_url, "dagit_base_url"
     )
-    slack_client = WebClient(token=slack_token)
     jobs = monitored_jobs if monitored_jobs else job_selection
     monitor_all = monitor_all_code_locations or monitor_all_repositories
 
@@ -214,6 +229,8 @@ def make_slack_on_run_failure_sensor(
             webserver_base_url=webserver_base_url,
         )
 
-        slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
+        _get_slack_client(slack_token).chat_postMessage(
+            channel=channel, blocks=blocks, text=main_body_text
+        )
 
     return slack_on_run_failure
