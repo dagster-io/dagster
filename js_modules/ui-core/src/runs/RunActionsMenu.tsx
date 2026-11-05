@@ -338,13 +338,16 @@ const BulkRunActionMenuItem = ({
   const hasPermission = permittedRuns.length > 0;
   const count = hasPermission ? permittedRuns.length : applicableRuns.length;
   const text = formatLabel(count === 1 ? '1 run' : `${numberFormatter.format(count)} runs`);
-  if (hasPermission) {
-    return <MenuItem icon={icon} intent={intent} text={text} onClick={onClick} />;
-  }
 
   return (
-    <Tooltip content={DEFAULT_DISABLED_REASON} display="block">
-      <MenuItem icon={icon} intent={intent} text={text} disabled />
+    <Tooltip content={DEFAULT_DISABLED_REASON} canShow={!hasPermission} display="block">
+      <MenuItem
+        icon={icon}
+        intent={intent}
+        text={text}
+        disabled={!hasPermission}
+        onClick={onClick}
+      />
     </Tooltip>
   );
 };
