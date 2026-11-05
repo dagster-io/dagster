@@ -45,6 +45,7 @@ from dagster_webserver.hillpointe import (
     entrata_api_log_endpoint,
     friday_report_endpoint,
     realpage_restore_endpoint,
+    refresh_endpoint,
 )
 from dagster_webserver.version import __version__
 
@@ -309,6 +310,7 @@ class DagsterWebserver(
                 Route("/hillpointe/friday_report", friday_report_endpoint),
                 Route("/hillpointe/entrata_api_log", entrata_api_log_endpoint),
                 Route("/hillpointe/realpage_restore", realpage_restore_endpoint),
+                Route("/hillpointe/refresh", refresh_endpoint, methods=["GET", "POST"]),
                 Route(
                     "/graphql",
                     self.graphql_http_endpoint,

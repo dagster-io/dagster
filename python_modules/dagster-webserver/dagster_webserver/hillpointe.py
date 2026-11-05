@@ -9,6 +9,7 @@ file next to workspace.yaml.
 """
 
 import os
+import time
 from datetime import datetime, timezone
 
 from starlette.concurrency import run_in_threadpool
@@ -225,3 +226,16 @@ async def realpage_restore_endpoint(request: Request) -> JSONResponse:
             ]
         }
     )
+
+
+# "Refresh every screen" button in Settings. Open pages poll this stamp and reload when
+# it changes; a POST moves it. It starts at process start, so a webserver restart also
+# makes every screen reload once onto the new build.
+_refresh = {"at": time.time()}
+
+
+async def refresh_endpoint(request: Request) -> JSONResponse:
+    """GET /hillpointe/refresh: the last refresh request's time. POST: request one now."""
+    if request.method == "POST":
+        _refresh["at"] = time.time()
+    return JSONResponse(_refresh)

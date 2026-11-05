@@ -59,3 +59,53 @@ export const useReloadOnNewBuild = () => {
     return () => clearInterval(timer);
   }, []);
 };
+
+// "Refresh every screen" button in Settings. The webserver keeps the time of the last
+// request; each open page polls it and reloads when it moves. The value last seen is kept
+// in sessionStorage so a page does not reload again for a request it already acted on,
+// and the page that pressed the button records the new value itself so it stays put.
+const REFRESH_URL = '/hillpointe/refresh';
+const REFRESH_EVERY_MS = 30 * 1000;
+const REFRESH_SEEN_KEY = 'hp-refresh-seen';
+
+const refreshStamp = async (method: 'GET' | 'POST'): Promise<string | null> => {
+  try {
+    const res = await fetch(REFRESH_URL, {method, cache: 'no-store'});
+    if (!res.ok) {
+      return null;
+    }
+    const body = await res.json();
+    return typeof body.at === 'number' ? String(body.at) : null;
+  } catch {
+    return null;
+  }
+};
+
+/** Ask every open screen to reload. Resolves false if the server did not take it. */
+export const requestRefreshEverywhere = async (): Promise<boolean> => {
+  const stamp = await refreshStamp('POST');
+  if (!stamp) {
+    return false;
+  }
+  window.sessionStorage.setItem(REFRESH_SEEN_KEY, stamp);
+  return true;
+};
+
+export const useReloadOnRemoteRefresh = () => {
+  useEffect(() => {
+    const check = async () => {
+      const stamp = await refreshStamp('GET');
+      if (!stamp) {
+        return;
+      }
+      const seen = window.sessionStorage.getItem(REFRESH_SEEN_KEY);
+      window.sessionStorage.setItem(REFRESH_SEEN_KEY, stamp);
+      if (seen && seen !== stamp) {
+        window.location.reload();
+      }
+    };
+    check();
+    const timer = setInterval(check, REFRESH_EVERY_MS);
+    return () => clearInterval(timer);
+  }, []);
+};

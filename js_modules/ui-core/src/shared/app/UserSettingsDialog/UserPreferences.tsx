@@ -18,6 +18,7 @@ import {ThemeSelect} from '../../../app/time/ThemeSelect';
 import {TimeContext} from '../../../app/time/TimeContext';
 import {TimezoneSelect} from '../../../app/time/TimezoneSelect';
 import {localTimezoneLabel, orgTimezoneLabel} from '../../../app/time/browserTimezone';
+import {requestRefreshEverywhere} from '../../../app/useReloadOnNewBuild';
 import {useThemeState} from '../../../app/useThemeState';
 import {useFallLeavesEnabled} from '../../../hillpointe/FallLeaves';
 import {useStateWithStorage} from '../../../hooks/useStateWithStorage';
@@ -143,7 +144,29 @@ export const UserPreferences = ({
         <div>Build</div>
         <BuildInfo />
       </Box>
+      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <div>Refresh every screen</div>
+          <Tooltip content="Reloads this site on every device that has it open, such as the TV, within about 30 seconds.">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+        <RefreshEverywhereButton />
+      </Box>
     </>
+  );
+};
+
+const RefreshEverywhereButton = () => {
+  const [state, setState] = React.useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const send = async () => {
+    setState('sending');
+    setState((await requestRefreshEverywhere()) ? 'sent' : 'failed');
+  };
+  return (
+    <Button icon={<Icon name="refresh" />} onClick={send} disabled={state === 'sending'}>
+      {state === 'sent' ? 'Sent' : state === 'failed' ? 'Failed, try again' : 'Refresh'}
+    </Button>
   );
 };
 
