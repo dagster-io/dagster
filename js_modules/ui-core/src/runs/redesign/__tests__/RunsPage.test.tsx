@@ -6,12 +6,23 @@ import {Router} from 'react-router-dom';
 
 import {ApolloLink, InMemoryCache} from '../../../apollo-client';
 import {AnalyticsContext} from '../../../app/analytics';
-import {buildPythonError, buildRunsFeedConnection} from '../../../graphql/builders';
+import {IsMobileContext} from '../../../app/layout/IsMobileContext';
+import {
+  buildPythonError,
+  buildQuery,
+  buildRuns,
+  buildRunsFeedConnection,
+} from '../../../graphql/builders';
 import possibleTypes from '../../../graphql/possibleTypes.generated.json';
 import {RunStatus, RunsFeedView, RunsFilter} from '../../../graphql/types';
 import {shortenId} from '../../../util/shortenId';
 import {DagsterTag} from '../../RunTag';
+import {TERMINATE_BATCH_QUERY} from '../../TerminateAllRunsDialog';
 import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
+import {
+  TerminateBatchQuery,
+  TerminateBatchQueryVariables,
+} from '../../types/TerminateAllRunsDialog.types';
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
 import {buildRunSummary, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
@@ -86,10 +97,14 @@ const ANALYTICS = {page: () => {}, track: () => {}};
 const OLDER_BUTTON = {name: /^Older/};
 const NEWER_BUTTON = {name: /Newer$/};
 
-const renderPage = (
-  path: string,
-  mocks: MockedResponse<RunsFeedQuery, RunsFeedQueryVariables>[],
-) => {
+const mockTerminateBatch = (
+  filter: RunsFilter,
+): MockedResponse<TerminateBatchQuery, TerminateBatchQueryVariables> => ({
+  request: {query: TERMINATE_BATCH_QUERY, variables: {filter, limit: 1000}},
+  result: {data: buildQuery({pipelineRunsOrError: buildRuns({results: []})})},
+});
+
+const renderPage = (path: string, mocks: MockedResponse[], isMobile = false) => {
   const history = createMemoryHistory({initialEntries: [path]});
   const operations: string[] = [];
   const logLink = new ApolloLink((operation, forward) => {
@@ -103,7 +118,9 @@ const renderPage = (
           link={ApolloLink.from([logLink, new MockLink([...mocks, ...buildRunTagFocusMocks()])])}
           cache={new InMemoryCache({possibleTypes})}
         >
-          <RunsPage />
+          <IsMobileContext.Provider value={isMobile}>
+            <RunsPage />
+          </IsMobileContext.Provider>
         </MockedProvider>
       </Router>
     </AnalyticsContext.Provider>,
@@ -112,6 +129,18 @@ const renderPage = (
 };
 
 const findRunLink = (id: string) => screen.findByRole('link', {name: `Run ${shortenId(id)}`});
+
+const TERMINATE_ALL_BUTTON = {name: 'Terminate all queued and in-progress runs'};
+const DISABLED_REASON = 'The filter excludes queued and in-progress runs';
+const FORCE_OPTION = {name: 'Force termination immediately'};
+
+const TERMINABLE_STATUSES = [
+  RunStatus.QUEUED,
+  RunStatus.STARTED,
+  RunStatus.STARTING,
+  RunStatus.SUSPENDED,
+  RunStatus.CANCELING,
+];
 
 const findSearchInput = () => screen.findByRole('textbox', {name: 'Search and filter runs'});
 
@@ -392,5 +421,111 @@ describe('RunsPage', () => {
     expect(await screen.findByText('Feed query failed')).toBeVisible();
     expect(await screen.findByRole('button', OLDER_BUTTON)).toBeDisabled();
     expect(screen.queryByText('No runs found')).not.toBeInTheDocument();
+  });
+});
+
+describe('RunsPage terminate all', () => {
+  const openDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    await user.click(await screen.findByRole('button', TERMINATE_ALL_BUTTON));
+  };
+
+  // The dialog queries the runs matching its filter, so a mock for that exact filter proves it.
+  const confirmTerminate = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+    await user.click(await screen.findByRole('button', {name}));
+    await user.click(await screen.findByRole('button', {name: 'Done'}));
+  };
+
+  it('terminates queued and in-progress runs, keeping the other filters', async () => {
+    const user = userEvent.setup();
+    const filter = {pipelineName: 'daily_etl'};
+    renderPage('/runs?q[]=job:daily_etl', [
+      mockFeed({data: FIRST_PAGE, filter}),
+      mockTerminateBatch({...filter, statuses: TERMINABLE_STATUSES}),
+    ]);
+
+    await openDialog(user);
+    expect(await screen.findByRole('checkbox', FORCE_OPTION)).toBeVisible();
+    await confirmTerminate(user, 'Terminate all');
+  });
+
+  it('hides the force option when only queued runs are targeted', async () => {
+    const user = userEvent.setup();
+    const filter = {pipelineName: 'daily_etl', statuses: [RunStatus.QUEUED]};
+    renderPage('/runs?q[]=status:QUEUED&q[]=job:daily_etl', [
+      mockFeed({data: FIRST_PAGE, filter}),
+      mockTerminateBatch(filter),
+    ]);
+
+    await openDialog(user);
+    expect(await screen.findByText(/All matching runs will be terminated/)).toBeVisible();
+    expect(screen.queryByRole('checkbox', FORCE_OPTION)).not.toBeInTheDocument();
+    await confirmTerminate(user, 'Force terminate all');
+  });
+
+  it('terminates only the queued and in-progress part of a mixed status filter', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs?q[]=status:QUEUED&q[]=status:FAILURE', [
+      mockFeed({data: FIRST_PAGE, filter: {statuses: [RunStatus.QUEUED, RunStatus.FAILURE]}}),
+      mockTerminateBatch({statuses: [RunStatus.QUEUED]}),
+    ]);
+
+    await openDialog(user);
+    await user.click(await screen.findByRole('button', {name: 'Force terminate all'}));
+
+    expect(await screen.findByRole('button', {name: 'Done'})).toBeVisible();
+  });
+
+  it.each([RunStatus.FAILURE, RunStatus.NOT_STARTED])(
+    'is disabled with its reason when the filter is %s',
+    async (status) => {
+      renderPage(`/runs?q[]=status:${status}`, [
+        mockFeed({data: FIRST_PAGE, filter: {statuses: [status]}}),
+      ]);
+
+      await findRunLink(FIRST_PAGE_RUN_ID);
+      const button = await screen.findByRole('button', TERMINATE_ALL_BUTTON);
+      expect(button).toBeDisabled();
+      expect(button).toHaveAccessibleDescription(DISABLED_REASON);
+    },
+  );
+
+  it('closes the dialog when the filter changes under it', async () => {
+    const user = userEvent.setup();
+    const {history} = renderPage('/runs?q[]=status:FAILURE', [
+      mockFeed({data: FIRST_PAGE, filter: {statuses: [RunStatus.FAILURE]}}),
+      mockFeed({data: FIRST_PAGE, filter: {statuses: [RunStatus.QUEUED]}}),
+    ]);
+
+    act(() => history.push('/runs?q[]=status:QUEUED'));
+    await openDialog(user);
+    expect(await screen.findByRole('dialog')).toBeVisible();
+
+    act(() => history.goBack());
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(await screen.findByRole('button', TERMINATE_ALL_BUTTON)).toBeDisabled();
+  });
+
+  it('refetches the feed when the dialog closes', async () => {
+    const user = userEvent.setup();
+    const {operations} = renderPage('/runs', [
+      mockFeed({data: FIRST_PAGE}),
+      mockTerminateBatch({statuses: TERMINABLE_STATUSES}),
+    ]);
+
+    await openDialog(user);
+    await confirmTerminate(user, 'Terminate all');
+
+    await waitFor(() =>
+      expect(operations.filter((operation) => operation === 'RunsFeedQuery')).toHaveLength(2),
+    );
+  });
+
+  it('is available on mobile', async () => {
+    renderPage('/runs', [mockFeed({data: FIRST_PAGE})], true);
+
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    expect(await screen.findByRole('button', TERMINATE_ALL_BUTTON)).toBeEnabled();
   });
 });

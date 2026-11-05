@@ -4,6 +4,7 @@ import {useEffect, useMemo, useRef} from 'react';
 import {RunsDateRangeSelect} from './RunsDateRangeSelect';
 import {RunsFeed} from './RunsFeed';
 import {RunsSearchInput} from './RunsSearchInput';
+import {TerminateAllRuns} from './TerminateAllRuns';
 import styles from './css/RunsPage.module.css';
 import {useRunsFeed} from './useRunsFeed';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
@@ -77,40 +78,46 @@ export const RunsPage = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title={
-          <Heading size={16} weight={600}>
-            Runs
-          </Heading>
-        }
-        right={
-          <Box flex={{alignItems: 'center', gap: 12}}>
-            <QueryRefreshCountdown refreshState={refreshState} />
-            <CursorHistoryControls
-              {...paginationProps}
-              popCursor={popCursor}
-              advanceCursor={advanceCursor}
-              style={{marginTop: 0}}
-              iconOnly={isMobile}
+    <RunsQueryRefetchContext.Provider value={refetchContext}>
+      <div className={styles.page}>
+        <PageHeader
+          title={
+            <Heading size={16} weight={600}>
+              Runs
+            </Heading>
+          }
+          right={
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <QueryRefreshCountdown refreshState={refreshState} />
+              <CursorHistoryControls
+                {...paginationProps}
+                popCursor={popCursor}
+                advanceCursor={advanceCursor}
+                style={{marginTop: 0}}
+                iconOnly={isMobile}
+              />
+            </Box>
+          }
+        />
+        <Box flex={{alignItems: 'center', gap: 12}} border="bottom" className={styles.toolbar}>
+          <RunsDateRangeSelect
+            tokens={dateTokens}
+            onChange={(tokens) => setFilterTokens([...searchTokens, ...tokens])}
+          />
+          <Box flex={{grow: 1}}>
+            <RunsSearchInput
+              tokens={searchTokens}
+              onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
             />
           </Box>
-        }
-      />
-      <Box flex={{alignItems: 'center', gap: 12}} border="bottom" className={styles.toolbar}>
-        <RunsDateRangeSelect
-          tokens={dateTokens}
-          onChange={(tokens) => setFilterTokens([...searchTokens, ...tokens])}
-        />
-        <Box flex={{grow: 1}}>
-          <RunsSearchInput
-            tokens={searchTokens}
-            onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
+          <TerminateAllRuns
+            // Remounting on a new query closes the dialog so it can't act on a filter it wasn't
+            // opened for.
+            key={appliedQueryKey}
+            filter={filter}
           />
         </Box>
-      </Box>
-      <div ref={bodyRef} className={styles.body}>
-        <RunsQueryRefetchContext.Provider value={refetchContext}>
+        <div ref={bodyRef} className={styles.body}>
           <RunsFeed
             // A new query key remounts the list, which closes any open tick dialog.
             key={appliedQueryKey}
@@ -119,9 +126,9 @@ export const RunsPage = () => {
             isLoading={isLoading}
             isFiltered={isFiltered}
           />
-        </RunsQueryRefetchContext.Provider>
+        </div>
       </div>
-    </div>
+    </RunsQueryRefetchContext.Provider>
   );
 };
 
