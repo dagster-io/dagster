@@ -1116,6 +1116,9 @@ async def execute_asset_backfill_iteration(
                 # Pending runs can be held back for many iterations, so keep the materialized
                 # and failed partitions up to date in the meantime. Downstream partitions are
                 # requested once all pending runs are submitted.
+                # latest_storage_id is intentionally not advanced, so that the next full
+                # iteration still sees the new materializations when requesting downstream
+                # partitions.
                 backfill_data = _get_asset_backfill_data_with_updated_statuses(
                     backfill.backfill_id,
                     previous_asset_backfill_data,
@@ -1129,6 +1132,18 @@ async def execute_asset_backfill_iteration(
             )
 
             updated_backfill = backfill
+            if max_queued_runs is not None:
+                # Persist the refreshed statuses even if no capacity is available to submit runs.
+                updated_backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+                if updated_backfill.status != BulkActionStatus.REQUESTED:
+                    logger.info("Backfill was canceled mid-iteration, returning")
+                    return
+                updated_backfill = updated_backfill.with_asset_backfill_data(
+                    backfill_data,
+                    dynamic_partitions_store=instance,
+                    asset_graph=asset_graph,
+                )
+                instance.update_backfill(updated_backfill)
         else:
             # Generate a new set of run requests to launch, and update the materialized and failed
             # subsets

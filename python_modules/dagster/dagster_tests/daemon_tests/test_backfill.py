@@ -4885,6 +4885,23 @@ def test_asset_backfill_max_queued_runs(tmp_path: Path):
         # Canceling the queued runs frees capacity; the held-back iteration also records their
         # partitions as failed, without waiting for every pending run to be submitted.
         _dequeue_all_runs(instance)
+
+        def _failed_partitions() -> list[str]:
+            return sorted(
+                check.not_none(instance.get_backfill("asset_backfill"))
+                .get_asset_backfill_data(asset_graph)
+                .failed_and_downstream_subset.get_partitions_subset(dg.AssetKey("daily_1"))
+                .get_partition_keys()
+            )
+
+        # Statuses are persisted even when no capacity is available to submit runs.
+        with mock.patch(
+            "dagster._core.execution.backfill.get_backfill_queued_run_capacity", return_value=0
+        ):
+            assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+        assert _failed_partitions() == target_partitions[:2]
+
         assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
         backfill = check.not_none(instance.get_backfill("asset_backfill"))
         assert len(backfill.submitting_run_requests) == 1
