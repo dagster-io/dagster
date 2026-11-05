@@ -29,9 +29,11 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
+from dagster._core.storage.runs.base import K8sWorkerTarget
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
+from dagster_k8s.backfill_admission import stamp_backfill_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
@@ -310,6 +312,23 @@ class K8sStepHandler(StepHandler):
 
         return pod.metadata.name, pod.metadata.uid
 
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return True
+
+    def get_backfill_worker_target(self, context: StepHandlerContext) -> K8sWorkerTarget:
+        check.inst(
+            context.instance.run_launcher, K8sRunLauncher
+        ).require_backfill_worker_admission()
+        container_context = self._get_container_context(context)
+        return K8sWorkerTarget(
+            job_name=self._get_k8s_step_job_name(context),
+            namespace=check.not_none(container_context.namespace),
+            admission_webhook_name=check.inst(
+                context.instance.run_launcher, K8sRunLauncher
+            ).backfill_worker_admission_webhook_name,
+        )
+
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_key = self._get_step_key(step_handler_context)
 
@@ -372,6 +391,24 @@ class K8sStepHandler(StepHandler):
             ],
             owner_references=owner_references,
         )
+        # Exit-proof inventory uses these reserved labels even when custom metadata provides
+        # other labels. Each retry has a separate immutable Job target in the launch ledger.
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
+        if run_uses_stop_protocol(step_handler_context.instance, run):
+            from dagster._core.execution.backfill import get_backfill_step_worker_id
+
+            launcher = check.inst(step_handler_context.instance.run_launcher, K8sRunLauncher)
+            known_state = step_handler_context.execute_step_args.known_state
+            attempt = (
+                known_state.get_retry_state().get_attempt_count(step_key) if known_state else 0
+            )
+            stamp_backfill_job(
+                job,
+                run.run_id,
+                get_backfill_step_worker_id(step_key, attempt),
+                launcher.backfill_worker_admission_webhook_name,
+            )
 
         yield DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
@@ -382,7 +419,12 @@ class K8sStepHandler(StepHandler):
         )
 
         namespace = check.not_none(container_context.namespace)
-        self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
+        if run_uses_stop_protocol(step_handler_context.instance, step_handler_context.dagster_run):
+            self._api_client.create_namespaced_job_once(body=job, namespace=namespace)
+        else:
+            self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_key = self._get_step_key(step_handler_context)

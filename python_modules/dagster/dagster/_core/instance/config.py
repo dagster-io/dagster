@@ -581,6 +581,10 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "defs_state_storage": config_field_for_configurable_class(),
         "retention": retention_config_schema(),
         "backfills": backfills_daemon_config(),
+        "backfill_stop_protocol": Field(
+            {"enabled": Field(bool, is_required=False, default_value=False)},
+            is_required=False,
+        ),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(

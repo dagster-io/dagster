@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from dagster import (
     DagsterInstance,
@@ -11,6 +11,9 @@ from dagster._core.execution.context.system import IStepContext, PlanOrchestrati
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteStepArgs
+
+if TYPE_CHECKING:
+    from dagster._core.storage.runs.base import WorkerLaunchTarget
 
 
 class StepHandlerContext:
@@ -76,6 +79,15 @@ class CheckStepHealthResult(
 
 
 class StepHandler(ABC):
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return False
+
+    def get_backfill_worker_target(self, context: StepHandlerContext) -> "WorkerLaunchTarget":
+        from dagster._core.storage.runs.base import UnknownWorkerTarget
+
+        return UnknownWorkerTarget(handler_name=self.name)
+
     @property
     @abstractmethod
     def name(self) -> str:

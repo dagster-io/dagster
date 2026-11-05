@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
+    DagsterInvariantViolationError,
     DagsterMaxRetriesExceededError,
     DagsterUserCodeExecutionError,
     HookExecutionError,
@@ -235,6 +236,14 @@ def dagster_event_sequence_for_step(
 
     try:
         if step_context.step_launcher and not force_local_execution:
+            from dagster._core.execution.backfill import run_uses_stop_protocol
+
+            if run_uses_stop_protocol(step_context.instance, step_context.dagster_run):
+                raise DagsterInvariantViolationError(
+                    f"Native StepLauncher {type(step_context.step_launcher).__name__} does not "
+                    "support durable backfill worker admission and exit proof. Use a supported "
+                    "StepDelegatingExecutor step handler instead."
+                )
             # info all on step_context - should deprecate second arg
             step_events = step_context.step_launcher.launch_step(step_context)
         else:

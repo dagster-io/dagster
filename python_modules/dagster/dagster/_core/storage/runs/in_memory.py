@@ -7,7 +7,12 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
 
 from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.runs.schema import InstanceInfo, RunStorageSqlMetadata
+from dagster._core.storage.runs.migration import RUN_BACKFILL_ID
+from dagster._core.storage.runs.schema import (
+    InstanceInfo,
+    RunStorageSqlMetadata,
+    SecondaryIndexMigrationTable,
+)
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
@@ -30,6 +35,11 @@ class InMemoryRunStorage(SqlRunStorage):
 
         with self._held_conn.begin():
             RunStorageSqlMetadata.create_all(self._held_conn)
+            self._held_conn.execute(
+                SecondaryIndexMigrationTable.insert().values(
+                    name=RUN_BACKFILL_ID, migration_completed=db.func.current_timestamp()
+                )
+            )
             alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
             stamp_alembic_rev(alembic_config, self._held_conn)
 
@@ -54,6 +64,11 @@ class InMemoryRunStorage(SqlRunStorage):
                 self.add_run(run)
 
     def has_secondary_index(self, name: str) -> bool:
+        return True
+
+    def has_built_index(self, migration_name: str) -> bool:
+        # Every in-memory database starts from the current schema and has no
+        # historical rows requiring a data migration.
         return True
 
     @contextmanager

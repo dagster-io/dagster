@@ -9,6 +9,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
+    from dagster._core.storage.runs.base import BackfillWorkerLaunch, WorkerLaunchTarget
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
@@ -41,6 +42,17 @@ class WorkerStatus(Enum):
     NOT_FOUND = "NOT_FOUND"
     FAILED = "FAILED"
     SUCCESS = "SUCCESS"
+    UNKNOWN = "UNKNOWN"
+
+
+class BackfillWorkerCreationStatus(Enum):
+    CREATED = "CREATED"
+    UNKNOWN = "UNKNOWN"
+
+
+class BackfillWorkerExitStatus(Enum):
+    EXITED = "EXITED"
+    RUNNING = "RUNNING"
     UNKNOWN = "UNKNOWN"
 
 
@@ -104,6 +116,41 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, run: DagsterRun, include_container_logs: bool | None = True
     ) -> str | None:
         return None
+
+    def get_backfill_worker_target(self, run: DagsterRun) -> "WorkerLaunchTarget":
+        from dagster._core.storage.runs.base import UnknownWorkerTarget
+
+        return UnknownWorkerTarget(
+            handler_name=f"{type(self).__module__}.{type(self).__qualname__}"
+        )
+
+    def request_backfill_worker_stop(self, run: DagsterRun, launch: "BackfillWorkerLaunch") -> None:
+        """Request termination without claiming that the worker has exited."""
+        from dagster._core.storage.runs.base import WorkerLaunchKind
+
+        if launch.kind == WorkerLaunchKind.RUN:
+            self.terminate(run.run_id)
+
+    def get_backfill_worker_exit_status(
+        self, run: DagsterRun, launch: "BackfillWorkerLaunch"
+    ) -> BackfillWorkerExitStatus:
+        """Prove exit of the execution worker represented by a durable dispatch.
+
+        A run's terminal event, an elapsed timeout, or absence of its parent process alone
+        does not establish this proof. Unsupported targets keep cancellation incomplete.
+        """
+        return BackfillWorkerExitStatus.UNKNOWN
+
+    def get_backfill_worker_creation_status(
+        self, run: DagsterRun, launch: "BackfillWorkerLaunch"
+    ) -> BackfillWorkerCreationStatus:
+        """Observe persistence of a controller-created worker with a retained identity."""
+        return BackfillWorkerCreationStatus.UNKNOWN
+
+    def cleanup_backfill_worker_launch(
+        self, run: DagsterRun, launch: "BackfillWorkerLaunch"
+    ) -> None:
+        """Release retained adapter resources after definitive worker exit."""
 
     @property
     def supports_resume_run(self) -> bool:

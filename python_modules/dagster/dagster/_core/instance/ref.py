@@ -475,6 +475,7 @@ class InstanceRef(
             "code_servers",
             "retention",
             "backfills",
+            "backfill_stop_protocol",
             "sensors",
             "schedules",
             "nux",
