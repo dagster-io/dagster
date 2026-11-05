@@ -45,8 +45,43 @@ const showNetworkError = async (statusCode: number) => {
   }
 };
 
+// Behind oauth2-proxy, an expired login cookie turns every request into the sign-in page
+// (a 401/403, or an HTML body where JSON was expected). Reloading sends the browser back
+// through the login redirect, which completes silently while the identity provider session
+// is still alive, so unattended screens pick up fresh data without anyone touching them.
+const AUTH_RELOAD_KEY = 'hp-auth-reload-at';
+const AUTH_RELOAD_MIN_GAP_MS = 5 * 60 * 1000;
+
+const isAuthFailure = (error: Error): boolean => {
+  if (!('statusCode' in error)) {
+    return false;
+  }
+  if (error.statusCode === 401 || error.statusCode === 403) {
+    return true;
+  }
+  return (
+    'bodyText' in error &&
+    typeof error.bodyText === 'string' &&
+    /<(!doctype|html)/i.test(error.bodyText.slice(0, 200))
+  );
+};
+
+const reloadForAuth = () => {
+  const last = Number(window.sessionStorage.getItem(AUTH_RELOAD_KEY) ?? 0);
+  if (Date.now() - last < AUTH_RELOAD_MIN_GAP_MS) {
+    return;
+  }
+  window.sessionStorage.setItem(AUTH_RELOAD_KEY, String(Date.now()));
+  window.location.reload();
+};
+
 export const createErrorLink = (toastOnErrors?: boolean) =>
   onError((response) => {
+    if (response.networkError && isAuthFailure(response.networkError)) {
+      console.warn('[Auth expired]', `{${response.operation.operationName}}`, 'reloading');
+      reloadForAuth();
+      return;
+    }
     let didLogError = false;
     // Wrap the operation name in curly braces so that our datadog RUM handler can parse the operation name out easily to add as an attribute.
     const operationName = `{${response.operation.operationName}}`;
