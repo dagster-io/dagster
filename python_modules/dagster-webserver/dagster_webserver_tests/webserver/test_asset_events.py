@@ -402,10 +402,11 @@ def test_report_asset_endpoints_malformed_json_body(test_client: TestClient):
         "/report_asset_check/my_asset",
         "/report_asset_observation/my_asset",
     ):
-        response = test_client.post(
-            endpoint,
-            content='{"asset_key": ["my_asset", "part',
-            headers={"content-type": "application/json"},
-        )
-        assert response.status_code == 400, endpoint
-        assert "Error parsing request body as JSON" in response.json()["error"]
+        for body in (b'{"asset_key": ["my_asset", "part', b'{"asset_key": ["\xff"]}'):
+            response = test_client.post(
+                endpoint,
+                content=body,
+                headers={"content-type": "application/json"},
+            )
+            assert response.status_code == 400, (endpoint, body)
+            assert "Error parsing request body as JSON" in response.json()["error"]

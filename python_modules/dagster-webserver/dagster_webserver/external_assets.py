@@ -63,7 +63,7 @@ async def handle_report_asset_materialization_request(
     elif body_content_type == "application/json":
         try:
             json_body = await request.json()
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             return JSONResponse(
                 {"error": f"Error parsing request body as JSON: {exc}"},
                 status_code=400,
@@ -153,7 +153,7 @@ async def handle_report_asset_check_request(
     elif body_content_type == "application/json":
         try:
             json_body = await request.json()
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             return JSONResponse(
                 {"error": f"Error parsing request body as JSON: {exc}"},
                 status_code=400,
@@ -265,7 +265,7 @@ async def handle_report_asset_observation_request(
     elif body_content_type == "application/json":
         try:
             json_body = await request.json()
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             return JSONResponse(
                 {"error": f"Error parsing request body as JSON: {exc}"},
                 status_code=400,
