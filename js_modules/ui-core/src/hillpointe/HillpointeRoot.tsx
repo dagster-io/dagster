@@ -560,13 +560,12 @@ const RunMonthCalendar = ({days}: {days: DayCounts[]}) => {
             return <div key={`lead-${i}`} />;
           }
           const {date, day, future} = cell;
-          const health = future ? 'none' : healthFor(day?.counts ?? {});
           const dot = (
             <div
               className={clsx(styles.monthDot, future && styles.monthFuture)}
               style={{
-                background: HEALTH_FILL[health],
-                color: health === 'none' ? Colors.textLighter() : Colors.backgroundDefault(),
+                background: Colors.dataVizRed(),
+                color: Colors.backgroundDefault(),
               }}
             >
               {date.getDate()}
