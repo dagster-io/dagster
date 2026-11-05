@@ -11,6 +11,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.decorator_utils import reflection_cache_scope
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import (
@@ -478,6 +479,7 @@ class ResourceRelatedState(NamedTuple):
         return wrap_resources_for_execution({**self.resources, **{io_manager_key: io_manager_def}})
 
 
+@reflection_cache_scope()
 def create_assets_def_from_fn_and_decorator_args(
     args: AssetDecoratorArgs, fn: Callable[..., Any]
 ) -> AssetsDefinition:
@@ -754,6 +756,7 @@ def multi_asset(
         hooks=check.opt_set_param(hooks, "hooks", of_type=HookDefinition),
     )
 
+    @reflection_cache_scope()
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         builder = DecoratorAssetsDefinitionBuilder.for_multi_asset(args=args, fn=fn)
 
@@ -1098,6 +1101,7 @@ def graph_multi_asset(
                 from the underlying nodes).
     """
 
+    @reflection_cache_scope()
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         partition_mappings = {
             input_name: asset_in.partition_mapping

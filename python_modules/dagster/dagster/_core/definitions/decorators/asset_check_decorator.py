@@ -4,7 +4,7 @@ from typing import Any, TypeAlias
 from dagster import _check as check
 from dagster._annotations import public
 from dagster._config import UserConfigSchema
-from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._core.decorator_utils import format_docstring_for_description, reflection_cache_scope
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -195,6 +195,7 @@ def asset_check(
     check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     dict(check.opt_mapping_param(resource_defs, "resource_defs", key_type=str))
 
+    @reflection_cache_scope()
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
         resolved_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
@@ -359,6 +360,7 @@ def multi_asset_check(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
+    @reflection_cache_scope()
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         op_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
         op_required_resource_keys = compute_required_resource_keys(

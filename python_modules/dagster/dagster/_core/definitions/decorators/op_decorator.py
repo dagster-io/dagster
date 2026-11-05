@@ -12,6 +12,7 @@ from dagster._core.decorator_utils import (
     get_valid_name_permutations,
     param_is_var_keyword,
     positional_arg_name_list,
+    reflection_cache_scope,
 )
 from dagster._core.definitions.inference import infer_input_props
 from dagster._core.definitions.input import In, InputDefinition
@@ -62,6 +63,7 @@ class _Op:
         self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
+    @reflection_cache_scope()
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from dagster._config.pythonic_config import validate_resource_annotated_function
         from dagster._core.definitions.op_definition import OpDefinition

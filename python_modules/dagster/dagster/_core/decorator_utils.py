@@ -2,7 +2,9 @@ import functools
 import inspect
 import re
 import textwrap
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from inspect import Parameter, Signature, signature
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -17,7 +19,6 @@ from typing import (  # noqa: UP035
     cast,
     get_type_hints as typing_get_type_hints,
 )
-from weakref import finalize
 
 from typing_extensions import ParamSpec
 
@@ -64,41 +65,57 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
     )
 
 
-# ``inspect.signature`` and ``typing.get_type_hints`` are pure functions of a callable, but each is
-# individually expensive and is invoked many times on the same function while a single
-# @op/@asset/@asset_check definition is built.
+# ``inspect.signature`` and ``typing.get_type_hints`` are each expensive, and building a single
+# @op/@asset/@asset_check definition calls them on the same callable dozens of times. Results are
+# memoized only while a ``reflection_cache_scope`` is active, which the definition decorators open
+# for the duration of one build. Outside a scope, every call reflects afresh, so a callable whose
+# signature or annotations change between builds is always re-read.
 #
-# Memoize the result per callable. Entries are keyed by object identity. Callables that cannot be
-# weak-referenced are not cached.
-#
-# This assumes a callable's signature and annotations are not mutated between asset builds.
-_function_params_cache: dict[int, tuple[Parameter, ...]] = {}
-_type_hints_cache: dict[int, Mapping[str, Any]] = {}
+# Entries are keyed by ``id`` and hold a strong reference to the callable so that the id cannot be
+# reused while the scope is open. The cache is dropped when the outermost scope exits.
+_ReflectionCache: TypeAlias = dict[tuple[str, int], tuple[Callable[..., Any], Any]]
+_reflection_cache: ContextVar[_ReflectionCache | None] = ContextVar(
+    "_dagster_reflection_cache", default=None
+)
 
 
-def _cached_by_identity(
-    cache: dict[int, T],
-    fn: Callable[..., Any],
-    compute: Callable[[Callable[..., Any]], T],
-) -> T:
-    key = id(fn)
-    if key in cache:
-        return cache[key]
-    value = compute(fn)
+@contextmanager
+def reflection_cache_scope() -> Iterator[None]:
+    """Memoize function reflection for the duration of a single definition build.
+
+    Nested scopes share the outermost scope's cache.
+    """
+    if _reflection_cache.get() is not None:
+        yield
+        return
+    token = _reflection_cache.set({})
     try:
-        finalize(fn, cache.pop, key, None)
-    except TypeError:  # fn is not weak-referenceable, do not cache
-        return value
-    cache[key] = value
+        yield
+    finally:
+        _reflection_cache.reset(token)
+
+
+def _cached_in_scope(
+    kind: str, fn: Callable[..., Any], compute: Callable[[Callable[..., Any]], T]
+) -> T:
+    cache = _reflection_cache.get()
+    if cache is None:
+        return compute(fn)
+    key = (kind, id(fn))
+    entry = cache.get(key)
+    if entry is not None and entry[0] is fn:
+        return entry[1]
+    value = compute(fn)
+    cache[key] = (fn, value)
     return value
 
 
-def _compute_function_params(fn: Callable[..., Any]) -> tuple[Parameter, ...]:
+def _compute_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
     return tuple(signature(fn).parameters.values())
 
 
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return _cached_by_identity(_function_params_cache, fn, _compute_function_params)
+    return _cached_in_scope("params", fn, _compute_function_params)
 
 
 def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Mapping[str, Any]:
@@ -129,7 +146,7 @@ def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Ma
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
-    return _cached_by_identity(_type_hints_cache, fn, _compute_type_hints)
+    return _cached_in_scope("type_hints", fn, _compute_type_hints)
 
 
 def _compute_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
