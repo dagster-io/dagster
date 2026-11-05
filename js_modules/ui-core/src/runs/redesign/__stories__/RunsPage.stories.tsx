@@ -19,7 +19,7 @@ import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types'
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
 import {buildActionsMenuQueryMock} from '../__fixtures__/RunActionsMenuQuery.fixtures';
-import {buildBackfillSummary, buildRunSummary, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
+import {buildRunSummary, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {RunsFeedEntryFragment} from '../types/RunsFeedFragments.types';
 import {RunsFeedQuery, RunsFeedQueryVariables} from '../types/RunsFeedQuery.types';
 
@@ -69,16 +69,16 @@ const FIRST_PAGE_RUNS = [
     tags: [tag(DagsterTag.SensorName, 'files_sensor')],
     ...finishedAfter(2 * MINUTE + 12),
   }),
+  buildRunSummary({
+    id: 'eeeeeeee-1111-2222-3333-444455556666',
+    runId: 'eeeeeeee-1111-2222-3333-444455556666',
+    jobName: 'daily_etl',
+    tags: [tag(DagsterTag.Backfill, 'bkfl1234'), tag(DagsterTag.User, 'pat@example.com')],
+    creationTime: NOW - 3 * HOUR,
+    startTime: NOW - 3 * HOUR,
+    endTime: NOW - HOUR,
+  }),
 ];
-
-const FIRST_PAGE_BACKFILL = buildBackfillSummary({
-  id: 'bkfl1234',
-  isAssetBackfill: true,
-  user: 'pat@example.com',
-  creationTime: NOW - 3 * HOUR,
-  startTime: NOW - 3 * HOUR,
-  endTime: NOW - HOUR,
-});
 
 const SECOND_PAGE_RUNS = [
   buildRunSummary({
@@ -106,7 +106,7 @@ const buildFeedMock = (
     variables: {
       limit: 30,
       filter: {},
-      view: RunsFeedView.ROOTS,
+      view: RunsFeedView.RUNS,
       ...(cursor === undefined ? {} : {cursor}),
     },
   },
@@ -162,7 +162,7 @@ const PageTemplate = ({mocks}: PageTemplateProps) => (
 export const Loaded = () => (
   <PageTemplate
     mocks={[
-      buildFeedMock(buildPage([...FIRST_PAGE_RUNS, FIRST_PAGE_BACKFILL], true)),
+      buildFeedMock(buildPage(FIRST_PAGE_RUNS, true)),
       buildFeedMock(buildPage(SECOND_PAGE_RUNS, false), {cursor: 'first-page-cursor'}),
       ...ROW_MOCKS,
     ]}

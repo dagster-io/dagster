@@ -9,14 +9,10 @@ import {useRunsFeed} from './useRunsFeed';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {useIsMobile} from '../../app/layout/IsMobileContext';
+import {RunsFeedView} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunsQueryRefetchContext} from '../RunUtils';
-import {
-  getRunsFeedDocumentTitle,
-  getRunsFeedQueryView,
-  getSelectedRunsFeedTab,
-  useQueryPersistedRunsFeedView,
-} from '../RunsFeedUtils';
+import {getRunsFeedDocumentTitle, getSelectedRunsFeedTab} from '../RunsFeedUtils';
 import {
   RunFilterToken,
   runsFilterForSearchTokens,
@@ -34,19 +30,17 @@ export const RunsPage = () => {
   const filter = runsFilterForSearchTokens(filterTokens);
   const dateTokens = filterTokens.filter(isCreatedDateToken);
   const searchTokens = filterTokens.filter((token) => !isCreatedDateToken(token));
-  const [view] = useQueryPersistedRunsFeedView();
-  const selectedTab = getSelectedRunsFeedTab(filterTokens, view);
+  const selectedTab = getSelectedRunsFeedTab(filterTokens, RunsFeedView.RUNS);
   useDocumentTitle(getRunsFeedDocumentTitle(selectedTab));
 
-  const queryView = getRunsFeedQueryView(selectedTab, view);
-  const appliedQueryKey = JSON.stringify({filter, view: queryView});
+  const appliedQueryKey = JSON.stringify(filter);
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const shouldScrollToTopRef = useRef(false);
 
   const {entries, error, queryResult, paginationProps, refreshState} = useRunsFeed({
     filter,
-    view: queryView,
+    view: RunsFeedView.RUNS,
     skip: false,
   });
 

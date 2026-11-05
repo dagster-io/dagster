@@ -10,10 +10,11 @@ import {buildPythonError, buildRunsFeedConnection} from '../../../graphql/builde
 import possibleTypes from '../../../graphql/possibleTypes.generated.json';
 import {RunStatus, RunsFeedView, RunsFilter} from '../../../graphql/types';
 import {shortenId} from '../../../util/shortenId';
+import {DagsterTag} from '../../RunTag';
 import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
-import {buildBackfillSummary, buildRunSummary} from '../__fixtures__/RunsFeedEntries.fixtures';
+import {buildRunSummary, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {RunsFeedEntryFragment} from '../types/RunsFeedFragments.types';
 import {RunsFeedQuery, RunsFeedQueryVariables} from '../types/RunsFeedQuery.types';
 
@@ -46,7 +47,6 @@ type FeedMockOptions = {
   data?: RunsFeedQuery;
   error?: Error;
   filter?: RunsFilter;
-  view?: RunsFeedView;
   cursor?: string;
   delay?: number;
 };
@@ -55,13 +55,17 @@ const mockFeed = ({
   data,
   error,
   filter = {},
-  view = RunsFeedView.ROOTS,
   cursor,
   delay,
 }: FeedMockOptions): MockedResponse<RunsFeedQuery, RunsFeedQueryVariables> => ({
   request: {
     query: RUNS_FEED_QUERY,
-    variables: {limit: 30, filter, view, ...(cursor === undefined ? {} : {cursor})},
+    variables: {
+      limit: 30,
+      filter,
+      view: RunsFeedView.RUNS,
+      ...(cursor === undefined ? {} : {cursor}),
+    },
   },
   result: data ? {data} : undefined,
   error,
@@ -156,17 +160,33 @@ describe('RunsPage', () => {
     expect(await screen.findByRole('button', NEWER_BUTTON)).toBeDisabled();
   });
 
-  it('queries the filter and view from a deep link', async () => {
-    renderPage('/runs?q[]=job:daily_etl&view=backfills', [
+  it.each(['runs', 'roots'])('queries individual runs for a view=%s deep link', async (view) => {
+    renderPage(`/runs?q[]=job:daily_etl&view=${view}`, [
+      mockFeed({data: FIRST_PAGE, filter: {pipelineName: 'daily_etl'}}),
+    ]);
+
+    expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
+    await waitFor(() => expect(document.title).toBe('Runs | All'));
+  });
+
+  it('lists the runs of a backfill for a backfill search', async () => {
+    const backfillRun = buildRunSummary({
+      id: SECOND_PAGE_RUN_ID,
+      runId: SECOND_PAGE_RUN_ID,
+      tags: [tag(DagsterTag.Backfill, BACKFILL_ID)],
+    });
+    renderPage('/runs', [
+      mockFeed({data: EMPTY_PAGE}),
       mockFeed({
-        data: buildRunsFeedQueryResult([buildBackfillSummary({id: BACKFILL_ID})]),
-        filter: {pipelineName: 'daily_etl'},
-        view: RunsFeedView.BACKFILLS,
+        data: buildRunsFeedQueryResult([backfillRun]),
+        filter: {tags: [{key: DagsterTag.Backfill, value: BACKFILL_ID}]},
       }),
     ]);
 
-    expect(await screen.findByRole('link', {name: `Backfill ${BACKFILL_ID}`})).toBeVisible();
-    await waitFor(() => expect(document.title).toBe('Runs | All backfills'));
+    await screen.findByText('No runs found');
+    await applySearch(`backfill:${BACKFILL_ID}`);
+
+    expect(await findRunLink(SECOND_PAGE_RUN_ID)).toBeVisible();
   });
 
   it.each([
@@ -184,31 +204,26 @@ describe('RunsPage', () => {
     },
   ])('lists individual runs for the $name status link', async ({tokens, statuses, title}) => {
     const query = tokens.map((token) => `q[]=${token}`).join('&');
-    renderPage(`/runs?${query}`, [
-      mockFeed({data: FIRST_PAGE, filter: {statuses}, view: RunsFeedView.RUNS}),
-    ]);
+    renderPage(`/runs?${query}`, [mockFeed({data: FIRST_PAGE, filter: {statuses}})]);
 
     expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
     await waitFor(() => expect(document.title).toBe(title));
   });
 
-  it('starts a new view on its first page and restores the cursor on Back', async () => {
+  it('starts a new filter on its first page and restores the cursor on Back', async () => {
     const user = userEvent.setup();
     const {history} = renderPage('/runs', [
       mockFeed({data: FIRST_PAGE}),
       mockFeed({data: SECOND_PAGE, cursor: 'first'}),
-      mockFeed({
-        data: buildRunsFeedQueryResult([buildBackfillSummary({id: BACKFILL_ID})]),
-        view: RunsFeedView.BACKFILLS,
-      }),
+      mockFeed({data: EMPTY_PAGE, filter: {pipelineName: 'daily_etl'}}),
     ]);
 
     await findRunLink(FIRST_PAGE_RUN_ID);
     await user.click(await screen.findByRole('button', OLDER_BUTTON));
     await findRunLink(SECOND_PAGE_RUN_ID);
 
-    act(() => history.push('/runs?view=backfills'));
-    expect(await screen.findByRole('link', {name: `Backfill ${BACKFILL_ID}`})).toBeVisible();
+    act(() => history.push('/runs?q[]=job:daily_etl'));
+    expect(await screen.findByText('No matching runs')).toBeVisible();
     expect(await screen.findByRole('button', NEWER_BUTTON)).toBeDisabled();
 
     act(() => history.goBack());
@@ -217,14 +232,17 @@ describe('RunsPage', () => {
   });
 
   it('applies a search as a new history entry on the first page', async () => {
-    const {history} = renderPage('/runs?runs_before=first&view=backfills', [
-      mockFeed({data: SECOND_PAGE, view: RunsFeedView.BACKFILLS, cursor: 'first'}),
-      mockFeed({
-        data: FIRST_PAGE,
-        filter: {statuses: [RunStatus.FAILURE]},
-        view: RunsFeedView.BACKFILLS,
-      }),
-    ]);
+    const {history} = renderPage(
+      '/runs?runs_before=first&view=roots&q[]=job:daily_etl&q[]=status:SUCCESS',
+      [
+        mockFeed({
+          data: SECOND_PAGE,
+          filter: {pipelineName: 'daily_etl', statuses: [RunStatus.SUCCESS]},
+          cursor: 'first',
+        }),
+        mockFeed({data: FIRST_PAGE, filter: {statuses: [RunStatus.FAILURE]}}),
+      ],
+    );
 
     await findRunLink(SECOND_PAGE_RUN_ID);
     const input = await applySearch('status:failure');
@@ -233,38 +251,12 @@ describe('RunsPage', () => {
     expect(history.length).toBe(2);
     const params = new URLSearchParams(history.location.search);
     expect(params.getAll('q[0]')).toEqual(['status:FAILURE']);
-    expect(params.get('view')).toBe('backfills');
+    expect(params.has('q[1]')).toBe(false);
+    expect(params.get('view')).toBe('roots');
     expect(params.has('runs_before')).toBe(false);
     expect(await findSearchInput()).toBe(input);
     expect(input).toHaveFocus();
   });
-
-  it.each([
-    {name: 'queued', text: 'status:queued', statuses: [RunStatus.QUEUED]},
-    {
-      name: 'in-progress',
-      text: 'status:started or status:starting or status:canceling',
-      statuses: [RunStatus.STARTED, RunStatus.STARTING, RunStatus.CANCELING],
-    },
-  ])(
-    'keeps querying backfills for a $name search on the backfills view',
-    async ({text, statuses}) => {
-      renderPage('/runs?view=backfills', [
-        mockFeed({data: EMPTY_PAGE, view: RunsFeedView.BACKFILLS}),
-        mockFeed({
-          data: buildRunsFeedQueryResult([buildBackfillSummary({id: BACKFILL_ID})]),
-          filter: {statuses},
-          view: RunsFeedView.BACKFILLS,
-        }),
-      ]);
-
-      await screen.findByText('No runs found');
-      await applySearch(text);
-
-      expect(await screen.findByRole('link', {name: `Backfill ${BACKFILL_ID}`})).toBeVisible();
-      await waitFor(() => expect(document.title).toBe('Runs | All backfills'));
-    },
-  );
 
   it('restores the previous search and entries after going back', async () => {
     const {history} = renderPage('/runs', [
@@ -322,18 +314,16 @@ describe('RunsPage', () => {
       name: 'runs',
       path: '/runs',
       filter: {},
-      view: RunsFeedView.ROOTS,
       title: 'No runs found',
     },
     {
       name: 'filtered runs',
       path: '/runs?q[]=job:daily_etl',
       filter: {pipelineName: 'daily_etl'},
-      view: RunsFeedView.ROOTS,
       title: 'No matching runs',
     },
-  ])('shows the empty state for $name', async ({path, filter, view, title}) => {
-    renderPage(path, [mockFeed({data: EMPTY_PAGE, filter, view})]);
+  ])('shows the empty state for $name', async ({path, filter, title}) => {
+    renderPage(path, [mockFeed({data: EMPTY_PAGE, filter})]);
 
     expect(await screen.findByText(title)).toBeVisible();
   });
