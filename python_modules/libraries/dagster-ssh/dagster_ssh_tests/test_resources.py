@@ -62,6 +62,27 @@ def test_ssh_connection_with_password(ssh_mock) -> None:
         )
 
 
+@pytest.mark.parametrize("allow_host_key_change", [True, False])
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_host_key_handling(ssh_mock, caplog, allow_host_key_change) -> None:
+    ssh_resource = SSHResource(
+        remote_host="remote_host",
+        username="username",
+        password="password",
+        no_host_key_check=False,
+        allow_host_key_change=allow_host_key_change,
+    )
+    ssh_resource.setup_for_execution(build_init_resource_context())
+    ssh_resource.set_logger(logging.root.getChild("test_resources"))
+
+    with caplog.at_level(logging.WARNING), ssh_resource.get_connection():
+        # System known hosts are always loaded, so host key changes are always verified
+        ssh_mock.return_value.load_system_host_keys.assert_called_once_with()
+        ssh_mock.return_value.set_missing_host_key_policy.assert_not_called()
+
+    assert "Remote Identification Change is not verified" not in caplog.text
+
+
 @mock.patch("paramiko.SSHClient")
 def test_ssh_connection_without_password(ssh_mock) -> None:
     ssh_resource = SSHResource(

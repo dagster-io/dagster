@@ -172,12 +172,6 @@ class SSHResource(ConfigurableResource):
         client = paramiko.SSHClient()
         client.load_system_host_keys()
 
-        if not self.allow_host_key_change:
-            self.log.warning(
-                "Remote Identification Change is not verified. This won't protect against "
-                "Man-In-The-Middle attacks"
-            )
-            client.load_system_host_keys()
         if self.no_host_key_check:
             self.log.warning(
                 "No Host Key Verification. This won't protect against Man-In-The-Middle attacks"
