@@ -28,3 +28,4 @@ def test_inferred_output_metadata_keeps_custom_attributes_local(
 def test_explicit_metadata_values_preserve_caller_identity() -> None:
     value = dg.MetadataValue.text("explicit")
     assert normalize_metadata_value(value) is value
+    assert OutputDefinition(metadata={"value": value}).metadata["value"] is value
