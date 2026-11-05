@@ -21,14 +21,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: yarn
-          cache-dependency-path: js_modules/yarn.lock
 
-      # Reusing node_modules skips most of `yarn install`; the key changes with the lockfile.
-      - name: Cache node_modules
+      # Reusing the yarn download cache and node_modules skips most of `yarn install`;
+      # the key changes with the lockfile.
+      - name: Cache yarn packages and node_modules
         uses: actions/cache@v4
         with:
           path: |
+            js_modules/.yarn/cache
             js_modules/node_modules
             js_modules/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('js_modules/yarn.lock') }}
