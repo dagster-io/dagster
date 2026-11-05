@@ -357,30 +357,38 @@
 .statusBody {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: stretch;
   flex-wrap: wrap;
   gap: 16px 24px;
 }
 
+/* Six tiles share the column's full height beside the calendar. */
 .statGrid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 10px;
 }
 
 .miniTile {
   background: var(--color-background-lighter);
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 10px 14px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
 }
 
 .miniTile .tileLabel {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .miniTile .jobStatValue {
-  font-size: 15px;
+  font-size: 20px;
+  line-height: 1.2;
 }
 
 .month {
