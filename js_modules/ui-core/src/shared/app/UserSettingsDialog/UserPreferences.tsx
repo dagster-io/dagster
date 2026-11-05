@@ -165,7 +165,7 @@ const RefreshEverywhereButton = () => {
   };
   return (
     <Button icon={<Icon name="refresh" />} onClick={send} disabled={state === 'sending'}>
-      {state === 'sent' ? 'Sent' : state === 'failed' ? 'Failed, try again' : 'Refresh'}
+      {state === 'sent' ? 'Sent' : state === 'failed' ? 'Failed, try again' : 'Refresh now'}
     </Button>
   );
 };
