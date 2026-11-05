@@ -44,6 +44,32 @@ def test_process_log_stream_handles_utf8_char_split_across_chunks():
     assert items[0].log == "hello \u2026 world"
 
 
+@pytest.mark.parametrize(
+    "first_fraction,second_fraction",
+    [
+        ("1", "123456"),
+        ("123456", "1"),
+        ("123456", "123456789"),
+        ("123456789", "123456"),
+        ("1", "123456789"),
+        ("123456789", "1"),
+    ],
+)
+@pytest.mark.parametrize("separate_chunks", [False, True])
+def test_process_log_stream_timestamp_precision(
+    first_fraction: str, second_fraction: str, separate_chunks: bool
+):
+    first_timestamp = f"2024-03-22T02:17:29.{first_fraction}Z"
+    second_timestamp = f"2024-03-22T02:17:30.{second_fraction}Z"
+    lines = [f"{first_timestamp} first".encode(), f"{second_timestamp} second".encode()]
+    chunks = lines if separate_chunks else [b"\n".join(lines)]
+
+    items = list(_process_log_stream(iter(chunks)))
+
+    assert [item.timestamp for item in items] == [first_timestamp, second_timestamp]
+    assert [item.log for item in items] == ["first", "second"]
+
+
 def test_stream_retry_and_succeed():
     reader = PipesK8sPodLogsMessageReader()
 

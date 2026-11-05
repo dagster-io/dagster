@@ -761,7 +761,7 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
         elif maybe_timestamp == timestamp:
             # Some runtimes can emit multiple lines sharing the same timestamp.
             log += f"\n{tail}"
-        elif not (len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)):
+        elif not _is_kube_timestamp(maybe_timestamp):
             # Continuation of a long line that got split across chunks (no timestamp prefix).
             log += line
         else:
