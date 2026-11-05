@@ -34,6 +34,16 @@ from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from kubernetes.client.models import (
+    V1ContainerState,
+    V1ContainerStateTerminated,
+    V1ContainerStatus,
+    V1Job,
+    V1JobStatus,
+    V1ObjectMeta,
+    V1Pod,
+    V1PodStatus,
+)
 
 
 @job(
@@ -842,3 +852,79 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
 
     assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
+
+
+def _check_step_health_with_mocks(kubeconfig_file, k8s_instance, mock_core_api):
+    mock_batch_api = mock.MagicMock()
+    mock_batch_api.read_namespaced_job_status.return_value = V1Job(status=V1JobStatus(failed=1))
+
+    handler = K8sStepHandler(
+        image="bizbuz",
+        container_context=K8sContainerContext(namespace="foo"),
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_batch_api,
+        k8s_client_core_api=mock_core_api,
+    )
+    run = create_run_for_test(
+        k8s_instance,
+        job_name="bar",
+        job_code_origin=reconstructable(bar).get_python_origin(),
+    )
+    return handler.check_step_health(
+        _step_handler_context(
+            job_def=reconstructable(bar),
+            dagster_run=run,
+            instance=k8s_instance,
+            executor=_get_executor(k8s_instance, reconstructable(bar)),
+        )
+    )
+
+
+def test_check_step_health_includes_pod_debug_info(kubeconfig_file, k8s_instance):
+    mock_core_api = mock.MagicMock()
+    mock_core_api.list_namespaced_pod.return_value = mock.Mock(
+        items=[
+            V1Pod(
+                metadata=V1ObjectMeta(name="dagster-step-abc-xyz"),
+                status=V1PodStatus(
+                    phase="Failed",
+                    container_statuses=[
+                        V1ContainerStatus(
+                            name="dagster",
+                            image="bizbuz",
+                            image_id="bizbuz",
+                            ready=False,
+                            restart_count=0,
+                            state=V1ContainerState(
+                                terminated=V1ContainerStateTerminated(
+                                    exit_code=137, reason="OOMKilled"
+                                )
+                            ),
+                        )
+                    ],
+                ),
+            )
+        ]
+    )
+    mock_core_api.list_namespaced_event.return_value = mock.Mock(items=[])
+
+    result = _check_step_health_with_mocks(kubeconfig_file, k8s_instance, mock_core_api)
+
+    assert not result.is_healthy
+    reason = result.unhealthy_reason or ""
+    assert "Discovered failed Kubernetes job" in reason
+    assert "Debug information for pod dagster-step-abc-xyz" in reason
+    assert "Terminated with exit code 137: OOMKilled" in reason
+    # Container logs are left out; the step's compute logs already have them.
+    mock_core_api.read_namespaced_pod_log.assert_not_called()
+
+
+def test_check_step_health_still_fails_step_when_debug_info_errors(kubeconfig_file, k8s_instance):
+    mock_core_api = mock.MagicMock()
+    mock_core_api.list_namespaced_pod.side_effect = Exception("boom")
+
+    result = _check_step_health_with_mocks(kubeconfig_file, k8s_instance, mock_core_api)
+
+    assert not result.is_healthy
+    assert (result.unhealthy_reason or "").startswith("Discovered failed Kubernetes job")

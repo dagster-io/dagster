@@ -1,4 +1,3 @@
-import logging
 import sys
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -392,40 +391,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
         )
-        namespace = container_context.namespace
-        pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
-        full_msg = ""
-        try:
-            pod_debug_info = [
-                self._api_client.get_pod_debug_info(
-                    pod_name, namespace, include_container_logs=include_container_logs
-                )
-                for pod_name in pod_names
-            ]
-            full_msg = "\n".join(pod_debug_info)
-        except Exception:
-            logging.exception(
-                f"Error trying to get debug information for failed k8s job {job_name}"
-            )
-        if pod_names:
-            full_msg = (
-                full_msg
-                + "\nFor more information about the failure, try running `kubectl describe pod"
-                f" {pod_names[0]}`, `kubectl logs {pod_names[0]}`, or `kubectl describe job"
-                f" {job_name}` in your cluster."
-            )
-
-        else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
-            full_msg = (
-                full_msg
-                + "\n\n"
-                + job_debug_info
-                + "\n\nFor more information about the failure, try running `kubectl describe job"
-                f" {job_name}` in your cluster."
-            )
-
-        return full_msg
+        return self._api_client.get_job_worker_debug_info(
+            job_name,
+            namespace=container_context.namespace,
+            include_container_logs=include_container_logs,
+        )
 
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
