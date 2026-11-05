@@ -38,29 +38,37 @@ def test_construction_scales() -> None:
     assets = [_build_asset(i) for i in range(n)]
     checks = [_build_check(i, asset_def) for i, asset_def in enumerate(assets)]
     assert len(assets) == len(checks) == n
+    assert all(
+        check.check_key.asset_key == asset_def.key for asset_def, check in zip(assets, checks)
+    )
 
 
-def benchmark_construction(n: int = 1000, repeats: int = 7) -> list[float]:
+def benchmark_construction(n: int = 1000, repeats: int = 7) -> tuple[list[float], list[float]]:
     """Time fresh definitions with imports warmed and all results retained.
 
     Run with: python -m dagster_tests.asset_defs_tests.test_build_perf
-    GC remains enabled; explicit collection and cleanup are outside the timed region.
+    Returns (wall_ms, cpu_ms) per run. Process CPU time is less sensitive to host load than wall
+    time. GC remains enabled; explicit collection and cleanup are outside the timed region.
     """
     _build_check(n, _build_asset(n))
-    timings = []
+    wall_timings = []
+    cpu_timings = []
     for _ in range(repeats):
         gc.collect()
-        start = time.perf_counter()
+        wall_start = time.perf_counter()
+        cpu_start = time.process_time()
         assets = [_build_asset(i) for i in range(n)]
         checks = [_build_check(i, asset_def) for i, asset_def in enumerate(assets)]
-        timings.append((time.perf_counter() - start) * 1000)
+        cpu_timings.append((time.process_time() - cpu_start) * 1000)
+        wall_timings.append((time.perf_counter() - wall_start) * 1000)
         del assets, checks
-    return timings
+    return wall_timings, cpu_timings
 
 
 if __name__ == "__main__":
-    timings = benchmark_construction()
-    print(  # noqa: T201
-        f"1000 assets + 1000 checks: median {statistics.median(timings):.1f} ms; "
-        f"runs {[round(value, 1) for value in timings]}"
-    )
+    wall, cpu = benchmark_construction()
+    for label, timings in (("wall", wall), ("cpu", cpu)):
+        print(  # noqa: T201
+            f"1000 assets + 1000 checks ({label}): median {statistics.median(timings):.1f} ms; "
+            f"runs {[round(value, 1) for value in timings]}"
+        )
