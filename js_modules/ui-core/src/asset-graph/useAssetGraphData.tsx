@@ -147,7 +147,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const {kinds, hideEdgesToNodesOutsideQuery} = options;
 
   const {loading: supplementaryDataLoading, data: supplementaryData} =
-    useAssetGraphSupplementaryData(opsQuery, allNodes);
+    useAssetGraphSupplementaryData(opsQuery, repoFilteredNodes, options.skip);
 
   useLayoutEffect(() => {
     if (options.loading || supplementaryDataLoading || assetsLoading || options.skip) {

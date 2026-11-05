@@ -139,11 +139,33 @@ describe('useAssetGraphSupplementaryData', () => {
       });
 
       expect(mockUseAssetsHealthData).toHaveBeenCalledWith({
-        assetKeys: [mockAssetKey1, mockAssetKey2],
+        assetKeys: [],
         thread: 'AssetGraphSupplementaryData',
         blockTrace: false,
         skip: true,
       });
+    });
+
+    it('should skip health data when skip is passed even with a status filter', () => {
+      mockParseExpression.mockReturnValue([
+        {field: 'status', value: 'HEALTHY'} as unknown as Filter,
+      ]);
+      mockUseAssetsHealthData.mockReturnValue({
+        liveDataByNode: {},
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
+
+      const {result} = renderHook(
+        () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes, true),
+        {wrapper: TestWrapper},
+      );
+
+      expect(mockUseAssetsHealthData).toHaveBeenCalledWith({
+        assetKeys: [],
+        thread: 'AssetGraphSupplementaryData',
+        blockTrace: false,
+        skip: true,
+      });
+      expect(result.current.loading).toBe(false);
     });
 
     it('should handle parse expression errors gracefully', () => {
@@ -159,7 +181,7 @@ describe('useAssetGraphSupplementaryData', () => {
       });
 
       expect(mockUseAssetsHealthData).toHaveBeenCalledWith({
-        assetKeys: [mockAssetKey1, mockAssetKey2],
+        assetKeys: [],
         thread: 'AssetGraphSupplementaryData',
         blockTrace: false,
         skip: true,

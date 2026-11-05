@@ -120,6 +120,10 @@ export function useLiveData<T>(
     // reset data to empty object
     setData(emptyObject);
 
+    if (skip) {
+      return;
+    }
+
     const unsubscribeCallbacks = keys.map((key) =>
       manager.subscribe(
         key,
@@ -134,7 +138,7 @@ export function useLiveData<T>(
         cb();
       });
     };
-  }, [keys, manager, thread, updateManager]);
+  }, [keys, manager, thread, updateManager, skip]);
 
   const refresh = React.useCallback(() => {
     manager.invalidateCache(keys);

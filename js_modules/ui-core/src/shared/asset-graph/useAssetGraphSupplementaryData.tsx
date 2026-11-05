@@ -17,9 +17,12 @@ import {AssetHealthStatus, InstigationStatus, SensorType} from '../../graphql/ty
 import {useStableReferenceByHash} from '../../hooks/useStableReferenceByHash';
 
 const emptyObject = {} as SupplementaryInformation;
+const emptyAssetKeys: AssetKey[] = [];
+
 export const useAssetGraphSupplementaryData = (
   selection: string,
   nodes: WorkspaceAssetNode[],
+  skip = false,
 ): {loading: boolean; data: SupplementaryInformation} => {
   const parsedFilters = useMemo(() => {
     try {
@@ -30,22 +33,26 @@ export const useAssetGraphSupplementaryData = (
   }, [selection]);
 
   const needsAssetHealthData = useMemo(
-    () => parsedFilters.some((filter) => filter.field === 'status'),
-    [parsedFilters],
+    () => !skip && parsedFilters.some((filter) => filter.field === 'status'),
+    [parsedFilters, skip],
   );
 
   const needsAutomationData = useMemo(
     () =>
+      !skip &&
       parsedFilters.some(
         (filter) =>
           filter.field === 'automation_type' ||
           filter.field === 'sensor' ||
           filter.field === 'schedule',
       ),
-    [parsedFilters],
+    [parsedFilters, skip],
   );
 
-  const assetKeys = useMemo(() => nodes.map((node) => node.assetKey), [nodes]);
+  const assetKeys = useMemo(
+    () => (needsAssetHealthData ? nodes.map((node) => node.assetKey) : emptyAssetKeys),
+    [nodes, needsAssetHealthData],
+  );
 
   const {liveDataByNode} = useAssetsHealthData({
     assetKeys,
