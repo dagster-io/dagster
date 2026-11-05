@@ -6,6 +6,7 @@ import {NavCollapseContext} from './NavCollapseProvider';
 import styles from './css/AppContainer.module.css';
 import {NavigationGroup} from './types';
 import {FallLeaves} from '../../hillpointe/FallLeaves';
+import {useReloadOnNewBuild} from '../useReloadOnNewBuild';
 
 interface Props {
   topGroups: NavigationGroup[];
@@ -19,6 +20,7 @@ export const AppContainer = (props: Props) => {
   const {topGroups, bottomGroups, banner, children, isFullScreenEnabled = false} = props;
 
   const {isCollapsed} = useContext(NavCollapseContext);
+  useReloadOnNewBuild();
 
   return (
     <div className={styles.container}>
