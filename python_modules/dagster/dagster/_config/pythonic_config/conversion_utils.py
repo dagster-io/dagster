@@ -102,7 +102,11 @@ def _convert_pydantic_field(
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
-    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import (
+        Config,
+        _config_value_to_dict_representation,
+        infer_schema_from_config_class,
+    )
 
     if pydantic_field.discriminator:
         return _convert_pydantic_discriminated_union_field(pydantic_field)
@@ -138,6 +142,10 @@ def _convert_pydantic_field(
         )
         if isinstance(default_to_pass, Enum):
             default_to_pass = default_to_pass.name
+        elif isinstance(default_to_pass, (list, dict)):
+            # Collection defaults may contain Config objects or Enums (e.g. list[InnerConfig]),
+            # which must be converted to their config dictionary representation
+            default_to_pass = _config_value_to_dict_representation(None, default_to_pass)
 
         # Extract is_secret from json_schema_extra
         extras = pydantic_field.json_schema_extra or {}
