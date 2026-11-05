@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.13.29 (core) / 0.29.29 (libraries)
+
+### New
+
+- [ui] Run pages now start loading logs sooner.
+- [ui] The code location overview, deployment code locations list, and sensor and schedule detail pages now have mobile layouts.
+- [ui] Improved global search performance on the home page and catalog.
+- [ui] Improved global search responsiveness for deployments with many assets.
+- [ui] Improved asset catalog load performance by sharing asset selection filtering across the page.
+
+### Bugfixes
+
+- [dg] Fixed `dg --help` showing no options or commands when `typer` 0.26 or later was installed. (Thanks, [@DRACULA1729](https://github.com/DRACULA1729)!)
+- [ui] Fixed shift-click selection in run, asset, and automation tables selecting nothing when the range crossed row 10.
+- [ui] Selecting a large asset group in the catalog with its group checkbox no longer freezes the page.
+- [ui] Fixed asset pages opening in the desktop layout on phones.
+- [ui] Fixed the Runs page's bulk actions menu so that actions the user doesn't have permission for cannot be taken, and are shown as disabled.
+- [ui] Fixed duplicate and stale rows accumulating in global search results when editing the query.
+
 ## 1.13.28 (core) / 0.29.28 (libraries)
 
 ### New
