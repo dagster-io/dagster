@@ -75,6 +75,29 @@ def get_asset_backfill_run_chunk_size():
     return int(os.getenv("DAGSTER_ASSET_BACKFILL_RUN_CHUNK_SIZE", "25"))
 
 
+def get_asset_backfill_max_runs_in_flight() -> int | None:
+    """Caps how many non-terminal runs a single backfill may have queued/in-progress at once.
+
+    Unset by default, matching today's behavior of submitting every computed run request in
+    the same tick. Large (10k+ partition) backfills can otherwise flood the run queue faster
+    than the run coordinator can evaluate concurrency limits against it, starving unrelated
+    schedules/sensors that share the queue.
+    """
+    raw = os.getenv("DAGSTER_ASSET_BACKFILL_MAX_RUNS_IN_FLIGHT")
+    return int(raw) if raw else None
+
+
+def _get_num_in_flight_runs_for_backfill(instance: DagsterInstance, backfill_id: str) -> int:
+    return len(
+        instance.get_run_ids(
+            filters=RunsFilter(
+                statuses=NOT_FINISHED_STATUSES,
+                tags={BACKFILL_ID_TAG: backfill_id},
+            ),
+        )
+    )
+
+
 MATERIALIZATION_CHUNK_SIZE = int(
     os.getenv("DAGSTER_ASSET_BACKFILL_MATERIALIZATION_CHUNK_SIZE", "1000")
 )
@@ -743,7 +766,10 @@ async def _submit_runs_and_update_backfill_in_chunks(
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
-) -> None:
+) -> bool:
+    """Returns True if submission stopped early because the backfill hit its configured max
+    number of in-flight runs, with run requests still left to submit on a later iteration.
+    """
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
 
@@ -765,6 +791,7 @@ async def _submit_runs_and_update_backfill_in_chunks(
     run_request_execution_data_cache = {}
 
     chunk_size = get_asset_backfill_run_chunk_size()
+    max_runs_in_flight = get_asset_backfill_max_runs_in_flight()
 
     for run_request_idx, run_request in enumerate(run_requests):
         run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
@@ -828,9 +855,20 @@ async def _submit_runs_and_update_backfill_in_chunks(
             )
 
             if backfill.status != BulkActionStatus.REQUESTED:
-                break
+                return False
 
-    return
+            if max_runs_in_flight is not None and num_submitted < len(run_requests):
+                num_in_flight = _get_num_in_flight_runs_for_backfill(instance, backfill_id)
+                if num_in_flight >= max_runs_in_flight:
+                    logger.info(
+                        f"Backfill {backfill_id} has {num_in_flight} runs in flight, which"
+                        f" meets or exceeds the configured max of {max_runs_in_flight}."
+                        f" Deferring remaining {len(run_requests) - num_submitted} run"
+                        " requests to a later iteration."
+                    )
+                    return True
+
+    return False
 
 
 def _check_target_partitions_subset_is_valid(
@@ -1118,8 +1156,9 @@ async def execute_asset_backfill_iteration(
 
             instance.update_backfill(updated_backfill)
 
+        deferred_due_to_in_flight_limit = False
         if result.run_requests:
-            await _submit_runs_and_update_backfill_in_chunks(
+            deferred_due_to_in_flight_limit = await _submit_runs_and_update_backfill_in_chunks(
                 asset_graph_view,
                 workspace_process_context,
                 updated_backfill.backfill_id,
@@ -1131,7 +1170,9 @@ async def execute_asset_backfill_iteration(
         updated_backfill = cast(
             "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
         )
-        if updated_backfill.status == BulkActionStatus.REQUESTED:
+        if updated_backfill.status == BulkActionStatus.REQUESTED and not (
+            deferred_due_to_in_flight_limit
+        ):
             check.invariant(
                 not updated_backfill.submitting_run_requests,
                 "All run requests should have been submitted",
