@@ -87,7 +87,7 @@ spec:
             "/bin/bash",
             "-c",
             "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
-          ]
+            ]
           env:
             {{- if not .Values.global.postgresqlAuthWifEnabled }}
             - name: DAGSTER_PG_PASSWORD
