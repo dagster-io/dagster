@@ -644,7 +644,15 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
 
     @property
     def is_result_event(self) -> bool:
-        return self.raw_event["info"]["name"] == "NodeFinished"
+        unique_id = self.raw_event["data"].get("node_info", {}).get("unique_id")
+        if unique_id is None:
+            return False
+
+        # Unit tests emit NodeFinished too, but their unique ids live under
+        # manifest["unit_tests"], not manifest["nodes"] — matching dbt Core's exclusion.
+        return self.raw_event["info"]["name"] == "NodeFinished" and not unique_id.startswith(
+            "unit_test"
+        )
 
     def _get_check_passed(self) -> bool:
         node_status = self._get_node_status()
