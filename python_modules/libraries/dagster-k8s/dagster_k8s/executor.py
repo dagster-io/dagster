@@ -405,9 +405,10 @@ class K8sStepHandler(StepHandler):
         """Check all running steps of the run with one paginated Job LIST per namespace, selected
         by the run ID label, instead of one Job GET per step.
 
-        Steps whose Job is not in the list (just created, or labels overridden by user config)
-        are left out so the executor checks them individually. Subclasses that override
-        check_step_health keep their per-step behavior: no results are returned.
+        Steps whose Job is not in the list (just created, or labels overridden by user config),
+        or whose namespace cannot be listed, are left out so the executor checks them
+        individually. Subclasses that override check_step_health keep their per-step behavior:
+        no results are returned.
         """
         if len(step_handler_contexts) < 2:
             return {}
@@ -428,13 +429,19 @@ class K8sStepHandler(StepHandler):
 
         results: dict[str, CheckStepHealthResult] = {}
         for namespace, job_names_by_step_key in job_names_by_namespace.items():
-            statuses = self._api_client.list_job_statuses(
-                namespace=namespace,
-                label_selector=(
-                    "app.kubernetes.io/component=step_worker,"
-                    f"dagster/run-id={sanitize_k8s_label(run_id)}"
-                ),
-            )
+            try:
+                statuses = self._api_client.list_job_statuses(
+                    namespace=namespace,
+                    label_selector=(
+                        "app.kubernetes.io/component=step_worker,"
+                        f"dagster/run-id={sanitize_k8s_label(run_id)}"
+                    ),
+                )
+            except Exception:
+                # LIST can fail even when the existing GET checks work (for example, with
+                # GET-only RBAC). Leave these steps out so the executor checks them with GET,
+                # rather than logging a batch error engine event on every health check.
+                continue
             for step_key, job_name in job_names_by_step_key.items():
                 status = statuses.get(job_name)
                 if status is not None:
