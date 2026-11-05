@@ -48,6 +48,8 @@ export type RunSummaryFragment = {
   hasDeletePermission: boolean;
   canTerminate: boolean;
   hasRunMetricsEnabled: boolean;
+  status: Types.RunStatus;
+  pipelineName: string;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;
@@ -119,6 +121,8 @@ export type RunsFeedEntryFragment_Run = {
   hasDeletePermission: boolean;
   canTerminate: boolean;
   hasRunMetricsEnabled: boolean;
+  status: Types.RunStatus;
+  pipelineName: string;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;

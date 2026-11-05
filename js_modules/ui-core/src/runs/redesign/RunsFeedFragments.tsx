@@ -1,4 +1,5 @@
 import {gql} from '../../apollo-client';
+import {RUN_ACTIONS_MENU_RUN_FRAGMENT} from '../RunActionsMenuRunFragment';
 
 export const RUN_SUMMARY_FRAGMENT = gql`
   fragment RunSummaryFragment on Run {
@@ -38,7 +39,10 @@ export const RUN_SUMMARY_FRAGMENT = gql`
     hasDeletePermission
     canTerminate
     hasRunMetricsEnabled
+    ...RunActionsMenuRunFragment
   }
+
+  ${RUN_ACTIONS_MENU_RUN_FRAGMENT}
 `;
 
 export const BACKFILL_SUMMARY_FRAGMENT = gql`

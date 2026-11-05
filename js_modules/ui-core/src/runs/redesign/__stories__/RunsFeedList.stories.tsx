@@ -10,6 +10,7 @@ import {
   buildRunStatsSnapshot,
 } from '../../../graphql/builders';
 import {InstigationTickStatus, InstigationType, RunStatus} from '../../../graphql/types';
+import {useSelectionReducer} from '../../../hooks/useSelectionReducer';
 import {JOB_SELECTED_TICK_QUERY} from '../../../instigation/TickDetailsDialog';
 import {
   SelectedTickQuery,
@@ -180,6 +181,27 @@ const ListTemplate = ({entries, isLoading = false}: ListTemplateProps) => (
 );
 
 export const Loading = () => <ListTemplate entries={[]} isLoading />;
+
+const SELECTABLE_RUNS = [liveRun, queuedRun, sensorRun, manualRun];
+const SELECTABLE_RUN_IDS = SELECTABLE_RUNS.map((run) => run.id);
+
+const SelectableListTemplate = () => {
+  const [{checkedIds}, {onToggleFactory}] = useSelectionReducer(SELECTABLE_RUN_IDS);
+  return (
+    <MockedProvider mocks={MOCKS}>
+      <div style={{width: 960}}>
+        <RunsFeedList
+          entries={SELECTABLE_RUNS}
+          isLoading={false}
+          checkedIds={checkedIds}
+          onToggleRun={(runId, toggle) => onToggleFactory(runId)(toggle)}
+        />
+      </div>
+    </MockedProvider>
+  );
+};
+
+export const Selectable = () => <SelectableListTemplate />;
 
 export const RowNavigation = () => (
   <ListTemplate

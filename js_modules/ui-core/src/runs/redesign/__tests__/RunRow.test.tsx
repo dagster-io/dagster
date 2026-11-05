@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {ComponentProps} from 'react';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import {
@@ -92,11 +93,19 @@ const CurrentPath = () => {
 const windowOpen = jest.fn();
 
 // The row is the first element rendered; neither the router nor the mock provider adds one.
-const renderRow = async (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn()) => {
+const renderRow = async (
+  entry: MappedRunsFeedEntry,
+  props: Partial<ComponentProps<typeof RunRow>> = {},
+) => {
   const {container} = render(
     <MemoryRouter initialEntries={[LIST_PATH]}>
       <MockedProvider mocks={[statsMock, menuMock]}>
-        <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} onOpenRunDialog={jest.fn()} />
+        <RunRow
+          entry={entry}
+          onOpenTickDetails={jest.fn()}
+          onOpenRunDialog={jest.fn()}
+          {...props}
+        />
       </MockedProvider>
       <CurrentPath />
     </MemoryRouter>,
@@ -151,7 +160,7 @@ describe('RunRow', () => {
   it('opens tick details without opening the run', async () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     const onOpenTickDetails = jest.fn();
-    await renderRow(automationRunWithTick, onOpenTickDetails);
+    await renderRow(automationRunWithTick, {onOpenTickDetails});
 
     await user.click(await screen.findByRole('button', {name: 'View tick'}));
 
@@ -201,6 +210,25 @@ describe('RunRow', () => {
     }
     await user.click(divider);
 
+    expect(getCurrentPath()).toBe(LIST_PATH);
+  });
+
+  it('toggles the checkbox without opening the run, shift-clicked or not', async () => {
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    const onToggleChecked = jest.fn();
+    await renderRow(succeededRun, {onToggleChecked});
+    const checkbox = await screen.findByRole('checkbox', {name: 'Select run a1b2c3d4'});
+
+    await user.click(checkbox);
+    await user.keyboard('{Shift>}');
+    await user.click(checkbox);
+    await user.keyboard('{/Shift}');
+
+    expect(onToggleChecked.mock.calls).toEqual([
+      [{checked: true, shiftKey: false}],
+      [{checked: true, shiftKey: true}],
+    ]);
+    expect(windowOpen).not.toHaveBeenCalled();
     expect(getCurrentPath()).toBe(LIST_PATH);
   });
 

@@ -139,6 +139,7 @@ export const RunsFeedTable = ({
           />
           {terminateAllRunsButton}
           <RunBulkActionsMenu
+            intent="primary"
             clearSelection={() => onToggleAll(false)}
             selected={selectedRuns}
             notice={

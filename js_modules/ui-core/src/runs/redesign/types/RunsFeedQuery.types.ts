@@ -112,6 +112,8 @@ export type RunsFeedQuery = {
               hasDeletePermission: boolean;
               canTerminate: boolean;
               hasRunMetricsEnabled: boolean;
+              status: Types.RunStatus;
+              pipelineName: string;
               repositoryOrigin: {
                 __typename: 'RepositoryOrigin';
                 id: string;
@@ -130,4 +132,4 @@ export type RunsFeedQuery = {
       };
 };
 
-export const RunsFeedQueryVersion = '0a964d18c673e98b148680213f0c02704054cf4b4b02f9b22a342665879d6056';
+export const RunsFeedQueryVersion = '06376501909ff8e9a8e6a9dd38a90421c610e5e9fa9d3e0ec06cbfc8399ce399';

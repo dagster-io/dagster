@@ -93,6 +93,12 @@ const initialState: State = {
   lastCheckedId: null,
 };
 
+/** An item's selection change, including whether Shift was held to select a range. */
+export type SelectionToggle = {
+  checked: boolean;
+  shiftKey: boolean;
+};
+
 export function useSelectionReducer(allIds: string[]) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -100,7 +106,7 @@ export function useSelectionReducer(allIds: string[]) {
     dispatch({type: 'set-all-ids', payload: {allIds}});
   }, [allIds]);
 
-  const onToggleFactory = (id: string) => (values: {checked: boolean; shiftKey: boolean}) => {
+  const onToggleFactory = (id: string) => (values: SelectionToggle) => {
     const {checked, shiftKey} = values;
     if (shiftKey && state.lastCheckedId) {
       dispatch({type: 'toggle-slice', payload: {checked, id, allIds}});
@@ -113,10 +119,14 @@ export function useSelectionReducer(allIds: string[]) {
     dispatch({type: 'toggle-all', payload: {checked, allIds}});
   };
 
+  const clearSelection = useCallback(() => {
+    dispatch({type: 'toggle-all', payload: {checked: false, allIds: []}});
+  }, []);
+
   // Use this rather than calling `onToggleFactory` in a loop, which copies the set once per id.
   const onToggleMany = useCallback((ids: string[], checked: boolean) => {
     dispatch({type: 'toggle-many', payload: {checked, ids}});
   }, []);
 
-  return [state, {onToggleFactory, onToggleAll, onToggleMany}] as const;
+  return [state, {onToggleFactory, onToggleAll, onToggleMany, clearSelection}] as const;
 }

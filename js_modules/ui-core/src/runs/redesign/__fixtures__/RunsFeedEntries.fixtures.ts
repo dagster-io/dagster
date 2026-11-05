@@ -33,26 +33,34 @@ const repositoryOrigin = buildRepositoryOrigin({
 
 export const buildRunSummary = (
   overrides: Partial<RunSummaryFragment> = {},
-): RunSummaryFragment => ({
-  ...buildRun({
-    id: 'a1b2c3d4-1111-2222-3333-444455556666',
-    runId: 'a1b2c3d4-1111-2222-3333-444455556666',
-    runStatus: RunStatus.SUCCESS,
-    creationTime: CREATED_AT,
-    startTime: STARTED_AT,
-    endTime: ENDED_AT,
-    jobName: HIDDEN_ASSET_JOB_NAME,
-    repositoryOrigin,
-    tags: [],
-    parentRunId: null,
-    rootRunId: null,
-    assetSelectionCount: 0,
-    assetCheckSelectionCount: 0,
-  }),
-  assetSelectionPreview: [],
-  assetCheckSelectionPreview: [],
-  ...overrides,
-});
+): RunSummaryFragment => {
+  const summary = {
+    ...buildRun({
+      id: 'a1b2c3d4-1111-2222-3333-444455556666',
+      runId: 'a1b2c3d4-1111-2222-3333-444455556666',
+      runStatus: RunStatus.SUCCESS,
+      creationTime: CREATED_AT,
+      startTime: STARTED_AT,
+      endTime: ENDED_AT,
+      jobName: HIDDEN_ASSET_JOB_NAME,
+      repositoryOrigin,
+      tags: [],
+      parentRunId: null,
+      rootRunId: null,
+      assetSelectionCount: 0,
+      assetCheckSelectionCount: 0,
+    }),
+    assetSelectionPreview: [],
+    assetCheckSelectionPreview: [],
+    ...overrides,
+  };
+  // The menu fragment fetches these two fields again under their schema names.
+  return {
+    ...summary,
+    status: summary.runStatus,
+    pipelineName: summary.jobName,
+  };
+};
 
 export const buildBackfillSummary = (
   overrides: Partial<BackfillSummaryFragment> = {},

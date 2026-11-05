@@ -8,6 +8,7 @@ import {ApolloLink, InMemoryCache} from '../../../apollo-client';
 import {AnalyticsContext} from '../../../app/analytics';
 import {IsMobileContext} from '../../../app/layout/IsMobileContext';
 import {
+  buildDeletePipelineRunSuccess,
   buildPythonError,
   buildQuery,
   buildRuns,
@@ -15,10 +16,13 @@ import {
 } from '../../../graphql/builders';
 import possibleTypes from '../../../graphql/possibleTypes.generated.json';
 import {RunStatus, RunsFeedView, RunsFilter} from '../../../graphql/types';
+import {buildMutationMock} from '../../../testing/mocking';
 import {shortenId} from '../../../util/shortenId';
 import {DagsterTag} from '../../RunTag';
+import {DELETE_MUTATION} from '../../RunUtils';
 import {TERMINATE_BATCH_QUERY} from '../../TerminateAllRunsDialog';
 import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
+import {DeleteMutation, DeleteMutationVariables} from '../../types/RunUtils.types';
 import {
   TerminateBatchQuery,
   TerminateBatchQueryVariables,
@@ -36,6 +40,7 @@ jest.mock('../../../selection/SelectionInput', () => ({
 
 const FIRST_PAGE_RUN_ID = 'aaaaaaaa-1111-2222-3333-444455556666';
 const SECOND_PAGE_RUN_ID = 'bbbbbbbb-1111-2222-3333-444455556666';
+const THIRD_RUN_ID = 'cccccccc-1111-2222-3333-444455556666';
 const BACKFILL_ID = 'bkfl1234';
 const INVALID_SEARCH = `id:"${FIRST_PAGE_RUN_ID}" or job:b`;
 
@@ -52,7 +57,7 @@ const buildRunsFeedQueryResult = (
   runsFeedOrError: {...buildRunsFeedConnection({cursor, hasMore}), results},
 });
 
-const runSummary = (id: string) => buildRunSummary({id, runId: id});
+const runSummary = (id: string) => buildRunSummary({id, runId: id, hasDeletePermission: true});
 
 type FeedMockOptions = {
   data?: RunsFeedQuery;
@@ -60,6 +65,7 @@ type FeedMockOptions = {
   filter?: RunsFilter;
   cursor?: string;
   delay?: number;
+  maxUsageCount?: number;
 };
 
 const mockFeed = ({
@@ -68,6 +74,7 @@ const mockFeed = ({
   filter = {},
   cursor,
   delay,
+  maxUsageCount = Number.POSITIVE_INFINITY,
 }: FeedMockOptions): MockedResponse<RunsFeedQuery, RunsFeedQueryVariables> => ({
   request: {
     query: RUNS_FEED_QUERY,
@@ -81,7 +88,7 @@ const mockFeed = ({
   result: data ? {data} : undefined,
   error,
   delay,
-  maxUsageCount: Number.POSITIVE_INFINITY,
+  maxUsageCount,
 });
 
 const FIRST_PAGE = buildRunsFeedQueryResult([runSummary(FIRST_PAGE_RUN_ID)], {
@@ -527,5 +534,243 @@ describe('RunsPage terminate all', () => {
 
     await findRunLink(FIRST_PAGE_RUN_ID);
     expect(await screen.findByRole('button', TERMINATE_ALL_BUTTON)).toBeEnabled();
+  });
+});
+
+describe('RunsPage selection', () => {
+  const SELECT_RUNS_BUTTON = {name: 'Select runs'};
+  const CLOSE_SELECTION_BUTTON = {name: 'Close and clear selection'};
+  const SELECT_ALL_CHECKBOX = {name: 'Select all runs on this page'};
+  const ACTIONS_BUTTON = {name: /^Actions/};
+
+  const THREE_RUNS_PAGE = buildRunsFeedQueryResult([
+    runSummary(FIRST_PAGE_RUN_ID),
+    runSummary(SECOND_PAGE_RUN_ID),
+    runSummary(THIRD_RUN_ID),
+  ]);
+
+  // The count's number and words are separate spans inside the bar's status region.
+  const findSelectionCount = (text: string) =>
+    screen.findByText(
+      (_, element) => element?.getAttribute('role') === 'status' && element.textContent === text,
+    );
+
+  const findRunCheckbox = (id: string) =>
+    screen.findByRole('checkbox', {name: `Select run ${shortenId(id)}`});
+
+  const deleteMock = buildMutationMock<DeleteMutation, DeleteMutationVariables>({
+    query: DELETE_MUTATION,
+    variables: {runId: FIRST_PAGE_RUN_ID},
+    data: {deletePipelineRun: buildDeletePipelineRunSuccess({runId: FIRST_PAGE_RUN_ID})},
+  });
+
+  const openDeleteDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(await screen.findByRole('button', ACTIONS_BUTTON));
+    await user.click(await screen.findByRole('menuitem', {name: /Delete 1 run$/}));
+  };
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('opens the selection bar when a run is checked', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [mockFeed({data: THREE_RUNS_PAGE})]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+
+    expect(await findSelectionCount('1 run selected')).toBeVisible();
+    const runCheckbox = await findRunCheckbox(FIRST_PAGE_RUN_ID);
+    expect(runCheckbox).toBeChecked();
+    expect(runCheckbox).toHaveFocus();
+    expect(await screen.findByRole('button', SELECT_RUNS_BUTTON)).toBeDisabled();
+  });
+
+  it('checks the runs between two checked runs on a shift-click', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [mockFeed({data: THREE_RUNS_PAGE})]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    await user.keyboard('{Shift>}');
+    await user.click(await findRunCheckbox(THIRD_RUN_ID));
+    await user.keyboard('{/Shift}');
+
+    expect(await findSelectionCount('3 runs selected')).toBeVisible();
+    expect(await findRunCheckbox(SECOND_PAGE_RUN_ID)).toBeChecked();
+  });
+
+  it('checks and unchecks every run on the page from the selection bar', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [mockFeed({data: THREE_RUNS_PAGE})]);
+
+    await findRunCheckbox(FIRST_PAGE_RUN_ID);
+    await user.click(await screen.findByRole('button', SELECT_RUNS_BUTTON));
+    await user.click(await screen.findByRole('checkbox', SELECT_ALL_CHECKBOX));
+
+    expect(await findSelectionCount('3 runs selected')).toBeVisible();
+    for (const id of [FIRST_PAGE_RUN_ID, SECOND_PAGE_RUN_ID, THIRD_RUN_ID]) {
+      expect(await findRunCheckbox(id)).toBeChecked();
+    }
+
+    await user.click(await screen.findByRole('checkbox', SELECT_ALL_CHECKBOX));
+    expect(await screen.findByText('Select runs')).toBeVisible();
+  });
+
+  it('clears the selection and closes the bar from its close button', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [mockFeed({data: THREE_RUNS_PAGE})]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    await user.click(await screen.findByRole('button', CLOSE_SELECTION_BUTTON));
+
+    expect(screen.queryByRole('checkbox', SELECT_ALL_CHECKBOX)).not.toBeInTheDocument();
+    expect(await findRunCheckbox(FIRST_PAGE_RUN_ID)).not.toBeChecked();
+    expect(await screen.findByRole('button', SELECT_RUNS_BUTTON)).toBeEnabled();
+  });
+
+  it('opens an empty selection bar from Select runs and disables the button while the bar is open', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [mockFeed({data: THREE_RUNS_PAGE})]);
+
+    await findRunCheckbox(FIRST_PAGE_RUN_ID);
+    await user.click(await screen.findByRole('button', SELECT_RUNS_BUTTON));
+
+    expect(await screen.findByText('Select runs')).toBeVisible();
+    expect(await screen.findByRole('button', ACTIONS_BUTTON)).toBeDisabled();
+    expect(await screen.findByRole('button', SELECT_RUNS_BUTTON)).toBeDisabled();
+  });
+
+  // A new filter's first load empties the list, which drops the selection anyway; going back
+  // to a cached filter does not.
+  it('clears the selection when going back to a filter that returns a checked run', async () => {
+    const user = userEvent.setup();
+    const overlappingPage = buildRunsFeedQueryResult([
+      runSummary(FIRST_PAGE_RUN_ID),
+      runSummary(THIRD_RUN_ID),
+    ]);
+    const {history} = renderPage('/runs', [
+      mockFeed({data: FIRST_PAGE}),
+      mockFeed({data: overlappingPage, filter: {statuses: [RunStatus.FAILURE]}}),
+    ]);
+
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    await applySearch('status:failure');
+    await findRunLink(THIRD_RUN_ID);
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    expect(await findSelectionCount('1 run selected')).toBeVisible();
+
+    act(() => history.goBack());
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('link', {name: `Run ${shortenId(THIRD_RUN_ID)}`}),
+      ).not.toBeInTheDocument(),
+    );
+    expect(await findRunCheckbox(FIRST_PAGE_RUN_ID)).not.toBeChecked();
+    expect(await screen.findByText('Select runs')).toBeVisible();
+  });
+
+  it('clears the selection when a newer page returns a checked run', async () => {
+    const user = userEvent.setup();
+    renderPage('/runs', [
+      mockFeed({
+        data: buildRunsFeedQueryResult(
+          [runSummary(FIRST_PAGE_RUN_ID), runSummary(SECOND_PAGE_RUN_ID)],
+          {cursor: 'first', hasMore: true},
+        ),
+      }),
+      mockFeed({
+        data: buildRunsFeedQueryResult([runSummary(SECOND_PAGE_RUN_ID), runSummary(THIRD_RUN_ID)]),
+        cursor: 'first',
+      }),
+    ]);
+
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    await user.click(await screen.findByRole('button', OLDER_BUTTON));
+    await findRunLink(THIRD_RUN_ID);
+    await user.click(await findRunCheckbox(SECOND_PAGE_RUN_ID));
+    expect(await findSelectionCount('1 run selected')).toBeVisible();
+
+    await user.click(await screen.findByRole('button', NEWER_BUTTON));
+
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    expect(await findRunCheckbox(SECOND_PAGE_RUN_ID)).not.toBeChecked();
+    expect(await screen.findByText('Select runs')).toBeVisible();
+  });
+
+  it('clears the selection and refetches after deleting, keeping the result', async () => {
+    const user = userEvent.setup();
+    const {operations} = renderPage('/runs', [mockFeed({data: FIRST_PAGE}), deleteMock]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    await openDeleteDialog(user);
+    await user.click(await screen.findByRole('button', {name: 'Yes, delete 1 run'}));
+
+    expect(await screen.findByText('Successfully deleted 1 run.')).toBeVisible();
+    expect(await screen.findByText('Select runs')).toBeVisible();
+    await waitFor(() =>
+      expect(operations.filter((operation) => operation === 'RunsFeedQuery')).toHaveLength(2),
+    );
+  });
+
+  it('keeps the selection when polling returns the checked run', async () => {
+    jest.useFakeTimers();
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    renderPage('/runs', [
+      mockFeed({
+        data: buildRunsFeedQueryResult([
+          runSummary(FIRST_PAGE_RUN_ID),
+          runSummary(SECOND_PAGE_RUN_ID),
+        ]),
+        maxUsageCount: 1,
+      }),
+      mockFeed({data: THREE_RUNS_PAGE}),
+    ]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    expect(await findSelectionCount('1 run selected')).toBeVisible();
+
+    act(() => jest.advanceTimersByTime(15_000));
+
+    await findRunLink(THIRD_RUN_ID);
+    expect(await findSelectionCount('1 run selected')).toBeVisible();
+    expect(await findRunCheckbox(FIRST_PAGE_RUN_ID)).toBeChecked();
+  });
+
+  it('keeps an open dialog when polling removes the checked run', async () => {
+    jest.useFakeTimers();
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    renderPage('/runs', [
+      mockFeed({
+        data: buildRunsFeedQueryResult([
+          runSummary(FIRST_PAGE_RUN_ID),
+          runSummary(SECOND_PAGE_RUN_ID),
+        ]),
+        maxUsageCount: 1,
+      }),
+      mockFeed({data: buildRunsFeedQueryResult([runSummary(SECOND_PAGE_RUN_ID)])}),
+    ]);
+
+    await user.click(await findRunCheckbox(FIRST_PAGE_RUN_ID));
+    await openDeleteDialog(user);
+    expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
+
+    act(() => jest.advanceTimersByTime(15_000));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('link', {name: `Run ${shortenId(FIRST_PAGE_RUN_ID)}`}),
+      ).not.toBeInTheDocument(),
+    );
+    expect(await screen.findByText('Select runs')).toBeVisible();
+    expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
+  });
+
+  it('has no selection controls on mobile', async () => {
+    renderPage('/runs', [mockFeed({data: FIRST_PAGE})], true);
+
+    await findRunLink(FIRST_PAGE_RUN_ID);
+    expect(screen.queryByRole('checkbox', {name: /^Select run/})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', SELECT_RUNS_BUTTON)).not.toBeInTheDocument();
   });
 });

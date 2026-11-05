@@ -1,10 +1,11 @@
-.page {
+.container {
   height: 100%;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
 }
 
-.body {
+.scrollArea {
+  flex: 1;
   min-height: 0;
   overflow: auto;
 }

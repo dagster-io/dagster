@@ -7,14 +7,18 @@ import styles from './css/RunsFeedList.module.css';
 import {TickIdentifier} from './getLaunchDetails';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {useRestoreFocus} from '../../hooks/useRestoreFocus';
+import {SelectionToggle} from '../../hooks/useSelectionReducer';
 import {TickDetailsDialog} from '../../instigation/TickDetailsDialog';
 
 type RunsFeedListProps = {
   entries: MappedRunsFeedEntry[];
   isLoading: boolean;
+  checkedIds?: Set<string>;
+  /** Shows selection checkboxes when set. */
+  onToggleRun?: (runId: string, toggle: SelectionToggle) => void;
 };
 
-export const RunsFeedList = ({entries, isLoading}: RunsFeedListProps) => {
+export const RunsFeedList = ({entries, isLoading, checkedIds, onToggleRun}: RunsFeedListProps) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [selectedTick, setSelectedTick] = useState<TickIdentifier | null>(null);
   const [runDialog, setRunDialog] = useState<RunDialog | null>(null);
@@ -62,6 +66,8 @@ export const RunsFeedList = ({entries, isLoading}: RunsFeedListProps) => {
               entry={entry}
               onOpenTickDetails={openTickDetails}
               onOpenRunDialog={openRunDialog}
+              checked={checkedIds?.has(entry.id)}
+              onToggleChecked={onToggleRun && ((toggle) => onToggleRun(entry.id, toggle))}
             />
           ))
         )}

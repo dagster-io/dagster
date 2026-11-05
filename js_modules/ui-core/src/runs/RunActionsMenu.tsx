@@ -6,6 +6,7 @@ import {
   DialogFooter,
   Icon,
   IconName,
+  Intent,
   JoinedButtons,
   Menu,
   MenuDivider,
@@ -356,10 +357,11 @@ interface RunBulkActionsMenuProps {
   selected: RunActionsMenuRunFragment[];
   clearSelection: () => void;
   notice?: React.ReactNode;
+  intent?: Intent;
 }
 
 export const RunBulkActionsMenu = React.memo(
-  ({selected, clearSelection, notice}: RunBulkActionsMenuProps) => {
+  ({selected, clearSelection, notice, intent}: RunBulkActionsMenuProps) => {
     const {refetch} = React.useContext(RunsQueryRefetchContext);
 
     const [visibleDialog, setVisibleDialog] = React.useState<
@@ -454,7 +456,7 @@ export const RunBulkActionsMenu = React.memo(
           <Button
             disabled={isSelectionEmpty}
             rightIcon={<Icon name="expand_more" />}
-            intent="primary"
+            intent={intent}
           >
             Actions
           </Button>
