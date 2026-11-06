@@ -43,6 +43,8 @@ export type AssetGraphLayout = {
   groups: {[name: string]: GroupLayout};
 };
 const MARGIN = 100;
+// Fewer unconnected assets than this stay in a single column.
+const ORPHAN_GRID_MIN = 4;
 
 export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
@@ -300,6 +302,31 @@ export const layoutAssetGraphImpl = (
     g.setNode(id, getAssetLinkDimensions(label, opts));
   });
 
+  // Assets with no dependencies in the graph all land in dagre's first rank and stack
+  // into one long column. Chain them with hidden edges so dagre spreads them into a
+  // square-ish grid instead; the chain edges are left out of the drawn edges below.
+  const orphansByParent = new Map<string | undefined, string[]>();
+  for (const id of g.nodes()) {
+    if (isGroupId(id) || (g.nodeEdges(id) ?? []).length > 0) {
+      continue;
+    }
+    const parent = g.parent(id);
+    orphansByParent.set(parent, [...(orphansByParent.get(parent) ?? []), id]);
+  }
+  for (const orphans of orphansByParent.values()) {
+    if (orphans.length < ORPHAN_GRID_MIN) {
+      continue;
+    }
+    orphans.sort();
+    const perRank = Math.ceil(Math.sqrt(orphans.length));
+    orphans.forEach((id, i) => {
+      const next = orphans[i + perRank];
+      if (next) {
+        g.setEdge({v: id, w: next}, {weight: 1, hidden: true});
+      }
+    });
+  }
+
   dagre.layout(g);
 
   let maxWidth = 1;
@@ -378,7 +405,7 @@ export const layoutAssetGraphImpl = (
   g.edges().forEach((e) => {
     const v = g.node(e.v);
     const w = g.node(e.w);
-    if (!v || !w) {
+    if (!v || !w || g.edge(e)?.hidden) {
       return;
     }
     const vXInset = !!linksToAssetsOutsideGraphedSet[e.v] ? 16 : 24;
