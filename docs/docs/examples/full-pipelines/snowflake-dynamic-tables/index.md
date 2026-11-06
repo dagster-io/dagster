@@ -22,7 +22,7 @@ In this example, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.10+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.11+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
 - A Snowflake account with a warehouse
 
 ## Step 1: Set up your Dagster environment

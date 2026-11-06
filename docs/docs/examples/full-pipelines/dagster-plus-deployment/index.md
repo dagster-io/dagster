@@ -23,7 +23,7 @@ By the end, you'll have:
 
 To follow this guide, you'll need:
 
-- Python 3.10+ and `uv` installed (see the [uv installation guide](https://docs.astral.sh/uv))
+- Python 3.11+ and `uv` installed (see the [uv installation guide](https://docs.astral.sh/uv))
 - A [Dagster+](https://dagster.cloud) account with three deployments named `dev`, `staging`, and `prod`
 - A Kubernetes cluster (GKE, EKS, AKS, or similar) with `kubectl` and `helm` configured
 - A container registry (GitHub Container Registry, Google Artifact Registry, etc.)

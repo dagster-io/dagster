@@ -9,7 +9,7 @@ description = "Package for running Soda Core data quality scans in Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 readme = "README.md"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     "soda-core>=3.0,<4",

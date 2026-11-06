@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "kitchen-sink"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.11,<3.12"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"

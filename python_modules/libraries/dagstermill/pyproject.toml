@@ -8,7 +8,7 @@ version = "1!0+dev"
 description = "run notebooks using the Dagster tools"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     # ipykernel 5.4.0 and 5.4.1 broke papermill

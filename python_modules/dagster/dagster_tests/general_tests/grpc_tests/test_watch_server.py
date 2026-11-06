@@ -305,10 +305,15 @@ def test_grpc_watch_thread_server_reconnect(
     port = find_free_port()
     fixed_server_id = "fixed_id"
 
-    # Create initial server and start watch thread
+    # Create initial server and start watch thread. The watcher has to keep retrying for as
+    # long as the restarted server takes to come up, which can be several seconds on a busy
+    # CI agent; with the default 10 attempts it gives up after about 2 seconds and reports
+    # on_error instead of on_reconnected.
     watch_interval = 0.2
+    max_reconnect_attempts = 50
     shutdown_event, watch_thread, server_process = create_server_process_and_watch_thread(
         watch_interval=watch_interval,
+        max_reconnect_attempts=max_reconnect_attempts,
         port=port,
         fixed_server_id=fixed_server_id,
     )
@@ -326,7 +331,11 @@ def test_grpc_watch_thread_server_reconnect(
         server_command=GrpcServerCommand.API_GRPC,
     )
     process_cleanup.append(server_process)
-    wait_for_condition(lambda: called_event.get("on_reconnected_count"), watch_interval)
+    wait_for_condition(
+        lambda: called_event.get("on_reconnected_count"),
+        watch_interval,
+        timeout=watch_interval * max_reconnect_attempts + 5,
+    )
 
     shutdown_event.set()
     watch_thread.join()

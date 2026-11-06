@@ -2,7 +2,7 @@
 name = "dagster-js-modules-tox"
 version = "1!0+dev"
 description = "Tox-only wrapper for the dagster js_modules yarn workspaces. Pulls in dagster Python deps because generateGraphQLTypes.ts shells out to dagster-graphql to introspect the schema."
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = []
 
 [dependency-groups]

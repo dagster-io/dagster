@@ -5,8 +5,9 @@ markupsafe<=2.0.1
 # implicitly depends. Can remove this pin when/if dagit cap on nbconvert is lifted.
 nbformat<=5.1.3
 
-# protobuf 4 retroactively breaks old versions of dagster
-protobuf>=3.13.0,<4
+# protobuf 4 retroactively breaks old versions of dagster. Those run on 3.10; on 3.11+
+# the latest release requires protobuf 4.
+protobuf>=3.13.0,<4; python_version < '3.11'
 
 # Deadlock / hang issue in new version of grpc
 grpcio<1.48.1; python_version < '3.10'

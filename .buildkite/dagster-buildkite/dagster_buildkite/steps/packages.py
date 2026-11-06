@@ -350,9 +350,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("examples/project_multi_tenant"),
-            unsupported_python_versions=[
-                AvailablePythonVersion.V3_10,  # requires-python >= 3.11
-            ],
         ),
         PackageSpec(
             oss_path("examples/with_great_expectations"),
@@ -368,10 +365,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("examples/with_wandb"),
-            unsupported_python_versions=[
-                # onnxruntime no longer ships cp310 wheels
-                AvailablePythonVersion.V3_10,
-            ],
         ),
         PackageSpec(
             oss_path("examples/assets_modern_data_stack"),
@@ -442,14 +435,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
 def _unsupported_dagster_python_versions(
     tox_factor: ToxFactor | None,
 ) -> list[AvailablePythonVersion]:
-    if tox_factor and tox_factor.factor == "general_tests_old_protobuf":
-        return [
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-            AvailablePythonVersion.V3_14,
-        ]
-
     if tox_factor and tox_factor.factor in {
         "type_signature_tests",
     }:
@@ -550,10 +535,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 # that drove the daemon-test bumps to 2000m/4Gi.
                 ToxFactor(
                     "general_tests",
-                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
-                ),
-                ToxFactor(
-                    "general_tests_old_protobuf",
                     resources=ResourceRequests(cpu="2000m", memory="4Gi"),
                 ),
                 ToxFactor(
@@ -808,9 +789,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         # PackageSpec(
         #     "python_modules/libraries/dagster-airflow",
-        #     # omit python 3.10 until we add support
         #     unsupported_python_versions=[
-        #         AvailablePythonVersion.V3_10,
         #         AvailablePythonVersion.V3_11,
         #         AvailablePythonVersion.V3_12,
         #         AvailablePythonVersion.V3_13,
@@ -1103,9 +1082,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path(".buildkite/dagster-buildkite"),
-            unsupported_python_versions=[
-                AvailablePythonVersion.V3_10,  # requires tomllib (3.11+)
-            ],
         ),
         PackageSpec(
             oss_path("python_modules/dagster-cloud"),

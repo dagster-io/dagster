@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "deploy_k8s"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster",
     "dagster-cloud",

@@ -23,7 +23,7 @@ env:
   # Enable PEX-based fast deploys (set to "false" to use Docker builds instead)
   ENABLE_FAST_DEPLOYS: "TEMPLATE_ENABLE_FAST_DEPLOYS"
   # Python version used to deploy the project
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
   # GitHub token for PR comments and branch deployments
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

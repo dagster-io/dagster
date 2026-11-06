@@ -9,7 +9,7 @@ version = "1!0+dev"
 # dagster-duckdb-pyspark (requires pyspark>=4.1 on py3.14+) and
 # dagster-snowflake-pyspark (requires pyspark<4); these are mutually
 # exclusive on py3.14+. Drop the cap once snowflake-pyspark relaxes.
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = []

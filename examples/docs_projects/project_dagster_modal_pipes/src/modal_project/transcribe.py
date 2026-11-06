@@ -56,7 +56,7 @@ def _merge_segments(left: Segment, right: Segment) -> Segment:
 
 # start_app
 app_image = (
-    modal.Image.debian_slim(python_version="3.10")
+    modal.Image.debian_slim(python_version="3.11")
     .apt_install("git")
     .pip_install(
         "git+https://github.com/openai/whisper.git",

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-cloud"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 version = "1!0+dev"
 authors = [{name = "Elementl", email = "support@elementl.com"}]
 license = {text = "Apache-2.0"}
@@ -14,7 +14,6 @@ classifiers = [
     "Environment :: Web Environment",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",

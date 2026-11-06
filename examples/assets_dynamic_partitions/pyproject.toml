@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "assets_dynamic_partitions"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "dagster",
     "dagster-duckdb-pandas",
