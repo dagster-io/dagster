@@ -87,6 +87,10 @@ class DagsterGrpcClient:
 
         self._metadata = check.opt_sequence_param(metadata, "metadata")
 
+        # Set inside shared_channel. Deliberately not thread-local: a code location load fetches its
+        # jobs from a thread pool, and those calls must share the channel too.
+        self._shared_channel: grpc.Channel | None = None
+
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
             "You must pass a valid `port` on Windows: `socket` not supported.",
@@ -115,7 +119,28 @@ class DagsterGrpcClient:
         return self._use_ssl
 
     @contextmanager
+    def shared_channel(self) -> Iterator[None]:
+        """Send every synchronous call on this client, from any thread, over one channel while the
+        block is open.
+
+        Otherwise each call opens its own channel, so when several servers share the address (as
+        the pods behind a Kubernetes Service do during a rolling deployment) consecutive calls can
+        reach different servers. A shared channel reaches one server unless its connection drops.
+        """
+        check.invariant(self._shared_channel is None, "Already sharing a channel")
+        with self._channel() as channel:
+            self._shared_channel = channel
+            try:
+                yield
+            finally:
+                self._shared_channel = None
+
+    @contextmanager
     def _channel(self) -> Iterator[grpc.Channel]:
+        if self._shared_channel is not None:
+            yield self._shared_channel
+            return
+
         options = [
             ("grpc.max_receive_message_length", max_rx_bytes()),
             ("grpc.max_send_message_length", max_send_bytes()),

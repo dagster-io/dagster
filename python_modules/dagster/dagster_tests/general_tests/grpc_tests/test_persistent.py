@@ -4,8 +4,10 @@ import re
 import subprocess
 import sys
 import time
+from unittest import mock
 
 import dagster as dg
+import grpc
 import pytest
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -15,6 +17,7 @@ from dagster._core.remote_origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, new_cwd, poll_for_finished_run
@@ -76,6 +79,40 @@ def test_load_grpc_server(entrypoint):
         )
         assert ssl_result.returncode == 1
 
+    finally:
+        process.terminate()
+        process.communicate(timeout=30)
+
+
+@pytest.mark.parametrize("entrypoint", entrypoints())
+def test_location_loads_over_one_channel(entrypoint):
+    """Each call on its own channel could reach a different server sharing the address."""
+    port = find_free_port()
+    subprocess_args = entrypoint + [
+        "--port",
+        str(port),
+        "--python-file",
+        dg.file_relative_path(__file__, "grpc_repo.py"),
+    ]
+    process = subprocess.Popen(subprocess_args)
+
+    try:
+        client = DagsterGrpcClient(port=port, host="localhost")
+        wait_for_grpc_server(process, client, subprocess_args)
+
+        with (
+            dg.instance_for_test() as instance,
+            mock.patch.object(grpc, "insecure_channel", wraps=grpc.insecure_channel) as channel,
+            GrpcServerCodeLocation(
+                origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
+                port=port,
+                host="localhost",
+                watch_server=False,
+                instance=instance,
+            ) as location,
+        ):
+            assert channel.call_count == 1
+            assert location.server_id == client.get_server_id()
     finally:
         process.terminate()
         process.communicate(timeout=30)
