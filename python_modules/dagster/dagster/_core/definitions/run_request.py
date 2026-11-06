@@ -91,6 +91,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             sensor/schedule targets an asset selection, then by default a RunRequest returned from it
             will launch all the asset checks in the selection. This argument is used to specify that
             only a subset of these asset checks should be launched, instead of all of them.
+            An empty sequence launches no asset checks.
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
