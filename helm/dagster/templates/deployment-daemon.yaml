@@ -83,11 +83,10 @@ spec:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagsterDaemon.image) | quote }}
-          command: [
-            "/bin/bash",
-            "-c",
-            "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
-            ]
+          command:
+            - "/bin/bash"
+            - "-c"
+            - "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
           env:
             {{- if not .Values.global.postgresqlAuthWifEnabled }}
             - name: DAGSTER_PG_PASSWORD
