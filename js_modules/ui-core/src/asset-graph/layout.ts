@@ -43,8 +43,8 @@ export type AssetGraphLayout = {
   groups: {[name: string]: GroupLayout};
 };
 const MARGIN = 100;
-// Fewer unconnected assets than this stay in a single column.
-const ORPHAN_GRID_MIN = 4;
+// Fewer siblings than this stay in a single column.
+const SIBLING_GRID_MIN = 4;
 
 export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
@@ -302,25 +302,32 @@ export const layoutAssetGraphImpl = (
     g.setNode(id, getAssetLinkDimensions(label, opts));
   });
 
-  // Assets with no dependencies in the graph all land in dagre's first rank and stack
-  // into one long column. Chain them with hidden edges so dagre spreads them into a
-  // square-ish grid instead; the chain edges are left out of the drawn edges below.
-  const orphansByParent = new Map<string | undefined, string[]>();
+  // Nodes that share the same parent, upstream and downstream (unconnected assets, or the
+  // fan-out of one source into many copies) all land in the same rank and stack into one
+  // long column. Chain each such set with hidden edges so dagre spreads it into a square-ish
+  // grid instead; the chain edges are left out of the drawn edges below.
+  const neighbours = (edges: dagre.Edge[] | undefined, side: 'v' | 'w') =>
+    (edges ?? []).map((e) => e[side]).sort();
+  const siblingSets = new Map<string, string[]>();
   for (const id of g.nodes()) {
-    if (isGroupId(id) || g.inEdges(id)?.length || g.outEdges(id)?.length) {
-      continue;
+    if (!g.node(id)?.width) {
+      continue; // an expanded group, laid out as a cluster
     }
-    const parent = g.parent(id);
-    orphansByParent.set(parent, [...(orphansByParent.get(parent) ?? []), id]);
+    const key = JSON.stringify([
+      g.parent(id),
+      neighbours(g.inEdges(id), 'v'),
+      neighbours(g.outEdges(id), 'w'),
+    ]);
+    siblingSets.set(key, [...(siblingSets.get(key) ?? []), id]);
   }
-  for (const orphans of orphansByParent.values()) {
-    if (orphans.length < ORPHAN_GRID_MIN) {
+  for (const siblings of siblingSets.values()) {
+    if (siblings.length < SIBLING_GRID_MIN) {
       continue;
     }
-    orphans.sort();
-    const perRank = Math.ceil(Math.sqrt(orphans.length));
-    orphans.forEach((id, i) => {
-      const next = orphans[i + perRank];
+    siblings.sort();
+    const perRank = Math.ceil(Math.sqrt(siblings.length));
+    siblings.forEach((id, i) => {
+      const next = siblings[i + perRank];
       if (next) {
         g.setEdge({v: id, w: next}, {weight: 1, hidden: true});
       }
