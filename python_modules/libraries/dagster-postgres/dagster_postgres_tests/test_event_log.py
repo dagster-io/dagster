@@ -19,7 +19,9 @@ from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
+from dagster_postgres.event_log import event_log as postgres_event_log
 from dagster_shared.yaml_utils import safe_load_yaml
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 from sqlalchemy.pool import QueuePool
 
@@ -153,6 +155,16 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
                 assert from_url.postgres_url == from_explicit.postgres_url  # ty: ignore[unresolved-attribute]
+
+
+def test_notify_statement_compiles_with_server_side_bind_params():
+    dialect = postgresql.dialect(paramstyle="numeric_dollar")
+
+    compiled = str(
+        postgres_event_log._NOTIFY_STATEMENT.compile(dialect=dialect)  # noqa: SLF001
+    )
+
+    assert compiled == "SELECT pg_notify($1, $2)"
 
 
 def test_has_table_returns_connection_to_pool(conn_string):
