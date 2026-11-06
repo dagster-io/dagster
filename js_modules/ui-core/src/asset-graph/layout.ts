@@ -307,7 +307,7 @@ export const layoutAssetGraphImpl = (
   // square-ish grid instead; the chain edges are left out of the drawn edges below.
   const orphansByParent = new Map<string | undefined, string[]>();
   for (const id of g.nodes()) {
-    if (isGroupId(id) || (g.nodeEdges(id) ?? []).length > 0) {
+    if (isGroupId(id) || g.inEdges(id)?.length || g.outEdges(id)?.length) {
       continue;
     }
     const parent = g.parent(id);
