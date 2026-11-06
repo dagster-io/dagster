@@ -1,8 +1,9 @@
+import math
 import multiprocessing
 import os
 import sys
 import threading
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
@@ -34,9 +35,11 @@ from dagster._core.executor.base import Executor
 from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
+    ChildProcessDeadlineExceeded,
     ChildProcessEvent,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
+    execute_child_process_with_deadline,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
@@ -48,6 +51,19 @@ if TYPE_CHECKING:
     from dagster._core.storage.dagster_run import DagsterRun
 
 DELEGATE_MARKER = "multiprocess_subprocess_init"
+
+
+def _close_step_iterators(
+    iterators: Iterable[Generator[DagsterEvent | None, None, None]],
+) -> list[BaseException]:
+    """Attempt every active cleanup without allowing one failure to abandon peers."""
+    failures = []
+    for iterator in list(iterators):
+        try:
+            iterator.close()
+        except BaseException as error:
+            failures.append(error)
+    return failures
 
 
 class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
@@ -120,7 +136,35 @@ class MultiprocessExecutor(Executor):
         start_method: str | None = None,
         explicit_forkserver_preload: Sequence[str] | None = None,
         step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
+        step_worker_timeout_seconds: float | None = None,
+        step_worker_timeout_max_event_bytes: int | None = None,
     ):
+        if step_worker_timeout_seconds is not None:
+            try:
+                valid_timeout = (
+                    type(step_worker_timeout_seconds) in (int, float)
+                    and math.isfinite(step_worker_timeout_seconds)
+                    and step_worker_timeout_seconds > 0
+                )
+            except OverflowError:
+                valid_timeout = False
+            if not valid_timeout:
+                raise ValueError("step_worker_timeout_seconds must be finite and positive")
+        elif step_worker_timeout_max_event_bytes is not None:
+            raise ValueError(
+                "step_worker_timeout_max_event_bytes requires step_worker_timeout_seconds"
+            )
+        if step_worker_timeout_max_event_bytes is not None and (
+            type(step_worker_timeout_max_event_bytes) is not int
+            or step_worker_timeout_max_event_bytes <= 0
+        ):
+            raise ValueError("step_worker_timeout_max_event_bytes must be a positive integer")
+        from dagster._core.executor._deadline_spool import DEFAULT_MAX_EVENT_BYTES
+
+        self._step_worker_timeout_seconds = step_worker_timeout_seconds
+        self._step_worker_timeout_max_event_bytes = (
+            step_worker_timeout_max_event_bytes or DEFAULT_MAX_EVENT_BYTES
+        )
         self._retries = check.inst_param(retries, "retries", RetryMode)
         self._step_dependency_config = check.inst_param(
             step_dependency_config, "step_dependency_config", StepDependencyConfig
@@ -216,7 +260,13 @@ class MultiprocessExecutor(Executor):
                     step_dependency_config=self._step_dependency_config,
                 )
             )
-            active_iters: dict[str, Iterator[DagsterEvent | None]] = {}
+            active_iters: dict[str, Generator[DagsterEvent | None, None, None]] = {}
+
+            def close_deadline_iterators():
+                if self._step_worker_timeout_seconds is not None:
+                    return _close_step_iterators(active_iters.values())
+                return []
+
             errors: dict[int, SerializableErrorInfo] = {}
             processes: dict[str, BaseProcess] = {}
             term_events: dict[str, Any] = {}
@@ -263,6 +313,9 @@ class MultiprocessExecutor(Executor):
                                 self.retries,
                                 active_execution.get_known_state(),
                                 execution_plan.repository_load_data,
+                                deadline_cancelled=lambda: stopping,
+                                timeout_seconds=self._step_worker_timeout_seconds,
+                                max_event_bytes=self._step_worker_timeout_max_event_bytes,
                             )
 
                     # process active iterators
@@ -303,9 +356,14 @@ class MultiprocessExecutor(Executor):
                             )
                             yield DagsterEvent.engine_event(
                                 step_context,
-                                get_run_crash_explanation(
-                                    prefix=f"Multiprocess executor: child process for step {key}",
-                                    exit_code=crash.exit_code,  # ty: ignore[invalid-argument-type]
+                                (
+                                    f"Multiprocess executor: step {key} exceeded its configured worker "
+                                    f"lifetime of {crash.timeout_seconds:g} seconds and was terminated."
+                                    if isinstance(crash, ChildProcessDeadlineExceeded)
+                                    else get_run_crash_explanation(
+                                        prefix=f"Multiprocess executor: child process for step {key}",
+                                        exit_code=crash.exit_code,  # ty: ignore[invalid-argument-type]
+                                    )
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
@@ -331,6 +389,19 @@ class MultiprocessExecutor(Executor):
                     # process skipped and abandoned steps
                     yield from active_execution.plan_events_iterator(plan_context)
             except Exception:
+                # Reap before yielding an error event: consumers may stop at that yield.
+                # Continue closing peers even when one cleanup fails; retain the original error.
+                cleanup_failures = close_deadline_iterators()
+                if cleanup_failures:
+                    try:
+                        plan_context.log.error(
+                            "Worker cleanup failures while preserving the original error: "
+                            + "; ".join(
+                                f"{type(error).__name__}: {error}" for error in cleanup_failures
+                            )
+                        )
+                    except Exception:
+                        pass  # A logging failure must not replace the original execution error.
                 if not stopping and active_iters:
                     serializable_error = serializable_error_info_from_exc_info(sys.exc_info())
                     yield DagsterEvent.engine_event(
@@ -352,6 +423,12 @@ class MultiprocessExecutor(Executor):
                             del processes[key]
 
                 raise
+            finally:
+                # Generator.close must reap enabled workers even without an exception event.
+                original_error = sys.exc_info()[0]
+                cleanup_failures = close_deadline_iterators()
+                if cleanup_failures and original_error in (None, GeneratorExit):
+                    raise cleanup_failures[0]
 
             errs = {pid: err for pid, err in errors.items() if err}
 
@@ -404,7 +481,10 @@ def execute_step_out_of_process(
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: RepositoryLoadData | None,
-) -> Iterator[DagsterEvent | None]:
+    deadline_cancelled=lambda: False,
+    timeout_seconds=None,
+    max_event_bytes=None,
+) -> Generator[DagsterEvent | None, None, None]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         dagster_run=step_context.dagster_run,
@@ -423,6 +503,20 @@ def execute_step_out_of_process(
         metadata={},
     )
 
+    if timeout_seconds is not None:
+        yield from _execute_deadline_step(
+            multiproc_ctx,
+            command,
+            step_context,
+            step,
+            errors,
+            processes,
+            timeout_seconds,
+            deadline_cancelled,
+            max_event_bytes,
+        )
+        return
+
     for ret in execute_child_process_command(multiproc_ctx, command):
         if ret is None or isinstance(ret, DagsterEvent):
             yield ret
@@ -433,3 +527,88 @@ def execute_step_out_of_process(
             processes[step.key] = ret
         else:
             check.failed(f"Unexpected return value from child process {type(ret)}")
+
+
+def _execute_deadline_step(
+    ctx, command, step_context, step, errors, processes, seconds, cancelled, max_event_bytes
+):
+    instance = step_context.instance
+    os.makedirs(instance.storage_directory(), exist_ok=True)
+    run_id = step_context.dagster_run.run_id
+    before = instance.get_records_for_run(run_id, limit=1, ascending=False)
+    cursor = before.cursor
+    buffered = []
+    failure = None
+    child_pid = None
+    child_iterator = execute_child_process_with_deadline(
+        ctx, command, seconds, instance.storage_directory(), cancelled, max_event_bytes
+    )
+    try:
+        for ret in child_iterator:
+            if isinstance(ret, BaseProcess):
+                processes[step.key] = ret
+                child_pid = ret.pid
+            elif isinstance(ret, DagsterEvent):
+                if (
+                    ret.is_step_success
+                    or ret.is_step_failure
+                    or ret.is_step_up_for_retry
+                    or ret.is_resource_init_failure
+                ):
+                    buffered.append(ret)
+                else:
+                    yield ret
+            elif isinstance(ret, ChildProcessSystemErrorEvent):
+                errors[ret.pid] = ret.error_info
+            else:
+                yield None
+    except (ChildProcessDeadlineExceeded, ChildProcessCrashException) as exc:
+        failure = exc
+    finally:
+        original_error = sys.exc_info()[0]
+        try:
+            child_iterator.close()
+        except BaseException as cleanup_error:
+            if original_error in (None, GeneratorExit):
+                raise
+            try:
+                step_context.log.error(f"Worker cleanup also failed: {cleanup_error}")
+            except Exception:
+                pass  # Preserve the real preexisting exception.
+
+    # Child is joined before any terminal event reaches ActiveExecution.
+    head = instance.get_records_for_run(run_id, limit=1, ascending=False)
+    upper_id = head.records[0].storage_id if head.records else -1
+    starts = []
+    terminals = []
+    while True:
+        batch = instance.get_records_for_run(run_id, cursor=cursor, limit=1000)
+        for record in batch.records:
+            if record.storage_id > upper_id:
+                break
+            event = record.event_log_entry.dagster_event
+            if event is None or event.step_key != step.key or event.pid != child_pid:
+                continue
+            if event.is_step_start or event.is_step_restarted:
+                starts.append(event)
+            elif starts and (
+                event.is_step_success or event.is_step_failure or event.is_step_up_for_retry
+            ):
+                terminals.append(event)
+        if not batch.has_more or not batch.records or batch.records[-1].storage_id >= upper_id:
+            break
+        cursor = batch.cursor
+        yield None  # Reconcile a finite snapshot without starving unrelated workers.
+    if len(starts) > 1 or len(terminals) > 1:
+        raise RuntimeError("Ambiguous worker attempt terminal records")
+    if terminals:
+        errors.pop(child_pid, None)
+        yield terminals[0]
+    elif buffered and all(e.is_resource_init_failure for e in buffered):
+        yield from buffered
+    elif buffered:
+        raise RuntimeError("Terminal event missing persisted worker attempt evidence")
+    elif failure:
+        if cancelled():
+            raise DagsterExecutionInterruptedError()
+        raise failure
