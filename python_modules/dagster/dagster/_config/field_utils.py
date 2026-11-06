@@ -511,10 +511,13 @@ class IntEnvVar(int):
 
     def get_value(self, default: int | None = None) -> int | None:
         """Returns the value of the environment variable, or the default value if the
-        environment variable is not set. If no default is provided, None will be returned.
+        environment variable is not set or is empty. If no default is provided, None will be
+        returned.
         """
-        value = os.getenv(self.name, default=default)
-        return int(value) if value else None
+        value = os.getenv(self.name)
+        if not value:
+            return default
+        return int(value)
 
     @property
     def env_var_name(self) -> str:
