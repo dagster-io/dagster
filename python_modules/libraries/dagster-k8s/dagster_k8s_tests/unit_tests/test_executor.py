@@ -35,6 +35,7 @@ from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from kubernetes.client.models import (
+    V1Container,
     V1ContainerState,
     V1ContainerStateTerminated,
     V1ContainerStatus,
@@ -42,6 +43,7 @@ from kubernetes.client.models import (
     V1JobStatus,
     V1ObjectMeta,
     V1Pod,
+    V1PodSpec,
     V1PodStatus,
 )
 
@@ -887,6 +889,9 @@ def test_check_step_health_includes_pod_debug_info(kubeconfig_file, k8s_instance
         items=[
             V1Pod(
                 metadata=V1ObjectMeta(name="dagster-step-abc-xyz"),
+                # Give the pod a container so the log assertion below is meaningful:
+                # debug info only fetches logs for containers listed in the pod spec.
+                spec=V1PodSpec(containers=[V1Container(name="dagster", image="bizbuz")]),
                 status=V1PodStatus(
                     phase="Failed",
                     container_statuses=[
