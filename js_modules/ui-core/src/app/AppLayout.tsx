@@ -1,5 +1,6 @@
 import {useFullScreen} from './AppTopNav/AppTopNavContext';
 import {useJobStateForNav} from './AppTopNav/useJobStateForNav';
+import {isKioskMode} from './kioskMode';
 import {MobileLayout} from './mobile/MobileLayout';
 import {AppContainer} from './navigation/AppContainer';
 import {NavCollapseProvider, useIsSmallScreen} from './navigation/NavCollapseProvider';
@@ -30,7 +31,7 @@ export const AppLayout = ({banner, children}: Props) => {
         topGroups={topGroups}
         bottomGroups={bottomGroups}
         banner={banner}
-        isFullScreenEnabled={isFullScreen}
+        isFullScreenEnabled={isFullScreen || isKioskMode}
       >
         {children}
       </AppContainer>
