@@ -320,10 +320,8 @@ export const layoutAssetGraphImpl = (
     ]);
     siblingSets.set(key, [...(siblingSets.get(key) ?? []), id]);
   }
-  for (const siblings of siblingSets.values()) {
-    if (siblings.length < SIBLING_GRID_MIN) {
-      continue;
-    }
+  const grids = [...siblingSets.values()].filter((set) => set.length >= SIBLING_GRID_MIN);
+  for (const siblings of grids) {
     siblings.sort();
     const perRank = Math.ceil(Math.sqrt(siblings.length));
     siblings.forEach((id, i) => {
@@ -335,6 +333,34 @@ export const layoutAssetGraphImpl = (
   }
 
   dagre.layout(g);
+
+  // Dagre reserves the room for each grid but staggers the rows while it tidies the real
+  // edges. Snap the nodes onto an exact grid within that room, using dagre's own spacing.
+  for (const siblings of grids) {
+    const perRank = Math.ceil(Math.sqrt(siblings.length));
+    const placed = siblings.map((id) => g.node(id));
+    const left = Math.min(...placed.map((n) => n.x - n.width / 2));
+    const top = Math.min(...placed.map((n) => n.y - n.height / 2));
+    const stepRank = Math.max(...placed.map((n) => n.width)) + (config.ranksep ?? 0);
+    const stepCross = Math.max(...placed.map((n) => n.height)) + (config.nodesep ?? 0);
+    placed.forEach((n, i) => {
+      const rank = Math.floor(i / perRank);
+      const cross = i % perRank;
+      if (opts.direction === 'horizontal') {
+        n.x = left + rank * stepRank + n.width / 2;
+        n.y = top + cross * stepCross + n.height / 2;
+      } else {
+        n.x =
+          left +
+          cross * (Math.max(...placed.map((m) => m.width)) + (config.nodesep ?? 0)) +
+          n.width / 2;
+        n.y =
+          top +
+          rank * (Math.max(...placed.map((m) => m.height)) + (config.ranksep ?? 0)) +
+          n.height / 2;
+      }
+    });
+  }
 
   let maxWidth = 1;
   let maxHeight = 1;

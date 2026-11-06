@@ -49,7 +49,9 @@ describe('layoutAssetGraph', () => {
       ),
     );
     const copyXs = new Set(copies.map((c) => result.nodes[assetId(c)]?.bounds.x));
+    const copyYs = new Set(copies.map((c) => result.nodes[assetId(c)]?.bounds.y));
     expect(copyXs.size).toBe(4);
+    expect(copyYs.size).toBe(4);
     expect(result.edges).toHaveLength(16);
     expect(result.edges.every((e) => e.fromId === assetId('source'))).toBe(true);
   });
