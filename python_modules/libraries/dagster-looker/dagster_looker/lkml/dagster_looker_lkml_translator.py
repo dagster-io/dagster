@@ -111,18 +111,29 @@ def build_deps_for_looker_view(
     # compatible SQL may not be parsable yet by sqlglot.
     #
     # https://cloud.google.com/looker/docs/sql-and-referring-to-lookml#substitution_operator_
+    #
+    # Each `${view.SQL_TABLE_NAME}` reference is replaced with a placeholder table name, so
+    # that the tables the SQL reads directly are still found when it also references views.
     upstream_view_pattern = re.compile(r"\${(.*?)\.SQL_TABLE_NAME\}")
-    if upstream_looker_views_from_substitution := upstream_view_pattern.findall(derived_table_sql):
-        return [
-            dagster_looker_translator.get_asset_spec(
-                lookml_structure=(
-                    lookml_view_path,
-                    "view",
-                    {"name": upstream_looker_view_name},
-                )
-            ).key
-            for upstream_looker_view_name in set(upstream_looker_views_from_substitution)
-        ]
+    upstream_looker_view_placeholders: dict[str, str] = {}
+
+    def _replace_with_placeholder(match: re.Match[str]) -> str:
+        return upstream_looker_view_placeholders.setdefault(
+            match.group(1), f"__dagster_looker_view_{len(upstream_looker_view_placeholders)}"
+        )
+
+    derived_table_sql = upstream_view_pattern.sub(_replace_with_placeholder, derived_table_sql)
+    upstream_looker_view_keys = [
+        dagster_looker_translator.get_asset_spec(
+            lookml_structure=(
+                lookml_view_path,
+                "view",
+                {"name": upstream_looker_view_name},
+            )
+        ).key
+        for upstream_looker_view_name in upstream_looker_view_placeholders
+    ]
+    placeholder_names = set(upstream_looker_view_placeholders.values())
 
     upstream_sqlglot_tables: Sequence[exp.Table] = []
     try:
@@ -148,26 +159,39 @@ def build_deps_for_looker_view(
             source
             for scope in cast("Iterator[Scope]", root_scope.traverse() if root_scope else [])
             for (_, source) in scope.selected_sources.values()
+            # `ML.PREDICT(...)` is parsed as a table whose last part has no name, which would
+            # give an asset key with an empty part. The tables it reads have their own scopes.
             if isinstance(source, exp.Table)
+            and all(part.name for part in source.parts)
+            and not (source.name in placeholder_names and not source.db and not source.catalog)
         ]
     except Exception as e:
+        omitted_dependencies = (
+            "The upstream table dependencies for the view will be omitted;"
+            " its dependencies on other views are kept."
+            if upstream_looker_view_keys
+            else "The upstream dependencies for the view will be omitted."
+        )
         logger.warning(
             f"Failed to parse derived table SQL for view `{lookml_view_props['name']}`"
             f" in file `{lookml_view_path.name}`."
-            " The upstream dependencies for the view will be omitted.\n\n"
+            f" {omitted_dependencies}\n\n"
             f"Exception: {e}"
         )
 
     return list(
         {
-            dagster_looker_translator.get_asset_spec(
-                lookml_structure=(
-                    lookml_view_path,
-                    "table",
-                    {"table": sqlglot_table, "from_structure": lookml_view_props},
-                )
-            ).key
-            for sqlglot_table in upstream_sqlglot_tables
+            *upstream_looker_view_keys,
+            *(
+                dagster_looker_translator.get_asset_spec(
+                    lookml_structure=(
+                        lookml_view_path,
+                        "table",
+                        {"table": sqlglot_table, "from_structure": lookml_view_props},
+                    )
+                ).key
+                for sqlglot_table in upstream_sqlglot_tables
+            ),
         }
     )
 
