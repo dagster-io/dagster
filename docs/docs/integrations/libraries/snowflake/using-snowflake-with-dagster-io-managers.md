@@ -1,5 +1,5 @@
 ---
-title: 'Using Snowflake with with Dagster I/O managers'
+title: 'Using Snowflake with Dagster I/O managers'
 description: 'Learn to integrate Snowflake with Dagster using a Snowflake I/O manager.'
 sidebar_position: 100
 ---

@@ -2,7 +2,7 @@
 
 The `dagster-graphql-client` cli is used for commands related to the Dagster GraphQL Python client.
 It is currently used to make sure that the current iteration of the client's GraphQL queries are accounted for in
-the Dagster GraphQL server's backwards compatability testing.
+the Dagster GraphQL server's backwards compatibility testing.
 
 ## Setup
 
@@ -22,7 +22,7 @@ for the command line.
 Run `dagster-graphql-client query check` to check if the current GraphQL queries used by the
 Dagster GraphQL client are accounted for in the query snapshot directory
 (located at `dagster-graphql:dagster_graphql_tests.graphql.client_backcompat.query_snapshots`)
-used by the GraphQL server's backwards compatability test suite for the Python Client.
+used by the GraphQL server's backwards compatibility test suite for the Python Client.
 
 If `dagster-graphql-client query check` runs into errors, fix them manually or run `dagster-graphql-client query snapshot`.
 
@@ -34,4 +34,4 @@ used by the Dagster GraphQL client are always accounted for in future backcompat
 Running `dagster-graphql-client query snapshot` takes a snapshot of the current version of queries
 used by the Dagster GraphQL client and stores them in the query snapshot directory
 (`dagster-graphql:dagster_graphql_tests.graphql.client_backcompat.query_snapshots`)
-for use in backwards compatability testing in the future.
+for use in backwards compatibility testing in the future.

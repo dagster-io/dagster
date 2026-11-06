@@ -27,7 +27,7 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
+1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
    cd examples/docs_projects/project_prompt_eng
