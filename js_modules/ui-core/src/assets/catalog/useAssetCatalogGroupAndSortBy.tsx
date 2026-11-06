@@ -50,6 +50,7 @@ const ITEMS_BY_KEY = SORT_ITEMS.reduce(
 type UseAssetCatalogGroupAndSortByProps = {
   liveDataByNode: Record<string, AssetHealthFragment>;
   assetsByAssetKey: Map<string, AssetTableFragment>;
+  skip?: boolean;
 };
 
 export type SortBy = (typeof SORT_ITEMS)[number]['key'];
@@ -57,6 +58,7 @@ export type SortBy = (typeof SORT_ITEMS)[number]['key'];
 export const useAssetCatalogGroupAndSortBy = ({
   liveDataByNode,
   assetsByAssetKey,
+  skip = false,
 }: UseAssetCatalogGroupAndSortByProps) => {
   const [sortBy, setSortBy] = useQueryAndLocalStoragePersistedState<SortBy>({
     localStorageKey: usePrefixedCacheKey('catalog-sortBy'),
@@ -87,6 +89,9 @@ export const useAssetCatalogGroupAndSortBy = ({
   });
 
   const grouped: Record<string, Grouped<any, any>> = useMemo(() => {
+    if (skip) {
+      return {};
+    }
     switch (groupBy) {
       case AssetHealthGroupBy.code_location:
         return groupByAttribute({
@@ -288,7 +293,7 @@ export const useAssetCatalogGroupAndSortBy = ({
           },
         });
     }
-  }, [assetsByAssetKey, groupBy, liveDataByNode]);
+  }, [assetsByAssetKey, groupBy, liveDataByNode, skip]);
 
   const allGroups = useMemo(() => {
     switch (groupBy) {
