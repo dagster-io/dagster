@@ -212,7 +212,10 @@ spec:
         {{- end }}
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
-      tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
+      {{- with $deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         {{- if $.Values.includeInstance }}
         - name: dagster-instance
