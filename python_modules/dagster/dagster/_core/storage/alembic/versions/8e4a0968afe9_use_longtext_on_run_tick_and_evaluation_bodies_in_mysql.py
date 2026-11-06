@@ -1,4 +1,4 @@
-"""use longtext on job_ticks.tick_body and asset_daemon_asset_evaluations.asset_evaluation_body in mysql
+"""use longtext on runs.run_body, job_ticks.tick_body and asset_daemon_asset_evaluations.asset_evaluation_body in mysql
 
 Revision ID: 8e4a0968afe9
 Revises: 29b539ebc72a
@@ -18,6 +18,7 @@ branch_labels = None
 depends_on = None
 
 COLUMNS = [
+    ("runs", "run_body"),
     ("job_ticks", "tick_body"),
     ("asset_daemon_asset_evaluations", "asset_evaluation_body"),
 ]
