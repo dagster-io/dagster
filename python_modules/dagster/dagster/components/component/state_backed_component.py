@@ -1,6 +1,5 @@
 import asyncio
 import inspect
-import shutil
 import tempfile
 from abc import abstractmethod
 from collections.abc import Awaitable
@@ -150,7 +149,11 @@ class StateBackedComponent(Component):
         self, key: str, state_storage: DefsStateStorage | None, project_root: Path
     ) -> str:
         state_path = get_local_state_path(key, project_root)
-        shutil.rmtree(state_path, ignore_errors=True)
+        # The state path is a file, so rmtree would raise NotADirectoryError (swallowed by
+        # ignore_errors=True) and leave the stale marker in place for the whole rebuild.
+        # Remove the marker up front so concurrent readers fall back to "no state" instead
+        # of consuming a half-built state directory.
+        state_path.unlink(missing_ok=True)
         await self._write_state_to_path_async(state_path)
         if state_storage:
             state_storage.set_latest_version(key, LOCAL_STATE_VERSION)
