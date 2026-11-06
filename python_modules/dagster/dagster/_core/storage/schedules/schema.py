@@ -74,7 +74,7 @@ AssetDaemonAssetEvaluationsTable = db.Table(
         "evaluation_id", db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"), index=True
     ),
     db.Column("asset_key", db.Text),
-    db.Column("asset_evaluation_body", db.Text),
+    db.Column("asset_evaluation_body", MySQLCompatabilityTypes.LongText),
     db.Column("num_requested", db.Integer),
     db.Column("num_skipped", db.Integer),
     db.Column("num_discarded", db.Integer),
