@@ -152,6 +152,46 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if $.Values.imagePullSecrets }}
     image_pull_secrets: {{- $.Values.imagePullSecrets | toYaml | nindent 6 }}
     {{- end }}
+    {{- /* env_config_maps and env_secrets are name-only. dagster-k8s turns those into envFrom
+       first (config maps, then secrets) and appends container_config.env_from after them.
+       Emitting only the optional refs there would place them after every required ref, so a
+       later secret on the code server could lose to an earlier config map on the run pod.
+       When any ref is optional, emit every user ref in Deployment order instead, and keep
+       only the generated user-env config map in env_config_maps so it stays first. */}}
+    {{- $hasOptionalEnvFrom := false }}
+    {{- range $envConfigMap := .envConfigMaps }}
+    {{- if and (hasKey $envConfigMap "name") $envConfigMap.optional }}
+    {{- $hasOptionalEnvFrom = true }}
+    {{- end }}
+    {{- end }}
+    {{- range $envSecret := .envSecrets }}
+    {{- if and (hasKey $envSecret "name") $envSecret.optional }}
+    {{- $hasOptionalEnvFrom = true }}
+    {{- end }}
+    {{- end }}
+    {{- $orderedEnvFrom := list }}
+    {{- if $hasOptionalEnvFrom }}
+    {{- range $envConfigMap := .envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    {{- if $envConfigMap.optional }}
+    {{- $orderedEnvFrom = append $orderedEnvFrom (dict "config_map_ref" (dict "name" $envConfigMap.name "optional" true)) }}
+    {{- else }}
+    {{- $orderedEnvFrom = append $orderedEnvFrom (dict "config_map_ref" (dict "name" $envConfigMap.name)) }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- range $envSecret := .envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    {{- if $envSecret.optional }}
+    {{- $orderedEnvFrom = append $orderedEnvFrom (dict "secret_ref" (dict "name" $envSecret.name "optional" true)) }}
+    {{- else }}
+    {{- $orderedEnvFrom = append $orderedEnvFrom (dict "secret_ref" (dict "name" $envSecret.name)) }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    env_config_maps:
+    - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
+    {{- else }}
     env_config_maps:
     - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
     {{- range $envConfigMap := .envConfigMaps }}
@@ -159,11 +199,16 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     - {{ $envConfigMap.name }}
     {{- end }}
     {{- end }}
-    {{- if .envSecrets }}
-    env_secrets:
+    {{- $requiredSecrets := list }}
     {{- range $envSecret := .envSecrets }}
     {{- if hasKey $envSecret "name" }}
-    - {{ $envSecret.name }}
+    {{- $requiredSecrets = append $requiredSecrets $envSecret.name }}
+    {{- end }}
+    {{- end }}
+    {{- if $requiredSecrets }}
+    env_secrets:
+    {{- range $secretName := $requiredSecrets }}
+    - {{ $secretName }}
     {{- end }}
     {{- end }}
     {{- end }}
@@ -188,6 +233,11 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     env: {{- .env | toYaml | nindent 6 }}
     {{- end }}
     run_k8s_config:
+      {{- if $orderedEnvFrom }}
+      container_config:
+        env_from:
+          {{- toYaml $orderedEnvFrom | nindent 10 }}
+      {{- end }}
       pod_spec_config:
         automount_service_account_token: true
         {{- if .nodeSelector }}
