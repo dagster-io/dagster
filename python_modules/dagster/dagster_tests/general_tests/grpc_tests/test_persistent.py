@@ -10,7 +10,7 @@ import dagster as dg
 import grpc
 import pytest
 from dagster._api.list_repositories import sync_list_repositories_grpc
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
@@ -113,6 +113,53 @@ def test_location_loads_over_one_channel(entrypoint):
         ):
             assert channel.call_count == 1
             assert location.server_id == client.get_server_id()
+    finally:
+        process.terminate()
+        process.communicate(timeout=30)
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+def test_location_reports_code_server_startup_error():
+    port = find_free_port()
+    process = subprocess.Popen(
+        [
+            "dagster",
+            "code-server",
+            "start",
+            "--port",
+            str(port),
+            "--python-file",
+            dg.file_relative_path(__file__, "crashy_grpc_repo.py"),
+        ]
+    )
+
+    try:
+        # Not wait_for_grpc_server: Ping fails too while the code server is down
+        client = DagsterGrpcClient(port=port, host="localhost")
+        start_time = time.time()
+        while True:
+            try:
+                client.list_repositories()
+                break
+            except DagsterUserCodeUnreachableError:
+                if time.time() - start_time > 60:
+                    raise
+                time.sleep(0.1)
+
+        with (
+            dg.instance_for_test() as instance,
+            pytest.raises(
+                DagsterUserCodeProcessError,
+                match="gRPC server exited with return code 123 while starting up",
+            ),
+        ):
+            GrpcServerCodeLocation(
+                origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
+                port=port,
+                host="localhost",
+                watch_server=False,
+                instance=instance,
+            )
     finally:
         process.terminate()
         process.communicate(timeout=30)

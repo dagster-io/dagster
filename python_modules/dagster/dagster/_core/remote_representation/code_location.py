@@ -18,7 +18,11 @@ from dagster._core.definitions.reconstruct import ReconstructableJob, Reconstruc
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterInvalidSubsetError,
+    DagsterUserCodeProcessError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -659,6 +663,8 @@ class GrpcServerCodeLocation(CodeLocation):
         grpc_server_registry: GrpcServerRegistry | None = None,
         grpc_metadata: Sequence[tuple[str, str]] | None = None,
     ):
+        import grpc
+
         from dagster._api.get_server_id import sync_get_server_id
         from dagster._api.list_repositories import sync_list_repositories_grpc
         from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
@@ -707,7 +713,21 @@ class GrpcServerCodeLocation(CodeLocation):
 
             # One channel, so the whole load comes from the server that reported _server_id
             with self.client.shared_channel():
-                self._server_id = sync_get_server_id(self.client)
+                try:
+                    self._server_id = sync_get_server_id(self.client)
+                except DagsterUserCodeUnreachableError as e:
+                    # A `dagster code-server start` whose code server failed to start fails
+                    # every call with UNKNOWN except ListRepositories, which returns the reason
+                    if not (
+                        isinstance(e.__cause__, grpc.RpcError)
+                        and cast("grpc.Call", e.__cause__).code() == grpc.StatusCode.UNKNOWN
+                    ):
+                        raise
+                    try:
+                        sync_list_repositories_grpc(self.client)
+                    except DagsterUserCodeProcessError as startup_error:
+                        raise startup_error from None
+                    raise
                 list_repositories_response = sync_list_repositories_grpc(self.client)
 
                 self.repository_names = set(
