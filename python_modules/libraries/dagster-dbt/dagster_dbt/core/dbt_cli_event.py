@@ -218,12 +218,15 @@ def _build_column_lineage_metadata(
             node_scope = build_scope(qualified_node_ast)
 
         column_deps: set[TableColumnDep] = set()
+        # trim_selects only builds a trimmed copy of each SELECT for node labels, and copying
+        # the whole SELECT for every node is most of the remaining cost. We only read leaves.
         for sqlglot_lineage_node in lineage(
             column=column_name,
             sql=qualified_node_ast,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
             scope=node_scope,
+            trim_selects=False,
             copy=False,
         ).walk():
             # Only the leaves of the lineage graph contain relevant information.
