@@ -17,11 +17,16 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster._utils.merger import merge_dicts
-from dagster_k8s import K8sRunLauncher
+from dagster_k8s import (
+    K8sRunLauncher,
+    launcher as launcher_module,
+)
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job_list import V1JobList
 from kubernetes.client.models.v1_job_status import V1JobStatus
+from kubernetes.client.models.v1_list_meta import V1ListMeta
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
 from kubernetes.client.models.v1_object_reference import V1ObjectReference
 
@@ -826,3 +831,192 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             assert f"Debug information for job {running_job_name}" in debug_info  # ty: ignore[unsupported-operator]
             assert "Job status:" in debug_info  # ty: ignore[unsupported-operator]
             assert "Testing: test message" in debug_info  # ty: ignore[unsupported-operator]
+
+
+def _job_list(items, continue_token):
+    return V1JobList(items=items, metadata=V1ListMeta(_continue=continue_token))
+
+
+def _run_worker_job(job_name: str, status: V1JobStatus) -> V1Job:
+    return V1Job(metadata=V1ObjectMeta(name=job_name), status=status)
+
+
+def test_check_run_health_batch(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.Mock(
+        spec_set=["list_namespaced_job", "read_namespaced_job_status"]
+    )
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+        running_run, failed_run, missing_run = (
+            create_run_for_test(instance, job_name="demo_job", status=DagsterRunStatus.STARTED)
+            for _ in range(3)
+        )
+
+        first_page = _job_list(
+            items=[
+                _run_worker_job(
+                    get_job_name_from_run_id(running_run.run_id),
+                    V1JobStatus(active=1, failed=0, succeeded=0),
+                )
+            ],
+            continue_token="next-page",
+        )
+        second_page = _job_list(
+            items=[
+                _run_worker_job(
+                    get_job_name_from_run_id(failed_run.run_id),
+                    V1JobStatus(active=0, failed=1, succeeded=0),
+                )
+            ],
+            continue_token=None,
+        )
+        mock_k8s_client_batch_api.list_namespaced_job.side_effect = [first_page, second_page]
+        mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
+            kubernetes.client.rest.ApiException(status=404, reason="Not Found")
+        )
+
+        results = k8s_run_launcher.check_run_worker_health_batch(
+            [running_run, failed_run, missing_run]
+        )
+
+        assert results[running_run.run_id].status == WorkerStatus.RUNNING
+        assert results[failed_run.run_id].status == WorkerStatus.FAILED
+        assert results[missing_run.run_id].status == WorkerStatus.UNKNOWN
+        assert results[missing_run.run_id].msg == (
+            f"Job {get_job_name_from_run_id(missing_run.run_id)} could not be found"
+        )
+
+        list_calls = mock_k8s_client_batch_api.list_namespaced_job.call_args_list
+        assert len(list_calls) == 2, list_calls
+        run_ids = ",".join(sorted(run.run_id for run in (running_run, failed_run, missing_run)))
+        assert list_calls[0].kwargs["label_selector"] == (
+            f"app.kubernetes.io/component=run_worker,dagster/run-id in ({run_ids})"
+        )
+        assert list_calls[0].kwargs["resource_version"] == "0"
+        assert list_calls[1].kwargs["_continue"] == "next-page"
+        assert "resource_version" not in list_calls[1].kwargs
+        # Only the Job missing from the list is read individually.
+        mock_k8s_client_batch_api.read_namespaced_job_status.assert_called_once_with(
+            get_job_name_from_run_id(missing_run.run_id), namespace=mock.ANY
+        )
+
+
+def test_check_run_health_batch_list_error(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.Mock(
+        spec_set=["list_namespaced_job", "read_namespaced_job_status"]
+    )
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+        runs = [
+            create_run_for_test(instance, job_name="demo_job", status=DagsterRunStatus.STARTED)
+            for _ in range(2)
+        ]
+        mock_k8s_client_batch_api.list_namespaced_job.side_effect = (
+            kubernetes.client.rest.ApiException(status=403, reason="Forbidden")
+        )
+
+        mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+            status=V1JobStatus(active=1, failed=0, succeeded=0)
+        )
+        results = k8s_run_launcher.check_run_worker_health_batch(runs)
+        assert results == {}
+
+        # Monitoring callers check missing results individually. LIST permission is not
+        # required for a deployment whose previous GET-based checks were healthy.
+        fallback_results = [k8s_run_launcher.check_run_worker_health(run) for run in runs]
+        assert all(result.status == WorkerStatus.RUNNING for result in fallback_results)
+        assert mock_k8s_client_batch_api.read_namespaced_job_status.call_count == len(runs)
+
+
+def test_check_run_health_batch_splits_run_ids(kubeconfig_file, monkeypatch):
+    monkeypatch.setattr(launcher_module, "RUN_IDS_PER_JOB_LIST", 2)
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+        runs = [
+            create_run_for_test(instance, job_name="demo_job", status=DagsterRunStatus.STARTED)
+            for _ in range(5)
+        ]
+        mock_k8s_client_batch_api.list_namespaced_job.return_value = _job_list(
+            items=[
+                _run_worker_job(
+                    get_job_name_from_run_id(run.run_id),
+                    V1JobStatus(active=1, failed=0, succeeded=0),
+                )
+                for run in runs
+            ],
+            continue_token=None,
+        )
+
+        results = k8s_run_launcher.check_run_worker_health_batch(runs)
+
+        assert {result.status for result in results.values()} == {WorkerStatus.RUNNING}
+        assert set(results) == {run.run_id for run in runs}
+        list_calls = mock_k8s_client_batch_api.list_namespaced_job.call_args_list
+        assert len(list_calls) == 3
+        selected_run_ids = [
+            call.kwargs["label_selector"].split(" in (")[1].rstrip(")").split(",")
+            for call in list_calls
+        ]
+        assert [len(ids) for ids in selected_run_ids] == [2, 2, 1]
+        assert sorted(run_id for ids in selected_run_ids for run_id in ids) == sorted(
+            run.run_id for run in runs
+        )
+
+
+class _CustomHealthK8sRunLauncher(K8sRunLauncher):
+    def check_run_worker_health(self, run):
+        return super().check_run_worker_health(run)
+
+
+def test_check_run_health_batch_skipped_when_single_check_overridden(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    k8s_run_launcher = _CustomHealthK8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+        run = create_run_for_test(instance, job_name="demo_job", status=DagsterRunStatus.STARTED)
+
+        assert k8s_run_launcher.check_run_worker_health_batch([run]) == {}
+        mock_k8s_client_batch_api.list_namespaced_job.assert_not_called()
