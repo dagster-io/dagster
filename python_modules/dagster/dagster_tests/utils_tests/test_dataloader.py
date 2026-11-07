@@ -103,6 +103,65 @@ def test_exception() -> None:
     asyncio.run(_test())
 
 
+@pytest.mark.parametrize("cancel_before_dispatch", [True, False])
+@pytest.mark.parametrize("cancelled_index", [0, 1, 2])
+@pytest.mark.parametrize("outcome", ["success", "item_error", "batch_error"])
+def test_cancelled_load_does_not_interrupt_batch(
+    cancel_before_dispatch: bool, cancelled_index: int, outcome: str
+) -> None:
+    async def _test() -> None:
+        dispatched = asyncio.Event()
+        release = asyncio.Event()
+        loop_errors = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+        error = ValueError("load failed")
+        batch_calls = 0
+
+        async def batch_load_fn(keys: Iterable[str]):
+            nonlocal batch_calls
+            batch_calls += 1
+            dispatched.set()
+            await release.wait()
+            if outcome == "batch_error" and batch_calls == 1:
+                raise error
+            return [error if outcome == "item_error" else key for key in keys]
+
+        loader = DataLoader(batch_load_fn)
+        keys = ["a", "b", "c"]
+        futures = [loader.load(key) for key in keys]
+        try:
+            if not cancel_before_dispatch:
+                await dispatched.wait()
+            futures[cancelled_index].cancel()
+            release.set()
+
+            _, pending = await asyncio.wait(futures, timeout=1)
+            assert not pending
+            assert futures[cancelled_index].cancelled()
+            for index, future in enumerate(futures):
+                if index == cancelled_index:
+                    continue
+                if outcome == "success":
+                    assert future.result() == keys[index]
+                else:
+                    assert future.exception() is error
+
+            if outcome == "batch_error":
+                assert await loader.load_many(keys) == keys
+
+            await asyncio.sleep(0)
+            assert not loop_errors
+        finally:
+            release.set()
+            for future in futures:
+                future.cancel()
+            await asyncio.gather(*futures, return_exceptions=True)
+            loop.set_exception_handler(None)
+
+    asyncio.run(_test())
+
+
 def test_deep_tree():
     async def _fetch(context: Context, key: str):
         thing = await Thing.gen(context, key)
