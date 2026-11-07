@@ -602,8 +602,13 @@ def cancel_backfill_runs_and_cancellation_complete(
                     message="Canceling run from the queue.",
                 )
                 instance.report_run_canceled(run)
-            else:
-                instance.run_launcher.terminate(run_id)
+        submitted_run_ids = [
+            run.run_id
+            for run in runs_to_cancel_in_iteration
+            if run.status != DagsterRunStatus.QUEUED
+        ]
+        if submitted_run_ids:
+            instance.run_launcher.terminate_runs(submitted_run_ids)
 
     if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.
