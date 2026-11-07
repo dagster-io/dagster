@@ -47,6 +47,7 @@ def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
     dbt_commands: list[str],
     run_results_json: dict | None = None,
+    job: dict | None = {},
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
 
@@ -102,7 +103,7 @@ def _add_dbt_cloud_job_responses(
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{DBT_CLOUD_RUN_ID}/",
-        json={"data": {"status_humanized": "Success", "job": {}, "id": DBT_CLOUD_RUN_ID}},
+        json={"data": {"status_humanized": "Success", "job": job, "id": DBT_CLOUD_RUN_ID}},
         status=200,
     )
 
@@ -209,6 +210,49 @@ def test_load_assets_from_dbt_cloud_job(
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=dbt_commands,
     )
+
+
+@responses.activate
+def test_load_assets_from_dbt_cloud_job_null_job(
+    mocker,
+    dbt_cloud,
+    dbt_cloud_service,
+):
+    """Regression test for https://github.com/dagster-io/dagster/issues/34317.
+
+    dbt Cloud can return `"job": null` (not `{}`) in the run details payload.
+    Materializing assets from such a run must not raise AttributeError.
+    """
+    dbt_commands = ["dbt run"]
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=dbt_commands,
+        job=None,
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    mocker.patch(
+        "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    materialize_assets_job = define_asset_job(
+        name="materialize_assets_null_job",
+        selection=AssetSelection.assets(*dbt_cloud_assets),
+    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
+
+    with instance_for_test() as instance:
+        result = materialize_assets_job.execute_in_process(instance=instance)
+
+    assert result.success
 
 
 @responses.activate
