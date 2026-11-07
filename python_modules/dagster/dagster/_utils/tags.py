@@ -214,7 +214,7 @@ def _normalize_value(value: Any, key: str) -> str:
     try:
         serialized_value = seven.json.dumps(value)
     except TypeError:
-        error = 'Could not JSON encode value "{value}"'
+        error = f'Could not JSON encode value "{value}"'
     if not error and not seven.json.loads(serialized_value) == value:
         error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'
     if error:
