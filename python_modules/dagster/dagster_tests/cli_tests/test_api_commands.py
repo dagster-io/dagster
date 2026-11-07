@@ -22,7 +22,9 @@ from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handl
 
 
 @pytest.mark.parametrize("command", ["grpc", "grpc-health-check"])
-def test_grpc_help_hint(command: str) -> None:
+def test_grpc_help_hint(command: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DAGSTER_GRPC_PORT", raising=False)
+    monkeypatch.delenv("DAGSTER_GRPC_SOCKET", raising=False)
     runner = CliRunner()
     cli = create_dagster_cli()
     result = runner.invoke(cli, ["api", command], prog_name="dagster")
