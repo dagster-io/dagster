@@ -98,6 +98,147 @@ def test_sensor_invocation_resources() -> None:
     ).run_config == {"foo": "foo"}
 
 
+@pytest.mark.parametrize("context_as_kwarg", [False, True])
+def test_sensor_invocation_required_resources(context_as_kwarg: bool) -> None:
+    class MyResource(dg.ConfigurableResource):
+        a_str: str
+
+    @dg.sensor(job_name="foo_job", required_resource_keys={"my_resource"})
+    def context_sensor(context: dg.SensorEvaluationContext) -> dg.RunRequest:
+        return dg.RunRequest(run_key=context.resources.my_resource.a_str)
+
+    with dg.build_sensor_context() as context:
+        with pytest.raises(
+            dg.DagsterInvalidDefinitionError,
+            match="Resource with key 'my_resource' required by sensor 'context_sensor'",
+        ):
+            context_sensor(context)
+
+    with dg.build_sensor_context(resources={"my_resource": MyResource(a_str="foo")}) as context:
+        result = context_sensor(context=context) if context_as_kwarg else context_sensor(context)
+        assert isinstance(result, dg.RunRequest)
+        assert result.run_key == "foo"
+        run_requests = context_sensor.evaluate_tick(context).run_requests
+        assert run_requests is not None
+        assert [request.run_key for request in run_requests] == [result.run_key]
+
+
+def test_sensor_invocation_required_resources_without_context() -> None:
+    events = []
+
+    @dg.resource
+    def my_resource() -> Iterator[str]:
+        events.append("initialized")
+        yield "foo"
+        events.append("cleaned up")
+
+    @dg.sensor(job_name="foo_job", required_resource_keys={"my_resource"})
+    def no_context_sensor() -> dg.SkipReason:
+        assert events == ["initialized"]
+        return dg.SkipReason("No runs needed")
+
+    with dg.build_sensor_context(resources={"my_resource": my_resource}) as context:
+        assert no_context_sensor(context) == dg.SkipReason("No runs needed")
+        assert events == ["initialized"]
+    assert events == ["initialized", "cleaned up"]
+
+
+def test_asset_sensor_invocation_required_resources() -> None:
+    @dg.asset_sensor(
+        asset_key=dg.AssetKey("my_asset"),
+        job_name="foo_job",
+        required_resource_keys={"context_resource"},
+    )
+    def my_sensor(context, event, injected_resource: dg.ResourceParam[str]) -> dg.RunRequest:
+        assert event.asset_materialization.asset_key == dg.AssetKey("my_asset")
+        return dg.RunRequest(run_key=context.resources.context_resource + injected_resource)
+
+    with dg.instance_for_test() as instance:
+        instance.report_runless_asset_event(dg.AssetMaterialization("my_asset"))
+        with dg.build_sensor_context(
+            instance=instance,
+            resources={"context_resource": "foo", "injected_resource": "bar"},
+        ) as context:
+            results = list(cast("Iterator[dg.RunRequest]", my_sensor(context)))
+            assert len(results) == 1
+            assert results[0].run_key == "foobar"
+            assert context.cursor is not None
+
+
+@pytest.mark.parametrize("missing_resource", [None, "context_resource", "injected_resource"])
+def test_multi_asset_sensor_invocation_required_resources(missing_resource: str | None) -> None:
+    @dg.asset
+    def my_asset() -> None: ...
+
+    @dg.multi_asset_sensor(
+        monitored_assets=[my_asset.key],
+        job_name="foo_job",
+        required_resource_keys={"context_resource"},
+    )
+    def my_sensor(context, injected_resource: dg.ResourceParam[str]) -> dg.RunRequest:
+        return dg.RunRequest(run_key=context.resources.context_resource + injected_resource)
+
+    resources = {"context_resource": "foo", "injected_resource": "bar"}
+    if missing_resource:
+        del resources[missing_resource]
+    with dg.instance_for_test() as instance:
+        with dg.build_multi_asset_sensor_context(
+            monitored_assets=[my_asset.key],
+            definitions=dg.Definitions(assets=[my_asset]),
+            instance=instance,
+            resources=resources,
+        ) as context:
+            if missing_resource:
+                with pytest.raises(
+                    dg.DagsterInvalidDefinitionError,
+                    match=f"Resource with key '{missing_resource}' required by sensor 'my_sensor'",
+                ):
+                    my_sensor(context)
+            else:
+                result = my_sensor(context)
+                assert isinstance(result, dg.RunRequest)
+                assert result.run_key == "foobar"
+
+
+@pytest.mark.parametrize("missing_resource", [None, "context_resource", "injected_resource"])
+def test_run_status_sensor_invocation_required_resources(missing_resource: str | None) -> None:
+    def on_success(context, injected_resource: dg.ResourceParam[str]) -> dg.RunRequest:
+        return dg.RunRequest(run_key=context.resources.context_resource + injected_resource)
+
+    my_sensor = dg.RunStatusSensorDefinition(
+        name="my_sensor",
+        run_status=dg.DagsterRunStatus.SUCCESS,
+        run_status_sensor_fn=on_success,
+        required_resource_keys={"context_resource"},
+    )
+
+    @dg.job
+    def my_job() -> None: ...
+
+    resources = {"context_resource": "foo", "injected_resource": "bar"}
+    if missing_resource:
+        del resources[missing_resource]
+    with dg.instance_for_test() as instance:
+        job_result = my_job.execute_in_process(instance=instance)
+        with dg.build_run_status_sensor_context(
+            sensor_name="my_sensor",
+            dagster_instance=instance,
+            dagster_run=job_result.dagster_run,
+            dagster_event=job_result.get_run_success_event(),
+            resources=resources,
+        ) as context:
+            if missing_resource:
+                with pytest.raises(
+                    dg.DagsterInvalidDefinitionError,
+                    match=f"Resource with key '{missing_resource}' required by sensor 'my_sensor'",
+                ):
+                    my_sensor(context)
+            else:
+                result = my_sensor(context)
+                assert isinstance(result, dg.RunRequest)
+                assert result.run_key == "foobar"
+
+
 def test_sensor_invocation_resources_callable() -> None:
     class MyResource(dg.ConfigurableResource):
         a_str: str

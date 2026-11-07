@@ -1008,7 +1008,10 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
             self._name,
             self._required_resource_keys,
         )
-        return self._run_status_sensor_fn(**context_param, **resources)
+        resource_args = {
+            arg.name: resources[arg.name] for arg in get_resource_args(self._run_status_sensor_fn)
+        }
+        return self._run_status_sensor_fn(**context_param, **resource_args)
 
     @property
     def sensor_type(self) -> SensorType:
