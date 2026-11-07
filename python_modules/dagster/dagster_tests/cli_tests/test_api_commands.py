@@ -7,7 +7,7 @@ import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import DagsterEventType
-from dagster._cli import api
+from dagster._cli import api, create_dagster_cli
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
@@ -19,6 +19,24 @@ from dagster._core.utils import make_new_run_id
 
 ensure_dagster_tests_import()
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
+
+
+@pytest.mark.parametrize("command", ["grpc", "grpc-health-check"])
+def test_grpc_help_hint(command: str) -> None:
+    runner = CliRunner()
+    cli = create_dagster_cli()
+    result = runner.invoke(cli, ["api", command], prog_name="dagster")
+
+    assert result.exit_code == 2
+    assert f"Try 'dagster api {command} --help' for help." in result.output
+
+    help_result = runner.invoke(cli, ["api", command, "--help"], prog_name="dagster")
+    assert help_result.exit_code == 0
+    assert "--host TEXT" in help_result.output
+
+    host_result = runner.invoke(cli, ["api", command, "-h"], prog_name="dagster")
+    assert host_result.exit_code == 2
+    assert "requires an argument" in host_result.output
 
 
 def runner_execute_run(runner, cli_args):
