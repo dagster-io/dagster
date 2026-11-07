@@ -1050,6 +1050,47 @@ def test_multi_static_and_dynamic_upstream_of_single_dynamic_partition_mapping()
         )
 
 
+@pytest.mark.parametrize("dimension_name", ["a", "b"])
+@pytest.mark.parametrize("upstream_is_multi", [False, True])
+def test_explicit_partition_dimension_name_respected(dimension_name: str, upstream_is_multi: bool):
+    """Regression test for explicit partition_dimension_name being ignored (issue #34325)."""
+    single = dg.StaticPartitionsDefinition(["1", "2", "3"])
+    multi = dg.MultiPartitionsDefinition({"a": single, "b": single})
+
+    other = "b" if dimension_name == "a" else "a"
+    multi_subset = multi.empty_subset().with_partition_keys(
+        [dg.MultiPartitionKey({dimension_name: "1", other: k}) for k in single.get_partition_keys()]
+    )
+    single_subset = single.empty_subset().with_partition_keys(["1"])
+
+    upstream_def, downstream_def = (multi, single) if upstream_is_multi else (single, multi)
+    upstream_subset, downstream_subset = (
+        (multi_subset, single_subset) if upstream_is_multi else (single_subset, multi_subset)
+    )
+
+    mapping = dg.MultiToSingleDimensionPartitionMapping(partition_dimension_name=dimension_name)
+    mapping.validate_partition_mapping(upstream_def, downstream_def)
+
+    result = mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_subset, downstream_def, upstream_def
+    )
+    assert result.partitions_subset == upstream_subset
+    assert result.required_but_nonexistent_subset.is_empty
+
+    downstream_result = mapping.get_downstream_partitions_for_partitions(
+        upstream_subset, upstream_def, downstream_def
+    )
+    assert downstream_result == downstream_subset
+
+
+def test_explicit_partition_dimension_name_invalid():
+    single = dg.StaticPartitionsDefinition(["1", "2", "3"])
+    multi = dg.MultiPartitionsDefinition({"a": single, "b": single})
+    mapping = dg.MultiToSingleDimensionPartitionMapping(partition_dimension_name="missing")
+    with pytest.raises(CheckError, match="missing"):
+        mapping.validate_partition_mapping(multi, single)
+
+
 def test_description():
     description = dg.MultiPartitionMapping(
         {
