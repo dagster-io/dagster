@@ -47,6 +47,7 @@ def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
     dbt_commands: list[str],
     run_results_json: dict | None = None,
+    job: dict | None = {},
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
 
@@ -102,7 +103,7 @@ def _add_dbt_cloud_job_responses(
     responses.add(
         method=responses.GET,
         url=f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{DBT_CLOUD_RUN_ID}/",
-        json={"data": {"status_humanized": "Success", "job": {}, "id": DBT_CLOUD_RUN_ID}},
+        json={"data": {"status_humanized": "Success", "job": job, "id": DBT_CLOUD_RUN_ID}},
         status=200,
     )
 
@@ -209,6 +210,43 @@ def test_load_assets_from_dbt_cloud_job(
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=dbt_commands,
     )
+
+
+@responses.activate
+def test_load_assets_from_dbt_cloud_job_null_job(
+    dbt_cloud,
+    dbt_cloud_service,
+):
+    """Regression test for https://github.com/dagster-io/dagster/issues/34317.
+
+    dbt Cloud can return `"job": null` (not `{}`) in the run details payload.
+    Materializing assets from such a run must not raise AttributeError.
+    """
+    dbt_commands = ["dbt run"]
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=dbt_commands,
+        job=None,
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
+    dbt_cloud_assets = dbt_cloud_cacheable_assets.build_definitions(
+        dbt_assets_definition_cacheable_data
+    )
+
+    materialize_assets_job = define_asset_job(
+        name="materialize_assets_null_job",
+        selection=AssetSelection.assets(*dbt_cloud_assets),
+    ).resolve(asset_graph=AssetGraph.from_assets(dbt_cloud_assets))
+
+    with instance_for_test() as instance:
+        result = materialize_assets_job.execute_in_process(instance=instance)
+
+    assert result.success
 
 
 @responses.activate
@@ -739,3 +777,109 @@ def test_dbt_cloud_metadata_ids(dbt_cloud, dbt_cloud_service):
         assert metadata["dagster_dbt/cloud_environment_id"] == MetadataValue.int(
             DBT_CLOUD_ENVIRONMENT_ID
         )
+
+
+@responses.activate
+@pytest.mark.parametrize("generate_docs", [True, False])
+@pytest.mark.parametrize("job_state", ["null", "present", "empty"])
+@pytest.mark.parametrize("rebuild_from_cache", [True, False])
+def test_load_assets_from_dbt_cloud_job_artifact_step(
+    dbt_cloud, dbt_cloud_service, generate_docs, job_state, rebuild_from_cache
+):
+    _add_dbt_cloud_job_responses(dbt_cloud_service, ["dbt run"])
+    job_url = f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/jobs/{DBT_CLOUD_JOB_ID}/"
+    responses.replace(
+        responses.GET,
+        job_url,
+        json={
+            "data": {
+                "project_id": DBT_CLOUD_PROJECT_ID,
+                "environment_id": DBT_CLOUD_ENVIRONMENT_ID,
+                "generate_docs": generate_docs,
+                "execute_steps": ["dbt run"],
+                "name": "A dbt Cloud job",
+                "id": DBT_CLOUD_JOB_ID,
+            }
+        },
+    )
+    run_details = {
+        "status_humanized": "Success",
+        "id": DBT_CLOUD_RUN_ID,
+        "run_steps": [{}] * (1 + generate_docs),
+        "account_id": DBT_CLOUD_ACCOUNT_ID,
+    }
+    if job_state != "missing":
+        run_details["job"] = (
+            None
+            if job_state == "null"
+            else {"generate_docs": generate_docs}
+            if job_state == "present"
+            else {}
+        )
+    responses.replace(
+        responses.GET,
+        f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{DBT_CLOUD_RUN_ID}/",
+        json={"data": run_details},
+    )
+    for artifact, payload in [
+        ("manifest.json", MANIFEST_JSON),
+        ("run_results.json", RUN_RESULTS_JSON),
+    ]:
+        artifact_url = (
+            f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}"
+            f"/runs/{DBT_CLOUD_RUN_ID}/artifacts/{artifact}"
+        )
+        responses.remove(responses.GET, artifact_url)
+        if artifact == "run_results.json":
+            responses.add(
+                responses.GET,
+                artifact_url,
+                json=payload,
+                match=[responses.matchers.query_param_matcher({})],
+            )
+        # Compilation always skips its docs step. Preserve the existing empty-job behavior
+        # only when choosing the artifacts for the materialization run.
+        responses.add(
+            responses.GET,
+            artifact_url,
+            json=payload,
+            match=[responses.matchers.query_param_matcher({"step": "1"})],
+        )
+
+    cacheable_assets = load_assets_from_dbt_cloud_job(dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID)
+    data = cacheable_assets.compute_cacheable_data()
+    if rebuild_from_cache:
+        cacheable_assets = load_assets_from_dbt_cloud_job(
+            dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+        )
+    assets = cacheable_assets.build_definitions(data)
+    if job_state == "empty" and generate_docs:
+        for artifact, payload in [
+            ("manifest.json", MANIFEST_JSON),
+            ("run_results.json", RUN_RESULTS_JSON),
+        ]:
+            artifact_url = (
+                f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}"
+                f"/runs/{DBT_CLOUD_RUN_ID}/artifacts/{artifact}"
+            )
+            responses.remove(responses.GET, artifact_url)
+            responses.add(
+                responses.GET,
+                artifact_url,
+                json=payload,
+                match=[responses.matchers.query_param_matcher({"step": "2"})],
+            )
+    job_gets_before = sum(
+        call.request.method == "GET" and call.request.url == job_url for call in responses.calls
+    )
+    job = define_asset_job("artifact_step", selection=AssetSelection.assets(*assets)).resolve(
+        asset_graph=AssetGraph.from_assets(assets)
+    )
+    with instance_for_test() as instance:
+        result = job.execute_in_process(instance=instance)
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 4
+    job_gets_after = sum(
+        call.request.method == "GET" and call.request.url == job_url for call in responses.calls
+    )
+    assert job_gets_after - job_gets_before == (job_state in {"null", "missing"})
