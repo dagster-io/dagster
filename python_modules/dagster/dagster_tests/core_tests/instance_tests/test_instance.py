@@ -23,7 +23,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.remote_representation.external_data import PartitionsSnap
-from dagster._core.secrets.env_file import PerProjectEnvFileLoader
+from dagster._core.secrets.env_file import EnvFileLoader, PerProjectEnvFileLoader
 from dagster._core.snap import create_execution_plan_snapshot_id, snapshot_from_execution_plan
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
@@ -170,6 +170,48 @@ def test_custom_per_project_secrets_manager():
             "FOO": "BAR"
         }
         assert instance._secrets_loader.get_secrets_for_environment("other_location") == {}  # noqa: SLF001
+
+
+def test_env_file_secrets_manager():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        (Path(temp_dir) / ".env").write_text("FOO=BAR")
+
+        assert EnvFileLoader(base_dir=temp_dir).get_secrets_for_environment(None) == {"FOO": "BAR"}
+
+
+def test_env_file_secrets_manager_defaults_to_cwd():
+    with tempfile.TemporaryDirectory() as temp_dir, new_cwd(temp_dir):
+        (Path(temp_dir) / ".env").write_text("FOO=BAR")
+
+        assert EnvFileLoader().get_secrets_for_environment(None) == {"FOO": "BAR"}
+
+
+def test_env_file_secrets_manager_no_env_file():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        assert EnvFileLoader(base_dir=temp_dir).get_secrets_for_environment(None) == {}
+
+
+def test_custom_env_file_secrets_manager():
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        dg.instance_for_test(
+            overrides={
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.secrets.env_file",
+                        "class": "EnvFileLoader",
+                        "config": {"base_dir": str(temp_dir)},
+                    }
+                }
+            }
+        ) as instance,
+    ):
+        assert isinstance(instance._secrets_loader, EnvFileLoader)  # noqa: SLF001
+        (Path(temp_dir) / ".env").write_text("FOO=BAR")
+
+        with environ({"FOO": None}):
+            instance.inject_env_vars(None)
+            assert os.environ["FOO"] == "BAR"
 
 
 def test_custom_secrets_manager():
