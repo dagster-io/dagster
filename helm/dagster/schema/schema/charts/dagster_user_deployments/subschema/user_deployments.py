@@ -1,6 +1,24 @@
-from pydantic import BaseModel, Field, create_model
+from typing import Annotated
+
+from pydantic import BaseModel, Field, GetJsonSchemaHandler, create_model
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 from schema.charts.utils import kubernetes
+
+
+class _RequireName:
+    """Annotation that overlays ``required: ["name"]`` onto a ``UserDeployment``'s JSON
+    schema. Applied only to the list form of ``deployments`` so that a missing ``name`` in
+    an array entry is still caught by schema validation (``helm lint``), while the map form
+    — where the map key supplies the name — leaves ``name`` optional. Reuses the shared
+    ``UserDeployment`` ``$def`` via ``allOf`` rather than duplicating it.
+    """
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return {"allOf": [handler(core_schema), {"required": ["name"]}]}
 
 
 class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
@@ -13,7 +31,9 @@ ReadinessProbeWithEnabled = create_model(
 
 
 class UserDeployment(BaseModel):
-    name: str
+    # Optional so that deployments can be supplied as a name-keyed map, where the
+    # map key provides the name. For the list form, the Helm templates require a name.
+    name: str | None = None
     image: kubernetes.Image
     dagsterApiGrpcArgs: list[str] | None = None
     codeServerArgs: list[str] | None = None
@@ -45,8 +65,13 @@ class UserDeployment(BaseModel):
     deploymentStrategy: kubernetes.DeploymentStrategy | None = None
 
 
+# `deployments` may be either a list of deployments (each requiring a `name`) or a map
+# keyed by deployment name (where the key supplies the name, so `name` is optional).
+UserDeploymentsValue = list[Annotated[UserDeployment, _RequireName()]] | dict[str, UserDeployment]
+
+
 class UserDeployments(BaseModel):
     enabled: bool
     enableSubchart: bool
     imagePullSecrets: list[kubernetes.SecretRef]
-    deployments: list[UserDeployment]
+    deployments: UserDeploymentsValue
