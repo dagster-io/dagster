@@ -455,6 +455,40 @@ class EventMethods:
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
 
+    def report_run_cancellation_batch(self, runs: Sequence["DagsterRun"]) -> None:
+        """Cancel queued runs through a storage-owned transaction where supported.
+
+        Listeners and customized reporting hooks retain the serial path. The batch backend
+        must revalidate queued status and commit run state and lifecycle events together.
+        Runs that left the queue are left for the caller's normal termination path.
+        """
+        from dagster._core.storage.dagster_run import DagsterRun
+
+        check.sequence_param(runs, "runs", of_type=DagsterRun)
+        if not runs:
+            return
+        use_batch = (
+            self._event_storage_impl.supports_queued_run_cancellation
+            and not any(self._subscribers_impl.get(run.run_id) for run in runs)
+            and all(
+                getattr(getattr(self, method), "__func__", None) is getattr(EventMethods, method)
+                for method in (
+                    "report_run_canceling",
+                    "report_run_canceled",
+                    "report_dagster_event",
+                    "handle_new_event",
+                    "store_event",
+                    "should_store_event",
+                )
+            )
+        )
+        if use_batch:
+            self._event_storage_impl.cancel_queued_runs(runs)
+        else:
+            for run in runs:
+                self.report_run_canceling(run, message="Canceling run from the queue.")
+                self.report_run_canceled(run)
+
     def report_run_failed(
         self,
         dagster_run: "DagsterRun",

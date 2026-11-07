@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, cast  # noqa: UP035
@@ -8,9 +9,16 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    BATCH_WRITABLE_EVENTS,
+    DagsterEvent,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.event_log import (
     AssetKeyTable,
     DynamicPartitionsTable,
@@ -21,6 +29,8 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
+from dagster._core.storage.runs.schema import RunsTable
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -29,7 +39,13 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlalchemy_compat import db_result, db_select
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
+from dagster._serdes import (
+    ConfigurableClass,
+    ConfigurableClassData,
+    deserialize_value,
+    serialize_value,
+)
+from dagster._time import datetime_from_timestamp, get_current_timestamp
 from sqlalchemy import event
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
@@ -220,6 +236,122 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
+
+    @property
+    def supports_queued_run_cancellation(self) -> bool:
+        # Cross-store atomicity is only possible for the stock stores sharing one database.
+        # Extensions must explicitly implement/opt into the new cancellation contract.
+        from dagster_postgres.run_storage import PostgresRunStorage
+
+        if not self.has_instance:
+            return False
+        run_storage = self._instance.run_storage
+        return (
+            type(self) is PostgresEventLogStorage
+            and type(run_storage) is PostgresRunStorage
+            and isinstance(run_storage, PostgresRunStorage)
+            and self.postgres_url == run_storage.postgres_url
+            and getattr(self.store_event, "__func__", None) is PostgresEventLogStorage.store_event
+            and getattr(run_storage.handle_run_event, "__func__", None)
+            is SqlRunStorage.handle_run_event
+        )
+
+    def cancel_queued_runs(self, runs: Sequence[DagsterRun]) -> Sequence[str]:
+        from dagster_postgres.run_storage import PostgresRunStorage
+
+        check.sequence_param(runs, "runs", of_type=DagsterRun)
+        check.invariant(self.supports_queued_run_cancellation, "Incompatible queued-run storage")
+        run_ids = sorted({run.run_id for run in runs})
+        if not run_ids:
+            return []
+        run_storage = check.inst(self._instance.run_storage, PostgresRunStorage)
+        has_end_time = run_storage.has_run_stats_index_cols()
+        canceled_ids: list[str] = []
+        # All chunks share a real transaction, despite the ordinary AUTOCOMMIT engine.
+        with self._connect() as connection:
+            conn = connection.execution_options(isolation_level="READ COMMITTED")
+            with conn.begin():
+                for offset in range(0, len(run_ids), 500):
+                    # Tuple rows keep this compatible with SQLAlchemy 1.3, which lacks mappings().
+                    rows = conn.execute(
+                        db_select([RunsTable.c.run_body])
+                        .where(
+                            db.and_(
+                                RunsTable.c.run_id.in_(run_ids[offset : offset + 500]),
+                                RunsTable.c.status == DagsterRunStatus.QUEUED.value,
+                            )
+                        )
+                        .order_by(RunsTable.c.run_id.asc())
+                        .with_for_update()
+                    ).fetchall()
+                    if not rows:
+                        continue
+                    timestamp = get_current_timestamp()
+                    events: list[EventLogEntry] = []
+                    run_bodies: dict[str, str] = {}
+                    for (run_body,) in rows:
+                        run = deserialize_value(run_body, DagsterRun)
+                        canceled_ids.append(run.run_id)
+                        run_bodies[run.run_id] = serialize_value(
+                            run.with_status(DagsterRunStatus.CANCELED)
+                        )
+                        for event_type, message, level in (
+                            (
+                                DagsterEventType.RUN_CANCELING,
+                                "Canceling run from the queue.",
+                                logging.INFO,
+                            ),
+                            (
+                                DagsterEventType.RUN_CANCELED,
+                                "This run has been marked as canceled from outside the execution context.",
+                                logging.ERROR,
+                            ),
+                        ):
+                            events.append(
+                                EventLogEntry(
+                                    user_message="",
+                                    error_info=None,
+                                    level=level,
+                                    run_id=run.run_id,
+                                    job_name=run.job_name,
+                                    timestamp=timestamp,
+                                    dagster_event=DagsterEvent(
+                                        event_type_value=event_type.value,
+                                        job_name=run.job_name,
+                                        message=message,
+                                    ),
+                                )
+                            )
+                    values: dict[str, Any] = {
+                        "status": DagsterRunStatus.CANCELED.value,
+                        "run_body": db.case(run_bodies, value=RunsTable.c.run_id),
+                        "update_timestamp": datetime_from_timestamp(timestamp),
+                    }
+                    if has_end_time:
+                        values["end_time"] = timestamp
+                    conn.execute(
+                        RunsTable.update()
+                        .where(RunsTable.c.run_id.in_(run_bodies))
+                        .values(**values)
+                    )
+                    result = conn.execute(
+                        self.prepare_insert_event_batch(events).returning(
+                            SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
+                        )
+                    )
+                    notifications = [
+                        f"{run_id}_{event_id}" for run_id, event_id in result.fetchall()
+                    ]
+                    result.close()
+                    # PostgreSQL delivers notifications only after the transaction commits.
+                    conn.execute(
+                        db.text(
+                            "SELECT pg_notify(:channel, notification) "
+                            "FROM unnest(CAST(:notifications AS text[])) AS notification"
+                        ),
+                        {"channel": CHANNEL_NAME, "notifications": notifications},
+                    ).close()
+        return canceled_ids
 
     def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
         from dagster import DagsterEventType
