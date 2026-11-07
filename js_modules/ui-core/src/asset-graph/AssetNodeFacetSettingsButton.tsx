@@ -140,6 +140,7 @@ const ExampleAutomationData: AssetAutomationFragment = {
       __typename: 'Sensor',
       id: 'sensor1',
       name: 'sensor1',
+      hasCursorUpdatePermissions: true,
       sensorType: SensorType.AUTOMATION,
       sensorState: {
         __typename: 'InstigationState',

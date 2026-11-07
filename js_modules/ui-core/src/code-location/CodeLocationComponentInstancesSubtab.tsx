@@ -35,6 +35,7 @@ import {
 import {CODE_LOCATION_COMPONENTS_QUERY} from './CodeLocationComponentsQuery';
 import {ComponentStateRefreshButton} from './ComponentStateRefreshButton';
 import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
+import {usePermissionsForLocation} from '../app/Permissions';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
 import {DefsStateManagementType} from '../graphql/types';
 import {
@@ -88,6 +89,10 @@ export const CodeLocationComponentInstancesSubtab = ({
   isAddOpen,
   setIsAddOpen,
 }: Props) => {
+  const {
+    permissions: {canEditAppManagedComponents},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
   // App-managed (editable) components: served directly from defs state storage,
   // so this works even when the location fails to load.
   const appManagedComponentsQ = useQuery<
@@ -502,13 +507,19 @@ export const CodeLocationComponentInstancesSubtab = ({
           }
           action={
             <Box flex={{direction: 'row', gap: 8}}>
-              <Button
-                intent="primary"
-                icon={<Icon name="add_circle" />}
-                onClick={() => setIsAddOpen(true)}
+              <Tooltip
+                content={disabledReasons.canEditAppManagedComponents}
+                canShow={!canEditAppManagedComponents}
               >
-                Add
-              </Button>
+                <Button
+                  intent="primary"
+                  icon={<Icon name="add_circle" />}
+                  disabled={!canEditAppManagedComponents}
+                  onClick={() => setIsAddOpen(true)}
+                >
+                  Add
+                </Button>
+              </Tooltip>
               <Link to={libraryPath}>
                 <Button icon={<Icon name="folder" />}>View component docs</Button>
               </Link>
@@ -538,6 +549,8 @@ export const CodeLocationComponentInstancesSubtab = ({
                 key={`${row.source}:${row.componentId}`}
                 row={row}
                 locationName={repoAddress.location}
+                canEdit={canEditAppManagedComponents}
+                editDisabledReason={disabledReasons.canEditAppManagedComponents}
                 onEdit={() => {
                   setEditTarget(row);
                   setIsEditOpen(true);
@@ -564,6 +577,8 @@ export const CodeLocationComponentInstancesSubtab = ({
 interface ComponentRowViewProps {
   row: ComponentRow;
   locationName: string;
+  canEdit: boolean;
+  editDisabledReason: string;
   onEdit: () => void;
   onViewConfig: () => void;
   onDelete: () => void;
@@ -572,6 +587,8 @@ interface ComponentRowViewProps {
 const ComponentRowView = ({
   row,
   locationName,
+  canEdit,
+  editDisabledReason,
   onEdit,
   onViewConfig,
   onDelete,
@@ -595,9 +612,19 @@ const ComponentRowView = ({
           position="bottom-right"
           content={
             <Menu>
-              <MenuItem icon="edit" text="Edit" onClick={onEdit} />
+              <Tooltip content={editDisabledReason} canShow={!canEdit} display="block">
+                <MenuItem icon="edit" text="Edit" disabled={!canEdit} onClick={onEdit} />
+              </Tooltip>
               <MenuItem icon="info" text="View config" onClick={onViewConfig} />
-              <MenuItem icon="delete" intent="danger" text="Delete" onClick={onDelete} />
+              <Tooltip content={editDisabledReason} canShow={!canEdit} display="block">
+                <MenuItem
+                  icon="delete"
+                  intent="danger"
+                  text="Delete"
+                  disabled={!canEdit}
+                  onClick={onDelete}
+                />
+              </Tooltip>
             </Menu>
           }
         >

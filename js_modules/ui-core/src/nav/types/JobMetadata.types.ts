@@ -102,6 +102,7 @@ export type JobMetadataQuery = {
           __typename: 'Sensor';
           id: string;
           name: string;
+          hasCursorUpdatePermissions: boolean;
           sensorType: Types.SensorType;
           targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
           sensorState: {
@@ -180,6 +181,7 @@ export type JobMetadataFragment = {
     __typename: 'Sensor';
     id: string;
     name: string;
+    hasCursorUpdatePermissions: boolean;
     sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
     sensorState: {
@@ -212,4 +214,4 @@ export type RunMetadataFragment = {
   }>;
 };
 
-export const JobMetadataQueryVersion = '42558b05c2bcdea56a428ab77c2f477601fec1628e24b82841e0eb4199e28067';
+export const JobMetadataQueryVersion = '7294517290dcfc244329beeedf7d7417d51839aee69ea8fd6fe5b3a4437f389a';

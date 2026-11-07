@@ -1,8 +1,5 @@
 import {
-  Box,
   Button,
-  ButtonLink,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -18,9 +15,8 @@ import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
 } from './types/EditCursorDialog.types';
-import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {showMutationErrorToast} from '../app/showMutationErrorToast';
 import {SensorSelector} from '../graphql/types';
 
 export const EditCursorDialog = ({
@@ -44,35 +40,8 @@ export const EditCursorDialog = ({
     const {data} = await requestSet({
       variables: {sensorSelector, cursor: cursorValue},
     });
-    if (data?.setSensorCursor.__typename === 'Sensor') {
+    if (!showMutationErrorToast(data?.setSensorCursor, 'Sensor', 'Could not set cursor value.')) {
       showToast({message: 'Cursor value updated', intent: 'success'});
-    } else if (data?.setSensorCursor) {
-      const error = data.setSensorCursor;
-      showToast({
-        intent: 'danger',
-        message: (
-          <Box flex={{direction: 'row', gap: 8}}>
-            <div>Could not set cursor value.</div>
-            <ButtonLink
-              color={Colors.accentReversed()}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  title: 'Python Error',
-                  body:
-                    error.__typename === 'PythonError' ? (
-                      <PythonErrorInfo error={error} />
-                    ) : (
-                      'Sensor not found'
-                    ),
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Box>
-        ),
-      });
     }
     onClose();
   };
@@ -121,6 +90,12 @@ export const SET_CURSOR_MUTATION = gql`
             }
           }
         }
+      }
+      ... on SensorNotFoundError {
+        message
+      }
+      ... on UnauthorizedError {
+        message
       }
       ...PythonErrorFragment
     }

@@ -63,7 +63,7 @@ interface Props {
 }
 
 export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
-  const canCreateIssue = useCanCreateIssueForRun(run.status);
+  const createIssue = useCanCreateIssueForRun(run.status);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics' | 'create-issue'
@@ -138,12 +138,20 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           content={
             <Menu ref={menuRef} onClick={onMenuClick}>
               <AISummaryForRunMenuItem run={run} />
-              {canCreateIssue && (
-                <MenuItem
-                  icon="issue"
-                  text="Create or link issue"
-                  onClick={() => setVisibleDialog('create-issue')}
-                />
+              {createIssue.visible && (
+                <Tooltip
+                  content={createIssue.disabledReason}
+                  canShow={!createIssue.enabled}
+                  position="left"
+                  display="block"
+                >
+                  <MenuItem
+                    icon="issue"
+                    text="Create or link issue"
+                    disabled={!createIssue.enabled}
+                    onClick={() => setVisibleDialog('create-issue')}
+                  />
+                </Tooltip>
               )}
               <MenuItem
                 style={{minWidth: 200}}
@@ -306,7 +314,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
         runConfigYaml={runConfigYaml || ''}
         isJob={isJob}
       />
-      {canCreateIssue && (
+      {createIssue.visible && (
         <CreateIssueForRunDialog
           isOpen={visibleDialog === 'create-issue'}
           onClose={closeDialogs}

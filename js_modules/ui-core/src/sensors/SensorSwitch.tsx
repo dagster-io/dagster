@@ -33,7 +33,8 @@ import {
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
 import {SensorSwitchFragment} from './types/SensorSwitchFragment.types';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
+import {showMutationErrorToast} from '../app/showMutationErrorToast';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -96,7 +97,7 @@ export const SensorSwitch = (props: Props) => {
   >(SET_CURSOR_MUTATION);
 
   const clearCursor = async () => {
-    await setSensorCursor({
+    const {data} = await setSensorCursor({
       variables: {
         sensorSelector: {
           ...repoAddressToSelector(repoAddress),
@@ -105,6 +106,11 @@ export const SensorSwitch = (props: Props) => {
         cursor: undefined,
       },
     });
+    return !showMutationErrorToast(
+      data?.setSensorCursor,
+      'Sensor',
+      'Could not clear the sensor cursor.',
+    );
   };
   const cursor =
     (sensor.sensorState.typeSpecificData &&
@@ -214,17 +220,22 @@ export const SensorSwitch = (props: Props) => {
             >
               Start sensor without clearing
             </Button>
-            <Button
-              intent="primary"
-              disabled={cursorMutationInFlight || toggleOnInFlight}
-              onClick={async () => {
-                await clearCursor();
-                onChangeSwitch();
-                setShowRunStatusWarningDialog(false);
-              }}
-            >
-              Clear cursor and start sensor
-            </Button>
+            <Tooltip content={DEFAULT_DISABLED_REASON} canShow={!sensor.hasCursorUpdatePermissions}>
+              <Button
+                intent="primary"
+                disabled={
+                  !sensor.hasCursorUpdatePermissions || cursorMutationInFlight || toggleOnInFlight
+                }
+                onClick={async () => {
+                  if (await clearCursor()) {
+                    onChangeSwitch();
+                  }
+                  setShowRunStatusWarningDialog(false);
+                }}
+              >
+                Clear cursor and start sensor
+              </Button>
+            </Tooltip>
           </DialogFooter>
         </Dialog>
       </>

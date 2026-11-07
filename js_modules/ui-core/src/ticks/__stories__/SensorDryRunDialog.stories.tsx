@@ -108,6 +108,7 @@ const Wrapper = ({mocks, cursor = CURRENT_CURSOR}: {mocks: MockedResponse[]; cur
           repoAddress={REPO_ADDRESS}
           currentCursor={cursor}
           jobName={JOB_NAME}
+          canUpdateCursor
         />
       </WorkspaceProvider>
     </MockedProvider>

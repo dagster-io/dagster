@@ -7,6 +7,7 @@ import {
   DialogFooter,
   Spinner,
   Text,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {memo, useCallback, useContext, useMemo, useState} from 'react';
 
@@ -14,9 +15,11 @@ import {
   DeleteDynamicPartitionsMutation,
   DeleteDynamicPartitionsMutationVariables,
 } from './types/DeleteDynamicPartitionsDialog.types';
+import {useAssetPermissions} from './useAssetPermissions';
 import {usePartitionHealthData} from './usePartitionHealthData';
 import {RefetchQueriesFunction, gql, useMutation} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
@@ -64,8 +67,11 @@ export const DeleteDynamicPartitionsDialogInner = memo(
     const {
       featureContext: {canWipeOnDeleteDynamicPartitions},
     } = useContext(CloudOSSContext);
+    const assetKeys = useMemo(() => [assetKey], [assetKey]);
+    const {hasWipePermission} = useAssetPermissions(assetKeys, repoAddress.location);
     const [wipeChecked, setWipeChecked] = useState(true);
-    const wipeMaterializations = canWipeOnDeleteDynamicPartitions && wipeChecked;
+    const wipeMaterializations =
+      canWipeOnDeleteDynamicPartitions && hasWipePermission && wipeChecked;
     const [health] = usePartitionHealthData([assetKey]);
 
     const dynamicHealth = health?.dimensions.find(
@@ -147,11 +153,14 @@ export const DeleteDynamicPartitionsDialogInner = memo(
           )}
           {canWipeOnDeleteDynamicPartitions ? (
             <Box margin={{top: 8}}>
-              <Checkbox
-                label="Also wipe materialization events for these partitions from all assets that share this partition definition"
-                checked={wipeChecked}
-                onChange={() => setWipeChecked((checked) => !checked)}
-              />
+              <Tooltip content={DEFAULT_DISABLED_REASON} canShow={!hasWipePermission}>
+                <Checkbox
+                  label="Also wipe materialization events for these partitions from all assets that share this partition definition"
+                  checked={wipeMaterializations}
+                  disabled={!hasWipePermission}
+                  onChange={() => setWipeChecked((checked) => !checked)}
+                />
+              </Tooltip>
             </Box>
           ) : null}
           <Text size={14} style={{marginTop: 10}}>
@@ -167,11 +176,11 @@ export const DeleteDynamicPartitionsDialogInner = memo(
       canWipeOnDeleteDynamicPartitions,
       deleting,
       dynamicHealth,
+      hasWipePermission,
       health,
       partitionsDefName,
       result,
       selectedPartitions,
-      wipeChecked,
       wipeMaterializations,
     ]);
 

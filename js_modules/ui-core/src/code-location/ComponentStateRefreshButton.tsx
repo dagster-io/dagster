@@ -1,10 +1,11 @@
-import {Button, Icon, Spinner, showToast} from '@dagster-io/ui-components';
+import {Button, Icon, Spinner, Tooltip, showToast} from '@dagster-io/ui-components';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {useApolloClient, useMutation} from '../apollo-client';
 import {CODE_LOCATION_COMPONENTS_QUERY} from './CodeLocationComponentsQuery';
 import {LATEST_DEFS_STATE_INFO_QUERY} from './LatestDefsStateInfoQuery';
 import {REFRESH_COMPONENT_STATE_MUTATION} from './RefreshComponentStateMutation';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {
   LatestDefsStateInfoQuery,
   LatestDefsStateInfoQueryVariables,
@@ -44,6 +45,10 @@ export const ComponentStateRefreshButton = ({
   previousVersion,
 }: Props) => {
   const client = useApolloClient();
+  const {
+    permissions: {canRefreshComponentState},
+    disabledReasons,
+  } = usePermissionsForLocation(locationName);
   const [isPolling, setIsPolling] = useState(false);
   const cancelledRef = useRef(false);
 
@@ -131,12 +136,14 @@ export const ComponentStateRefreshButton = ({
   const loading = mutating || isPolling;
   const label = isPolling ? 'Still refreshing…' : mutating ? 'Refreshing…' : 'Refresh';
   return (
-    <Button
-      icon={loading ? <Spinner purpose="body-text" /> : <Icon name="refresh" />}
-      disabled={loading}
-      onClick={handleRefresh}
-    >
-      {label}
-    </Button>
+    <Tooltip content={disabledReasons.canRefreshComponentState} canShow={!canRefreshComponentState}>
+      <Button
+        icon={loading ? <Spinner purpose="body-text" /> : <Icon name="refresh" />}
+        disabled={loading || !canRefreshComponentState}
+        onClick={handleRefresh}
+      >
+        {label}
+      </Button>
+    </Tooltip>
   );
 };

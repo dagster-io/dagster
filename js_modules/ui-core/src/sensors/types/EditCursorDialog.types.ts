@@ -47,8 +47,8 @@ export type SetSensorCursorMutation = {
             | null;
         };
       }
-    | {__typename: 'SensorNotFoundError'}
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'SensorNotFoundError'; message: string}
+    | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export const SetSensorCursorMutationVersion = 'a2982d2698c645a5d39b60415792c233abd90f85d2a2ac7cd626d88c3d3362a2';
+export const SetSensorCursorMutationVersion = '1a13ac198329ec89b5e3e730b334e3e647496b5331451c45e53f073ab2ca9b01';

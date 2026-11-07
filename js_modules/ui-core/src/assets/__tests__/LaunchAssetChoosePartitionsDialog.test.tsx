@@ -21,6 +21,7 @@ import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
+import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -98,20 +99,24 @@ describe('launchAssetChoosePartitionsDialog', () => {
             ...workspaceMocks,
           ]}
         >
-          <WorkspaceProvider>
-            <LaunchAssetChoosePartitionsDialog
-              open={true}
-              setOpen={(_open: boolean) => {}}
-              repoAddress={buildRepoAddress('test', 'test')}
-              target={{
-                jobName: '__ASSET_JOB',
-                assetKeys: [assetA.assetKey, assetB.assetKey],
-                type: 'job',
-              }}
-              assets={[assetA, assetB]}
-              upstreamAssetKeys={[]}
-            />
-          </WorkspaceProvider>
+          <TestPermissionsProvider
+            unscopedOverrides={{canEditDynamicPartitions: {enabled: true, disabledReason: ''}}}
+          >
+            <WorkspaceProvider>
+              <LaunchAssetChoosePartitionsDialog
+                open={true}
+                setOpen={(_open: boolean) => {}}
+                repoAddress={buildRepoAddress('test', 'test')}
+                target={{
+                  jobName: '__ASSET_JOB',
+                  assetKeys: [assetA.assetKey, assetB.assetKey],
+                  type: 'job',
+                }}
+                assets={[assetA, assetB]}
+                upstreamAssetKeys={[]}
+              />
+            </WorkspaceProvider>
+          </TestPermissionsProvider>
         </MockedProvider>
       </MemoryRouter>,
     );
@@ -147,16 +152,20 @@ describe('launchAssetChoosePartitionsDialog', () => {
     render(
       <MemoryRouter>
         <MockedProvider mocks={[healthMock, ...workspaceMocks]}>
-          <WorkspaceProvider>
-            <LaunchAssetChoosePartitionsDialog
-              open={true}
-              setOpen={(_open: boolean) => {}}
-              repoAddress={buildRepoAddress('test', 'test')}
-              target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
-              assets={[asset]}
-              upstreamAssetKeys={[]}
-            />
-          </WorkspaceProvider>
+          <TestPermissionsProvider
+            unscopedOverrides={{canEditDynamicPartitions: {enabled: true, disabledReason: ''}}}
+          >
+            <WorkspaceProvider>
+              <LaunchAssetChoosePartitionsDialog
+                open={true}
+                setOpen={(_open: boolean) => {}}
+                repoAddress={buildRepoAddress('test', 'test')}
+                target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
+                assets={[asset]}
+                upstreamAssetKeys={[]}
+              />
+            </WorkspaceProvider>
+          </TestPermissionsProvider>
         </MockedProvider>
       </MemoryRouter>,
     );
@@ -199,16 +208,20 @@ describe('launchAssetChoosePartitionsDialog', () => {
     render(
       <MemoryRouter>
         <MockedProvider mocks={[healthMock, ...workspaceMocks]}>
-          <WorkspaceProvider>
-            <LaunchAssetChoosePartitionsDialog
-              open={true}
-              setOpen={(_open: boolean) => {}}
-              repoAddress={buildRepoAddress('test', 'test')}
-              target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
-              assets={[asset]}
-              upstreamAssetKeys={[]}
-            />
-          </WorkspaceProvider>
+          <TestPermissionsProvider
+            unscopedOverrides={{canEditDynamicPartitions: {enabled: true, disabledReason: ''}}}
+          >
+            <WorkspaceProvider>
+              <LaunchAssetChoosePartitionsDialog
+                open={true}
+                setOpen={(_open: boolean) => {}}
+                repoAddress={buildRepoAddress('test', 'test')}
+                target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
+                assets={[asset]}
+                upstreamAssetKeys={[]}
+              />
+            </WorkspaceProvider>
+          </TestPermissionsProvider>
         </MockedProvider>
       </MemoryRouter>,
     );
