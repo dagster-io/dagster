@@ -1173,3 +1173,181 @@ def test_single_run_backfill_full_execution(
                 assert (
                     "Falling back to storing multiple single-event storage requests...\n" in stderr
                 )
+
+
+def _execute_multi_single_run_iteration(partitions_def, partition_names):
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def multi_partitioned_asset():
+        return 1
+
+    asset_graph = get_asset_graph({"repo": [multi_partitioned_asset]})
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=partition_names,
+        asset_graph=asset_graph,
+        asset_selection=[multi_partitioned_asset.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 12, 5).timestamp(),
+    )
+    return execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=DagsterInstance.ephemeral(),
+    )
+
+
+def _expanded_partition_keys(partitions_def, run_requests):
+    keys = set()
+    with partition_loading_context(create_datetime(2023, 12, 5)):
+        for run_request in run_requests:
+            keys.update(
+                str(key)
+                for key in partitions_def.get_partition_keys_in_range(
+                    dg.PartitionKeyRange(
+                        run_request.tags[ASSET_PARTITION_RANGE_START_TAG],
+                        run_request.tags[ASSET_PARTITION_RANGE_END_TAG],
+                    )
+                )
+            )
+    return keys
+
+
+def test_asset_backfill_single_run_multi_partitions_partial_inner() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    partition_names = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+    ]
+
+    result = _execute_multi_single_run_iteration(partitions_def, partition_names)
+
+    assert len(result.run_requests) == 1
+    run_request = result.run_requests[0]
+    assert run_request.partition_key is None
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-12-01-00:00|A"
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-12-01-02:00|B"
+    assert _expanded_partition_keys(partitions_def, result.run_requests) == set(partition_names)
+
+
+def test_asset_backfill_single_run_multi_partitions_partial_inner_renamed_dims() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "zpartition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "asource": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    partition_names = [
+        f"{source}|2023-12-01-0{hour}:00" for hour in range(3) for source in ["A", "B"]
+    ]
+
+    result = _execute_multi_single_run_iteration(partitions_def, partition_names)
+
+    assert len(result.run_requests) == 1
+    run_request = result.run_requests[0]
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "A|2023-12-01-00:00"
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "B|2023-12-01-02:00"
+    assert _expanded_partition_keys(partitions_def, result.run_requests) == set(partition_names)
+
+
+def test_asset_backfill_single_run_multi_partitions_non_contiguous_inner_stays_exact() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    # {A, C} cannot be expressed as a single partition key range without also
+    # selecting B, so the backfill must keep the per-range run requests.
+    partition_names = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "C"]
+    ]
+
+    result = _execute_multi_single_run_iteration(partitions_def, partition_names)
+
+    assert len(result.run_requests) == 2
+    assert _expanded_partition_keys(partitions_def, result.run_requests) == set(partition_names)
+
+
+def test_asset_backfill_single_run_multi_partitions_dynamic_dimension() -> None:
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("dynamic_sources", ["A", "B", "C"])
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.DynamicPartitionsDefinition(name="dynamic_sources"),
+        }
+    )
+    partition_names = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+    ]
+
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def multi_partitioned_asset():
+        return 1
+
+    asset_graph = get_asset_graph({"repo": [multi_partitioned_asset]})
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=partition_names,
+        asset_graph=asset_graph,
+        asset_selection=[multi_partitioned_asset.key],
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 12, 5).timestamp(),
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        backfill_id="test_backfill_id",
+        asset_backfill_data=backfill_data,
+        asset_graph=asset_graph,
+        instance=instance,
+    )
+
+    assert len(result.run_requests) == 1
+    run_request = result.run_requests[0]
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-12-01-00:00|A"
+    assert run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-12-01-02:00|B"
+
+
+def test_asset_backfill_single_run_multi_partitions_partial_inner_to_completion() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    partition_names = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+    ]
+
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def multi_partitioned_asset():
+        return 1
+
+    assets_by_repo_name = {"repo": [multi_partitioned_asset]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=partition_names,
+        asset_graph=asset_graph,
+        asset_selection=[multi_partitioned_asset.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 12, 5).timestamp(),
+    )
+
+    instance = DagsterInstance.ephemeral()
+    _, materialized, failed = run_backfill_to_completion(
+        asset_graph,
+        assets_by_repo_name,
+        backfill_data=backfill_data,
+        fail_asset_partitions=set(),
+        instance=instance,
+    )
+
+    assert len(failed) == 0
+    assert {akpk.partition_key for akpk in materialized} == set(partition_names)
+    assert instance.get_runs_count() == 1

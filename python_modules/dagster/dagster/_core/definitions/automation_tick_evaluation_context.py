@@ -33,8 +33,15 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.context import use_partition_loading_context
-from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.context import (
+    partition_loading_context,
+    use_partition_loading_context,
+)
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.instance import DynamicPartitionsStore
@@ -588,6 +595,15 @@ def _build_run_requests_with_backfill_policy(
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
     partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
+    if (
+        backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN
+        and len(partition_key_ranges) > 1
+    ):
+        coalesced_range = _try_coalesce_to_single_partition_key_range(
+            partition_keys, partitions_def, dynamic_partitions_store
+        )
+        if coalesced_range is not None:
+            partition_key_ranges = [coalesced_range]
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
@@ -616,6 +632,61 @@ def _build_run_requests_with_backfill_policy(
                 )
             )
     return run_requests
+
+
+def _try_coalesce_to_single_partition_key_range(
+    partition_keys: frozenset[str],
+    partitions_def: PartitionsDefinition,
+    dynamic_partitions_store: DynamicPartitionsStore,
+) -> PartitionKeyRange | None:
+    """Returns a single range covering exactly `partition_keys`, if one exists.
+
+    Multi-partition subsets compute one range per dimension slice, so a selection that
+    forms a rectangle across dimensions (e.g. 3 hours x sources {A, B} of {A, B, C})
+    yields several ranges even though a single bounding range expands to exactly the
+    selected keys. Returns None whenever the bounding range would over- or
+    under-select, leaving the per-range behavior unchanged.
+    """
+    if not isinstance(partitions_def, MultiPartitionsDefinition) or not partition_keys:
+        return None
+    try:
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
+            parsed_keys = [
+                partitions_def.get_partition_key_from_str(partition_key)
+                for partition_key in partition_keys
+            ]
+            start_keys_by_dimension: dict[str, str] = {}
+            end_keys_by_dimension: dict[str, str] = {}
+            num_keys_in_bounding_range = 1
+            for dimension in partitions_def.partitions_defs:
+                projected_keys = {
+                    parsed_key.keys_by_dimension[dimension.name] for parsed_key in parsed_keys
+                }
+                dimension_ranges = dimension.partitions_def.subset_with_partition_keys(
+                    projected_keys
+                ).get_partition_key_ranges(dimension.partitions_def)
+                if len(dimension_ranges) != 1:
+                    return None
+                num_keys_in_bounding_range *= len(projected_keys)
+                start_keys_by_dimension[dimension.name] = dimension_ranges[0].start
+                end_keys_by_dimension[dimension.name] = dimension_ranges[0].end
+            # The bounding range expands to at least the cross-product of the per-dimension
+            # projections, so it can only be exact if that cross-product is the selection.
+            if num_keys_in_bounding_range != len(partition_keys):
+                return None
+            bounding_range = PartitionKeyRange(
+                start=str(MultiPartitionKey(start_keys_by_dimension)),
+                end=str(MultiPartitionKey(end_keys_by_dimension)),
+            )
+            if {
+                str(key) for key in partitions_def.get_partition_keys_in_range(bounding_range)
+            } != set(partition_keys):
+                return None
+            return bounding_range
+    except Exception:
+        # Coalescing is opportunistic: if the ranges cannot be resolved (e.g. a dynamic
+        # dimension whose store is unavailable), fall back to the per-range requests.
+        return None
 
 
 def _build_run_requests_for_partition_key_range(
