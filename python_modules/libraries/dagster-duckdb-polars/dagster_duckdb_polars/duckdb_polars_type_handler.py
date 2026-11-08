@@ -1,9 +1,12 @@
 from collections.abc import Sequence
 
+import dagster._check as check
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from pydantic import Field
 
 
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -33,7 +36,19 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
 
+    Args:
+        recreate_table_on_schema_mismatch (bool): If True, drop and recreate an
+            existing unpartitioned table when the output DataFrame's ordered
+            column names differ from the table's. Partitioned outputs raise an
+            error instead, so rows belonging to other partitions are never
+            deleted. Defaults to False, which preserves the legacy behavior.
+
     """
+
+    def __init__(self, recreate_table_on_schema_mismatch: bool = False) -> None:
+        self._recreate_table_on_schema_mismatch = check.bool_param(
+            recreate_table_on_schema_mismatch, "recreate_table_on_schema_mismatch"
+        )
 
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
@@ -46,15 +61,44 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         else:
             obj_arrow = obj.to_arrow()  # noqa: F841  # need obj_arrow symbol to exist for duckdb query
             connection.execute(f"create schema if not exists {table_slice.schema};")
-            connection.execute(
-                f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-                " obj_arrow;"
-            )
-            if not connection.fetchall():
-                # table was not created, therefore already exists. Insert the data
+            if self._recreate_table_on_schema_mismatch:
+                existing_columns = _existing_table_columns(connection, table_slice)
+                if existing_columns is None:
+                    connection.execute(
+                        f"create table {table_slice.schema}.{table_slice.table} as select * from"
+                        " obj_arrow;"
+                    )
+                elif existing_columns == list(obj.columns):
+                    connection.execute(
+                        f"insert into {table_slice.schema}.{table_slice.table} select * from obj_arrow"
+                    )
+                elif table_slice.partition_dimensions:
+                    raise DagsterInvariantViolationError(
+                        f"DuckDB table {table_slice.schema}.{table_slice.table} has columns "
+                        f"{existing_columns} but the output DataFrame has columns "
+                        f"{list(obj.columns)}. Refusing to recreate the table for this "
+                        "partitioned output because dropping it would delete rows belonging "
+                        "to other partitions. Migrate the table manually or write the "
+                        "partitioned asset with a consistent schema."
+                    )
+                else:
+                    connection.execute(
+                        f"drop table if exists {table_slice.schema}.{table_slice.table};"
+                    )
+                    connection.execute(
+                        f"create table {table_slice.schema}.{table_slice.table} as select * from"
+                        " obj_arrow;"
+                    )
+            else:
                 connection.execute(
-                    f"insert into {table_slice.schema}.{table_slice.table} select * from obj_arrow"
+                    f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+                    " obj_arrow;"
                 )
+                if not connection.fetchall():
+                    # table was not created, therefore already exists. Insert the data
+                    connection.execute(
+                        f"insert into {table_slice.schema}.{table_slice.table} select * from obj_arrow"
+                    )
 
         context.add_output_metadata(
             {
@@ -85,6 +129,20 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     @property
     def supported_types(self):
         return [pl.DataFrame]
+
+
+def _existing_table_columns(connection, table_slice: TableSlice) -> list[str] | None:
+    """Returns the table's ordered column names, or None if the table does not exist."""
+    connection.execute(
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE lower(table_schema) = lower(?) AND lower(table_name) = lower(?) "
+        "ORDER BY ordinal_position",
+        [table_slice.schema, table_slice.table],
+    )
+    rows = connection.fetchall()
+    if not rows:
+        return None
+    return [row[0] for row in rows]
 
 
 duckdb_polars_io_manager = build_duckdb_io_manager(
@@ -249,6 +307,15 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
 
     """
 
+    recreate_table_on_schema_mismatch: bool = Field(
+        default=False,
+        description=(
+            "If True, drop and recreate an existing unpartitioned table when the output "
+            "DataFrame's ordered column names differ from the table's. Partitioned outputs "
+            "raise an error instead, so rows belonging to other partitions are never deleted."
+        ),
+    )
+
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True
@@ -260,3 +327,23 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
     @staticmethod
     def default_load_type() -> type | None:
         return pl.DataFrame
+
+    def create_io_manager(self, context) -> DbIOManager:
+        if not self.recreate_table_on_schema_mismatch:
+            return super().create_io_manager(context)
+        # Respect subclasses that override type_handlers(); only the stock handler is
+        # swapped for one with the opt-in enabled.
+        type_handlers = [
+            DuckDBPolarsTypeHandler(recreate_table_on_schema_mismatch=True)
+            if type(handler) is DuckDBPolarsTypeHandler
+            else handler
+            for handler in self.type_handlers()
+        ]
+        return DbIOManager(
+            db_client=DuckDbClient(),
+            database=self.database,
+            schema=self.schema_,
+            type_handlers=type_handlers,
+            default_load_type=self.default_load_type(),
+            io_manager_name="DuckDBIOManager",
+        )

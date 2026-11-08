@@ -25,7 +25,8 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
-from dagster._core.storage.db_io_manager import TableSlice
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager
 from dagster_duckdb_polars.duckdb_polars_type_handler import DuckDBPolarsTypeHandler
 
@@ -612,3 +613,313 @@ def test_self_dependent_asset(tmp_path, io_managers):
         # drop table so we start with an empty db for the next io manager
         duckdb_conn.execute("DELETE FROM my_schema.self_dependent_asset")
         duckdb_conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Opt-in recreate-on-schema-mismatch tests (#17058)
+# ---------------------------------------------------------------------------
+
+
+def _read_schema_table(db_path, table):
+    # Match DuckDbClient.connect config so readback still works after a failed
+    # write leaked its connection in this process.
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    try:
+        return pl.DataFrame(conn.execute(f"SELECT * FROM {table} ORDER BY ALL").arrow())
+    finally:
+        conn.close()
+
+
+def _recreate_manager(tmp_path):
+    return DuckDBPolarsIOManager(
+        database=os.path.join(tmp_path, "schema_test.duckdb"),
+        recreate_table_on_schema_mismatch=True,
+    )
+
+
+def _evolving_asset(state):
+    @asset(key_prefix=["my_schema"])
+    def evolving_table() -> pl.DataFrame:
+        return state["df"]
+
+    return evolving_table
+
+
+def _materialize_twice(tmp_path, state, first, second, io_manager=None):
+    manager = io_manager or _recreate_manager(tmp_path)
+    evolving_table = _evolving_asset(state)
+    state["df"] = first
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    state["df"] = second
+    return materialize([evolving_table], resources={"io_manager": manager}).success
+
+
+def test_schema_mismatch_recreate_renamed_column(tmp_path):
+    state = {}
+    assert _materialize_twice(
+        tmp_path,
+        state,
+        pl.DataFrame({"a": [1, 2], "b": [3, 4]}),
+        pl.DataFrame({"a": [1, 2], "c": [3, 4]}),
+    )
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "c"]
+    assert out["c"].to_list() == [3, 4]
+
+
+def test_schema_mismatch_recreate_added_column(tmp_path):
+    state = {}
+    assert _materialize_twice(
+        tmp_path,
+        state,
+        pl.DataFrame({"a": [1, 2], "b": [3, 4]}),
+        pl.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]}),
+    )
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "b", "c"]
+    assert out["c"].to_list() == [5, 6]
+
+
+def test_schema_mismatch_recreate_dropped_column(tmp_path):
+    state = {}
+    assert _materialize_twice(
+        tmp_path,
+        state,
+        pl.DataFrame({"a": [1, 2], "b": [3, 4]}),
+        pl.DataFrame({"a": [1, 2]}),
+    )
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a"]
+    assert out["a"].to_list() == [1, 2]
+
+
+def test_schema_mismatch_recreate_reordered_same_type(tmp_path):
+    state = {}
+    assert _materialize_twice(
+        tmp_path,
+        state,
+        pl.DataFrame({"a": [1, 2], "b": [10, 20]}),
+        pl.DataFrame({"b": [10, 20], "a": [1, 2]}),
+    )
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["b", "a"]
+    assert out["a"].to_list() == [1, 2]
+    assert out["b"].to_list() == [10, 20]
+
+
+def test_schema_mismatch_dtype_only_keeps_existing_behavior(tmp_path):
+    # Names match, so recreate must not trigger: an incompatible dtype still
+    # fails on insert (cast-or-error), even with opt-in enabled.
+    state = {}
+    manager = _recreate_manager(tmp_path)
+    evolving_table = _evolving_asset(state)
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    state["df"] = pl.DataFrame({"a": ["x", "y"], "b": [3, 4]})
+    result = materialize([evolving_table], resources={"io_manager": manager}, raise_on_error=False)
+    assert not result.success
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "b"]
+
+
+def test_schema_mismatch_empty_dataframe_leaves_schema_unchanged(tmp_path):
+    state = {}
+    manager = _recreate_manager(tmp_path)
+    evolving_table = _evolving_asset(state)
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    state["df"] = pl.DataFrame({"x": pl.Series([], dtype=pl.Int64)})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "b"]
+
+
+def test_schema_mismatch_unchanged_schema_overwrites(tmp_path):
+    state = {}
+    assert _materialize_twice(
+        tmp_path,
+        state,
+        pl.DataFrame({"a": [1, 2], "b": [3, 4]}),
+        pl.DataFrame({"a": [5, 6], "b": [7, 8]}),
+    )
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "b"]
+    assert out["a"].to_list() == [5, 6]
+
+
+def test_schema_mismatch_default_off_keeps_legacy_failure(tmp_path):
+    state = {}
+    manager = DuckDBPolarsIOManager(database=os.path.join(tmp_path, "schema_test.duckdb"))
+    evolving_table = _evolving_asset(state)
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
+    result = materialize([evolving_table], resources={"io_manager": manager}, raise_on_error=False)
+    assert not result.success
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_table"
+    )
+    assert out.columns == ["a", "b"]
+
+
+def test_schema_mismatch_recreate_op_output(tmp_path):
+    state = {"df": pl.DataFrame({"a": [1, 2], "b": [3, 4]})}
+
+    @op(out=Out(metadata={"schema": "evolving_op"}))
+    def evolving_op() -> pl.DataFrame:
+        return state["df"]
+
+    @graph
+    def evolving_graph():
+        evolving_op()
+
+    job = evolving_graph.to_job(resource_defs={"io_manager": _recreate_manager(tmp_path)})
+    assert job.execute_in_process().success
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4], "c": [5, 6]})
+    assert job.execute_in_process().success
+    out = _read_schema_table(os.path.join(tmp_path, "schema_test.duckdb"), "evolving_op.result")
+    assert out.columns == ["a", "b", "c"]
+    assert out["c"].to_list() == [5, 6]
+
+
+def test_schema_mismatch_partitioned_refuses_and_preserves_other_partitions(tmp_path):
+    state = {"extra": False}
+
+    @asset(
+        key_prefix=["my_schema"],
+        partitions_def=StaticPartitionsDefinition(["red", "blue"]),
+        metadata={"partition_expr": "color"},
+    )
+    def evolving_partitioned_table(context) -> pl.DataFrame:
+        data = {"color": [context.partition_key], "a": [1]}
+        if state["extra"]:
+            data["c"] = [99]
+        return pl.DataFrame(data)
+
+    manager = _recreate_manager(tmp_path)
+    assert materialize(
+        [evolving_partitioned_table],
+        partition_key="red",
+        resources={"io_manager": manager},
+    ).success
+    state["extra"] = True
+    result = materialize(
+        [evolving_partitioned_table],
+        partition_key="blue",
+        resources={"io_manager": manager},
+        raise_on_error=False,
+    )
+    assert not result.success
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"), "my_schema.evolving_partitioned_table"
+    )
+    assert sorted(out["color"].to_list()) == ["red"]
+
+
+def test_schema_mismatch_multi_partitioned_refuses_and_preserves_other_partitions(tmp_path):
+    state = {"extra": False}
+
+    @asset(
+        key_prefix=["my_schema"],
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "color": StaticPartitionsDefinition(["red", "blue"]),
+            }
+        ),
+        metadata={"partition_expr": {"time": "CAST(time as DATE)", "color": "color"}},
+    )
+    def evolving_multi_partitioned_table(context) -> pl.DataFrame:
+        keys = context.partition_key.keys_by_dimension
+        data = {
+            "color": [keys["color"]],
+            "time": [keys["time"]],
+            "a": [1],
+        }
+        if state["extra"]:
+            data["c"] = [99]
+        return pl.DataFrame(data)
+
+    manager = _recreate_manager(tmp_path)
+    assert materialize(
+        [evolving_multi_partitioned_table],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources={"io_manager": manager},
+    ).success
+    state["extra"] = True
+    result = materialize(
+        [evolving_multi_partitioned_table],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+        resources={"io_manager": manager},
+        raise_on_error=False,
+    )
+    assert not result.success
+    out = _read_schema_table(
+        os.path.join(tmp_path, "schema_test.duckdb"),
+        "my_schema.evolving_multi_partitioned_table",
+    )
+    assert sorted(out["color"].to_list()) == ["red"]
+
+
+def test_schema_mismatch_partitioned_handler_error_message(tmp_path):
+    db_path = os.path.join(tmp_path, "schema_handler.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    conn.execute("create schema if not exists my_schema;")
+    conn.execute("create table my_schema.slice_table (color VARCHAR, a BIGINT);")
+    conn.execute("insert into my_schema.slice_table values ('red', 1);")
+    handler = DuckDBPolarsTypeHandler(recreate_table_on_schema_mismatch=True)
+    with pytest.raises(DagsterInvariantViolationError, match="partitioned"):
+        handler.handle_output(
+            build_output_context(),
+            TableSlice(
+                table="slice_table",
+                schema="my_schema",
+                database=db_path,
+                columns=None,
+                partition_dimensions=[
+                    TablePartitionDimension(partition_expr="color", partitions=["blue"])
+                ],
+            ),
+            pl.DataFrame({"color": ["blue"], "a": [1], "c": [99]}),
+            conn,
+        )
+    rows = conn.execute("SELECT color FROM my_schema.slice_table").fetchall()
+    assert rows == [("red",)]
+    conn.close()
+
+
+def test_schema_mismatch_respects_subclass_type_handlers(tmp_path):
+    class CustomHandler(DuckDBPolarsTypeHandler):
+        pass
+
+    class CustomManager(DuckDBPolarsIOManager):
+        @staticmethod
+        def type_handlers():
+            return [CustomHandler()]
+
+    for flag in (False, True):
+        manager = CustomManager(
+            database=os.path.join(tmp_path, "subclass.duckdb"),
+            recreate_table_on_schema_mismatch=flag,
+        )
+        handlers = list(manager.create_io_manager(None)._handlers_by_type.values())  # noqa: SLF001
+        assert [type(h) for h in handlers] == [CustomHandler]
+
+    stock = _recreate_manager(tmp_path).create_io_manager(None)
+    stock_handlers = list(stock._handlers_by_type.values())  # noqa: SLF001
+    assert [type(h) for h in stock_handlers] == [DuckDBPolarsTypeHandler]
+    assert stock_handlers[0]._recreate_table_on_schema_mismatch  # noqa: SLF001
