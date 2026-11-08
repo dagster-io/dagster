@@ -311,8 +311,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 if tag_concurrency_limits_counter.is_blocked(run):
                     to_remove.append(run)
                     continue
-                else:
-                    tag_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 if (
                     global_concurrency_limits_counter
@@ -331,6 +329,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     continue
                 elif global_concurrency_limits_counter:
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
+
+                tag_concurrency_limits_counter.update_counters_with_launched_item(run)
 
                 location_name = (
                     run.remote_job_origin.location_name if run.remote_job_origin else None
