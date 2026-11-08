@@ -19,9 +19,9 @@ The following run coordinators can be configured on your [Dagster instance](/dep
 
 ## Configuring run coordinators
 
-If you use the `DefaultRunCoordinator`, no configuration is required on your part.
+The `QueuedRunCoordinator` is the default, so no configuration is required on your part to use it.
 
-However, if using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](/deployment/execution/customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).
+When using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](/deployment/execution/customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).
 
 ## Concurrency pools and dequeue ordering
 
