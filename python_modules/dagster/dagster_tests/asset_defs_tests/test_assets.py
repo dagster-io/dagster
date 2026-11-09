@@ -2183,6 +2183,17 @@ def test_asset_owners():
     assert asset3.specs_by_key[asset3.key].owners == []
 
 
+def test_asset_owner_email_with_long_tld():
+    # TLDs longer than a handful of characters (e.g. ".software", ".international") are valid
+    owners = ["devs@example.software", "jane.doe@acme.international"]
+
+    @dg.asset(owners=owners)
+    def my_asset():
+        pass
+
+    assert my_asset.specs_by_key[my_asset.key].owners == owners
+
+
 def test_invalid_asset_owners():
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
