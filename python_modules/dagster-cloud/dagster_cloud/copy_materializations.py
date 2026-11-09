@@ -185,31 +185,19 @@ def _fetch_events_by_storage_ids(
     return records
 
 
-def _fetch_latest_source_records(
-    storage: GraphQLEventLogStorage, asset_key: AssetKey
-) -> list[EventLogRecord]:
-    """Fetch the latest materialization per partition, or the latest overall if unpartitioned."""
-    by_partition = storage.get_latest_storage_id_by_partition(
-        asset_key, DagsterEventType.ASSET_MATERIALIZATION
-    )
-    if by_partition:
-        return _fetch_events_by_storage_ids(storage, asset_key, sorted(by_partition.values()))
-    return list(storage.fetch_materializations(asset_key, limit=1).records)
-
-
 def build_copied_event(
-    record: EventLogRecord, source_org: str, source_deployment: str
+    event: EventLogEntry, source_org: str, source_deployment: str
 ) -> EventLogEntry:
     """Build the runless event written to the target for a source materialization."""
-    materialization = record.asset_materialization
+    materialization = event.asset_materialization
     if materialization is None:
-        raise ValueError(f"Record {record.storage_id} is not a materialization")
+        raise ValueError(f"Event for run {event.run_id} is not a materialization")
 
     tags = {
         **(materialization.tags if materialization.tags is not None else {}),
         SOURCE_ORG_TAG: source_org,
         SOURCE_DEPLOYMENT_TAG: source_deployment,
-        SOURCE_RUN_ID_TAG: record.event_log_entry.run_id,
+        SOURCE_RUN_ID_TAG: event.run_id,
     }
     return EventLogEntry(
         user_message="",
@@ -217,7 +205,7 @@ def build_copied_event(
         job_name=RUNLESS_JOB_NAME,
         run_id=RUNLESS_RUN_ID,
         error_info=None,
-        timestamp=record.timestamp,
+        timestamp=event.timestamp,
         step_key=None,
         dagster_event=DagsterEvent(
             event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
@@ -248,14 +236,28 @@ def plan_asset_copy(
 
     - Skips the asset if the target's latest materialization is its own, unless merging.
     - Skips partitions missing from the target or already materialized there.
+    - Fetches source events only for the partitions it copies.
     """
     plan = AssetCopyPlan(asset_key=asset_key)
-    records = _fetch_latest_source_records(source, asset_key)
-    if not records:
+
+    # 1. The source's materialized partitions, without fetching their events: storage IDs for a
+    #    partitioned asset, the latest event for an unpartitioned one.
+    storage_ids: Mapping[str, int] = {}
+    latest_event = None
+    if target_partition_keys:
+        storage_ids = source.get_latest_storage_id_by_partition(
+            asset_key, DagsterEventType.ASSET_MATERIALIZATION
+        )
+        source_partitions: list[str | None] = list(storage_ids)
+    else:
+        latest_event = source.get_latest_materialization_events([asset_key]).get(asset_key)
+        materialization = latest_event.asset_materialization if latest_event is not None else None
+        source_partitions = [materialization.partition] if materialization is not None else []
+    if not source_partitions:
         plan.skip_reason = "no materializations in source"
         return plan
 
-    target_partitions = target.get_materialized_partitions(asset_key)
+    # 2. Compare with the target.
     target_latest = target.get_latest_materialization_events([asset_key]).get(asset_key)
     target_latest_materialization = (
         target_latest.asset_materialization if target_latest is not None else None
@@ -272,20 +274,37 @@ def plan_asset_copy(
         plan.skip_reason = "target already has its own materializations"
         return plan
 
-    for record in sorted(records, key=lambda r: r.timestamp):
-        partition = record.partition_key
+    # No latest event means nothing materialized, so skip the request.
+    target_partitions = (
+        target.get_materialized_partitions(asset_key) if target_latest is not None else set()
+    )
+    to_copy = []
+    for partition in source_partitions:
         # e.g. dynamic keys the target hasn't added, or static keys it no longer defines.
         if not _is_target_partition(partition, target_partition_keys):
             plan.missing_from_target += 1
-            continue
-        if partition is None:
-            if target_latest_materialization is not None:
-                plan.already_in_target += 1
-                continue
-        elif partition in target_partitions:
+        elif partition is None and target_latest_materialization is not None:
             plan.already_in_target += 1
-            continue
-        plan.events_to_write.append(build_copied_event(record, source_org, source_deployment))
+        elif partition is not None and partition in target_partitions:
+            plan.already_in_target += 1
+        else:
+            to_copy.append(partition)
+    if not to_copy:
+        return plan
+
+    # 3. Fetch only the events of the partitions to copy.
+    if storage_ids:
+        storage_ids_to_copy = sorted(storage_ids[p] for p in to_copy if p is not None)
+        events = [
+            record.event_log_entry
+            for record in _fetch_events_by_storage_ids(source, asset_key, storage_ids_to_copy)
+        ]
+    else:
+        events = [latest_event] if latest_event is not None else []
+    plan.events_to_write = [
+        build_copied_event(event, source_org, source_deployment)
+        for event in sorted(events, key=lambda e: e.timestamp)
+    ]
     return plan
 
 

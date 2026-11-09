@@ -1,3 +1,5 @@
+from collections import Counter
+
 from dagster import AssetKey, AssetMaterialization
 from dagster._core.event_api import EventLogRecord, EventRecordsResult
 from dagster._core.events import DagsterEvent, DagsterEventType, StepMaterializationData
@@ -45,6 +47,7 @@ def _record(
 class FakeStorage:
     def __init__(self, records: list[EventLogRecord]):
         self._records = records
+        self.calls: Counter[str] = Counter()
 
     def _latest_by_partition(self) -> dict[str, EventLogRecord]:
         latest = {}
@@ -54,9 +57,11 @@ class FakeStorage:
         return latest
 
     def get_latest_storage_id_by_partition(self, asset_key, event_type):
+        self.calls["get_latest_storage_id_by_partition"] += 1
         return {p: r.storage_id for p, r in self._latest_by_partition().items()}
 
     def fetch_materializations(self, records_filter, limit, cursor=None):
+        self.calls["fetch_materializations"] += 1
         if isinstance(records_filter, AssetKey):
             rows = sorted(self._records, key=lambda r: -r.storage_id)
         else:
@@ -65,6 +70,7 @@ class FakeStorage:
         return EventRecordsResult(records=rows[:limit], cursor="", has_more=False)
 
     def get_materialized_partitions(self, asset_key):
+        self.calls["get_materialized_partitions"] += 1
         return set(self._latest_by_partition())
 
     def get_latest_materialization_events(self, asset_keys):
@@ -73,11 +79,18 @@ class FakeStorage:
         return {ASSET_KEY: max(self._records, key=lambda r: r.storage_id).event_log_entry}
 
 
-def _plan(source_records, target_records, merge_partitions=False, partition_keys=({"a", "b"},)):
+def _plan(
+    source_records,
+    target_records,
+    merge_partitions=False,
+    partition_keys=({"a", "b"},),
+    source=None,
+    target=None,
+):
     return plan_asset_copy(
         ASSET_KEY,
-        FakeStorage(source_records),  # ty: ignore[invalid-argument-type]
-        FakeStorage(target_records),  # ty: ignore[invalid-argument-type]
+        source if source is not None else FakeStorage(source_records),  # ty: ignore[invalid-argument-type]
+        target if target is not None else FakeStorage(target_records),  # ty: ignore[invalid-argument-type]
         "source-org",
         "prod",
         merge_partitions,
@@ -90,9 +103,8 @@ def _partitions(plan):
 
 
 def test_copied_entry_keeps_timestamp_and_tags_source():
-    entry = build_copied_event(
-        _record(7, "2024-01-01", 1700000000.0, {"k": "v"}), "source-org", "prod"
-    )
+    record = _record(7, "2024-01-01", 1700000000.0, {"k": "v"})
+    entry = build_copied_event(record.event_log_entry, "source-org", "prod")
 
     assert entry.run_id == RUNLESS_RUN_ID
     assert entry.timestamp == 1700000000.0
@@ -174,6 +186,34 @@ def test_skips_partitions_missing_from_target():
 
     assert _partitions(plan) == ["a"]
     assert plan.missing_from_target == 2
+
+
+def test_fetches_only_partitions_to_copy():
+    source = FakeStorage([_record(i, f"p{i}", float(i)) for i in range(250)])
+
+    plan = _plan(None, [], partition_keys=({"p0", "p1"},), source=source)
+
+    assert _partitions(plan) == ["p0", "p1"]
+    assert plan.missing_from_target == 248
+    assert source.calls["fetch_materializations"] == 1
+
+
+def test_skipped_asset_fetches_no_events():
+    source = FakeStorage([_record(1, "a", 10.0)])
+
+    plan = _plan(None, [_record(1, "b", 50.0)], source=source)
+
+    assert plan.skip_reason == "target already has its own materializations"
+    assert source.calls["fetch_materializations"] == 0
+
+
+def test_skips_partition_read_when_target_never_materialized():
+    target = FakeStorage([])
+
+    plan = _plan([_record(1, "a", 10.0)], None, target=target)
+
+    assert _partitions(plan) == ["a"]
+    assert target.calls["get_materialized_partitions"] == 0
 
 
 def test_checks_multipartition_keys_per_dimension():
