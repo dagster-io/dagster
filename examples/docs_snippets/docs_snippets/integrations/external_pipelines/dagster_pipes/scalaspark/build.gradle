@@ -24,9 +24,20 @@ dependencies {
     // compileOnly - because Spark already provides the Scala and Spark libraries.
     //               everything else should be included in the "FatJar" created by shadow.
     compileOnly 'org.scala-lang:scala-library:2.12.18'
-    compileOnly 'org.apache.spark:spark-sql_2.12:3.5.5'
+    compileOnly 'org.apache.spark:spark-sql_2.12:3.5.9'
 
     implementation 'io.dagster:pipes:1.1.0'
+
+    // Spark 3.5.9 and io.dagster:pipes depend on releases of these libraries
+    // with known vulnerabilities. Declaring the constraints on `implementation`
+    // raises them on both the compile and runtime classpaths.
+    implementation platform('io.netty:netty-bom:4.1.140.Final')
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.22.4')
+    implementation platform('org.apache.logging.log4j:log4j-bom:2.26.1')
+    constraints {
+        implementation 'com.google.protobuf:protobuf-java:3.25.9'
+        implementation 'org.apache.zookeeper:zookeeper:3.9.7'
+    }
 }
 
 application {
