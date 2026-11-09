@@ -50,6 +50,22 @@ def test_asset_job_key_user_string_roundtrip() -> None:
     assert AssetJobKey.from_user_string("my_job") == key
 
 
+@pytest.mark.parametrize(
+    "check_key",
+    [
+        dg.AssetCheckKey(dg.AssetKey("a"), "b"),
+        dg.AssetCheckKey(dg.AssetKey(["prefix", "asset1"]), "freshness_check"),
+        # Asset keys can contain colons. For example the dagster-looker integration emits
+        # keys such as AssetKey(["my_model::my_explore"]). The check name is a plain
+        # identifier, so the trailing ":<name>" segment is unambiguous.
+        dg.AssetCheckKey(dg.AssetKey(["my_model::my_explore"]), "freshness_check"),
+        dg.AssetCheckKey(dg.AssetKey(["snowflake", "db:schema:table"]), "row_count"),
+    ],
+)
+def test_asset_check_key_user_string_roundtrip(check_key: AssetCheckKey) -> None:
+    assert AssetCheckKey.from_user_string(check_key.to_user_string()) == check_key
+
+
 def test_asset_job_key_from_db_string_returns_none_for_non_matching() -> None:
     assert AssetJobKey.from_db_string('["a"]') is None
     assert AssetJobKey.from_db_string('{"asset_key": "[\\"a\\"]", "check_name": "b"}') is None
