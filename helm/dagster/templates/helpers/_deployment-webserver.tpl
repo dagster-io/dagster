@@ -67,8 +67,9 @@ spec:
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
-          image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
-          command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+          image: {{ include "dagster.dagsterImage.name" (list $ $_.Values.dagsterWebserver.image) | quote }}
+          imagePullPolicy: {{ $_.Values.dagsterWebserver.image.pullPolicy }}
+          command: ['sh', '-c', "until getent hosts {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
           {{- if $_.Values.dagsterWebserver.initContainerResources }}
