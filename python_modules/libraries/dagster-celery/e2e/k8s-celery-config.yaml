@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: celery-worker-config
+  namespace: dagster
+data:
+  celery.yaml: |
+    execution:
+      config:
+        broker: "pyamqp://test:test@dagster-rabbitmq:5672//"
+        backend: "redis://dagster-redis-master:6379/0"
