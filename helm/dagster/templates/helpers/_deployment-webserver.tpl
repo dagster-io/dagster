@@ -5,6 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "dagster.webserver.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
     component: {{ include "dagster.webserver.componentName" . }}
