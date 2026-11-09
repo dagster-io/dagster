@@ -719,3 +719,60 @@ def test_static_where_clause_multiple_partitions():
         static_where_clause(TablePartitionDimension(partition_expr="col", partitions=["a", "b's"]))
         == "col in ('a', 'b''s')"
     )
+
+
+def test_asset_out_multi_partition_rectangle_real_contexts():
+    handler = IntHandler()
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient,
+        get_select_statement=MagicMock(return_value=""),
+        connect=connect_mock,
+        get_table_name=mock_table_name,
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    bounding_range = dg.PartitionKeyRange("2023-12-01-00:00|A", "2023-12-01-02:00|B")
+    instance = dg.DagsterInstance.ephemeral()
+    output_context = dg.build_output_context(
+        asset_key=dg.AssetKey(["schema1", "table1"]),
+        definition_metadata={"partition_expr": {"partition": "ts", "source": "src"}},
+        asset_partitions_def=partitions_def,
+        asset_partition_key_range=bounding_range,
+        instance=instance,
+    )
+    manager.handle_output(output_context, 5)
+    input_context = dg.build_input_context(
+        upstream_output=output_context,
+        asset_key=dg.AssetKey(["schema1", "table1"]),
+        dagster_type=resolve_dagster_type(int),
+        definition_metadata={"partition_expr": {"partition": "ts", "source": "src"}},
+        asset_partitions_def=partitions_def,
+        asset_partition_key_range=bounding_range,
+        instance=instance,
+    )
+    assert manager.load_input(input_context) == 7
+
+    expected_slice = TableSlice(
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partitions=dg.TimeWindow(
+                    create_datetime(2023, 12, 1, 0), create_datetime(2023, 12, 1, 3)
+                ),
+                partition_expr="ts",
+            ),
+            TablePartitionDimension(partitions=["A", "B"], partition_expr="src"),
+        ],
+    )
+    assert len(handler.handle_output_calls) == 1
+    assert handler.handle_output_calls[0][1:] == (expected_slice, 5)
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == expected_slice

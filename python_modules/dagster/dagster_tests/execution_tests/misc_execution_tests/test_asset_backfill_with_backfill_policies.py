@@ -8,6 +8,13 @@ from dagster import BackfillPolicy, DagsterInstance
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance.types import DynamicPartitionsStore
+from dagster._core.storage.db_io_manager import (
+    DbClient,
+    DbIOManager,
+    DbTypeHandler,
+    TablePartitionDimension,
+    TableSlice,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -1273,6 +1280,28 @@ def test_asset_backfill_single_run_multi_partitions_non_contiguous_inner_stays_e
     assert _expanded_partition_keys(partitions_def, result.run_requests) == set(partition_names)
 
 
+def test_asset_backfill_single_run_multi_partitions_missing_corner_stays_exact() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    # Both per-dimension projections are contiguous, but the bounding rectangle
+    # (2 hours x {A, B}) would also select 2023-12-01-01:00|B, so the backfill
+    # must keep the per-range run requests instead of coalescing.
+    partition_names = [
+        "2023-12-01-00:00|A",
+        "2023-12-01-00:00|B",
+        "2023-12-01-01:00|A",
+    ]
+
+    result = _execute_multi_single_run_iteration(partitions_def, partition_names)
+
+    assert len(result.run_requests) == 2
+    assert _expanded_partition_keys(partitions_def, result.run_requests) == set(partition_names)
+
+
 def test_asset_backfill_single_run_multi_partitions_dynamic_dimension() -> None:
     instance = DagsterInstance.ephemeral()
     instance.add_dynamic_partitions("dynamic_sources", ["A", "B", "C"])
@@ -1351,3 +1380,82 @@ def test_asset_backfill_single_run_multi_partitions_partial_inner_to_completion(
     assert len(failed) == 0
     assert {akpk.partition_key for akpk in materialized} == set(partition_names)
     assert instance.get_runs_count() == 1
+
+
+class _CapturingIntHandler(DbTypeHandler[int]):
+    def __init__(self) -> None:
+        self.output_slices: list[TableSlice] = []
+
+    def handle_output(self, context, table_slice: TableSlice, obj: int, connection):
+        self.output_slices.append(table_slice)
+
+    def load_input(self, context, table_slice: TableSlice, connection) -> int:
+        return 7
+
+    @property
+    def supported_types(self):
+        return [int]
+
+
+def _fake_db_io_manager(handler: _CapturingIntHandler) -> DbIOManager:
+    db_client = MagicMock(
+        spec=DbClient,
+        get_select_statement=MagicMock(return_value=""),
+        connect=MagicMock(),
+        get_table_name=MagicMock(return_value="table_name"),
+    )
+    return DbIOManager(
+        type_handlers=[handler], db_client=db_client, database="database_abc", schema=None
+    )
+
+
+def _expected_rectangle_slice(table: str) -> TableSlice:
+    return TableSlice(
+        table=table,
+        schema="public",
+        database="database_abc",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partition_expr="ts",
+                partitions=dg.TimeWindow(
+                    create_datetime(2023, 12, 1, 0), create_datetime(2023, 12, 1, 3)
+                ),
+            ),
+            TablePartitionDimension(partition_expr="src", partitions=["A", "B"]),
+        ],
+    )
+
+
+def test_single_run_multi_partitions_rectangle_db_io_manager_end_to_end() -> None:
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+    partition_names = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+    ]
+    iteration = _execute_multi_single_run_iteration(partitions_def, partition_names)
+    assert len(iteration.run_requests) == 1
+    run_request = iteration.run_requests[0]
+
+    @dg.asset(
+        partitions_def=partitions_def,
+        metadata={"partition_expr": {"partition": "ts", "source": "src"}},
+    )
+    def rectangle_asset() -> int:
+        return 1
+
+    handler = _CapturingIntHandler()
+    result = dg.materialize(
+        [rectangle_asset],
+        resources={"io_manager": _fake_db_io_manager(handler)},
+        instance=DagsterInstance.ephemeral(),
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: run_request.tags[ASSET_PARTITION_RANGE_START_TAG],
+            ASSET_PARTITION_RANGE_END_TAG: run_request.tags[ASSET_PARTITION_RANGE_END_TAG],
+        },
+    )
+    assert result.success
+    assert handler.output_slices == [_expected_rectangle_slice("rectangle_asset")]

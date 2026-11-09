@@ -28,6 +28,9 @@ from dagster._core.definitions.partitions.definition import (
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.subset.default import (
+    try_coalesce_to_single_partition_key_range,
+)
 from dagster._core.definitions.partitions.utils import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
@@ -1070,6 +1073,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partition_key_ranges = subset.get_partition_key_ranges(
                 partitions_def=upstream_asset_partitions_def,
             )
+            if len(partition_key_ranges) != 1:
+                coalesced_range = try_coalesce_to_single_partition_key_range(
+                    subset.get_partition_keys(), upstream_asset_partitions_def
+                )
+                if coalesced_range is not None:
+                    return coalesced_range
 
         if len(partition_key_ranges) != 1:
             check.failed(
