@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "feature_graph_backed_assets"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = "Dagster example of op and graph-backed assets."
 license = "Apache-2.0"
 dependencies = [

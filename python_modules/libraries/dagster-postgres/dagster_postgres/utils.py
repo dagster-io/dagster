@@ -174,6 +174,10 @@ def create_pg_engine(
     """Create a SQLAlchemy engine, optionally with WIF token injection via
     the ``do_connect`` event hook.
     """
+    # SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg 3, but this package
+    # installs psycopg2, the driver earlier SQLAlchemy versions picked for it.
+    if postgres_url.startswith("postgresql://"):
+        postgres_url = "postgresql+psycopg2://" + postgres_url.removeprefix("postgresql://")
     engine = create_engine(postgres_url, **engine_kwargs)
     if token_provider is not None:
         from dagster_postgres.auth import register_do_connect_hook

@@ -166,7 +166,7 @@ const ReasonTooltip = ({reason, children}: ReasonTooltipProps) => (
 
 type RunActionsMenuItemsProps = {
   run: MappedRun;
-  canCreateIssue: boolean;
+  createIssue: ReturnType<typeof useCanCreateIssueForRun>;
   menuRef: RefObject<HTMLUListElement>;
   onMenuClick: (event: MouseEvent<HTMLUListElement>) => void;
   onOpenDialog: (dialog: RunDialog) => void;
@@ -176,7 +176,7 @@ type RunActionsMenuItemsProps = {
 
 const RunActionsMenuItems = ({
   run,
-  canCreateIssue,
+  createIssue,
   menuRef,
   onMenuClick,
   onOpenDialog,
@@ -249,12 +249,15 @@ const RunActionsMenuItems = ({
           />
         )}
         <AISummaryForRunMenuItem run={{id: run.id, status: run.runStatus}} />
-        {canCreateIssue && (
-          <MenuItem
-            icon="issue"
-            text="Create or link issue"
-            onClick={() => onOpenDialog({kind: 'create-issue', run})}
-          />
+        {createIssue.visible && (
+          <ReasonTooltip reason={createIssue.enabled ? null : createIssue.disabledReason}>
+            <MenuItem
+              icon="issue"
+              text="Create or link issue"
+              disabled={!createIssue.enabled}
+              onClick={() => onOpenDialog({kind: 'create-issue', run})}
+            />
+          </ReasonTooltip>
         )}
         <MenuDivider className={styles.divider} />
         {isLoading && (
@@ -342,7 +345,7 @@ type RunActionsCellProps = {
 export const RunActionsCell = ({run, onOpenRunDialog}: RunActionsCellProps) => {
   const {refetch} = useContext(RunsQueryRefetchContext);
   const reexecute = useJobReexecution({onCompleted: refetch});
-  const canCreateIssue = useCanCreateIssueForRun(run.runStatus);
+  const createIssue = useCanCreateIssueForRun(run.runStatus);
   const {buttonRef, menuRef, isMenuOpen, onInteraction, onMenuClick} = useMenuPopover();
 
   const openDialog = (dialog: RunDialog) => {
@@ -367,7 +370,7 @@ export const RunActionsCell = ({run, onOpenRunDialog}: RunActionsCellProps) => {
       content={
         <RunActionsMenuItems
           run={run}
-          canCreateIssue={canCreateIssue}
+          createIssue={createIssue}
           menuRef={menuRef}
           onMenuClick={onMenuClick}
           onOpenDialog={openDialog}

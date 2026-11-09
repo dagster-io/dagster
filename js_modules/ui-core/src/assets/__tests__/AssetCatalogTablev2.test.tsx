@@ -1,8 +1,10 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
+import {AnalyticsContext} from '../../app/analytics';
 import {ASSETS_HEALTH_INFO_QUERY} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../../asset-data/AssetLiveDataProvider';
 import {buildMockedAssetGraphLiveQuery} from '../../asset-data/__tests__/util';
@@ -53,6 +55,24 @@ jest.mock('../../util/idb-lru-cache', () => {
 
 jest.mock('../catalog/AssetCatalogV2VirtualizedTable', () => ({
   AssetCatalogV2VirtualizedTable: jest.fn(() => null),
+}));
+
+jest.mock('../catalog/AssetCatalogAssetGraph', () => ({
+  AssetCatalogAssetGraph: jest.fn(({tabs}: {tabs: React.ReactNode}) => (
+    <div>
+      {tabs}
+      Lineage graph
+    </div>
+  )),
+}));
+
+jest.mock('@shared/assets/catalog/AssetCatalogTabs', () => ({
+  AssetCatalogTabs: ({onChangeTab}: {onChangeTab: (tab: string) => void}) => (
+    <div>
+      <button onClick={() => onChangeTab('assets')}>Assets tab</button>
+      <button onClick={() => onChangeTab('lineage')}>Lineage tab</button>
+    </div>
+  ),
 }));
 
 const createMock = ({
@@ -285,4 +305,87 @@ describe('AssetCatalogTableV2', () => {
       );
     });
   });
+
+  it('does not fetch health data when the lineage tab is selected', async () => {
+    const assetKeys = [asset1, asset2, asset3, asset4, asset5];
+    const healthQueryMock = getHealthQueryMock(assetKeys);
+    const resultFn = getMockResultFn(healthQueryMock);
+    const {findByText} = render(
+      <RecoilRoot>
+        <MemoryRouter initialEntries={['/catalog?selectedTab=lineage']}>
+          <MockedProvider
+            mocks={[
+              assetsMock,
+              healthQueryMock,
+              ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+              ...workspaceMocks,
+            ]}
+          >
+            <WorkspaceProvider>
+              <AssetLiveDataProvider>
+                <AssetCatalogTableV2 />
+              </AssetLiveDataProvider>
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>
+      </RecoilRoot>,
+    );
+
+    await findByText('Lineage graph');
+    await act(() => new Promise((resolve) => setTimeout(resolve, 500)));
+
+    expect(resultFn).not.toHaveBeenCalled();
+    expect(AssetCatalogV2VirtualizedTable).not.toHaveBeenCalled();
+  });
+
+  it('keeps checked rows when switching to the lineage tab and back', async () => {
+    const assetKeys = [asset1, asset2, asset3, asset4, asset5];
+    const healthQueryMock = getHealthQueryMock(assetKeys);
+    const {findByText} = render(
+      <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
+        <RecoilRoot>
+          <MemoryRouter>
+            <MockedProvider
+              mocks={[
+                assetsMock,
+                healthQueryMock,
+                ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+                ...workspaceMocks,
+              ]}
+            >
+              <WorkspaceProvider>
+                <AssetLiveDataProvider>
+                  <AssetCatalogTableV2 />
+                </AssetLiveDataProvider>
+              </WorkspaceProvider>
+            </MockedProvider>
+          </MemoryRouter>
+        </RecoilRoot>
+      </AnalyticsContext.Provider>,
+    );
+
+    await findByText('5 assets');
+    await waitFor(() => {
+      expect(lastTableProps()).toEqual(expect.objectContaining({healthDataLoading: false}));
+    });
+
+    act(() => {
+      lastTableProps().onToggleFactory('asset1')({checked: true, shiftKey: false});
+    });
+    expect(lastTableProps().checkedDisplayKeys).toEqual(new Set(['asset1']));
+
+    await userEvent.click(await findByText('Lineage tab'));
+    await findByText('Lineage graph');
+    await userEvent.click(await findByText('Assets tab'));
+
+    await waitFor(() => {
+      expect(lastTableProps()).toEqual(expect.objectContaining({healthDataLoading: false}));
+    });
+    expect(lastTableProps().checkedDisplayKeys).toEqual(new Set(['asset1']));
+  });
 });
+
+function lastTableProps() {
+  const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+  return calls[calls.length - 1][0];
+}

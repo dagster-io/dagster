@@ -66,6 +66,9 @@ test = [
 
 [tool.uv]
 exclude-newer = "48h"
+# TEMPORARY: let authlib 1.9.5 (published 2026-11-05, completes the CVE-2026-114615
+# fix) through the 48h cooldown. Remove this line after 2026-11-07.
+exclude-newer-package = { authlib = "2026-11-05T17:00:00Z" }
 
 [tool.uv.sources]
 dagster-sphinx = { path = "sphinx/_ext/dagster-sphinx", editable = true }

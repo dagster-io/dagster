@@ -709,6 +709,7 @@ export type AssetViewDefinitionQuery = {
                 __typename: 'Sensor';
                 id: string;
                 name: string;
+                hasCursorUpdatePermissions: boolean;
                 sensorType: Types.SensorType;
                 sensorState: {
                   __typename: 'InstigationState';
@@ -17187,6 +17188,7 @@ export type AssetViewDefinitionNodeFragment = {
         __typename: 'Sensor';
         id: string;
         name: string;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
@@ -32801,4 +32803,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '5ae1c366703cf42f0c9bb5583fbb1789981bda3853360fec897c44dd069eea40';
+export const AssetViewDefinitionQueryVersion = 'e0952601dac2b57a25d22e547d0c5b1d8680b366011467f959bcb4a6e0223bf6';

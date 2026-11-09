@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-helm"
 version = "0.0.1"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = "Tools for Dagster Helm schema"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
@@ -36,7 +36,6 @@ test = [
     "dagster-k8s",
     "dagster-celery",
     "dagster-celery-k8s",
-    "pyparsing<3.0.0",
     "kubernetes>=31",
     "dagster",
 ]

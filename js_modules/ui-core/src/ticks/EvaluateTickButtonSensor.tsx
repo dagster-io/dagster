@@ -11,6 +11,7 @@ interface EvaluateTickButtonSensorProps {
   repoAddress: RepoAddress;
   jobName: string;
   sensorType: SensorType;
+  canUpdateCursor: boolean;
 }
 
 export const EvaluateTickButtonSensor = ({
@@ -19,6 +20,7 @@ export const EvaluateTickButtonSensor = ({
   repoAddress,
   jobName,
   sensorType,
+  canUpdateCursor,
 }: EvaluateTickButtonSensorProps) => {
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
@@ -44,6 +46,7 @@ export const EvaluateTickButtonSensor = ({
         name={name}
         repoAddress={repoAddress}
         jobName={jobName}
+        canUpdateCursor={canUpdateCursor}
       />
     </Box>
   );

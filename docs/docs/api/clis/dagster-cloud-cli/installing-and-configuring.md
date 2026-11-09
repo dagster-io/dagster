@@ -20,7 +20,7 @@ For new projects, we recommend using the [`dg` CLI](/api/clis/dg-cli/dg-cli-refe
 
 :::note
 
-The `dagster-cloud` CLI requires Python 3.10 through 3.13 and a recent version of Docker.
+The `dagster-cloud` CLI requires Python 3.11 through 3.14 and a recent version of Docker.
 
 :::
 

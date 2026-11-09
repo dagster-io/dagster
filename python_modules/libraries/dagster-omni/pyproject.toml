@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster_omni"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = "Package for integrating Omni with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"

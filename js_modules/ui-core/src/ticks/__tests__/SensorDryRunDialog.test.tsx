@@ -68,6 +68,7 @@ function Test({
               location: 'testLocation',
             }}
             jobName="testJobName"
+            canUpdateCursor
             currentCursor="testCursor"
           />
         </TestPermissionsProvider>

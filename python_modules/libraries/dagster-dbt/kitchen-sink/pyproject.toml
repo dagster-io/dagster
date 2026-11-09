@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-dbt-cloud-kitchen-sink"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"

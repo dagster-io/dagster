@@ -59,6 +59,7 @@ export type AssetAutomationQuery = {
           __typename: 'Sensor';
           id: string;
           name: string;
+          hasCursorUpdatePermissions: boolean;
           sensorType: Types.SensorType;
           sensorState: {
             __typename: 'InstigationState';
@@ -111,6 +112,7 @@ export type AssetAutomationFragment = {
         __typename: 'Sensor';
         id: string;
         name: string;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
@@ -153,6 +155,7 @@ export type AssetInstigatorFragment_Sensor = {
   __typename: 'Sensor';
   id: string;
   name: string;
+  hasCursorUpdatePermissions: boolean;
   sensorType: Types.SensorType;
   sensorState: {
     __typename: 'InstigationState';
@@ -172,4 +175,4 @@ export type AssetInstigatorFragment =
   | AssetInstigatorFragment_Schedule
   | AssetInstigatorFragment_Sensor;
 
-export const AssetAutomationQueryVersion = 'ba290842b1e65f256ea3b1e95285e050da5a8ee50ecf34b6228299e7dd605425';
+export const AssetAutomationQueryVersion = '619e116f0e9a85be3569b48658509b3808d117b8aa7ec7d6602ee0fa6b15aa3d';

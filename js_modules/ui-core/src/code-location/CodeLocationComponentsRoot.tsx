@@ -13,6 +13,7 @@ import {Redirect, useHistory, useLocation, useParams} from 'react-router-dom';
 import {CodeLocationComponentInstancesSubtab} from './CodeLocationComponentInstancesSubtab';
 import {CodeLocationComponentsCatalogSubtab} from './CodeLocationComponentsCatalogSubtab';
 import {addComponentDisabledReason} from './appManagedComponentAddGate';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -40,13 +41,20 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
     repoAddress.location,
   );
 
-  const addDisabledReason = addComponentDisabledReason({
-    isBranchDeployment,
-    gitProviderConnected,
-    gitBackedEnabled,
-    bindingLoading,
-    hasBinding: binding !== null,
-  });
+  const {
+    permissions: {canEditAppManagedComponents},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
+
+  const addDisabledReason = canEditAppManagedComponents
+    ? addComponentDisabledReason({
+        isBranchDeployment,
+        gitProviderConnected,
+        gitBackedEnabled,
+        bindingLoading,
+        hasBinding: binding !== null,
+      })
+    : disabledReasons.canEditAppManagedComponents;
 
   const params = useParams<{
     packageName?: string;

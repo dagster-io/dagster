@@ -93,6 +93,7 @@ export type SingleJobQuery = {
           __typename: 'Sensor';
           id: string;
           name: string;
+          hasCursorUpdatePermissions: boolean;
           sensorType: Types.SensorType;
           sensorState: {
             __typename: 'InstigationState';
@@ -112,4 +113,4 @@ export type SingleJobQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SingleJobQueryVersion = '25d7a06c2c616338bb6d6e49f8df1803d82ebd77c94e2229bce8633e1dbd912f';
+export const SingleJobQueryVersion = 'af9c3d1f8802e41934025b0d79b93fd0f3b5b135fc56434ad077b59ca3ccb583';

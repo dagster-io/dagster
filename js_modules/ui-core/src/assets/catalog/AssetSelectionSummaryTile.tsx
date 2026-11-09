@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 
 import styles from './AssetSelectionSummaryTile.module.css';
 import {JOB_TILE_QUERY} from './JobTileQuery';
-import {getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
+import {getHealthStatuses} from './util';
 import {useQuery} from '../../apollo-client';
 import {JobTileQuery, JobTileQueryVariables} from './types/JobTileQuery.types';
 import {useSelectionHealthData} from './useSelectionHealthData';
@@ -58,21 +58,14 @@ export const AssetSelectionSummaryTile = React.memo(
     label,
     assets,
     link,
-    loading: _assetsLoading,
+    loading,
   }: {
     icon: React.ReactNode;
     label: string;
     assets: AssetTableFragment[];
     link: string;
     loading?: boolean;
-    threadId?: string;
   }) => {
-    const {loading} = useAssetHealthStatuses({
-      assets,
-      threadId: useMemo(() => getThreadId(), []),
-      loading: _assetsLoading,
-    });
-
     return (
       <AssetSelectionSummaryTileWithHealthStatus
         icon={icon}

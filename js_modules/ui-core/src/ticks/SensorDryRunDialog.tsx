@@ -29,11 +29,12 @@ import {
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {useTrackEvent} from '../app/analytics';
+import {showMutationErrorToast} from '../app/showMutationErrorToast';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {DELETE_DYNAMIC_PARTITIONS_MUTATION} from '../assets/DeleteDynamicPartitionsDialog';
 import {
@@ -71,6 +72,7 @@ type Props = {
   currentCursor: string;
   isOpen: boolean;
   jobName: string;
+  canUpdateCursor: boolean;
 };
 
 export const SensorDryRunDialog = (props: Props) => {
@@ -88,7 +90,14 @@ export const SensorDryRunDialog = (props: Props) => {
   );
 };
 
-const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
+const SensorDryRun = ({
+  repoAddress,
+  name,
+  currentCursor,
+  onClose,
+  jobName,
+  canUpdateCursor,
+}: Props) => {
   const trackEvent = useTrackEvent();
 
   const {
@@ -182,36 +191,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     const {data} = await setCursorMutation({
       variables: {sensorSelector, cursor},
     });
-    if (data?.setSensorCursor.__typename === 'Sensor') {
+    if (!showMutationErrorToast(data?.setSensorCursor, 'Sensor', 'Could not set cursor value.')) {
       showToast({message: 'Cursor value updated', intent: 'success'});
       onClose();
-    } else if (data?.setSensorCursor) {
-      const error = data.setSensorCursor;
-      showToast({
-        intent: 'danger',
-        message: (
-          <Box flex={{direction: 'row', gap: 8}}>
-            <div>Could not set cursor value.</div>
-            <ButtonLink
-              color={Colors.accentReversed()}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  title: 'Python Error',
-                  body:
-                    error.__typename === 'PythonError' ? (
-                      <PythonErrorInfo error={error} />
-                    ) : (
-                      'Sensor not found'
-                    ),
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Box>
-        ),
-      });
     }
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation, onClose]);
 
@@ -382,6 +364,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       const numRunRequests = runRequests?.length || 0;
       const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
       const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
+      const cannotCommitCursor =
+        !!sensorExecutionData?.evaluationResult?.cursor && !canUpdateCursor;
 
       if (error) {
         return (
@@ -394,10 +378,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Box flex={{direction: 'row', gap: 8}}>
             <Button onClick={onClose}>Close</Button>
 
-            <Tooltip content="Commits tick result" placement="top-end">
+            <Tooltip
+              content={cannotCommitCursor ? DEFAULT_DISABLED_REASON : 'Commits tick result'}
+              placement="top-end"
+            >
               <Button
                 icon={<Icon name="check_filled" />}
                 intent="primary"
+                disabled={cannotCommitCursor}
                 onClick={onCommitTickResult}
                 data-testid={testId('commit-tick-result')}
               >
@@ -452,6 +440,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     submitting,
     onClose,
     onCommitTickResult,
+    canUpdateCursor,
     canApply,
     onApply,
     submitTest,

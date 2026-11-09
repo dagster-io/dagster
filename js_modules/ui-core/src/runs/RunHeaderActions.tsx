@@ -27,6 +27,7 @@ import {useMutation} from '../apollo-client';
 import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
+import {useUnscopedPermissions} from '../app/Permissions';
 import {useIsMobile} from '../app/layout/IsMobileContext';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
@@ -49,7 +50,7 @@ type VisibleDialog =
   | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
-  const canCreateIssue = useCanCreateIssueForRun(run.status);
+  const createIssue = useCanCreateIssueForRun(run.status);
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -60,6 +61,10 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const history = useHistory();
   // Icon-only on mobile, so the actions fit beside the run's status tags.
   const isMobile = useIsMobile();
+  const {
+    permissions: {canEditConcurrencyLimit},
+    disabledReasons,
+  } = useUnscopedPermissions();
 
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
@@ -127,12 +132,20 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />
-                    {canCreateIssue && (
-                      <MenuItem
-                        icon="issue"
-                        text="Create or link issue"
-                        onClick={() => setVisibleDialog('create-issue')}
-                      />
+                    {createIssue.visible && (
+                      <Tooltip
+                        content={createIssue.disabledReason}
+                        canShow={!createIssue.enabled}
+                        position="left"
+                        display="block"
+                      >
+                        <MenuItem
+                          icon="issue"
+                          text="Create or link issue"
+                          disabled={!createIssue.enabled}
+                          onClick={() => setVisibleDialog('create-issue')}
+                        />
+                      </Tooltip>
                     )}
                     <Tooltip content="Loadable in dagster-webserver-debug" position="left">
                       <MenuItem
@@ -159,11 +172,19 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                       />
                     ) : null}
                     {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
-                      <MenuItem
-                        text="Free concurrency slots"
-                        icon="lock"
-                        onClick={freeConcurrencySlots}
-                      />
+                      <Tooltip
+                        content={disabledReasons.canEditConcurrencyLimit}
+                        canShow={!canEditConcurrencyLimit}
+                        position="left"
+                        display="block"
+                      >
+                        <MenuItem
+                          text="Free concurrency slots"
+                          icon="lock"
+                          disabled={!canEditConcurrencyLimit}
+                          onClick={freeConcurrencySlots}
+                        />
+                      </Tooltip>
                     ) : null}
                   </>
                 ) : null}
@@ -244,7 +265,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           onClose={() => setVisibleDialog(null)}
         />
       ) : null}
-      {canCreateIssue && (
+      {createIssue.visible && (
         <CreateIssueForRunDialog
           isOpen={visibleDialog === 'create-issue'}
           onClose={() => setVisibleDialog(null)}

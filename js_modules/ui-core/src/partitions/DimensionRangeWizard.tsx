@@ -1,4 +1,12 @@
-import {Box, Button, ButtonLink, Colors, Icon, JoinedButtons} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonLink,
+  Colors,
+  Icon,
+  JoinedButtons,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {CreatePartitionDialog} from './CreatePartitionDialog';
@@ -9,6 +17,7 @@ import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
 import {convertToPartitionSelection} from './SpanRepresentation';
 import {detectDatePartitions} from './isDateFormattedPartitions';
 import {PartitionDateFilter, filterPartitionKeysByDate} from './partitionDateFilter';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {Range, rangesClippedToSelection} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
@@ -48,6 +57,10 @@ export const DimensionRangeWizard = ({
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress?.location);
 
   const datePartitionInfo = React.useMemo(
     () => (isTimeseries ? detectDatePartitions(partitionKeys) : null),
@@ -299,19 +312,25 @@ export const DimensionRangeWizard = ({
       </Box>
       <Box margin={{bottom: 8}}>
         {isDynamic && (
-          <ButtonLink
-            color={Colors.linkDefault()}
-            underline="hover"
-            onClick={() => {
-              setShowCreatePartition(true);
-            }}
-            data-testid={testId('add-partition-link')}
+          <Tooltip
+            content={disabledReasons.canEditDynamicPartitions}
+            canShow={!canEditDynamicPartitions}
           >
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <Icon name="add" size={24} />
-              <div>Add a partition</div>
-            </Box>
-          </ButtonLink>
+            <ButtonLink
+              disabled={!canEditDynamicPartitions}
+              color={Colors.linkDefault()}
+              underline="hover"
+              onClick={() => {
+                setShowCreatePartition(true);
+              }}
+              data-testid={testId('add-partition-link')}
+            >
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                <Icon name="add" size={24} />
+                <div>Add a partition</div>
+              </Box>
+            </ButtonLink>
+          </Tooltip>
         )}
         {isTimeseries && (
           <PartitionStatus

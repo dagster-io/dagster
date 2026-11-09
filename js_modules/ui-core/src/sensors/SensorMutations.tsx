@@ -4,9 +4,8 @@ import {
   StartSensorMutation,
   StopRunningSensorMutation,
 } from './types/SensorMutations.types';
-import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {showMutationErrorToast} from '../app/showMutationErrorToast';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 
 export const START_SENSOR_MUTATION = gql`
@@ -77,19 +76,11 @@ export const RESET_SENSOR_MUTATION = gql`
 export const displaySensorMutationErrors = (
   data: StartSensorMutation | StopRunningSensorMutation | ResetSensorMutation,
 ) => {
-  let error;
-  if ('startSensor' in data && data.startSensor.__typename === 'PythonError') {
-    error = data.startSensor;
-  } else if ('stopSensor' in data && data.stopSensor.__typename === 'PythonError') {
-    error = data.stopSensor;
-  } else if ('resetSensor' in data && data.resetSensor.__typename === 'PythonError') {
-    error = data.resetSensor;
-  }
-
-  if (error) {
-    showCustomAlert({
-      title: 'Sensor Response',
-      body: <PythonErrorInfo error={error} />,
-    });
+  if ('startSensor' in data) {
+    showMutationErrorToast(data.startSensor, 'Sensor', 'Could not start sensor.');
+  } else if ('stopSensor' in data) {
+    showMutationErrorToast(data.stopSensor, 'StopSensorMutationResult', 'Could not stop sensor.');
+  } else if ('resetSensor' in data) {
+    showMutationErrorToast(data.resetSensor, 'Sensor', 'Could not reset sensor.');
   }
 };

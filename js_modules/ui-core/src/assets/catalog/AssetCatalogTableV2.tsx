@@ -39,11 +39,13 @@ import {isHealthGroupBy, useAssetCatalogGroupAndSortBy} from './useAssetCatalogG
 import {useCatalogAssets} from './useCatalogAssets';
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {assertUnreachable} from '../../app/Util';
 import {currentPageAtom, useTrackEvent} from '../../app/analytics';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {useAllAssets} from '../../assets/AssetsCatalogTable';
+import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../../hooks/useSelectionReducer';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
@@ -56,6 +58,13 @@ import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 const SPLIT_PANEL_IDENTIFIER = 'asset-catalog-table';
+
+// Any tab not listed here (normally just 'assets') renders the table.
+const NON_TABLE_TABS = ['lineage', 'insights', 'alerts'] as const;
+type NonTableTab = (typeof NON_TABLE_TABS)[number];
+const isNonTableTab = (tab: string): tab is NonTableTab =>
+  (NON_TABLE_TABS as readonly string[]).includes(tab);
+const EMPTY_ASSET_KEYS: AssetKeyInput[] = [];
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {
@@ -94,9 +103,24 @@ export const AssetCatalogTableV2 = React.memo(() => {
   });
   const loading = selectionLoading && !filtered.length;
 
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
+    queryKey: 'selectedTab',
+    defaults: {selectedTab: 'assets'},
+    decode: (qs) =>
+      qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'assets',
+    encode: (b) => ({selectedTab: b || 'assets'}),
+  });
+
+  // Health data only feeds the table.
+  const tableHidden = isNonTableTab(selectedTab);
+
   const {liveDataByNode} = useAssetsHealthData({
-    assetKeys: useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
+    assetKeys: useMemo(
+      () => (tableHidden ? EMPTY_ASSET_KEYS : filtered.map((asset) => asAssetKeyInput(asset.key))),
+      [filtered, tableHidden],
+    ),
     loading,
+    skip: tableHidden,
   });
 
   const healthDataLoading = useMemo(() => {
@@ -126,21 +150,19 @@ export const AssetCatalogTableV2 = React.memo(() => {
   } = useAssetCatalogGroupAndSortBy({
     liveDataByNode,
     assetsByAssetKey,
-  });
-
-  const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
-    queryKey: 'selectedTab',
-    defaults: {selectedTab: 'assets'},
-    decode: (qs) =>
-      qs.selectedTab && typeof qs.selectedTab === 'string' ? qs.selectedTab : 'assets',
-    encode: (b) => ({selectedTab: b || 'assets'}),
+    skip: tableHidden,
   });
 
   const displayKeys = useMemo(() => {
+    // Health groupings omit assets whose health hasn't loaded, so pruning the
+    // selection against them would drop checked rows (e.g. on returning to this tab).
+    if (tableHidden || (healthDataLoading && isHealthGroupBy(groupBy))) {
+      return filtered.map((asset) => tokenForAssetKey(asset.key));
+    }
     return Object.values(groupedAndSorted).flatMap((group) =>
       group.assets.map((asset) => tokenForAssetKey(asset.key)),
     );
-  }, [groupedAndSorted]);
+  }, [filtered, groupBy, groupedAndSorted, healthDataLoading, tableHidden]);
 
   const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleMany}] =
     useSelectionReducer(displayKeys);
@@ -203,6 +225,33 @@ export const AssetCatalogTableV2 = React.memo(() => {
         </Box>
       );
     }
+    if (!isNonTableTab(selectedTab)) {
+      return (
+        <Table
+          assets={filtered}
+          grouped={groupedAndSorted}
+          loading={loading}
+          selectionLoading={selectionLoading}
+          selection={assetSelection}
+          onChangeSelection={setAssetSelection}
+          healthDataLoading={healthDataLoading}
+          tabs={tabs}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          checkedDisplayKeys={checkedDisplayKeys}
+          onToggleFactory={onToggleFactory}
+          onToggleGroup={onToggleGroup}
+          allGroups={allGroups}
+          SORT_ITEMS={SORT_ITEMS}
+          ITEMS_BY_KEY={ITEMS_BY_KEY}
+          hideConnectionAssets={hideConnectionAssets}
+          setHideConnectionAssets={setHideConnectionAssets}
+          connectionLocationNames={connectionLocationNames}
+        />
+      );
+    }
     switch (selectedTab) {
       case 'lineage':
         return (
@@ -232,31 +281,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
       case 'alerts':
         return <AssetCatalogAlerts tabs={tabs} selection={assetSelection} />;
       default:
-        return (
-          <Table
-            assets={filtered}
-            grouped={groupedAndSorted}
-            loading={loading}
-            selectionLoading={selectionLoading}
-            selection={assetSelection}
-            onChangeSelection={setAssetSelection}
-            healthDataLoading={healthDataLoading}
-            tabs={tabs}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            groupBy={groupBy}
-            setGroupBy={setGroupBy}
-            checkedDisplayKeys={checkedDisplayKeys}
-            onToggleFactory={onToggleFactory}
-            onToggleGroup={onToggleGroup}
-            allGroups={allGroups}
-            SORT_ITEMS={SORT_ITEMS}
-            ITEMS_BY_KEY={ITEMS_BY_KEY}
-            hideConnectionAssets={hideConnectionAssets}
-            setHideConnectionAssets={setHideConnectionAssets}
-            connectionLocationNames={connectionLocationNames}
-          />
-        );
+        return assertUnreachable(selectedTab);
     }
   };
 

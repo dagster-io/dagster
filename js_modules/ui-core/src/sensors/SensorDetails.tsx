@@ -144,6 +144,7 @@ export const SensorDetails = ({
               repoAddress={repoAddress}
               jobName={sensor.targets?.[0]?.pipelineName || ''}
               sensorType={sensor.sensorType}
+              canUpdateCursor={sensor.hasCursorUpdatePermissions}
             />
           </Box>
         }

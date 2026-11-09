@@ -207,6 +207,14 @@ dependencies = [
 # set — uv installs the deps and never builds `ty-master` itself.
 package = false
 exclude-newer = "48h"
+# TEMPORARY: let authlib 1.9.5 (published 2026-11-05, completes the CVE-2026-114615
+# fix) and mlflow 3.18.0 (published 2026-11-03, the first release that allows
+# pyarrow 26) through the 48h cooldown. Remove this line after 2026-11-07.
+exclude-newer-package = { authlib = "2026-11-05T17:00:00Z", mlflow = "2026-11-04T00:00:00Z", mlflow-skinny = "2026-11-04T00:00:00Z", mlflow-tracing = "2026-11-04T00:00:00Z" }
+# dagster-gemini's google-generativeai pins protobuf<6, which holds dbt-common at
+# 1.27.1 and its `deepdiff<8` cap. This env only type-checks, so lift the cap to
+# get the deepdiff release that fixes its critical advisory.
+override-dependencies = ["deepdiff>=8.6.1"]
 
 [tool.uv.sources]
 # In-repo editable paths. Relative to this pyproject.toml
@@ -357,7 +365,7 @@ sling_decorator   = { path = "../../examples/experimental/sling_decorator",   ed
 
 [tool.ty.environment]
 # Minimum version of Python on which code must run.
-python-version = "3.10"
+python-version = "3.11"
 
 # `quickstart_etl` is a src-layout example that is not installed into this env, so its tests
 # cannot resolve the package by name without this.
@@ -389,12 +397,7 @@ unused-ignore-comment = "ignore"
 
 # Paths owned by this env (previously `ty/master/ty.yaml`'s `paths:`).
 #
-# `.buildkite/` is intentionally not enrolled: it is not in pyright's
-# include.txt either, and buildkite-shared uses 3.11+ stdlib features
-# (typing.Self, enum.StrEnum, tomllib) while this env's
-# `tool.ty.environment.python-version` is "3.10" — checking it produces
-# ~90 cascading false positives. Enroll once buildkite-shared is either
-# made 3.10-compatible or this env is bumped.
+# `.buildkite/` is not enrolled: it is not in pyright's include.txt either.
 include = [
   "examples",
   "python_modules",
@@ -422,11 +425,6 @@ exclude = [
   # Vendored third-party code (croniter, dateutil).
   "python_modules/dagster/dagster/_vendored",
 
-  # ty runner itself — uses 3.11+ stdlib (tomllib, typing.NotRequired) so
-  # it can run without external deps in CI's system Python (3.12). This
-  # env's python-version is 3.10 (matching dagster's minimum), so ty
-  # would flag those imports as unresolved here.
-  "scripts/run-ty.py",
 
   # Airflow-bound packages: owned by (and pinned to sqlalchemy 1.x in) the
   # `airflow` ty env. Mirrors that env's include set so the two partition the

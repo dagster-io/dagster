@@ -4,7 +4,7 @@ import dagster as dg
 
 
 def utc_now_str() -> str:
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d, %H:%M:%S")
+    return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d, %H:%M:%S")
 
 
 @dg.sensor()

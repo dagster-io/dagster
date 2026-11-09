@@ -54,6 +54,7 @@ export type SingleSensorQuery = {
         description: string | null;
         name: string;
         minIntervalSeconds: number;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
         metadata: {
@@ -107,4 +108,4 @@ export type SingleSensorQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SingleSensorQueryVersion = '713c94fb89ff1edd1ca419cb2b5eabe4f317dcef7529a3fd6a186ca28e56b62e';
+export const SingleSensorQueryVersion = '91c21e9bd5951950efdf888d1fdfc7a18eda81463ff4f0bcb1468e3e12851baf';

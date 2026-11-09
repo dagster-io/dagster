@@ -83,6 +83,7 @@ export type WorkspaceSensorFragment = {
   id: string;
   name: string;
   sensorType: Types.SensorType;
+  hasCursorUpdatePermissions: boolean;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
   sensorState: {
@@ -136,6 +137,7 @@ export type PartialWorkspaceRepositoryFragment = {
     id: string;
     name: string;
     sensorType: Types.SensorType;
+    hasCursorUpdatePermissions: boolean;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
@@ -221,6 +223,7 @@ export type PartialWorkspaceLocationFragment = {
       id: string;
       name: string;
       sensorType: Types.SensorType;
+      hasCursorUpdatePermissions: boolean;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
@@ -328,6 +331,7 @@ export type PartialWorkspaceLocationNodeFragment = {
             id: string;
             name: string;
             sensorType: Types.SensorType;
+            hasCursorUpdatePermissions: boolean;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
@@ -609,6 +613,7 @@ export type WorkspaceLocationFragment = {
       id: string;
       name: string;
       sensorType: Types.SensorType;
+      hasCursorUpdatePermissions: boolean;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
@@ -878,6 +883,7 @@ export type LocationWorkspaceQuery = {
                   id: string;
                   name: string;
                   sensorType: Types.SensorType;
+                  hasCursorUpdatePermissions: boolean;
                   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
                   sensorState: {
@@ -1198,6 +1204,7 @@ export type WorkspaceLocationNodeFragment = {
             id: string;
             name: string;
             sensorType: Types.SensorType;
+            hasCursorUpdatePermissions: boolean;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
@@ -1342,6 +1349,7 @@ export type WorkspaceRepositoryLocationFragment = {
       id: string;
       name: string;
       sensorType: Types.SensorType;
+      hasCursorUpdatePermissions: boolean;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
@@ -1477,6 +1485,7 @@ export type WorkspaceRepositoryFragment = {
     id: string;
     name: string;
     sensorType: Types.SensorType;
+    hasCursorUpdatePermissions: boolean;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
@@ -1569,7 +1578,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '8e4dff45086e9f3bdb86af2001e711d1c881d59d80266df3fc410ed599d16050';
+export const LocationWorkspaceQueryVersion = 'f6ebba13d98a3cd7382c1c3a4d811207336ced9001882adfd3b66b0a50173a90';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

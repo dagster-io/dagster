@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "buildkite-shared"
 version = "0.0.1"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = "Shared tools for buildkite automation"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "development_to_production"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = "Dagster example of local development and production deployment."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"

@@ -117,6 +117,8 @@ export const extractPermissions = (
     canEditWorkspace: permissionOrFallback('edit_workspace'),
     canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
     canEditDynamicPartitions: permissionOrFallback('edit_dynamic_partitions'),
+    canEditAppManagedComponents: permissionOrFallback('edit_app_managed_components'),
+    canRefreshComponentState: permissionOrFallback('refresh_component_state'),
   };
 };
 

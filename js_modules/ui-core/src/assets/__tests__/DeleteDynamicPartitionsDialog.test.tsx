@@ -5,7 +5,12 @@ import userEvent from '@testing-library/user-event';
 import {useContext} from 'react';
 
 import {CloudOSSContext} from '../../app/CloudOSSContext';
-import {buildDeleteDynamicPartitionsSuccess, buildMutation} from '../../graphql/builders';
+import {
+  buildAssetNode,
+  buildDeleteDynamicPartitionsSuccess,
+  buildMutation,
+} from '../../graphql/builders';
+import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {
   buildQueryMock,
   mockViewportClientRect,
@@ -16,9 +21,20 @@ import {
   DeleteDynamicPartitionsDialog,
 } from '../DeleteDynamicPartitionsDialog';
 import {ONE_DIMENSIONAL_DYNAMIC_ASSET} from '../__fixtures__/PartitionHealth.fixtures';
+import {
+  AssetsPermissionsQuery,
+  AssetsPermissionsQueryVariables,
+} from '../types/useAssetPermissions.types';
+import {ASSETS_PERMISSIONS_QUERY} from '../useAssetPermissions';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
-const WipeOnDeleteEnabled = ({children}: {children: React.ReactNode}) => {
+const WipeOnDeleteFeature = ({
+  canWipeAssets,
+  children,
+}: {
+  canWipeAssets: boolean;
+  children: React.ReactNode;
+}) => {
   const value = useContext(CloudOSSContext);
   return (
     <CloudOSSContext.Provider
@@ -27,10 +43,22 @@ const WipeOnDeleteEnabled = ({children}: {children: React.ReactNode}) => {
         featureContext: {...value.featureContext, canWipeOnDeleteDynamicPartitions: true},
       }}
     >
-      {children}
+      <TestPermissionsProvider
+        unscopedOverrides={{canWipeAssets: {enabled: canWipeAssets, disabledReason: ''}}}
+      >
+        {children}
+      </TestPermissionsProvider>
     </CloudOSSContext.Provider>
   );
 };
+
+const WipeOnDeleteWithLocationPermission = ({children}: {children: React.ReactNode}) => (
+  <WipeOnDeleteFeature canWipeAssets>{children}</WipeOnDeleteFeature>
+);
+
+const WipeOnDeleteWithoutLocationPermission = ({children}: {children: React.ReactNode}) => (
+  <WipeOnDeleteFeature canWipeAssets={false}>{children}</WipeOnDeleteFeature>
+);
 
 const buildDeletePartitionsMock = (wipeMaterializations: boolean) => ({
   request: {
@@ -51,7 +79,13 @@ const buildDeletePartitionsMock = (wipeMaterializations: boolean) => ({
 
 const renderDialog = (
   deletePartitionsMock: ReturnType<typeof buildDeletePartitionsMock>,
-  wrapper?: React.ComponentType<{children: React.ReactNode}>,
+  {
+    wrapper,
+    hasWipePermission = true,
+  }: {
+    wrapper?: React.ComponentType<{children: React.ReactNode}>;
+    hasWipePermission?: boolean;
+  } = {},
 ) => {
   render(
     <MockedProvider
@@ -60,6 +94,11 @@ const renderDialog = (
           query: PARTITION_HEALTH_QUERY,
           variables: {assetKey: {path: ['asset']}},
           data: ONE_DIMENSIONAL_DYNAMIC_ASSET,
+        }),
+        buildQueryMock<AssetsPermissionsQuery, AssetsPermissionsQueryVariables>({
+          query: ASSETS_PERMISSIONS_QUERY,
+          variables: {assetKeys: [{path: ['asset']}]},
+          data: {assetNodes: [buildAssetNode({id: 'asset-permissions', hasWipePermission})]},
         }),
         deletePartitionsMock,
       ]}
@@ -114,7 +153,7 @@ describe('DeleteDynamicPartitionsDialog', () => {
     const user = userEvent.setup();
     const deletePartitionsMock = buildDeletePartitionsMock(true);
 
-    renderDialog(deletePartitionsMock, WipeOnDeleteEnabled);
+    renderDialog(deletePartitionsMock, {wrapper: WipeOnDeleteWithLocationPermission});
 
     // the checkbox renders and defaults to checked
     const checkbox = await screen.findByRole('checkbox');
@@ -129,10 +168,45 @@ describe('DeleteDynamicPartitionsDialog', () => {
     const user = userEvent.setup();
     const deletePartitionsMock = buildDeletePartitionsMock(false);
 
-    renderDialog(deletePartitionsMock, WipeOnDeleteEnabled);
+    renderDialog(deletePartitionsMock, {wrapper: WipeOnDeleteWithLocationPermission});
 
     await user.click(await screen.findByRole('checkbox'));
     expect(screen.getByRole('checkbox')).not.toBeChecked();
+
+    await selectPartitionsAndDelete(user);
+
+    expect(deletePartitionsMock.result).toHaveBeenCalled();
+  });
+
+  it('should not offer to wipe materializations without the asset wipe permission', async () => {
+    const user = userEvent.setup();
+    const deletePartitionsMock = buildDeletePartitionsMock(false);
+
+    renderDialog(deletePartitionsMock, {
+      wrapper: WipeOnDeleteWithLocationPermission,
+      hasWipePermission: false,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox')).toBeDisabled();
+    });
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
+
+    await selectPartitionsAndDelete(user);
+
+    expect(deletePartitionsMock.result).toHaveBeenCalled();
+  });
+
+  it('should offer to wipe materializations with only the asset wipe permission', async () => {
+    const user = userEvent.setup();
+    const deletePartitionsMock = buildDeletePartitionsMock(true);
+
+    renderDialog(deletePartitionsMock, {wrapper: WipeOnDeleteWithoutLocationPermission});
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox')).toBeEnabled();
+    });
+    expect(screen.getByRole('checkbox')).toBeChecked();
 
     await selectPartitionsAndDelete(user);
 

@@ -22,6 +22,7 @@ export type SensorSwitchFragment = {
   __typename: 'Sensor';
   id: string;
   name: string;
+  hasCursorUpdatePermissions: boolean;
   sensorType: Types.SensorType;
   sensorState: {
     __typename: 'InstigationState';

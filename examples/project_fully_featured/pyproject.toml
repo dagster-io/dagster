@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "project_fully_featured"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.11,<3.12"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 dependencies = [
     "dagster",

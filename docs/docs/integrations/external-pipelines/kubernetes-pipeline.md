@@ -100,7 +100,7 @@ At this point you can execute the rest of your Kubernetes code as normal, invoki
 Next, you'll package the script into a container image using a `Dockerfile`. For example:
 
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN pip install dagster-pipes
 

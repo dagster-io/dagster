@@ -8,10 +8,11 @@ version = "1!0+dev"
 description = "Package for wandb Dagster components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
-    "wandb>=0.15.11,<1.0",
+    # 0.30 removed wandb.sdk.internal.internal_api, which resources.py imports.
+    "wandb>=0.15.11,<0.30",
 ]
 
 [project.urls]

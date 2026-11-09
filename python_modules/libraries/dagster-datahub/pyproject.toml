@@ -8,7 +8,7 @@ version = "1!0+dev"
 description = "Package for Datahub-specific Dagster framework solid and resource components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "acryl-datahub[datahub-rest, datahub-kafka]",
     "dagster==1!0+dev",
@@ -28,6 +28,9 @@ test = [
 
 [tool.uv]
 exclude-newer = "48h"
+# TEMPORARY: let authlib 1.9.5 (published 2026-11-05, completes the CVE-2026-114615
+# fix) through the 48h cooldown. Remove this line after 2026-11-07.
+exclude-newer-package = { authlib = "2026-11-05T17:00:00Z" }
 
 [tool.uv.sources]
 dagster = { path = "../../dagster", editable = true }
