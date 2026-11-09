@@ -30,6 +30,10 @@ You can connect to the Dagster+ MCP server using OAuth or by manually specifying
 <Tabs>
 <TabItem value="claude" label="Claude Code">
 
+The Dagster+ MCP server can be added to Claude Code by adding the official [Dagster+ MCP Connector](https://claude.ai/directory/dagster-mcp) to your Anthropic account, or by manually adding the MCP server to Claude Code.
+
+To manually add the MCP server:
+
 1. Install and sign in to [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup) using the setup guide.
 
 2. Within your terminal, run the following command:
