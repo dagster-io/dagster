@@ -10,9 +10,8 @@ from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesTempFileContextInjector, PipesTempFileMessageReader
 from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 from dagster_prefect.resource import PrefectResource
-from prefect import flow, task
+from prefect import flow
 from prefect.client.schemas.objects import State, StateType
-from prefect.runtime import task_run as task_run_runtime
 from prefect.states import Cancelled, Completed, Crashed, Failed, Running
 
 # The scripted client never reaches the API, so point it somewhere that would fail loudly
@@ -145,16 +144,6 @@ def reads_back() -> int:
     return 1
 
 
-@task
-def report_task_run_id() -> str:
-    return task_run_runtime.id
-
-
-@flow(name="reads-back-with-task")
-def reads_back_with_task() -> str:
-    return report_task_run_id()
-
-
 def test_read_state_of_a_real_flow_run(prefect_resource: PrefectResource) -> None:
     with prefect_resource.get_client() as prefect_client:
         flow_run = prefect_client.create_flow_run(reads_back)
@@ -167,11 +156,12 @@ def test_read_state_of_a_real_flow_run(prefect_resource: PrefectResource) -> Non
     assert state.type == flow_run.state.type
 
 
-def test_read_state_of_a_real_task_run(prefect_resource: PrefectResource) -> None:
-    task_run_id = reads_back_with_task()
+def test_read_state_of_a_real_task_run(
+    prefect_resource: PrefectResource, finished_task_run_id: str
+) -> None:
     client = StubPipesPrefectClient(prefect=prefect_resource)
 
-    state = client._read_state(PrefectRun(kind="task-run", id=UUID(task_run_id)))  # noqa: SLF001
+    state = client._read_state(PrefectRun(kind="task-run", id=UUID(finished_task_run_id)))  # noqa: SLF001
 
     assert state is not None
     assert state.is_completed()

@@ -1,9 +1,8 @@
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_prefect.resource import PrefectResource, is_final_state, is_successful_state
-from prefect import flow, task
+from prefect import flow
 from prefect.client.schemas.objects import StateType
-from prefect.runtime import task_run as task_run_runtime
 from prefect.states import Cancelled, Completed, Crashed, Failed, Running, State
 
 FLOW_RUN_ID = "11111111-1111-1111-1111-111111111111"
@@ -12,16 +11,6 @@ FLOW_RUN_ID = "11111111-1111-1111-1111-111111111111"
 @flow(name="record-order")
 def record_order(as_of: str = "latest") -> str:
     return as_of
-
-
-@task
-def report_task_run_id() -> str:
-    return task_run_runtime.id
-
-
-@flow(name="with-a-task")
-def with_a_task() -> str:
-    return report_task_run_id()
 
 
 @pytest.fixture
@@ -68,12 +57,10 @@ def test_cancel_flow_run(prefect_resource: PrefectResource, deployment_name: str
     assert canceled.state.type in (StateType.CANCELLING, StateType.CANCELLED)
 
 
-def test_get_task_run(prefect_resource: PrefectResource) -> None:
-    task_run_id = with_a_task()
+def test_get_task_run(prefect_resource: PrefectResource, finished_task_run_id: str) -> None:
+    task_run = prefect_resource.get_task_run(finished_task_run_id)
 
-    task_run = prefect_resource.get_task_run(task_run_id)
-
-    assert str(task_run.id) == task_run_id
+    assert str(task_run.id) == finished_task_run_id
     assert is_successful_state(task_run.state)
 
 

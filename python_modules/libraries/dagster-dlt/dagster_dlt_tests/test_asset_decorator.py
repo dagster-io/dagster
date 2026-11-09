@@ -425,7 +425,7 @@ def test_resource_failure_aware_materialization(dlt_pipeline: Pipeline) -> None:
 
     temporary_duckdb_path = f"{dlt_pipeline.pipeline_name}.duckdb"
     with duckdb.connect(database=temporary_duckdb_path, read_only=False) as conn:
-        row = conn.execute("select count(*) from example.repos").fetchone()
+        row = conn.execute("select count(*) from example.repos").fetchall()[0]
         assert row and row[0] == 3
         conn.sql("drop table example.repos")
 

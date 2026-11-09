@@ -75,6 +75,7 @@ markers = [
   "subchart: Helm subchart tests",
   "mark_redis: Requires Redis",
   "mark_rabbitmq: Requires RabbitMQ",
+  "nightly: Runs only in the nightly dagster-k8s suite",
 
   # dagstermill
   "notebook_test: Executes a notebook",
