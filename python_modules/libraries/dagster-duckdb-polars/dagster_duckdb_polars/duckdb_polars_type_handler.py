@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 import polars as pl
@@ -7,6 +8,9 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
 from pydantic import Field
+
+if TYPE_CHECKING:
+    from duckdb import DuckDBPyConnection
 
 
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -44,6 +48,10 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             deleted. Defaults to False, which preserves the legacy behavior.
 
     """
+
+    # Class-level default so subclasses whose __init__ does not call
+    # super().__init__() keep their pre-existing (legacy) behaviour.
+    _recreate_table_on_schema_mismatch: bool = False
 
     def __init__(self, recreate_table_on_schema_mismatch: bool = False) -> None:
         self._recreate_table_on_schema_mismatch = check.bool_param(
@@ -131,13 +139,25 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         return [pl.DataFrame]
 
 
-def _existing_table_columns(connection, table_slice: TableSlice) -> list[str] | None:
+def _catalog_identifier(identifier: str) -> str:
+    # DuckDB stores the catalog name without SQL quoting; "" inside a
+    # quoted identifier is an escaped double-quote. Unquoted spellings
+    # are already catalog names (case handled by lower() in SQL).
+    stripped = identifier.strip()
+    if len(stripped) >= 2 and stripped.startswith('"') and stripped.endswith('"'):
+        return stripped[1:-1].replace('""', '"')
+    return identifier
+
+
+def _existing_table_columns(
+    connection: "DuckDBPyConnection", table_slice: TableSlice
+) -> list[str] | None:
     """Returns the table's ordered column names, or None if the table does not exist."""
     connection.execute(
         "SELECT column_name FROM information_schema.columns "
         "WHERE lower(table_schema) = lower(?) AND lower(table_name) = lower(?) "
         "ORDER BY ordinal_position",
-        [table_slice.schema, table_slice.table],
+        [_catalog_identifier(table_slice.schema), _catalog_identifier(table_slice.table)],
     )
     rows = connection.fetchall()
     if not rows:

@@ -28,7 +28,10 @@ from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager
-from dagster_duckdb_polars.duckdb_polars_type_handler import DuckDBPolarsTypeHandler
+from dagster_duckdb_polars.duckdb_polars_type_handler import (
+    DuckDBPolarsTypeHandler,
+    _existing_table_columns,
+)
 
 
 def test_handle_output_empty_dataframe():
@@ -923,3 +926,94 @@ def test_schema_mismatch_respects_subclass_type_handlers(tmp_path):
     stock_handlers = list(stock._handlers_by_type.values())  # noqa: SLF001
     assert [type(h) for h in stock_handlers] == [DuckDBPolarsTypeHandler]
     assert stock_handlers[0]._recreate_table_on_schema_mismatch  # noqa: SLF001
+
+
+def test_schema_mismatch_quoted_schema_repeated_write(tmp_path):
+    state = {}
+    db_path = os.path.join(tmp_path, "schema_test.duckdb")
+    manager = DuckDBPolarsIOManager(
+        database=db_path,
+        schema='"custom-schema"',
+        recreate_table_on_schema_mismatch=True,
+    )
+    evolving_table = _evolving_asset(state)
+    state["df"] = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    state["df"] = pl.DataFrame({"a": [5, 6], "b": [7, 8]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    out = _read_schema_table(db_path, '"custom-schema".evolving_table')
+    assert out.columns == ["a", "b"]
+    assert out["a"].to_list() == [5, 6]
+    state["df"] = pl.DataFrame({"a": [9], "b": [10], "c": [11]})
+    assert materialize([evolving_table], resources={"io_manager": manager}).success
+    out = _read_schema_table(db_path, '"custom-schema".evolving_table')
+    assert out.columns == ["a", "b", "c"]
+    assert out["c"].to_list() == [11]
+
+
+def test_existing_table_columns_quoted_identifiers(tmp_path):
+    db_path = os.path.join(tmp_path, "quoted.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    conn.execute('create schema "my-schema";')
+    conn.execute('create table "my-schema"."my-table" (a BIGINT, b VARCHAR);')
+    conn.execute('create schema "weird""schema";')
+    conn.execute('create table "weird""schema".t1 (x BIGINT);')
+    assert _existing_table_columns(
+        conn,
+        TableSlice(
+            table='"my-table"',
+            schema='"my-schema"',
+            database=db_path,
+            columns=None,
+            partition_dimensions=[],
+        ),
+    ) == ["a", "b"]
+    assert _existing_table_columns(
+        conn,
+        TableSlice(
+            table="t1",
+            schema='"weird""schema"',
+            database=db_path,
+            columns=None,
+            partition_dimensions=[],
+        ),
+    ) == ["x"]
+    assert (
+        _existing_table_columns(
+            conn,
+            TableSlice(
+                table='"missing-table"',
+                schema='"my-schema"',
+                database=db_path,
+                columns=None,
+                partition_dimensions=[],
+            ),
+        )
+        is None
+    )
+    conn.close()
+
+
+def test_schema_mismatch_legacy_subclass_without_super_init(tmp_path):
+    class LegacyHandler(DuckDBPolarsTypeHandler):
+        def __init__(self):
+            pass
+
+    assert LegacyHandler()._recreate_table_on_schema_mismatch is False  # noqa: SLF001
+    db_path = os.path.join(tmp_path, "legacy.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    LegacyHandler().handle_output(
+        build_output_context(),
+        TableSlice(
+            table="legacy_table",
+            schema="my_schema",
+            database=db_path,
+            columns=None,
+            partition_dimensions=[],
+        ),
+        pl.DataFrame({"a": [1]}),
+        conn,
+    )
+    rows = conn.execute("SELECT a FROM my_schema.legacy_table").fetchall()
+    assert rows == [(1,)]
+    conn.close()
