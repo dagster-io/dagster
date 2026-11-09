@@ -95,6 +95,9 @@ dagsterWebserver:
   # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
   dbPoolMaxOverflow: ~
 
+  # Enable SQLAlchemy pool pre-ping on checkout. Unset uses webserver default (true).
+  dbPoolPrePing: ~
+
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 

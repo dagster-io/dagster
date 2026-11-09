@@ -89,7 +89,11 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.optimize()
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
@@ -99,6 +103,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             pool_size=1,
             pool_recycle=pool_recycle,
             max_overflow=max_overflow,
+            pool_pre_ping=pool_pre_ping,
         )
 
     @property
