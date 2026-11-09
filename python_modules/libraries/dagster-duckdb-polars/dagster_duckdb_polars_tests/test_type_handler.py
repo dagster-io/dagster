@@ -1108,3 +1108,51 @@ def test_schema_mismatch_non_ascii_case_schemas_not_merged(tmp_path):
     # Mixed ASCII-case spellings still resolve.
     assert _existing_table_columns(conn, _slice('"Ä"', '"Shared_Table"')) == ["a", "b"]
     conn.close()
+
+
+def test_schema_mismatch_padded_schema_repeated_write(tmp_path):
+    db_path = os.path.join(tmp_path, "padded.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    handler = DuckDBPolarsTypeHandler(recreate_table_on_schema_mismatch=True)
+    # DuckDB trims whitespace around unquoted identifiers in SQL text, so the
+    # table is stored under the bare name; the catalog lookup must strip the
+    # padding too, or a matching second write looks like a missing table.
+    table_slice = TableSlice(
+        table="padded_table",
+        schema=" custom_schema ",
+        database=db_path,
+        columns=None,
+        partition_dimensions=[],
+    )
+    handler.handle_output(
+        build_output_context(), table_slice, pl.DataFrame({"a": [1, 2], "b": [3, 4]}), conn
+    )
+    handler.handle_output(
+        build_output_context(), table_slice, pl.DataFrame({"a": [5, 6], "b": [7, 8]}), conn
+    )
+    rows = conn.execute("SELECT * FROM custom_schema.padded_table ORDER BY a").fetchall()
+    assert rows == [(1, 3), (2, 4), (5, 7), (6, 8)]
+
+    def _slice(schema, table):
+        return TableSlice(
+            table=table,
+            schema=schema,
+            database=db_path,
+            columns=None,
+            partition_dimensions=[],
+        )
+
+    # Padded unquoted spellings resolve to the same table.
+    assert _existing_table_columns(conn, _slice(" custom_schema ", " padded_table ")) == [
+        "a",
+        "b",
+    ]
+    conn.execute("create schema public;")
+    conn.execute("create table public.public_table (p BIGINT);")
+    assert _existing_table_columns(conn, _slice(" public ", " public_table ")) == ["p"]
+    # Spaces inside quotes are part of the catalog name and must be preserved,
+    # even when the quoted spelling itself is padded.
+    conn.execute('create schema " spaced schema ";')
+    conn.execute('create table " spaced schema ".spaced_table (s BIGINT);')
+    assert _existing_table_columns(conn, _slice(' " spaced schema " ', "spaced_table")) == ["s"]
+    conn.close()

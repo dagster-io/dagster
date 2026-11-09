@@ -152,7 +152,7 @@ def _catalog_identifier(identifier: str) -> str:
     stripped = identifier.strip()
     if len(stripped) >= 2 and stripped.startswith('"') and stripped.endswith('"'):
         return stripped[1:-1].replace('""', '"')
-    return identifier
+    return stripped
 
 
 # DuckDB folds identifier case for ASCII letters only, so e.g. "Ä" and "ä"
