@@ -220,7 +220,7 @@ def test_op_tags():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Could not JSON encode value",
+        match=r'Could not JSON encode value "<.*\.X object at 0x[0-9a-f]+>"',
     ):
 
         @dg.op(tags={"bad": X()})
