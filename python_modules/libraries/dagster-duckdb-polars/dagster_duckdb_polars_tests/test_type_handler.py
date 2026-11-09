@@ -1017,3 +1017,65 @@ def test_schema_mismatch_legacy_subclass_without_super_init(tmp_path):
     rows = conn.execute("SELECT a FROM my_schema.legacy_table").fetchall()
     assert rows == [(1,)]
     conn.close()
+
+
+def test_schema_mismatch_existing_columns_scoped_to_current_catalog(tmp_path):
+    main_path = os.path.join(tmp_path, "main_db.duckdb")
+    other_path = os.path.join(tmp_path, "other_db.duckdb")
+    other = duckdb.connect(database=other_path, config={"custom_user_agent": "dagster"})
+    other.execute("create schema my_schema;")
+    other.execute("create table my_schema.shared_table (x BIGINT, y BIGINT);")
+    other.execute("create table my_schema.only_other (z BIGINT);")
+    other.close()
+
+    conn = duckdb.connect(database=main_path, config={"custom_user_agent": "dagster"})
+    conn.execute("create schema my_schema;")
+    conn.execute("create table my_schema.shared_table (a BIGINT, b BIGINT);")
+    conn.execute(f"ATTACH '{other_path}' AS other_db;")
+
+    def _slice(table):
+        return TableSlice(
+            table=table,
+            schema="my_schema",
+            database=main_path,
+            columns=None,
+            partition_dimensions=[],
+        )
+
+    assert _existing_table_columns(conn, _slice("shared_table")) == ["a", "b"]
+    assert _existing_table_columns(conn, _slice("only_other")) is None
+    conn.close()
+
+
+def test_schema_mismatch_case_colliding_columns_repeated_write(tmp_path):
+    db_path = os.path.join(tmp_path, "case_collision.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    handler = DuckDBPolarsTypeHandler(recreate_table_on_schema_mismatch=True)
+    table_slice = TableSlice(
+        table="collide_table",
+        schema="my_schema",
+        database=db_path,
+        columns=None,
+        partition_dimensions=[],
+    )
+    # DuckDB stores the case-colliding "A" as "A_1"; an identical second write
+    # must take the insert path (append), not be mistaken for a schema change.
+    handler.handle_output(
+        build_output_context(), table_slice, pl.DataFrame({"a": [1], "A": [10]}), conn
+    )
+    handler.handle_output(
+        build_output_context(), table_slice, pl.DataFrame({"a": [2], "A": [20]}), conn
+    )
+    rows = conn.execute("SELECT * FROM my_schema.collide_table ORDER BY a").fetchall()
+    assert rows == [(1, 10), (2, 20)]
+    # A genuinely changed schema must still drop and recreate.
+    handler.handle_output(
+        build_output_context(),
+        table_slice,
+        pl.DataFrame({"a": [3], "A": [30], "b": [300]}),
+        conn,
+    )
+    rows = conn.execute("SELECT * FROM my_schema.collide_table ORDER BY a").fetchall()
+    assert rows == [(3, 30, 300)]
+    assert _existing_table_columns(conn, table_slice) == ["a", "A_1", "b"]
+    conn.close()

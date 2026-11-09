@@ -71,12 +71,17 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             connection.execute(f"create schema if not exists {table_slice.schema};")
             if self._recreate_table_on_schema_mismatch:
                 existing_columns = _existing_table_columns(connection, table_slice)
+                # Compare against the names DuckDB itself assigns to obj_arrow:
+                # it renames case-colliding columns on write (a/A -> a/A_1), so
+                # the Polars names would never match the stored table's.
+                connection.execute("DESCRIBE SELECT * FROM obj_arrow")
+                incoming_columns = [row[0] for row in connection.fetchall()]
                 if existing_columns is None:
                     connection.execute(
                         f"create table {table_slice.schema}.{table_slice.table} as select * from"
                         " obj_arrow;"
                     )
-                elif existing_columns == list(obj.columns):
+                elif existing_columns == incoming_columns:
                     connection.execute(
                         f"insert into {table_slice.schema}.{table_slice.table} select * from obj_arrow"
                     )
@@ -84,7 +89,7 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
                     raise DagsterInvariantViolationError(
                         f"DuckDB table {table_slice.schema}.{table_slice.table} has columns "
                         f"{existing_columns} but the output DataFrame has columns "
-                        f"{list(obj.columns)}. Refusing to recreate the table for this "
+                        f"{incoming_columns}. Refusing to recreate the table for this "
                         "partitioned output because dropping it would delete rows belonging "
                         "to other partitions. Migrate the table manually or write the "
                         "partitioned asset with a consistent schema."
@@ -156,6 +161,7 @@ def _existing_table_columns(
     connection.execute(
         "SELECT column_name FROM information_schema.columns "
         "WHERE lower(table_schema) = lower(?) AND lower(table_name) = lower(?) "
+        "AND table_catalog = current_database() "
         "ORDER BY ordinal_position",
         [_catalog_identifier(table_slice.schema), _catalog_identifier(table_slice.table)],
     )
