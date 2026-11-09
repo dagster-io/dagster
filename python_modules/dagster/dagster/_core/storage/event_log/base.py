@@ -55,6 +55,7 @@ from dagster._utils.warnings import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.asset_check_state import AssetCheckState
+    from dagster._core.storage.dagster_run import DagsterRun
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -442,6 +443,20 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def store_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
         for event in events:
             self.store_event(event)
+
+    @property
+    def supports_queued_run_cancellation(self) -> bool:
+        """Whether queued-run state and cancellation events can be committed atomically."""
+        return False
+
+    def cancel_queued_runs(self, runs: Sequence["DagsterRun"]) -> Sequence[str]:
+        """Atomically cancel still-queued runs and return the IDs actually canceled.
+
+        Implementations must revalidate queued status, preserve both cancellation events and
+        end timestamps, and commit state, events and notifications together. No automatic
+        replay is safe if the caller cannot determine whether the transaction committed.
+        """
+        raise NotImplementedError("This storage does not support atomic queued-run cancellation")
 
     @abstractmethod
     def delete_events(self, run_id: str) -> None:

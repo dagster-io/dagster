@@ -589,21 +589,32 @@ def cancel_backfill_runs_and_cancellation_complete(
                 break
 
         canceled_any_runs = True
-        for run in runs_to_cancel_in_iteration:
-            run_id = run.run_id
-            logger.info(f"Terminating submitted run {run_id}")
-
-            # in both cases this will synchonrously set its status to CANCELING or CANCELED,
-            # ensuring that it will not be returned in the next loop
-
-            if run.status == DagsterRunStatus.QUEUED:
-                instance.report_run_canceling(
-                    run,
-                    message="Canceling run from the queue.",
+        if runs_to_cancel_in_iteration[0].status == DagsterRunStatus.QUEUED:
+            # Re-read the page immediately before reporting cancellation. Runs that left the
+            # queue since selection need launcher termination rather than queued cancellation.
+            # This does not eliminate the coordinator's existing dequeue/cancel race.
+            current_runs = {
+                run.run_id: run
+                for run in instance.get_runs(
+                    RunsFilter(run_ids=[run.run_id for run in runs_to_cancel_in_iteration])
                 )
-                instance.report_run_canceled(run)
-            else:
-                instance.run_launcher.terminate(run_id)
+            }
+            runs_to_cancel_in_iteration = [
+                current_runs[run.run_id]
+                for run in runs_to_cancel_in_iteration
+                if run.run_id in current_runs
+            ]
+            queued_runs = [
+                run for run in runs_to_cancel_in_iteration if run.status == DagsterRunStatus.QUEUED
+            ]
+            for run in queued_runs:
+                logger.info(f"Canceling queued run {run.run_id}")
+            instance.report_run_cancellation_batch(queued_runs)
+
+        for run in runs_to_cancel_in_iteration:
+            if run.status != DagsterRunStatus.QUEUED and run.status in CANCELABLE_RUN_STATUSES:
+                logger.info(f"Terminating submitted run {run.run_id}")
+                instance.run_launcher.terminate(run.run_id)
 
     if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.
