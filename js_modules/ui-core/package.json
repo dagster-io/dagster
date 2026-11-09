@@ -8,6 +8,7 @@
     "find-dead-code": "yarn ts-prune --ignore 'types.ts|stories.ts|mocks.ts|__stories__|__fixtures__|__mocks__'",
     "jest": "jest",
     "jest-all-silent": "yarn jest --silent --watchAll=false --maxWorkers=50%",
+    "benchmark:asset-group-lineage-routing": "node --expose-gc -e \"require('ts-node').register({compilerOptions:{module:'commonjs'}}); require('./src/asset-graph/__benchmarks__/assetGroupLineageRouting.benchmark.ts')\"",
     "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
     "lint": "eslint src/ --fix",
     "lint:ci": "eslint src/",
