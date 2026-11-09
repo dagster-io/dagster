@@ -37,6 +37,33 @@ dependencies {
     constraints {
         implementation 'com.google.protobuf:protobuf-java:3.25.9'
         implementation 'org.apache.zookeeper:zookeeper:3.9.7'
+        // Spark's compile-only dependencies. They do not ship in the jar, but
+        // the lockfile records them.
+        implementation 'com.google.guava:guava:33.7.2-jre'
+        implementation 'io.airlift:aircompressor:2.0.3'
+        implementation 'org.apache.commons:commons-lang3:3.18.0'
+        implementation 'org.xerial.snappy:snappy-java:1.1.10.9'
+        // Gradle's Scala compiler (zinc) depends on Log4j 2.17.1. It does not
+        // ship in the jar, but the lockfile records it. This is a constraint
+        // because declaring a dependency on `zinc` replaces the Scala plugin's
+        // default zinc dependency.
+        zinc 'org.apache.logging.log4j:log4j-core:2.26.1'
+        zinc 'org.apache.logging.log4j:log4j-api:2.26.1'
+    }
+}
+
+// The lockfile records the resolved versions, so dependency scanners report
+// what the build uses rather than the versions declared above.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+// org.lz4:lz4-java has no release that fixes its known advisories. The
+// project's maintained fork publishes the same net.jpountz API under a new
+// group, so Spark's lz4 dependency resolves to the fork instead.
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute module('org.lz4:lz4-java') using module('at.yawk.lz4:lz4-java:1.11.4') because 'org.lz4:lz4-java has no patched release'
     }
 }
 
