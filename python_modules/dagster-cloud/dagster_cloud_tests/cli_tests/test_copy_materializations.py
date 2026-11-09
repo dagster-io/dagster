@@ -1,3 +1,4 @@
+import threading
 from collections import Counter
 
 from dagster import AssetKey, AssetMaterialization
@@ -53,7 +54,12 @@ def _asset_key(record: EventLogRecord) -> AssetKey | None:
 class FakeStorage:
     def __init__(self, records: list[EventLogRecord]):
         self._records = records
+        self._lock = threading.Lock()
         self.calls: Counter[str] = Counter()
+
+    def _count(self, name):
+        with self._lock:
+            self.calls[name] += 1
 
     def _for(self, asset_key):
         return [r for r in self._records if _asset_key(r) == asset_key]
@@ -66,21 +72,21 @@ class FakeStorage:
         return latest
 
     def get_latest_storage_id_by_partition(self, asset_key, event_type):
-        self.calls["get_latest_storage_id_by_partition"] += 1
+        self._count("get_latest_storage_id_by_partition")
         return {p: r.storage_id for p, r in self._latest_by_partition(asset_key).items()}
 
     def fetch_materializations(self, records_filter, limit, cursor=None):
-        self.calls["fetch_materializations"] += 1
+        self._count("fetch_materializations")
         ids = set(records_filter.storage_ids)
         rows = [r for r in self._for(records_filter.asset_key) if r.storage_id in ids]
         return EventRecordsResult(records=rows[:limit], cursor="", has_more=False)
 
     def get_materialized_partitions(self, asset_key):
-        self.calls["get_materialized_partitions"] += 1
+        self._count("get_materialized_partitions")
         return set(self._latest_by_partition(asset_key))
 
     def get_latest_materialization_events(self, asset_keys):
-        self.calls["get_latest_materialization_events"] += 1
+        self._count("get_latest_materialization_events")
         latest = {}
         for key in asset_keys:
             records = self._for(key)
@@ -253,19 +259,33 @@ class RecordingStorage(FakeStorage):
         return list({_asset_key(r) for r in self._records})
 
     def store_event_batch(self, events):
-        self.written.extend(events)
+        with self._lock:
+            self.written.extend(events)
+
+
+class FailingStorage(RecordingStorage):
+    def store_event_batch(self, events):
+        self._count("store_event_batch")
+        raise RuntimeError("write failed")
 
 
 SIGNATURE = (("default", "STATIC", None),)
 
 
 def _run(
-    monkeypatch, args, confirm=True, source_records=None, signatures=None, source_signature=None
+    monkeypatch,
+    args,
+    confirm=True,
+    source_records=None,
+    signatures=None,
+    source_signature=None,
+    partition_keys=({"a"},),
+    fail_writes=False,
 ):
     source = RecordingStorage(
         source_records if source_records is not None else [_record(1, "a", 10.0)]
     )
-    target = RecordingStorage([])
+    target = FailingStorage([]) if fail_writes else RecordingStorage([])
     target_signatures = signatures if signatures is not None else {ASSET_KEY: SIGNATURE}
     prompts = []
 
@@ -287,7 +307,7 @@ def _run(
     monkeypatch.setattr(
         copy_materializations,
         "_fetch_target_partition_keys",
-        lambda endpoint, asset_keys: {key: [{"a"}] for key in asset_keys},
+        lambda endpoint, asset_keys: {key: list(partition_keys) for key in asset_keys},
     )
     monkeypatch.setattr(copy_materializations.ui, "confirm", _confirm)
 
@@ -308,6 +328,9 @@ def _run(
             "https://source-org.dagster.cloud",
             "--target-url",
             "https://target-org.dagster.cloud",
+            # Throttling is covered by the rate limiter test; don't sleep here.
+            "--max-events-per-second",
+            "1000000",
             *args,
         ],
     )
@@ -415,6 +438,80 @@ def test_target_partition_keys_are_read_in_chunks(monkeypatch):
 
     assert [len(paths) for paths in requests] == [25, 25, 10]
     assert keys_by_asset[keys[0]] == [{"x"}, {"1"}]
+
+
+def test_concurrent_writes_keep_each_asset_oldest_first(monkeypatch):
+    keys = [AssetKey(f"asset_{i}") for i in range(8)]
+    records = [
+        _record(i * 10 + j, f"p{j}", float(100 - j), asset_key=key)
+        for i, key in enumerate(keys)
+        for j in range(5)
+    ]
+
+    result, _, target, _ = _run(
+        monkeypatch,
+        ["--concurrency", "4", "--batch-size", "2"],
+        source_records=records,
+        signatures={key: SIGNATURE for key in keys},
+        partition_keys=({f"p{j}" for j in range(5)},),
+    )
+
+    assert result.exit_code == 0, result.output
+    assert len(target.written) == 40
+    for key in keys:
+        timestamps = [
+            e.timestamp for e in target.written if e.asset_materialization.asset_key == key
+        ]
+        assert timestamps == sorted(timestamps)
+
+
+def test_failed_write_stops_the_copy(monkeypatch):
+    keys = [AssetKey(f"asset_{i}") for i in range(20)]
+    records = [_record(i, None, float(i), asset_key=key) for i, key in enumerate(keys)]
+
+    result, _, target, _ = _run(
+        monkeypatch,
+        ["--concurrency", "1"],
+        source_records=records,
+        signatures={key: None for key in keys},
+        fail_writes=True,
+    )
+
+    assert result.exit_code != 0
+    # The first failure stops the 19 writes still queued.
+    assert target.calls["store_event_batch"] == 1
+
+
+def test_failed_write_stops_other_workers(monkeypatch):
+    keys = [AssetKey(f"asset_{i}") for i in range(20)]
+    records = [_record(i, None, float(i), asset_key=key) for i, key in enumerate(keys)]
+
+    result, _, target, _ = _run(
+        monkeypatch,
+        ["--concurrency", "4"],
+        source_records=records,
+        signatures={key: None for key in keys},
+        fail_writes=True,
+    )
+
+    assert result.exit_code != 0
+    # At most one batch per worker was already in flight; none start after the failure.
+    assert 1 <= target.calls["store_event_batch"] <= 4
+
+
+def test_rate_limiter_spaces_units_across_calls():
+    now = [0.0]
+    sleeps = []
+
+    def _sleep(seconds):
+        sleeps.append(seconds)
+        now[0] += seconds
+
+    limiter = copy_materializations.RateLimiter(100, clock=lambda: now[0], sleep=_sleep)
+    for _ in range(3):
+        limiter.acquire(50)
+
+    assert sleeps == [0.5, 0.5]
 
 
 def test_endpoint_from_url():

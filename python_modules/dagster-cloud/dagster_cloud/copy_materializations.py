@@ -1,5 +1,9 @@
 import logging
-from collections.abc import Mapping, Sequence
+import threading
+import time
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import ExitStack
 from dataclasses import dataclass, field
 from typing import AbstractSet, Annotated, Any, Protocol  # noqa: UP035
 from urllib.parse import urlparse
@@ -33,6 +37,9 @@ ASSET_CHUNK_SIZE = 100
 PARTITION_KEYS_CHUNK_SIZE = 25
 # Ursula rejects event batches larger than this.
 MAX_EVENT_BATCH_SIZE = 50
+DEFAULT_CONCURRENCY = 4
+# Materializations aren't rate limited server side, so this protects the target's event log.
+DEFAULT_MAX_EVENTS_PER_SECOND = 200.0
 
 
 ASSET_NODES_QUERY = """
@@ -108,6 +115,53 @@ def resolve_endpoint(agent_token: str, deployment: str, url: str | None) -> Endp
         webserver_url=f"{parsed.scheme}://{parsed.netloc}",
         agent_url=f"{parsed.scheme}://{org}.agent.{domain}",
     )
+
+
+class RateLimiter:
+    """Spaces `acquire` calls across threads so units average at most `per_second`."""
+
+    def __init__(
+        self,
+        per_second: float,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ):
+        self._per_second = per_second
+        self._clock = clock
+        self._sleep = sleep
+        self._lock = threading.Lock()
+        self._next_free = 0.0
+
+    def acquire(self, units: int) -> None:
+        with self._lock:
+            now = self._clock()
+            start = max(now, self._next_free)
+            self._next_free = start + units / self._per_second
+        if start > now:
+            self._sleep(start - now)
+
+
+class _Clients:
+    """Source and target storages per thread, since a requests session isn't thread-safe."""
+
+    def __init__(self, source_endpoint: Endpoint, target_endpoint: Endpoint, stack: ExitStack):
+        self._source_ep = source_endpoint
+        self._target_ep = target_endpoint
+        self._stack = stack
+        self._lock = threading.Lock()
+        self._local = threading.local()
+
+    def get(self) -> tuple[GraphQLEventLogStorage, GraphQLEventLogStorage]:
+        storages = getattr(self._local, "storages", None)
+        if storages is None:
+            with self._lock:
+                session = self._stack.enter_context(create_graphql_requests_session())
+            storages = (
+                _create_event_log_storage(session, self._source_ep),
+                _create_event_log_storage(session, self._target_ep),
+            )
+            self._local.storages = storages
+        return storages
 
 
 def _create_event_log_storage(session, endpoint: Endpoint) -> GraphQLEventLogStorage:
@@ -434,6 +488,13 @@ def copy_materializations_command(
         int,
         Option(min=1, max=MAX_EVENT_BATCH_SIZE, help="Events written per request."),
     ] = MAX_EVENT_BATCH_SIZE,
+    concurrency: Annotated[
+        int, Option(min=1, help="Assets read or written in parallel.")
+    ] = DEFAULT_CONCURRENCY,
+    max_events_per_second: Annotated[
+        float,
+        Option(min=1, help="Upper bound on events written per second, across all workers."),
+    ] = DEFAULT_MAX_EVENTS_PER_SECOND,
     dry_run: Annotated[
         bool,
         Option("--dry-run", help="Show what would be copied without writing anything."),
@@ -463,9 +524,9 @@ def copy_materializations_command(
         f"{source_endpoint.org}/{source_deployment} -> {target_endpoint.org}/{target_deployment}"
     )
 
-    with create_graphql_requests_session() as session:
-        source = _create_event_log_storage(session, source_endpoint)
-        target = _create_event_log_storage(session, target_endpoint)
+    with ExitStack() as stack:
+        clients = _Clients(source_endpoint, target_endpoint, stack)
+        source, _ = clients.get()
 
         source_keys = (
             {AssetKey.from_user_string(k) for k in asset_key}
@@ -478,10 +539,8 @@ def copy_materializations_command(
         for key in sorted(undefined_keys, key=lambda k: k.to_user_string()):
             ui.print(f"  SKIP   {key.to_user_string()}: not defined in target")
 
-        plans = []
-        keys = sorted(source_keys & target_signatures.keys(), key=lambda k: k.to_user_string())
-        for i in range(0, len(keys), ASSET_CHUNK_SIZE):
-            chunk = keys[i : i + ASSET_CHUNK_SIZE]
+        def plan_chunk(chunk: Sequence[AssetKey]) -> list[AssetCopyPlan]:
+            source, target = clients.get()
             comparable = [
                 key
                 for key in chunk
@@ -498,23 +557,37 @@ def copy_materializations_command(
                 _fetch_target_partition_keys(target_endpoint, partitioned) if partitioned else {}
             )
 
+            plans = []
             for key in chunk:
                 if key not in comparable:
-                    plan = AssetCopyPlan(
-                        asset_key=key, skip_reason="partitioned differently in target"
+                    plans.append(
+                        AssetCopyPlan(
+                            asset_key=key, skip_reason="partitioned differently in target"
+                        )
                     )
                 else:
-                    plan = plan_asset_copy(
-                        key,
-                        chunk_source,
-                        chunk_target,
-                        source_endpoint.org,
-                        source_deployment,
-                        merge_partitions,
-                        partition_keys.get(key, []),
+                    plans.append(
+                        plan_asset_copy(
+                            key,
+                            chunk_source,
+                            chunk_target,
+                            source_endpoint.org,
+                            source_deployment,
+                            merge_partitions,
+                            partition_keys.get(key, []),
+                        )
                     )
-                _print_plan(plan)
-                plans.append(plan)
+            return plans
+
+        keys = sorted(source_keys & target_signatures.keys(), key=lambda k: k.to_user_string())
+        chunks = [keys[i : i + ASSET_CHUNK_SIZE] for i in range(0, len(keys), ASSET_CHUNK_SIZE)]
+        plans = []
+        with ThreadPoolExecutor(max_workers=concurrency) as pool:
+            # `map` yields in submission order, so output stays sorted by asset key.
+            for chunk_plans in pool.map(plan_chunk, chunks):
+                for plan in chunk_plans:
+                    _print_plan(plan)
+                    plans.append(plan)
 
         to_write = [plan for plan in plans if plan.events_to_write]
         total = sum(len(plan.events_to_write) for plan in to_write)
@@ -533,13 +606,43 @@ def copy_materializations_command(
             ui.print("Aborted: nothing written.")
             return
 
-        # Within an asset, insertion order decides "latest", so each asset is written oldest first.
+        limiter = RateLimiter(max_events_per_second)
+        # Set by the first failed write so other workers stop before their next batch, without
+        # waiting for the main thread to cancel the queue.
+        stop = threading.Event()
+
+        # Within an asset, insertion order decides "latest", so each asset is written oldest
+        # first by a single worker; assets are independent of each other.
+        def write(plan: AssetCopyPlan) -> AssetCopyPlan | None:
+            _, target = clients.get()
+            try:
+                for i in range(0, len(plan.events_to_write), batch_size):
+                    batch = plan.events_to_write[i : i + batch_size]
+                    limiter.acquire(len(batch))
+                    if stop.is_set():
+                        return None
+                    target.store_event_batch(batch)
+            except BaseException:
+                stop.set()
+                raise
+            return plan
+
+        started = time.monotonic()
         written = 0
-        for plan in to_write:
-            for i in range(0, len(plan.events_to_write), batch_size):
-                target.store_event_batch(plan.events_to_write[i : i + batch_size])
-            written += len(plan.events_to_write)
-            ui.print(
-                f"  wrote {len(plan.events_to_write)} events for {plan.asset_key.to_user_string()}"
-            )
-        ui.print(f"Done: wrote {written} events.")
+        with ThreadPoolExecutor(max_workers=concurrency) as pool:
+            futures = [pool.submit(write, plan) for plan in to_write]
+            try:
+                for future in as_completed(futures):
+                    plan = future.result()
+                    if plan is None:  # stopped by another write's failure, which raises below
+                        continue
+                    written += len(plan.events_to_write)
+                    ui.print(
+                        f"  wrote {len(plan.events_to_write)} events for"
+                        f" {plan.asset_key.to_user_string()} ({written}/{total})"
+                    )
+            except BaseException:
+                # Stop queued writes; a rerun resumes from what was written.
+                pool.shutdown(wait=True, cancel_futures=True)
+                raise
+        ui.print(f"Done: wrote {written} events in {time.monotonic() - started:.0f}s.")
