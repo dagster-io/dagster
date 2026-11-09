@@ -208,6 +208,8 @@ def build_artifact(
     use_editable_dagster: bool,
     python_version: str | None,
     location_names: tuple[str],
+    pex_deps_cache_from: str | None = None,
+    pex_deps_cache_to: str | None = None,
 ):
     from dagster_cloud_cli.commands.ci import BuildStrategy
 
@@ -233,6 +235,8 @@ def build_artifact(
             use_editable_dagster,
             python_version,
             workspace_context=None,
+            pex_deps_cache_from=pex_deps_cache_from,
+            pex_deps_cache_to=pex_deps_cache_to,
         )
     else:
         for spec in dg_context.project_specs:
@@ -255,6 +259,8 @@ def build_artifact(
                 use_editable_dagster,
                 python_version,
                 workspace_context=dg_context,
+                pex_deps_cache_from=pex_deps_cache_from,
+                pex_deps_cache_to=pex_deps_cache_to,
             )
 
 
@@ -267,6 +273,8 @@ def _build_artifact_for_project(
     use_editable_dagster: bool,
     python_version: str,
     workspace_context: DgContext | None,
+    pex_deps_cache_from: str | None = None,
+    pex_deps_cache_to: str | None = None,
 ):
     merged_build_config: DgRawBuildConfig = merge_build_configs(
         workspace_context.build_config if workspace_context else None,
@@ -315,8 +323,8 @@ def _build_artifact_for_project(
             docker_env=[],
             python_version=python_version,
             pex_build_method=pex_build_method,
-            pex_deps_cache_from=None,
-            pex_deps_cache_to=None,
+            pex_deps_cache_from=pex_deps_cache_from,
+            pex_deps_cache_to=pex_deps_cache_to,
             pex_base_image_tag=None,
         )
 
