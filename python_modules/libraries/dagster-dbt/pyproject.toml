@@ -73,7 +73,6 @@ test-bare = [
 test = [
     {include-group = "test-bare"},
     "dbt-duckdb<1.9.2",  # concurrency issues
-    "duckdb<1.4.0",  # compat issues
 ]
 # dbt-core 1.7.x / 1.8.x pin protobuf<5 internally. dagster's runtime
 # requires grpcio>=1.66.2 on py>=3.13 (which transitively requires

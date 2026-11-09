@@ -90,10 +90,10 @@ def test_duckdb_io_manager_with_ops(tmp_path, io_managers):
             assert res.success
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM a_df.result").arrow())
+            out_df = pl.DataFrame(duckdb_conn.sql("SELECT * FROM a_df.result").to_arrow_table())
             assert out_df["a"].to_list() == [1, 2, 3]
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM add_one.result").arrow())
+            out_df = pl.DataFrame(duckdb_conn.sql("SELECT * FROM add_one.result").to_arrow_table())
             assert out_df["a"].to_list() == [2, 3, 4]
 
             duckdb_conn.close()
@@ -120,10 +120,12 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_df").arrow())
+            out_df = pl.DataFrame(duckdb_conn.sql("SELECT * FROM my_schema.b_df").to_arrow_table())
             assert out_df["a"].to_list() == [1, 2, 3]
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one").arrow())
+            out_df = pl.DataFrame(
+                duckdb_conn.sql("SELECT * FROM my_schema.b_plus_one").to_arrow_table()
+            )
             assert out_df["a"].to_list() == [2, 3, 4]
 
             duckdb_conn.close()
@@ -157,11 +159,13 @@ def test_duckdb_io_manager_with_schema(tmp_path):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM custom_schema.my_df").arrow())
+            out_df = pl.DataFrame(
+                duckdb_conn.sql("SELECT * FROM custom_schema.my_df").to_arrow_table()
+            )
             assert out_df["a"].to_list() == [1, 2, 3]
 
             out_df = pl.DataFrame(
-                duckdb_conn.execute("SELECT * FROM custom_schema.my_df_plus_one").arrow()
+                duckdb_conn.sql("SELECT * FROM custom_schema.my_df_plus_one").to_arrow_table()
             )
             assert out_df["a"].to_list() == [2, 3, 4]
 
@@ -184,11 +188,11 @@ def test_loading_columns(tmp_path, io_managers):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_df").arrow())
+            out_df = pl.DataFrame(duckdb_conn.sql("SELECT * FROM my_schema.b_df").to_arrow_table())
             assert out_df["a"].to_list() == [1, 2, 3]
 
             out_df = pl.DataFrame(
-                duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one_columns").arrow()
+                duckdb_conn.sql("SELECT * FROM my_schema.b_plus_one_columns").to_arrow_table()
             )
             assert out_df["a"].to_list() == [2, 3, 4]
 
@@ -255,7 +259,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.daily_partitioned").to_arrow_table()
         )
         assert out_df["a"].to_list() == ["1", "1", "1"]
         duckdb_conn.close()
@@ -269,7 +273,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.daily_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
         duckdb_conn.close()
@@ -283,7 +287,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.daily_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -323,7 +327,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.static_partitioned").to_arrow_table()
         )
         assert out_df["a"].to_list() == ["1", "1", "1"]
         duckdb_conn.close()
@@ -337,7 +341,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.static_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
         duckdb_conn.close()
@@ -351,7 +355,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.static_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -396,7 +400,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.multi_partitioned").to_arrow_table()
         )
         assert out_df["a"].to_list() == ["1", "1", "1"]
         duckdb_conn.close()
@@ -410,7 +414,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.multi_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
         duckdb_conn.close()
@@ -424,7 +428,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.multi_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
         duckdb_conn.close()
@@ -438,7 +442,7 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.multi_partitioned").to_arrow_table()
         )
         assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -484,7 +488,7 @@ def test_dynamic_partition(tmp_path, io_managers):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
             out_df = pl.DataFrame(
-                duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+                duckdb_conn.sql("SELECT * FROM my_schema.dynamic_partitioned").to_arrow_table()
             )
             assert out_df["a"].to_list() == ["1", "1", "1"]
             duckdb_conn.close()
@@ -501,7 +505,7 @@ def test_dynamic_partition(tmp_path, io_managers):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
             out_df = pl.DataFrame(
-                duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+                duckdb_conn.sql("SELECT * FROM my_schema.dynamic_partitioned").to_arrow_table()
             )
             assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
             duckdb_conn.close()
@@ -516,7 +520,7 @@ def test_dynamic_partition(tmp_path, io_managers):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
             out_df = pl.DataFrame(
-                duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+                duckdb_conn.sql("SELECT * FROM my_schema.dynamic_partitioned").to_arrow_table()
             )
             assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -583,7 +587,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.self_dependent_asset").to_arrow_table()
         )
 
         assert out_df["a"].to_list() == ["1", "1", "1"]
@@ -604,7 +608,7 @@ def test_self_dependent_asset(tmp_path, io_managers):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = pl.DataFrame(
-            duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").arrow()
+            duckdb_conn.sql("SELECT * FROM my_schema.self_dependent_asset").to_arrow_table()
         )
 
         assert out_df["a"].to_list() == ["1", "1", "1", "2", "2", "2"]

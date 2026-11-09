@@ -10,12 +10,12 @@ from dagster import (
     define_asset_job,
 )
 from dagster_openai import OpenAIResource
-from langchain.chains.qa_with_sources import stuff_prompt
-from langchain.docstore.document import Document
-from langchain.schema.output_parser import StrOutputParser
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_classic.chains.qa_with_sources import stuff_prompt
 from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
 
 from .constants import SUMMARY_TEMPLATE
 from .utils import get_github_docs

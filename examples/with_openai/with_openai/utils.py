@@ -5,7 +5,7 @@ import tempfile
 import zipfile
 
 import requests
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 
 
 def get_wiki_data(title, first_paragraph_only):

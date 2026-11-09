@@ -2,10 +2,10 @@
 duckcli>=0.2.1
 
 # Database adapter
-dbt-duckdb>=1.7.3,<1.8.0
+dbt-duckdb>=1.10
 
-# dbt Core 1.
-dbt-core>=1.7.9,<1.8.0
+# dbt Core
+dbt-core>=1.10
 
 # extra features
-sqlfluff>=2.3.5,<3
+sqlfluff>=3

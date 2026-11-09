@@ -211,10 +211,12 @@ exclude-newer = "48h"
 # fix) and mlflow 3.18.0 (published 2026-11-03, the first release that allows
 # pyarrow 26) through the 48h cooldown. Remove this line after 2026-11-07.
 exclude-newer-package = { authlib = "2026-11-05T17:00:00Z", mlflow = "2026-11-04T00:00:00Z", mlflow-skinny = "2026-11-04T00:00:00Z", mlflow-tracing = "2026-11-04T00:00:00Z" }
-# dagster-gemini's google-generativeai pins protobuf<6, which holds dbt-common at
-# 1.27.1 and its `deepdiff<8` cap. This env only type-checks, so lift the cap to
-# get the deepdiff release that fixes its critical advisory.
-override-dependencies = ["deepdiff>=8.6.1"]
+# dagster-gemini's google-generativeai pins protobuf<6. That holds dbt-common at
+# 1.27.1, with its `deepdiff<8` cap, and holds dbt-snowflake below 1.10, whose
+# Snowflake connector caps pyopenssl and cffi low enough to keep cryptography
+# below 47. This env only type-checks, so lift those caps to get the releases
+# that fix their advisories.
+override-dependencies = ["deepdiff>=8.6.1", "cryptography>=48.0.1", "cffi>=2.0.0"]
 
 [tool.uv.sources]
 # In-repo editable paths. Relative to this pyproject.toml

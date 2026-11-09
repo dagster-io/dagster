@@ -76,11 +76,13 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         """Loads the input as a Polars DataFrame."""
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return pl.DataFrame()
-        select_statement = connection.execute(
+        # `to_arrow_table()` on a relation returns a pyarrow Table on every duckdb
+        # release we support. duckdb 2.0 removed `.arrow()` from `execute()` results,
+        # and since 1.4 a relation's `.arrow()` returns a RecordBatchReader instead.
+        select_statement = connection.sql(
             DuckDbClient.get_select_statement(table_slice=table_slice)
         )
-        duckdb_to_arrow = select_statement.arrow()
-        return pl.DataFrame(duckdb_to_arrow)
+        return pl.DataFrame(select_statement.to_arrow_table())
 
     @property
     def supported_types(self):

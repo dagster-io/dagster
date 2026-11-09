@@ -12,9 +12,11 @@ dependencies = [
     "dagster-openai",
     "faiss-cpu==1.8.0",
     "filelock",
-    "langchain<0.4",
-    "langchain-community<0.4",
-    "langchain-openai<0.4",
+    "langchain-classic",
+    "langchain-community",
+    "langchain-core>=1.2.22",
+    "langchain-openai",
+    "langchain-text-splitters",
 ]
 
 [project.optional-dependencies]
