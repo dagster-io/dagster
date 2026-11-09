@@ -415,6 +415,12 @@ class TimeWindowPartitionMapping(
                     ]
 
                 for invalid_time_window in invalid_time_windows:
+                    # An invalid window holding no partitions at all (e.g. it
+                    # covers only excluded partitions) contributes no
+                    # nonexistent keys; adding it would leave a non-empty
+                    # subset whose partition keys are empty.
+                    if not to_partitions_def.has_any_partitions_in_window(invalid_time_window):
+                        continue
                     required_but_nonexistent_subset = (
                         required_but_nonexistent_subset
                         | to_partitions_def.get_partition_subset_in_time_window(
@@ -517,11 +523,12 @@ class TimeWindowPartitionMapping(
             else:
                 required_but_nonexistent_subset = to_partitions_def.empty_subset()
                 for time_window in from_partitions_subset.included_time_windows:
+                    public_time_window = time_window.to_public_time_window()
+                    if not to_partitions_def.has_any_partitions_in_window(public_time_window):
+                        continue
                     required_but_nonexistent_subset = (
                         required_but_nonexistent_subset
-                        | to_partitions_def.get_partition_subset_in_time_window(
-                            time_window.to_public_time_window()
-                        )
+                        | to_partitions_def.get_partition_subset_in_time_window(public_time_window)
                     )
 
             return UpstreamPartitionsResult(

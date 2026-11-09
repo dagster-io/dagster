@@ -1292,3 +1292,43 @@ def test_downstream_direction_unchanged_by_offset_overflow_fix():
         partitions_def,
         current_time=datetime(2023, 2, 1),
     ).get_partition_keys() == ["2023-01-10", "2023-01-11"]
+
+
+def test_offset_overflow_into_excluded_partition_reports_no_nonexistent():
+    downstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    upstream = dg.DailyPartitionsDefinition(
+        start_date="2023-01-01", exclusions=[create_datetime(2023, 1, 11)]
+    )
+    # the +1 end offset overflows only into the excluded 2023-01-11 partition,
+    # so nothing is required-but-nonexistent
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-10"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == []
+    assert result.required_but_nonexistent_subset.is_empty
+
+
+def test_offset_overflow_past_excluded_partition_reports_only_real_nonexistent():
+    downstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    upstream = dg.DailyPartitionsDefinition(
+        start_date="2023-01-01", exclusions=[create_datetime(2023, 1, 11)]
+    )
+    # the +2 end offset overflows into the excluded 2023-01-11 partition and
+    # the not-yet-existent 2023-01-12 partition; only the latter is reported
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=2
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-10"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-12"]
+    assert not result.required_but_nonexistent_subset.is_empty
