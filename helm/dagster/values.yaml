@@ -1348,7 +1348,7 @@ dagsterDaemon:
   startupProbe: {}
 
 ####################################################################################################
-# busybox: Configuration for the busybox image used to check connections
+# busybox: Configuration for the busybox image used to check RabbitMQ readiness
 ####################################################################################################
 busybox:
   image:
