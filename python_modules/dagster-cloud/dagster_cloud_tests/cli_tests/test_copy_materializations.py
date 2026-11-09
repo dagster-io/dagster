@@ -22,6 +22,7 @@ def _record(
     partition: str | None,
     timestamp: float,
     tags: dict[str, str] | None = None,
+    asset_key: AssetKey = ASSET_KEY,
 ) -> EventLogRecord:
     entry = EventLogEntry(
         user_message="",
@@ -36,7 +37,7 @@ def _record(
             job_name="job",
             event_specific_data=StepMaterializationData(
                 AssetMaterialization(
-                    asset_key=ASSET_KEY, partition=partition, metadata={"rows": 3}, tags=tags
+                    asset_key=asset_key, partition=partition, metadata={"rows": 3}, tags=tags
                 )
             ),
         ),
@@ -44,39 +45,48 @@ def _record(
     return EventLogRecord(storage_id=storage_id, event_log_entry=entry)
 
 
+def _asset_key(record: EventLogRecord) -> AssetKey | None:
+    materialization = record.asset_materialization
+    return materialization.asset_key if materialization is not None else None
+
+
 class FakeStorage:
     def __init__(self, records: list[EventLogRecord]):
         self._records = records
         self.calls: Counter[str] = Counter()
 
-    def _latest_by_partition(self) -> dict[str, EventLogRecord]:
+    def _for(self, asset_key):
+        return [r for r in self._records if _asset_key(r) == asset_key]
+
+    def _latest_by_partition(self, asset_key) -> dict[str, EventLogRecord]:
         latest = {}
-        for record in sorted(self._records, key=lambda r: r.storage_id):
+        for record in sorted(self._for(asset_key), key=lambda r: r.storage_id):
             if record.partition_key is not None:
                 latest[record.partition_key] = record
         return latest
 
     def get_latest_storage_id_by_partition(self, asset_key, event_type):
         self.calls["get_latest_storage_id_by_partition"] += 1
-        return {p: r.storage_id for p, r in self._latest_by_partition().items()}
+        return {p: r.storage_id for p, r in self._latest_by_partition(asset_key).items()}
 
     def fetch_materializations(self, records_filter, limit, cursor=None):
         self.calls["fetch_materializations"] += 1
-        if isinstance(records_filter, AssetKey):
-            rows = sorted(self._records, key=lambda r: -r.storage_id)
-        else:
-            ids = set(records_filter.storage_ids)
-            rows = [r for r in self._records if r.storage_id in ids]
+        ids = set(records_filter.storage_ids)
+        rows = [r for r in self._for(records_filter.asset_key) if r.storage_id in ids]
         return EventRecordsResult(records=rows[:limit], cursor="", has_more=False)
 
     def get_materialized_partitions(self, asset_key):
         self.calls["get_materialized_partitions"] += 1
-        return set(self._latest_by_partition())
+        return set(self._latest_by_partition(asset_key))
 
     def get_latest_materialization_events(self, asset_keys):
-        if not self._records:
-            return {}
-        return {ASSET_KEY: max(self._records, key=lambda r: r.storage_id).event_log_entry}
+        self.calls["get_latest_materialization_events"] += 1
+        latest = {}
+        for key in asset_keys:
+            records = self._for(key)
+            if records:
+                latest[key] = max(records, key=lambda r: r.storage_id).event_log_entry
+        return latest
 
 
 def _plan(
@@ -240,7 +250,7 @@ class RecordingStorage(FakeStorage):
         self.written: list[EventLogEntry] = []
 
     def all_asset_keys(self):
-        return [ASSET_KEY]
+        return list({_asset_key(r) for r in self._records})
 
     def store_event_batch(self, events):
         self.written.extend(events)
@@ -249,10 +259,14 @@ class RecordingStorage(FakeStorage):
 SIGNATURE = (("default", "STATIC", None),)
 
 
-def _invoke(monkeypatch, args, confirm, source_signature=SIGNATURE):
-    source = RecordingStorage([_record(1, "a", 10.0)])
+def _run(
+    monkeypatch, args, confirm=True, source_records=None, signatures=None, source_signature=None
+):
+    source = RecordingStorage(
+        source_records if source_records is not None else [_record(1, "a", 10.0)]
+    )
     target = RecordingStorage([])
-    storages = iter([source, target])
+    target_signatures = signatures if signatures is not None else {ASSET_KEY: SIGNATURE}
     prompts = []
 
     def _confirm(prompt, default=True):
@@ -260,14 +274,20 @@ def _invoke(monkeypatch, args, confirm, source_signature=SIGNATURE):
         return confirm
 
     def _signatures(endpoint):
-        return {ASSET_KEY: source_signature if endpoint.org == "source-org" else SIGNATURE}
+        if endpoint.org == "source-org" and source_signature is not None:
+            return source_signature
+        return target_signatures
 
     monkeypatch.setattr(
-        copy_materializations, "_create_event_log_storage", lambda *args: next(storages)
+        copy_materializations,
+        "_create_event_log_storage",
+        lambda session, endpoint: source if endpoint.org == "source-org" else target,
     )
     monkeypatch.setattr(copy_materializations, "_fetch_partition_signatures", _signatures)
     monkeypatch.setattr(
-        copy_materializations, "_fetch_target_partition_keys", lambda *args: [{"a"}]
+        copy_materializations,
+        "_fetch_target_partition_keys",
+        lambda endpoint, asset_keys: {key: [{"a"}] for key in asset_keys},
     )
     monkeypatch.setattr(copy_materializations.ui, "confirm", _confirm)
 
@@ -290,6 +310,13 @@ def _invoke(monkeypatch, args, confirm, source_signature=SIGNATURE):
             "https://target-org.dagster.cloud",
             *args,
         ],
+    )
+    return result, source, target, prompts
+
+
+def _invoke(monkeypatch, args, confirm, source_signature=SIGNATURE):
+    result, _, target, prompts = _run(
+        monkeypatch, args, confirm, source_signature={ASSET_KEY: source_signature}
     )
     assert result.exit_code == 0, result.output
     return target.written, prompts, result.output
@@ -321,6 +348,73 @@ def test_skips_assets_partitioned_differently_in_target(monkeypatch):
     assert "partitioned differently in target" in output
     assert prompts == []
     assert written == []
+
+
+def test_reads_latest_materializations_once_per_chunk(monkeypatch):
+    keys = [AssetKey(f"asset_{i:03d}") for i in range(150)]
+    records = [_record(i, None, float(i), asset_key=key) for i, key in enumerate(keys)]
+
+    result, source, target, _ = _run(
+        monkeypatch, [], source_records=records, signatures={key: None for key in keys}
+    )
+
+    assert result.exit_code == 0, result.output
+    assert len(target.written) == 150
+    # Two chunks of up to 100 assets: one read per chunk and side, none per asset.
+    assert source.calls == Counter({"get_latest_materialization_events": 2})
+    assert target.calls == Counter({"get_latest_materialization_events": 2})
+
+
+def test_prefetched_event_log_serves_prefetched_assets_without_requests():
+    other = AssetKey("other")
+    storage = FakeStorage([_record(1, None, 10.0), _record(2, None, 20.0, asset_key=other)])
+    prefetched = copy_materializations.PrefetchedEventLog(storage, [ASSET_KEY])  # ty: ignore[invalid-argument-type]
+
+    prefetched_event = prefetched.get_latest_materialization_events([ASSET_KEY])[ASSET_KEY]
+    assert prefetched_event is not None and prefetched_event.timestamp == 10.0
+    assert storage.calls["get_latest_materialization_events"] == 1
+
+    other_event = prefetched.get_latest_materialization_events([other])[other]
+    assert other_event is not None and other_event.timestamp == 20.0
+    assert storage.calls["get_latest_materialization_events"] == 2
+
+
+def test_rejects_batch_size_above_server_limit(monkeypatch):
+    result, _, target, _ = _run(monkeypatch, ["--batch-size", "51"])
+
+    assert result.exit_code != 0
+    assert target.written == []
+
+
+def test_target_partition_keys_are_read_in_chunks(monkeypatch):
+    requests = []
+
+    def _query(endpoint, query, variables):
+        paths = [key["path"] for key in variables["assetKeys"]]
+        requests.append(paths)
+        return {
+            "assetNodes": [
+                {
+                    "assetKey": {"path": path},
+                    "partitionKeysByDimension": [
+                        {"name": "b", "partitionKeys": ["1"]},
+                        {"name": "a", "partitionKeys": ["x"]},
+                    ],
+                }
+                for path in paths
+            ]
+        }
+
+    monkeypatch.setattr(copy_materializations, "_query_webserver", _query)
+    keys = [AssetKey(f"asset_{i}") for i in range(60)]
+
+    keys_by_asset = copy_materializations._fetch_target_partition_keys(  # noqa: SLF001
+        copy_materializations.resolve_endpoint("token", "prod", "https://my-org.dagster.cloud"),
+        keys,
+    )
+
+    assert [len(paths) for paths in requests] == [25, 25, 10]
+    assert keys_by_asset[keys[0]] == [{"x"}, {"1"}]
 
 
 def test_endpoint_from_url():

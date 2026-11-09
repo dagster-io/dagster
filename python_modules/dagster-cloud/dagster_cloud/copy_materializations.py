@@ -1,13 +1,13 @@
 import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import AbstractSet, Annotated, Any  # noqa: UP035
+from typing import AbstractSet, Annotated, Any, Protocol  # noqa: UP035
 from urllib.parse import urlparse
 
 import requests
 from dagster import AssetKey, AssetMaterialization
 from dagster._core.definitions.partitions.utils.multi import MULTIPARTITION_KEY_DELIMITER
-from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
+from dagster._core.event_api import AssetRecordsFilter, EventLogRecord, EventRecordsResult
 from dagster._core.events import DagsterEvent, DagsterEventType, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
@@ -27,6 +27,13 @@ SOURCE_DEPLOYMENT_TAG = "migration/source_deployment"
 SOURCE_RUN_ID_TAG = "migration/source_run_id"
 
 EVENTS_PER_FETCH = 100
+# Assets per request when reading latest materializations.
+ASSET_CHUNK_SIZE = 100
+# Smaller, since a single asset can have tens of thousands of partition keys.
+PARTITION_KEYS_CHUNK_SIZE = 25
+# Ursula rejects event batches larger than this.
+MAX_EVENT_BATCH_SIZE = 50
+
 
 ASSET_NODES_QUERY = """
 query CopyMaterializationsAssetNodes {
@@ -48,6 +55,9 @@ query CopyMaterializationsAssetNodes {
 PARTITION_KEYS_QUERY = """
 query CopyMaterializationsPartitionKeys($assetKeys: [AssetKeyInput!]) {
   assetNodes(assetKeys: $assetKeys) {
+    assetKey {
+      path
+    }
     partitionKeysByDimension {
       name
       partitionKeys
@@ -145,15 +155,22 @@ def _fetch_partition_signatures(endpoint: Endpoint) -> dict[AssetKey, PartitionS
     return signatures
 
 
-def _fetch_target_partition_keys(endpoint: Endpoint, asset_key: AssetKey) -> list[set[str]]:
-    """Fetch the asset's current partition keys, one set per dimension in dimension name order."""
-    nodes = _query_webserver(
-        endpoint, PARTITION_KEYS_QUERY, {"assetKeys": [{"path": asset_key.path}]}
-    )["assetNodes"]
-    if not nodes:
-        return []
-    dimensions = sorted(nodes[0]["partitionKeysByDimension"], key=lambda d: d["name"])
-    return [set(d["partitionKeys"]) for d in dimensions]
+def _fetch_target_partition_keys(
+    endpoint: Endpoint, asset_keys: Sequence[AssetKey]
+) -> dict[AssetKey, list[set[str]]]:
+    """Fetch each asset's current partition keys, one set per dimension in dimension name order."""
+    keys_by_asset: dict[AssetKey, list[set[str]]] = {}
+    for i in range(0, len(asset_keys), PARTITION_KEYS_CHUNK_SIZE):
+        chunk = asset_keys[i : i + PARTITION_KEYS_CHUNK_SIZE]
+        nodes = _query_webserver(
+            endpoint, PARTITION_KEYS_QUERY, {"assetKeys": [{"path": key.path} for key in chunk]}
+        )["assetNodes"]
+        for node in nodes:
+            dimensions = sorted(node["partitionKeysByDimension"], key=lambda d: d["name"])
+            keys_by_asset[AssetKey(node["assetKey"]["path"])] = [
+                set(d["partitionKeys"]) for d in dimensions
+            ]
+    return keys_by_asset
 
 
 def _is_target_partition(partition: str | None, partition_keys: Sequence[AbstractSet[str]]) -> bool:
@@ -171,8 +188,59 @@ def _is_target_partition(partition: str | None, partition_keys: Sequence[Abstrac
     )
 
 
+class EventLogReader(Protocol):
+    """The event log reads `plan_asset_copy` makes, served by a storage or `PrefetchedEventLog`."""
+
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]: ...
+
+    def fetch_materializations(
+        self, records_filter: AssetKey | AssetRecordsFilter, limit: int
+    ) -> EventRecordsResult: ...
+
+    def get_latest_materialization_events(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, EventLogEntry | None]: ...
+
+    def get_materialized_partitions(self, asset_key: AssetKey) -> set[str]: ...
+
+
+class PrefetchedEventLog:
+    """Event log storage that serves latest-materialization reads from one batched request.
+
+    - `get_latest_materialization_events` for the prefetched assets makes no request.
+    - Every other read goes to the wrapped storage.
+    """
+
+    def __init__(self, storage: GraphQLEventLogStorage, asset_keys: Sequence[AssetKey]):
+        self._storage = storage
+        self._asset_keys = set(asset_keys)
+        self._latest = storage.get_latest_materialization_events(asset_keys) if asset_keys else {}
+
+    def get_latest_materialization_events(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, EventLogEntry | None]:
+        if self._asset_keys.issuperset(asset_keys):
+            return {key: self._latest[key] for key in asset_keys if key in self._latest}
+        return self._storage.get_latest_materialization_events(asset_keys)
+
+    def get_latest_storage_id_by_partition(
+        self, asset_key: AssetKey, event_type: DagsterEventType
+    ) -> Mapping[str, int]:
+        return self._storage.get_latest_storage_id_by_partition(asset_key, event_type)
+
+    def fetch_materializations(
+        self, records_filter: AssetKey | AssetRecordsFilter, limit: int
+    ) -> EventRecordsResult:
+        return self._storage.fetch_materializations(records_filter, limit=limit)
+
+    def get_materialized_partitions(self, asset_key: AssetKey) -> set[str]:
+        return self._storage.get_materialized_partitions(asset_key)
+
+
 def _fetch_events_by_storage_ids(
-    storage: GraphQLEventLogStorage, asset_key: AssetKey, storage_ids: Sequence[int]
+    storage: EventLogReader, asset_key: AssetKey, storage_ids: Sequence[int]
 ) -> list[EventLogRecord]:
     """Fetch materialization records by storage ID, `EVENTS_PER_FETCH` per request."""
     records = []
@@ -225,8 +293,8 @@ def build_copied_event(
 
 def plan_asset_copy(
     asset_key: AssetKey,
-    source: GraphQLEventLogStorage,
-    target: GraphQLEventLogStorage,
+    source: EventLogReader,
+    target: EventLogReader,
     source_org: str,
     source_deployment: str,
     merge_partitions: bool,
@@ -362,7 +430,10 @@ def copy_materializations_command(
         bool,
         Option(help="Copy missing partitions even into assets the target already materialized."),
     ] = False,
-    batch_size: Annotated[int, Option(help="Events written per request.")] = 50,
+    batch_size: Annotated[
+        int,
+        Option(min=1, max=MAX_EVENT_BATCH_SIZE, help="Events written per request."),
+    ] = MAX_EVENT_BATCH_SIZE,
     dry_run: Annotated[
         bool,
         Option("--dry-run", help="Show what would be copied without writing anything."),
@@ -408,27 +479,42 @@ def copy_materializations_command(
             ui.print(f"  SKIP   {key.to_user_string()}: not defined in target")
 
         plans = []
-        for key in sorted(source_keys & target_signatures.keys(), key=lambda k: k.to_user_string()):
-            target_signature = target_signatures[key]
-            if key in source_signatures and source_signatures[key] != target_signature:
-                plan = AssetCopyPlan(asset_key=key, skip_reason="partitioned differently in target")
-            else:
-                partition_keys = (
-                    _fetch_target_partition_keys(target_endpoint, key)
-                    if target_signature is not None
-                    else []
-                )
-                plan = plan_asset_copy(
-                    key,
-                    source,
-                    target,
-                    source_endpoint.org,
-                    source_deployment,
-                    merge_partitions,
-                    partition_keys,
-                )
-            _print_plan(plan)
-            plans.append(plan)
+        keys = sorted(source_keys & target_signatures.keys(), key=lambda k: k.to_user_string())
+        for i in range(0, len(keys), ASSET_CHUNK_SIZE):
+            chunk = keys[i : i + ASSET_CHUNK_SIZE]
+            comparable = [
+                key
+                for key in chunk
+                if key not in source_signatures or source_signatures[key] == target_signatures[key]
+            ]
+            partitioned = [key for key in comparable if target_signatures[key] is not None]
+            unpartitioned = [key for key in comparable if target_signatures[key] is None]
+
+            # One request per side for the chunk's latest materializations, which
+            # plan_asset_copy then reads without a request; its other reads stay per asset.
+            chunk_source = PrefetchedEventLog(source, unpartitioned)
+            chunk_target = PrefetchedEventLog(target, comparable)
+            partition_keys = (
+                _fetch_target_partition_keys(target_endpoint, partitioned) if partitioned else {}
+            )
+
+            for key in chunk:
+                if key not in comparable:
+                    plan = AssetCopyPlan(
+                        asset_key=key, skip_reason="partitioned differently in target"
+                    )
+                else:
+                    plan = plan_asset_copy(
+                        key,
+                        chunk_source,
+                        chunk_target,
+                        source_endpoint.org,
+                        source_deployment,
+                        merge_partitions,
+                        partition_keys.get(key, []),
+                    )
+                _print_plan(plan)
+                plans.append(plan)
 
         to_write = [plan for plan in plans if plan.events_to_write]
         total = sum(len(plan.events_to_write) for plan in to_write)
