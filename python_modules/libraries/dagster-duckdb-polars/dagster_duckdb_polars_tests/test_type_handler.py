@@ -1079,3 +1079,32 @@ def test_schema_mismatch_case_colliding_columns_repeated_write(tmp_path):
     assert rows == [(3, 30, 300)]
     assert _existing_table_columns(conn, table_slice) == ["a", "A_1", "b"]
     conn.close()
+
+
+def test_schema_mismatch_non_ascii_case_schemas_not_merged(tmp_path):
+    db_path = os.path.join(tmp_path, "non_ascii.duckdb")
+    conn = duckdb.connect(database=db_path, config={"custom_user_agent": "dagster"})
+    # DuckDB identifiers fold case ASCII-only, so "Ä" and "ä" are distinct
+    # schemas; Unicode-aware SQL lower() must not merge them.
+    conn.execute('create schema "Ä";')
+    conn.execute('create schema "ä";')
+    conn.execute('create table "Ä".shared_table (a BIGINT, b BIGINT);')
+    conn.execute('create table "ä".shared_table (x BIGINT, y BIGINT, z BIGINT);')
+    conn.execute('create table "Ä".upper_only (u BIGINT);')
+
+    def _slice(schema, table):
+        return TableSlice(
+            table=table,
+            schema=schema,
+            database=db_path,
+            columns=None,
+            partition_dimensions=[],
+        )
+
+    assert _existing_table_columns(conn, _slice('"Ä"', "shared_table")) == ["a", "b"]
+    assert _existing_table_columns(conn, _slice('"ä"', "shared_table")) == ["x", "y", "z"]
+    # Only the case-twin schema "Ä" has this table.
+    assert _existing_table_columns(conn, _slice('"ä"', "upper_only")) is None
+    # Mixed ASCII-case spellings still resolve.
+    assert _existing_table_columns(conn, _slice('"Ä"', '"Shared_Table"')) == ["a", "b"]
+    conn.close()

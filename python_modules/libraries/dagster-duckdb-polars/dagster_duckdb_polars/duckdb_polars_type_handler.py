@@ -1,3 +1,4 @@
+import string
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -147,28 +148,44 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
 def _catalog_identifier(identifier: str) -> str:
     # DuckDB stores the catalog name without SQL quoting; "" inside a
     # quoted identifier is an escaped double-quote. Unquoted spellings
-    # are already catalog names (case handled by lower() in SQL).
+    # are already catalog names (case handled in _existing_table_columns).
     stripped = identifier.strip()
     if len(stripped) >= 2 and stripped.startswith('"') and stripped.endswith('"'):
         return stripped[1:-1].replace('""', '"')
     return identifier
 
 
+# DuckDB folds identifier case for ASCII letters only, so e.g. "Ä" and "ä"
+# stay distinct; never use Unicode-aware str.lower()/casefold() here.
+_ASCII_CASE_FOLD = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+
+
 def _existing_table_columns(
     connection: "DuckDBPyConnection", table_slice: TableSlice
 ) -> list[str] | None:
     """Returns the table's ordered column names, or None if the table does not exist."""
+    schema = _catalog_identifier(table_slice.schema)
+    table = _catalog_identifier(table_slice.table)
     connection.execute(
-        "SELECT column_name FROM information_schema.columns "
+        "SELECT table_schema, table_name, column_name FROM information_schema.columns "
         "WHERE lower(table_schema) = lower(?) AND lower(table_name) = lower(?) "
         "AND table_catalog = current_database() "
         "ORDER BY ordinal_position",
-        [_catalog_identifier(table_slice.schema), _catalog_identifier(table_slice.table)],
+        [schema, table],
     )
-    rows = connection.fetchall()
-    if not rows:
+    # SQL lower() is Unicode-aware, so it is only a coarse superset filter;
+    # keep exactly the rows whose identifiers match under ASCII-only folding.
+    folded_schema = schema.translate(_ASCII_CASE_FOLD)
+    folded_table = table.translate(_ASCII_CASE_FOLD)
+    columns = [
+        row[2]
+        for row in connection.fetchall()
+        if row[0].translate(_ASCII_CASE_FOLD) == folded_schema
+        and row[1].translate(_ASCII_CASE_FOLD) == folded_table
+    ]
+    if not columns:
         return None
-    return [row[0] for row in rows]
+    return columns
 
 
 duckdb_polars_io_manager = build_duckdb_io_manager(
