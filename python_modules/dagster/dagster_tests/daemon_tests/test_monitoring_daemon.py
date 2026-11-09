@@ -349,6 +349,52 @@ def test_monitor_started(
     assert run_launcher.resume_run_calls == 3
 
 
+def test_monitoring_iteration_checks_started_runs_in_batch(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    logger: Logger,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    started_run_ids = [
+        create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+        for _ in range(3)
+    ]
+    create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTING)
+    batch_check = mock.Mock(
+        return_value={
+            run_id: CheckRunHealthResult(WorkerStatus.RUNNING) for run_id in started_run_ids
+        }
+    )
+    single_check = mock.Mock()
+    monkeypatch.setattr(instance.run_launcher, "check_run_worker_health_batch", batch_check)
+    monkeypatch.setattr(instance.run_launcher, "check_run_worker_health", single_check)
+
+    list(execute_run_monitoring_iteration(workspace_context, logger))
+
+    batch_check.assert_called_once()
+    assert {run.run_id for run in batch_check.call_args.args[0]} == set(started_run_ids)
+    single_check.assert_not_called()
+    for run_id in started_run_ids:
+        assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.STARTED
+
+
+def test_monitoring_iteration_checks_runs_missing_from_batch_individually(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    logger: Logger,
+):
+    # MockRunLauncher keeps the default check_run_worker_health_batch, which returns no results.
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
+        assert instance.run_launcher.check_run_worker_health_batch([]) == {}
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.STARTED
+    assert cast("MockRunLauncher", instance.run_launcher).resume_run_calls == 0
+
+    list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert cast("MockRunLauncher", instance.run_launcher).resume_run_calls == 1
+
+
 @pytest.mark.parametrize(
     "worker_status,debug_info_fails,expect_debug_info",
     [

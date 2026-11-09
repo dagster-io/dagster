@@ -284,6 +284,14 @@ def _init_container_will_be_retried(pod: kubernetes.client.V1Pod, container_name
     return (container_policy or pod.spec.restart_policy) in ("OnFailure", "Always")
 
 
+def _get_list_continue_token(k8s_list: Any) -> str | None:
+    metadata = k8s_list.metadata
+    if not metadata:
+        return None
+    # The pydantic models of kubernetes>=37 name the field var_continue instead of _continue.
+    return metadata.var_continue if K8S_MODELS_ARE_PYDANTIC else metadata._continue  # noqa: SLF001
+
+
 class DagsterKubernetesClient:
     def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
@@ -526,6 +534,41 @@ class DagsterKubernetesClient:
             return job.status
 
         return k8s_api_retry(_get_job_status, max_retries=3, timeout=wait_time_between_attempts)
+
+    def list_job_statuses(
+        self,
+        namespace: str,
+        label_selector: str,
+        page_size: int = 500,
+    ) -> dict[str, V1JobStatus]:
+        """Return the status of every Job in the namespace matching the label selector, keyed
+        by Job name.
+
+        Lists with resource_version="0", so the API server can answer from its watch cache
+        instead of etcd. Results may be slightly stale, which is fine for periodic health checks.
+        Servers may ignore the requested page size. Follow continuation tokens when provided;
+        do not assume the page size is a bound on the number of returned Jobs.
+        """
+        statuses: dict[str, V1JobStatus] = {}
+        continue_token = None
+        while True:
+            kwargs: dict[str, Any] = {"label_selector": label_selector, "limit": page_size}
+            if continue_token:
+                kwargs["_continue"] = continue_token
+            else:
+                kwargs["resource_version"] = "0"
+            job_list = k8s_api_retry(
+                lambda kwargs=kwargs: self.batch_api.list_namespaced_job(
+                    namespace=namespace, **kwargs
+                ),
+                max_retries=3,
+                timeout=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+            )
+            for job in job_list.items:
+                statuses[job.metadata.name] = job.status
+            continue_token = _get_list_continue_token(job_list)
+            if not continue_token:
+                return statuses
 
     def delete_job(
         self,
