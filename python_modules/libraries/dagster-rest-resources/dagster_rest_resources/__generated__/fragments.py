@@ -11,6 +11,7 @@ from .enums import (
     InsightsAlertComparisonOperator,
     InstigatorType,
     IssueStatus,
+    PartitionRangeStatus,
     RunStatus,
 )
 
@@ -303,6 +304,13 @@ class AlertPolicyFieldsPolicyOptions(BaseModel):
     renotify_interval_minutes: Optional[int] = Field(alias="renotifyIntervalMinutes")
 
 
+class DefaultPartitionStatusFields(BaseModel):
+    materialized_partitions: list[str] = Field(alias="materializedPartitions")
+    failed_partitions: list[str] = Field(alias="failedPartitions")
+    materializing_partitions: list[str] = Field(alias="materializingPartitions")
+    unmaterialized_partitions: list[str] = Field(alias="unmaterializedPartitions")
+
+
 class IssueFields(BaseModel):
     public_id: str = Field(alias="publicId")
     title: str
@@ -376,6 +384,18 @@ class SecretFieldsUpdatedBy(BaseModel):
     email: str
 
 
+class TimePartitionStatusFields(BaseModel):
+    ranges: List["TimePartitionStatusFieldsRanges"]
+
+
+class TimePartitionStatusFieldsRanges(BaseModel):
+    start_key: str = Field(alias="startKey")
+    end_key: str = Field(alias="endKey")
+    status: PartitionRangeStatus
+
+
 AlertPolicyFields.model_rebuild()
+DefaultPartitionStatusFields.model_rebuild()
 IssueFields.model_rebuild()
 SecretFields.model_rebuild()
+TimePartitionStatusFields.model_rebuild()

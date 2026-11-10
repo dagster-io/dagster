@@ -2,10 +2,15 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from dagster_rest_resources.schemas.enums import DgApiAssetHealthStatus
+from dagster_rest_resources.schemas.enums import (
+    DgApiAssetHealthStatus,
+    DgApiPartitionDefinitionType,
+    DgApiPartitionRangeStatus,
+)
 from dagster_rest_resources.schemas.util import DgApiList, DgApiPaginatedList
 
 DgApiEventType = Literal["ASSET_MATERIALIZATION", "ASSET_OBSERVATION"]
+DgApiPartitionStatusFilter = Literal["MATERIALIZED", "FAILED", "MATERIALIZING", "UNMATERIALIZED"]
 
 
 class DgApiAssetHealthMetadata(BaseModel):
@@ -184,3 +189,70 @@ class DgApiPartitionStats(BaseModel):
     num_failed: int
     num_materializing: int
     num_partitions: int
+
+
+class DgApiPartitionKeyList(DgApiPaginatedList[str]):
+    pass
+
+
+class DgApiPartitionDimension(BaseModel):
+    name: str
+    type: DgApiPartitionDefinitionType
+    dynamic_partitions_definition_name: str | None = None
+
+
+class DgApiAssetPartitionDefinition(BaseModel):
+    """An asset's partitioning, with the repository and code location that define it."""
+
+    asset_key: str
+    asset_key_parts: list[str]
+    repository_name: str
+    code_location_name: str
+    type: DgApiPartitionDefinitionType
+    dimensions: list[DgApiPartitionDimension]
+
+
+class DgApiPartitionKeyStatuses(BaseModel):
+    """Partition keys by status. Statuses filtered out are None."""
+
+    materialized: list[str] | None = None
+    failed: list[str] | None = None
+    materializing: list[str] | None = None
+    unmaterialized: list[str] | None = None
+
+
+class DgApiPartitionKeyRangeStatus(BaseModel):
+    """An inclusive range of time partition keys that share a status."""
+
+    start_key: str
+    end_key: str
+    status: DgApiPartitionRangeStatus
+
+
+class DgApiPartitionStatuses(BaseModel):
+    """Statuses for one dimension: per-key lists, or ranges for time partitions.
+
+    Time partitions outside every range have not been materialized.
+    """
+
+    keys: DgApiPartitionKeyStatuses | None = None
+    ranges: list[DgApiPartitionKeyRangeStatus] | None = None
+
+
+class DgApiMultiPartitionRangeStatus(BaseModel):
+    primary_start_key: str
+    primary_end_key: str
+    secondary: DgApiPartitionStatuses
+
+
+class DgApiAssetPartitionStatuses(BaseModel):
+    """Per-partition status for an asset.
+
+    Single-dimension assets fill `statuses`. Multi-partitioned assets fill
+    `primary_dimension_name` and `multi_ranges`, one per range of primary keys.
+    """
+
+    asset_key: str
+    statuses: DgApiPartitionStatuses | None = None
+    primary_dimension_name: str | None = None
+    multi_ranges: list[DgApiMultiPartitionRangeStatus] | None = None

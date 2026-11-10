@@ -1,0 +1,54 @@
+mutation AddDynamicPartition(
+  $partitionsDefName: String!
+  $partitionKey: String!
+  $repositorySelector: RepositorySelector!
+) {
+  addDynamicPartition(
+    partitionsDefName: $partitionsDefName
+    partitionKey: $partitionKey
+    repositorySelector: $repositorySelector
+  ) {
+    __typename
+    ... on AddDynamicPartitionSuccess {
+      partitionsDefName
+      partitionKey
+    }
+    ... on DuplicateDynamicPartitionError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation DeleteDynamicPartitions(
+  $partitionsDefName: String!
+  $partitionKeys: [String!]!
+  $repositorySelector: RepositorySelector!
+  $wipeMaterializations: Boolean
+) {
+  deleteDynamicPartitions(
+    partitionsDefName: $partitionsDefName
+    partitionKeys: $partitionKeys
+    repositorySelector: $repositorySelector
+    wipeMaterializations: $wipeMaterializations
+  ) {
+    __typename
+    ... on DeleteDynamicPartitionsSuccess {
+      partitionsDefName
+    }
+    ... on UnsupportedOperationError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

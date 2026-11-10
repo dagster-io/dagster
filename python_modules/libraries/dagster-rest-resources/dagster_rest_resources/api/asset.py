@@ -25,6 +25,8 @@ from dagster_rest_resources.schemas.asset import (
     DgApiAssetLocation,
     DgApiAssetLocationList,
     DgApiAssetMaterialization,
+    DgApiAssetPartitionDefinition,
+    DgApiAssetPartitionStatuses,
     DgApiAssetStatus,
     DgApiAutomationCondition,
     DgApiBackfillPolicy,
@@ -32,9 +34,16 @@ from dagster_rest_resources.schemas.asset import (
     DgApiEvaluationRecord,
     DgApiEvaluationRecordList,
     DgApiFreshnessPolicy,
+    DgApiMultiPartitionRangeStatus,
     DgApiPartitionDefinition,
+    DgApiPartitionDimension,
+    DgApiPartitionKeyList,
+    DgApiPartitionKeyRangeStatus,
+    DgApiPartitionKeyStatuses,
     DgApiPartitionMapping,
     DgApiPartitionStats,
+    DgApiPartitionStatuses,
+    DgApiPartitionStatusFilter,
 )
 from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 
@@ -348,10 +357,10 @@ class DgApiAssetApi:
         ).asset_nodes
         return DgApiAssetLocationList(items=[_build_location(n) for n in nodes])
 
-    def get_partition_status(self, asset_key: str) -> DgApiPartitionStats:
-        """Get partition materialization stats for an asset by slash-separated key."""
+    def get_partition_status(self, asset_key: list[str]) -> DgApiPartitionStats:
+        """Get partition materialization stats for an asset."""
         result = self._client.get_asset_partition_status(
-            asset_key=AssetKeyInput(path=asset_key.split("/")),
+            asset_key=AssetKeyInput(path=asset_key),
         ).asset_node_or_error
 
         match result.typename__:
@@ -367,6 +376,111 @@ class DgApiAssetApi:
                 )
             case "AssetNotFoundError":
                 raise DagsterPlusClientError(f"Error getting partition status: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def list_partition_keys(
+        self,
+        asset_key: list[str],
+        limit: int,
+        cursor: str | None = None,
+        ascending: bool = True,
+    ) -> DgApiPartitionKeyList:
+        """Page through an asset's partition keys."""
+        result = self._client.get_asset_partition_keys(
+            asset_key=AssetKeyInput(path=asset_key),
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+        ).asset_node_or_error
+
+        match result.typename__:
+            case "AssetNode":
+                connection = result.partition_key_connection  # ty: ignore[unresolved-attribute]
+                if connection is None:
+                    raise DagsterPlusClientError("Asset does not have partitions")
+                return DgApiPartitionKeyList(
+                    items=connection.results,
+                    cursor=connection.cursor,
+                    has_more=connection.has_more,
+                )
+            case "AssetNotFoundError":
+                raise DagsterPlusClientError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def get_partition_statuses(
+        self, asset_key: list[str], status: DgApiPartitionStatusFilter | None = None
+    ) -> DgApiAssetPartitionStatuses:
+        """Get the materialization status of each of an asset's partitions.
+
+        With `status`, return only partitions with that status. Multi-partitioned assets
+        drop primary ranges with no such partitions.
+        """
+        result = self._client.get_asset_partition_statuses(
+            asset_key=AssetKeyInput(path=asset_key),
+        ).asset_node_or_error
+
+        match result.typename__:
+            case "AssetNode":
+                if not result.is_partitioned:  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError("Asset does not have partitions")
+                asset_key_str = "/".join(result.asset_key.path)  # ty: ignore[unresolved-attribute]
+                statuses = result.asset_partition_statuses  # ty: ignore[unresolved-attribute]
+                if statuses.typename__ == "MultiPartitionStatuses":
+                    multi_ranges = [
+                        DgApiMultiPartitionRangeStatus(
+                            primary_start_key=r.primary_dim_start_key,
+                            primary_end_key=r.primary_dim_end_key,
+                            secondary=_build_partition_statuses(r.secondary_dim, status),
+                        )
+                        for r in statuses.ranges
+                    ]
+                    if status is not None:
+                        multi_ranges = [r for r in multi_ranges if _has_partitions(r.secondary)]
+                    return DgApiAssetPartitionStatuses(
+                        asset_key=asset_key_str,
+                        primary_dimension_name=statuses.primary_dimension_name,
+                        multi_ranges=multi_ranges,
+                    )
+                return DgApiAssetPartitionStatuses(
+                    asset_key=asset_key_str,
+                    statuses=_build_partition_statuses(statuses, status),
+                )
+            case "AssetNotFoundError":
+                raise DagsterPlusClientError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def get_partition_definition(self, asset_key: list[str]) -> DgApiAssetPartitionDefinition:
+        """Get an asset's partition dimensions and the code location."""
+        result = self._client.get_asset_partition_definition(
+            asset_key=AssetKeyInput(path=asset_key),
+        ).asset_node_or_error
+
+        match result.typename__:
+            case "AssetNode":
+                definition = result.partition_definition  # ty: ignore[unresolved-attribute]
+                if definition is None:
+                    raise DagsterPlusClientError("Asset does not have partitions")
+                path = result.asset_key.path  # ty: ignore[unresolved-attribute]
+                return DgApiAssetPartitionDefinition(
+                    asset_key="/".join(path),
+                    asset_key_parts=path,
+                    repository_name=result.repository.name,  # ty: ignore[unresolved-attribute]
+                    code_location_name=result.repository.location.name,  # ty: ignore[unresolved-attribute]
+                    type=definition.type,
+                    dimensions=[
+                        DgApiPartitionDimension(
+                            name=d.name,
+                            type=d.type,
+                            dynamic_partitions_definition_name=d.dynamic_partitions_definition_name,
+                        )
+                        for d in definition.dimension_types
+                    ],
+                )
+            case "AssetNotFoundError":
+                raise DagsterPlusClientError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -624,3 +738,46 @@ class DgApiAssetApi:
             freshness_info=freshness_info,
             checks_status=checks_status,
         )
+
+
+def _build_partition_statuses(
+    statuses: Any, status: DgApiPartitionStatusFilter | None
+) -> DgApiPartitionStatuses:
+    if statuses.typename__ == "TimePartitionStatuses":
+        if status == "UNMATERIALIZED":
+            # The server reports only the ranges that have a status; the gaps are unmaterialized.
+            raise DagsterPlusClientError(
+                "Time partitions cannot be filtered to UNMATERIALIZED: keys outside every"
+                " returned range are unmaterialized. Omit the status to see every range."
+            )
+        return DgApiPartitionStatuses(
+            ranges=[
+                DgApiPartitionKeyRangeStatus(
+                    start_key=r.start_key, end_key=r.end_key, status=r.status
+                )
+                for r in statuses.ranges
+                if status is None or r.status == status
+            ]
+        )
+    keys_by_status = {
+        "MATERIALIZED": statuses.materialized_partitions,
+        "FAILED": statuses.failed_partitions,
+        "MATERIALIZING": statuses.materializing_partitions,
+        "UNMATERIALIZED": statuses.unmaterialized_partitions,
+    }
+    return DgApiPartitionStatuses(
+        keys=DgApiPartitionKeyStatuses(
+            **{
+                name.lower(): keys
+                for name, keys in keys_by_status.items()
+                if status is None or name == status
+            }
+        )
+    )
+
+
+def _has_partitions(statuses: DgApiPartitionStatuses) -> bool:
+    keys = statuses.keys
+    if keys is None:
+        return bool(statuses.ranges)
+    return any([keys.materialized, keys.failed, keys.materializing, keys.unmaterialized])

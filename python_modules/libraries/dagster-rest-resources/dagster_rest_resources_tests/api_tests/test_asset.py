@@ -1,7 +1,11 @@
 from unittest.mock import Mock
 
 import pytest
-from dagster_rest_resources.__generated__.enums import AssetHealthStatus
+from dagster_rest_resources.__generated__.enums import (
+    AssetHealthStatus,
+    PartitionDefinitionType,
+    PartitionRangeStatus,
+)
 from dagster_rest_resources.__generated__.get_asset_condition_evaluations import (
     GetAssetConditionEvaluations,
     GetAssetConditionEvaluationsAssetConditionEvaluationRecordsOrErrorAssetConditionEvaluationRecords,
@@ -75,11 +79,31 @@ from dagster_rest_resources.__generated__.get_asset_observation_events import (
     GetAssetObservationEventsAssetsOrErrorAssetConnectionNodesKey,
     GetAssetObservationEventsAssetsOrErrorPythonError,
 )
+from dagster_rest_resources.__generated__.get_asset_partition_definition import (
+    GetAssetPartitionDefinition,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNode,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeAssetKey,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodePartitionDefinition,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodePartitionDefinitionDimensionTypes,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepository,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepositoryLocation,
+    GetAssetPartitionDefinitionAssetNodeOrErrorAssetNotFoundError,
+)
+from dagster_rest_resources.__generated__.get_asset_partition_keys import (
+    GetAssetPartitionKeys,
+    GetAssetPartitionKeysAssetNodeOrErrorAssetNode,
+    GetAssetPartitionKeysAssetNodeOrErrorAssetNodePartitionKeyConnection,
+    GetAssetPartitionKeysAssetNodeOrErrorAssetNotFoundError,
+)
 from dagster_rest_resources.__generated__.get_asset_partition_status import (
     GetAssetPartitionStatus,
     GetAssetPartitionStatusAssetNodeOrErrorAssetNode,
     GetAssetPartitionStatusAssetNodeOrErrorAssetNodePartitionStats,
     GetAssetPartitionStatusAssetNodeOrErrorAssetNotFoundError,
+)
+from dagster_rest_resources.__generated__.get_asset_partition_statuses import (
+    GetAssetPartitionStatuses,
+    GetAssetPartitionStatusesAssetNodeOrErrorAssetNotFoundError,
 )
 from dagster_rest_resources.__generated__.input_types import AssetKeyInput
 from dagster_rest_resources.__generated__.list_asset_records import (
@@ -96,7 +120,7 @@ from dagster_rest_resources.schemas.asset import (
     DgApiEvaluationRecordList,
     DgApiPartitionStats,
 )
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusGraphqlError
 
 
 def _make_asset_record(id: str = "asset-id", path: list[str] | None = None):
@@ -742,7 +766,11 @@ class TestGetPartitionStatus:
             )
         )
 
-        result = DgApiAssetApi(_client=client).get_partition_status("test/asset")
+        result = DgApiAssetApi(_client=client).get_partition_status(["marts/daily", "orders"])
+
+        client.get_asset_partition_status.assert_called_once_with(
+            asset_key=AssetKeyInput(path=["marts/daily", "orders"])
+        )
 
         assert result == DgApiPartitionStats(
             num_materialized=1,
@@ -761,7 +789,7 @@ class TestGetPartitionStatus:
         )
 
         with pytest.raises(DagsterPlusGraphqlError, match="Asset does not have partitions"):
-            DgApiAssetApi(_client=client).get_partition_status("test/asset")
+            DgApiAssetApi(_client=client).get_partition_status(["test", "asset"])
 
     def test_not_found_raises(self):
         client = Mock(spec=IGraphQLClient)
@@ -772,7 +800,7 @@ class TestGetPartitionStatus:
         )
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error getting partition status"):
-            DgApiAssetApi(_client=client).get_partition_status("test/asset")
+            DgApiAssetApi(_client=client).get_partition_status(["test", "asset"])
 
 
 def _location_node(path: list[str], repo: str = "repo", location: str = "loc"):
@@ -850,3 +878,303 @@ class TestListAssetLocations:
         result = DgApiAssetApi(_client=client).list_asset_locations([["gone"]])
 
         assert result.items == []
+
+
+class TestListPartitionKeys:
+    def test_returns_a_page_of_keys(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_keys.return_value = GetAssetPartitionKeys(
+            assetNodeOrError=GetAssetPartitionKeysAssetNodeOrErrorAssetNode(
+                __typename="AssetNode",
+                partitionKeyConnection=GetAssetPartitionKeysAssetNodeOrErrorAssetNodePartitionKeyConnection(
+                    results=["2024-01-01", "2024-01-02"], cursor="c1", hasMore=True
+                ),
+            )
+        )
+
+        result = DgApiAssetApi(client).list_partition_keys(
+            ["marts/daily", "orders"], limit=2, cursor="c0", ascending=False
+        )
+
+        client.get_asset_partition_keys.assert_called_once_with(
+            asset_key=AssetKeyInput(path=["marts/daily", "orders"]),
+            limit=2,
+            ascending=False,
+            cursor="c0",
+        )
+        assert result.items == ["2024-01-01", "2024-01-02"]
+        assert result.cursor == "c1"
+        assert result.has_more
+
+    def test_unpartitioned_asset_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_keys.return_value = GetAssetPartitionKeys(
+            assetNodeOrError=GetAssetPartitionKeysAssetNodeOrErrorAssetNode(
+                __typename="AssetNode", partitionKeyConnection=None
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="does not have partitions"):
+            DgApiAssetApi(client).list_partition_keys(["orders"], limit=10)
+
+    def test_asset_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_keys.return_value = GetAssetPartitionKeys(
+            assetNodeOrError=GetAssetPartitionKeysAssetNodeOrErrorAssetNotFoundError(
+                __typename="AssetNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Asset not found"):
+            DgApiAssetApi(client).list_partition_keys(["missing"], limit=10)
+
+
+class TestGetPartitionDefinition:
+    def test_returns_dimensions_and_location(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_definition.return_value = GetAssetPartitionDefinition(
+            assetNodeOrError=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNode(
+                __typename="AssetNode",
+                assetKey=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeAssetKey(
+                    path=["orders"]
+                ),
+                repository=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepository(
+                    name="repo",
+                    location=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepositoryLocation(
+                        name="loc"
+                    ),
+                ),
+                partitionDefinition=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodePartitionDefinition(
+                    type=PartitionDefinitionType.DYNAMIC,
+                    dimensionTypes=[
+                        GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodePartitionDefinitionDimensionTypes(
+                            name="default",
+                            type=PartitionDefinitionType.DYNAMIC,
+                            dynamicPartitionsDefinitionName="customers",
+                        )
+                    ],
+                ),
+            )
+        )
+
+        result = DgApiAssetApi(client).get_partition_definition(["orders"])
+
+        assert (result.code_location_name, result.repository_name) == ("loc", "repo")
+        assert result.type == PartitionDefinitionType.DYNAMIC
+        assert result.dimensions[0].dynamic_partitions_definition_name == "customers"
+
+    def test_unpartitioned_asset_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_definition.return_value = GetAssetPartitionDefinition(
+            assetNodeOrError=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNode(
+                __typename="AssetNode",
+                assetKey=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeAssetKey(
+                    path=["orders"]
+                ),
+                repository=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepository(
+                    name="repo",
+                    location=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNodeRepositoryLocation(
+                        name="loc"
+                    ),
+                ),
+                partitionDefinition=None,
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="does not have partitions"):
+            DgApiAssetApi(client).get_partition_definition(["orders"])
+
+    def test_asset_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_definition.return_value = GetAssetPartitionDefinition(
+            assetNodeOrError=GetAssetPartitionDefinitionAssetNodeOrErrorAssetNotFoundError(
+                __typename="AssetNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Asset not found"):
+            DgApiAssetApi(client).get_partition_definition(["missing"])
+
+
+def _partition_statuses_response(statuses: dict, is_partitioned: bool = True):
+    return GetAssetPartitionStatuses.model_validate(
+        {
+            "assetNodeOrError": {
+                "__typename": "AssetNode",
+                "assetKey": {"path": ["orders"]},
+                "isPartitioned": is_partitioned,
+                "assetPartitionStatuses": statuses,
+            }
+        }
+    )
+
+
+_DEFAULT_STATUSES = {
+    "__typename": "DefaultPartitionStatuses",
+    "materializedPartitions": ["a"],
+    "failedPartitions": ["c"],
+    "materializingPartitions": ["b"],
+    "unmaterializedPartitions": ["d"],
+}
+
+
+class TestGetPartitionStatuses:
+    def test_lists_keys_by_status(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            _DEFAULT_STATUSES
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"])
+
+        client.get_asset_partition_statuses.assert_called_once_with(
+            asset_key=AssetKeyInput(path=["orders"])
+        )
+        assert result.statuses is not None and result.statuses.keys is not None
+        assert result.statuses.keys.failed == ["c"]
+        assert result.statuses.keys.unmaterialized == ["d"]
+        assert result.multi_ranges is None
+
+    def test_reports_time_partitions_as_ranges(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            {
+                "__typename": "TimePartitionStatuses",
+                "ranges": [
+                    {"startKey": "2024-01-01", "endKey": "2024-01-05", "status": "MATERIALIZED"}
+                ],
+            }
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"])
+
+        assert result.statuses is not None and result.statuses.ranges is not None
+        [time_range] = result.statuses.ranges
+        assert (time_range.start_key, time_range.end_key) == ("2024-01-01", "2024-01-05")
+        assert time_range.status == PartitionRangeStatus.MATERIALIZED
+
+    def test_reports_multi_partitions_by_primary_range(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            {
+                "__typename": "MultiPartitionStatuses",
+                "primaryDimensionName": "date",
+                "ranges": [
+                    {
+                        "primaryDimStartKey": "2024-01-01",
+                        "primaryDimEndKey": "2024-01-02",
+                        "secondaryDim": _DEFAULT_STATUSES,
+                    },
+                    {
+                        "primaryDimStartKey": "2024-01-03",
+                        "primaryDimEndKey": "2024-01-03",
+                        "secondaryDim": {
+                            "__typename": "TimePartitionStatuses",
+                            "ranges": [
+                                {"startKey": "00:00", "endKey": "12:00", "status": "FAILED"}
+                            ],
+                        },
+                    },
+                ],
+            }
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"])
+
+        assert result.statuses is None
+        assert result.primary_dimension_name == "date"
+        assert result.multi_ranges is not None
+        first_range, second_range = result.multi_ranges
+        assert first_range.primary_start_key == "2024-01-01"
+        assert first_range.secondary.keys is not None
+        assert first_range.secondary.keys.materialized == ["a"]
+        assert second_range.primary_start_key == "2024-01-03"
+        assert second_range.secondary.keys is None
+        assert second_range.secondary.ranges is not None
+        [secondary_range] = second_range.secondary.ranges
+        assert (secondary_range.start_key, secondary_range.end_key) == ("00:00", "12:00")
+        assert secondary_range.status == PartitionRangeStatus.FAILED
+
+    def test_filters_keys_to_one_status(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            _DEFAULT_STATUSES
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"], status="FAILED")
+
+        assert result.statuses is not None and result.statuses.keys is not None
+        assert result.statuses.keys.failed == ["c"]
+        assert result.statuses.keys.materialized is None
+        assert result.statuses.keys.materializing is None
+        assert result.statuses.keys.unmaterialized is None
+
+    def test_filters_time_ranges_to_one_status(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            {
+                "__typename": "TimePartitionStatuses",
+                "ranges": [
+                    {"startKey": "2024-01-01", "endKey": "2024-01-05", "status": "MATERIALIZED"},
+                    {"startKey": "2024-01-06", "endKey": "2024-01-06", "status": "FAILED"},
+                ],
+            }
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"], status="FAILED")
+
+        assert result.statuses is not None and result.statuses.ranges is not None
+        [failed_range] = result.statuses.ranges
+        assert (failed_range.start_key, failed_range.end_key) == ("2024-01-06", "2024-01-06")
+
+    def test_time_partitions_cannot_be_filtered_to_unmaterialized(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            {"__typename": "TimePartitionStatuses", "ranges": []}
+        )
+        with pytest.raises(DagsterPlusClientError, match="cannot be filtered to UNMATERIALIZED"):
+            DgApiAssetApi(client).get_partition_statuses(["orders"], status="UNMATERIALIZED")
+
+    def test_filtering_multi_partitions_drops_ranges_without_the_status(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            {
+                "__typename": "MultiPartitionStatuses",
+                "primaryDimensionName": "date",
+                "ranges": [
+                    {
+                        "primaryDimStartKey": "2024-01-01",
+                        "primaryDimEndKey": "2024-01-02",
+                        "secondaryDim": _DEFAULT_STATUSES,
+                    },
+                    {
+                        "primaryDimStartKey": "2024-01-03",
+                        "primaryDimEndKey": "2024-01-03",
+                        "secondaryDim": {**_DEFAULT_STATUSES, "failedPartitions": []},
+                    },
+                ],
+            }
+        )
+
+        result = DgApiAssetApi(client).get_partition_statuses(["orders"], status="FAILED")
+
+        assert result.multi_ranges is not None
+        [failed_range] = result.multi_ranges
+        assert failed_range.primary_start_key == "2024-01-01"
+        assert failed_range.secondary.keys is not None
+        assert failed_range.secondary.keys.failed == ["c"]
+        assert failed_range.secondary.keys.materialized is None
+
+    def test_unpartitioned_asset_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = _partition_statuses_response(
+            _DEFAULT_STATUSES, is_partitioned=False
+        )
+        with pytest.raises(DagsterPlusClientError, match="does not have partitions"):
+            DgApiAssetApi(client).get_partition_statuses(["orders"])
+
+    def test_asset_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_partition_statuses.return_value = GetAssetPartitionStatuses(
+            assetNodeOrError=GetAssetPartitionStatusesAssetNodeOrErrorAssetNotFoundError(
+                __typename="AssetNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Asset not found"):
+            DgApiAssetApi(client).get_partition_statuses(["missing"])

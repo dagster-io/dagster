@@ -408,3 +408,99 @@ query GetAssetLocations($assetKeys: [AssetKeyInput!]!) {
     }
   }
 }
+
+query GetAssetPartitionKeys(
+  $assetKey: AssetKeyInput!
+  $limit: Int!
+  $ascending: Boolean!
+  $cursor: String
+) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      partitionKeyConnection(limit: $limit, ascending: $ascending, cursor: $cursor) {
+        results
+        cursor
+        hasMore
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}
+
+query GetAssetPartitionDefinition($assetKey: AssetKeyInput!) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      assetKey {
+        path
+      }
+      repository {
+        name
+        location {
+          name
+        }
+      }
+      partitionDefinition {
+        type
+        dimensionTypes {
+          name
+          type
+          dynamicPartitionsDefinitionName
+        }
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}
+
+fragment DefaultPartitionStatusFields on DefaultPartitionStatuses {
+  materializedPartitions
+  failedPartitions
+  materializingPartitions
+  unmaterializedPartitions
+}
+
+fragment TimePartitionStatusFields on TimePartitionStatuses {
+  ranges {
+    startKey
+    endKey
+    status
+  }
+}
+
+query GetAssetPartitionStatuses($assetKey: AssetKeyInput!) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      assetKey {
+        path
+      }
+      isPartitioned
+      assetPartitionStatuses {
+        __typename
+        ...DefaultPartitionStatusFields
+        ...TimePartitionStatusFields
+        ... on MultiPartitionStatuses {
+          primaryDimensionName
+          ranges {
+            primaryDimStartKey
+            primaryDimEndKey
+            secondaryDim {
+              __typename
+              ...DefaultPartitionStatusFields
+              ...TimePartitionStatusFields
+            }
+          }
+        }
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}

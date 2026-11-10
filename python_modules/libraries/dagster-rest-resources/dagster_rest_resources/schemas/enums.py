@@ -8,6 +8,8 @@ from dagster_rest_resources.__generated__.enums import (
     InstigationTickStatus as DgApiInstigationTickStatus,  # noqa: F401
     IssueStatus as DgApiIssueStatus,  # noqa: F401
     LogLevel as DgApiLogLevel,  # noqa: F401
+    PartitionDefinitionType as DgApiPartitionDefinitionType,  # noqa: F401
+    PartitionRangeStatus as DgApiPartitionRangeStatus,  # noqa: F401
     PullRequestStatus as DgApiPullRequestStatus,  # noqa: F401
     RunStatus as DgApiRunStatus,  # noqa: F401
     SensorType as DgApiSensorType,  # noqa: F401

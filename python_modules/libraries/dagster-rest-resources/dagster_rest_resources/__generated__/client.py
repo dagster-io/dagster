@@ -7,6 +7,7 @@ from .base_client import BaseClient
 from .base_model import UNSET
 
 if TYPE_CHECKING:
+    from .add_dynamic_partition import AddDynamicPartition
     from .add_link_to_issue import AddLinkToIssue
     from .add_or_update_code_location import AddOrUpdateCodeLocation
     from .base_model import UnsetType
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from .delete_alert_policy import DeleteAlertPolicy
     from .delete_code_location import DeleteCodeLocation
     from .delete_deployment import DeleteDeployment
+    from .delete_dynamic_partitions import DeleteDynamicPartitions
     from .enums import (
         InstigationTickStatus,
         IssueStatus,
@@ -33,7 +35,10 @@ if TYPE_CHECKING:
     from .get_asset_materialization_events import GetAssetMaterializationEvents
     from .get_asset_metrics import GetAssetMetrics
     from .get_asset_observation_events import GetAssetObservationEvents
+    from .get_asset_partition_definition import GetAssetPartitionDefinition
+    from .get_asset_partition_keys import GetAssetPartitionKeys
     from .get_asset_partition_status import GetAssetPartitionStatus
+    from .get_asset_partition_statuses import GetAssetPartitionStatuses
     from .get_asset_selection_metrics import GetAssetSelectionMetrics
     from .get_captured_logs import GetCapturedLogs
     from .get_captured_logs_metadata import GetCapturedLogsMetadata
@@ -1855,6 +1860,155 @@ class Client(BaseClient):
         data = self.get_data(response)
         return GetAssetLocations.model_validate(data)
 
+    def get_asset_partition_keys(
+        self,
+        asset_key: "AssetKeyInput",
+        limit: int,
+        ascending: bool,
+        cursor: Union[Optional[str], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetPartitionKeys":
+        from .get_asset_partition_keys import GetAssetPartitionKeys
+
+        query = gql("""
+            query GetAssetPartitionKeys($assetKey: AssetKeyInput!, $limit: Int!, $ascending: Boolean!, $cursor: String) {
+              assetNodeOrError(assetKey: $assetKey) {
+                __typename
+                ... on AssetNode {
+                  partitionKeyConnection(limit: $limit, ascending: $ascending, cursor: $cursor) {
+                    results
+                    cursor
+                    hasMore
+                  }
+                }
+                ... on AssetNotFoundError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {
+            "assetKey": asset_key,
+            "limit": limit,
+            "ascending": ascending,
+            "cursor": cursor,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetPartitionKeys",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetPartitionKeys.model_validate(data)
+
+    def get_asset_partition_definition(
+        self, asset_key: "AssetKeyInput", **kwargs: Any
+    ) -> "GetAssetPartitionDefinition":
+        from .get_asset_partition_definition import GetAssetPartitionDefinition
+
+        query = gql("""
+            query GetAssetPartitionDefinition($assetKey: AssetKeyInput!) {
+              assetNodeOrError(assetKey: $assetKey) {
+                __typename
+                ... on AssetNode {
+                  assetKey {
+                    path
+                  }
+                  repository {
+                    name
+                    location {
+                      name
+                    }
+                  }
+                  partitionDefinition {
+                    type
+                    dimensionTypes {
+                      name
+                      type
+                      dynamicPartitionsDefinitionName
+                    }
+                  }
+                }
+                ... on AssetNotFoundError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"assetKey": asset_key}
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetPartitionDefinition",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetPartitionDefinition.model_validate(data)
+
+    def get_asset_partition_statuses(
+        self, asset_key: "AssetKeyInput", **kwargs: Any
+    ) -> "GetAssetPartitionStatuses":
+        from .get_asset_partition_statuses import GetAssetPartitionStatuses
+
+        query = gql("""
+            query GetAssetPartitionStatuses($assetKey: AssetKeyInput!) {
+              assetNodeOrError(assetKey: $assetKey) {
+                __typename
+                ... on AssetNode {
+                  assetKey {
+                    path
+                  }
+                  isPartitioned
+                  assetPartitionStatuses {
+                    __typename
+                    ...DefaultPartitionStatusFields
+                    ...TimePartitionStatusFields
+                    ... on MultiPartitionStatuses {
+                      primaryDimensionName
+                      ranges {
+                        primaryDimStartKey
+                        primaryDimEndKey
+                        secondaryDim {
+                          __typename
+                          ...DefaultPartitionStatusFields
+                          ...TimePartitionStatusFields
+                        }
+                      }
+                    }
+                  }
+                }
+                ... on AssetNotFoundError {
+                  message
+                }
+              }
+            }
+
+            fragment DefaultPartitionStatusFields on DefaultPartitionStatuses {
+              materializedPartitions
+              failedPartitions
+              materializingPartitions
+              unmaterializedPartitions
+            }
+
+            fragment TimePartitionStatusFields on TimePartitionStatuses {
+              ranges {
+                startKey
+                endKey
+                status
+              }
+            }
+            """)
+        variables: dict[str, object] = {"assetKey": asset_key}
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetPartitionStatuses",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetPartitionStatuses.model_validate(data)
+
     def list_asset_checks(
         self,
         asset_key: "AssetKeyInput",
@@ -3475,6 +3629,102 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return UpdateOrganizationSettings.model_validate(data)
+
+    def add_dynamic_partition(
+        self,
+        partitions_def_name: str,
+        partition_key: str,
+        repository_selector: "RepositorySelector",
+        **kwargs: Any
+    ) -> "AddDynamicPartition":
+        from .add_dynamic_partition import AddDynamicPartition
+
+        query = gql("""
+            mutation AddDynamicPartition($partitionsDefName: String!, $partitionKey: String!, $repositorySelector: RepositorySelector!) {
+              addDynamicPartition(
+                partitionsDefName: $partitionsDefName
+                partitionKey: $partitionKey
+                repositorySelector: $repositorySelector
+              ) {
+                __typename
+                ... on AddDynamicPartitionSuccess {
+                  partitionsDefName
+                  partitionKey
+                }
+                ... on DuplicateDynamicPartitionError {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {
+            "partitionsDefName": partitions_def_name,
+            "partitionKey": partition_key,
+            "repositorySelector": repository_selector,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="AddDynamicPartition",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return AddDynamicPartition.model_validate(data)
+
+    def delete_dynamic_partitions(
+        self,
+        partitions_def_name: str,
+        partition_keys: list[str],
+        repository_selector: "RepositorySelector",
+        wipe_materializations: Union[Optional[bool], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "DeleteDynamicPartitions":
+        from .delete_dynamic_partitions import DeleteDynamicPartitions
+
+        query = gql("""
+            mutation DeleteDynamicPartitions($partitionsDefName: String!, $partitionKeys: [String!]!, $repositorySelector: RepositorySelector!, $wipeMaterializations: Boolean) {
+              deleteDynamicPartitions(
+                partitionsDefName: $partitionsDefName
+                partitionKeys: $partitionKeys
+                repositorySelector: $repositorySelector
+                wipeMaterializations: $wipeMaterializations
+              ) {
+                __typename
+                ... on DeleteDynamicPartitionsSuccess {
+                  partitionsDefName
+                }
+                ... on UnsupportedOperationError {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {
+            "partitionsDefName": partitions_def_name,
+            "partitionKeys": partition_keys,
+            "repositorySelector": repository_selector,
+            "wipeMaterializations": wipe_materializations,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="DeleteDynamicPartitions",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return DeleteDynamicPartitions.model_validate(data)
 
     def get_run(self, run_id: str, **kwargs: Any) -> "GetRun":
         from .get_run import GetRun
