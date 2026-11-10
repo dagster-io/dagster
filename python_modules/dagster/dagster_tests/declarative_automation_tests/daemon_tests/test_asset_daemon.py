@@ -13,6 +13,7 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
+from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -37,6 +38,7 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR,
+    AssetDaemon,
     asset_daemon_cursor_from_instigator_serialized_cursor,
     get_has_migrated_sensor_names,
     get_has_migrated_to_sensors,
@@ -551,6 +553,52 @@ def test_auto_materialize_sensor_enforced_minimum_interval():
             )
 
 
+@pytest.mark.parametrize("stale_status", [InstigatorStatus.RUNNING, None])
+def test_stale_sensor_states_do_not_tick_a_stopped_sensor(
+    stale_status: InstigatorStatus | None, caplog
+):
+    with get_daemon_instance(paused=False) as instance:
+        result = daemon_sensor_scenario.evaluate_daemon(instance)
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_a",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.DECLARED_IN_CODE,
+        )
+        result = result.stop_sensor("auto_materialize_sensor_a").start_sensor(
+            "auto_materialize_sensor_b"
+        )
+
+        # The asset daemon sees the stopped sensor as still running, or as having no saved state,
+        # and sees auto_materialize_sensor_b's state correctly.
+        stale_states = []
+        for state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR):
+            if state.instigator_name != "auto_materialize_sensor_a":
+                stale_states.append(state)
+            elif stale_status:
+                stale_states.append(state.with_status(stale_status))
+        with (
+            mock.patch.object(AssetDaemon, "get_sensor_states", return_value=stale_states),
+            # Process auto_materialize_sensor_a first, so skipping it must not skip the sensors
+            # after it.
+            mock.patch(
+                "dagster._daemon.asset_daemon.shuffled_round_robin_by_key",
+                side_effect=lambda items, key: sorted(items, key=lambda item: item[0].name),
+            ),
+        ):
+            result.with_current_time_advanced(seconds=60).evaluate_tick()
+
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_a",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.STOPPED,
+        )
+        _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=1)
+        skipped_missing_state = "its state already exists in storage" in caplog.text
+        assert skipped_missing_state == (stale_status is None)
+
+
 def test_auto_materialize_sensor_no_transition():
     # have not been using global AMP before - first tick does not create
     # any sensor states except for the one that is declared in code
@@ -775,6 +823,60 @@ def test_auto_materialize_sensor_name_transition() -> None:
                 ).evaluation_id
                 > 0  # real world should be larger
             )
+
+
+@pytest.mark.parametrize("new_name_state_saved", [True, False])
+@pytest.mark.parametrize("stale_read", [True, False])
+def test_sensor_name_migration_with_stale_sensor_states(
+    new_name_state_saved: bool, stale_read: bool
+) -> None:
+    """A stale get_sensor_states can fail the sensor name migration once, but the asset daemon's
+    next iteration completes it with the same result as a fresh read.
+    """
+    old_name_origin = RemoteRepositoryOrigin(
+        code_location_origin=get_code_location_origin(single_daemon_sensor_scenario.initial_spec),
+        repository_name="__repository__",
+    ).get_instigator_origin("default_auto_materialize_sensor")
+    old_name_state = InstigatorState(
+        old_name_origin,
+        InstigatorType.SENSOR,
+        InstigatorStatus.RUNNING,
+        SensorInstigatorData(sensor_type=SensorType.AUTO_MATERIALIZE),
+    )
+    new_name_state = InstigatorState(
+        old_name_origin._replace(instigator_name="default_automation_condition_sensor"),
+        InstigatorType.SENSOR,
+        InstigatorStatus.DECLARED_IN_CODE,
+        SensorInstigatorData(sensor_type=SensorType.AUTOMATION),
+    )
+
+    with get_daemon_instance(paused=False) as instance:
+        instance.add_instigator_state(old_name_state)
+        if new_name_state_saved:
+            instance.add_instigator_state(new_name_state)
+
+        if stale_read:
+            # The read disagrees with storage about the new-name state, as a lagging replica could.
+            stale_states = (
+                [old_name_state] if new_name_state_saved else [old_name_state, new_name_state]
+            )
+            with (
+                mock.patch.object(AssetDaemon, "get_sensor_states", return_value=stale_states),
+                pytest.raises(dg.DagsterInvariantViolationError),
+            ):
+                single_daemon_sensor_scenario.evaluate_daemon(instance)
+            assert not get_has_migrated_sensor_names(instance)
+
+        single_daemon_sensor_scenario.evaluate_daemon(instance)
+
+        assert get_has_migrated_sensor_names(instance)
+        # The new-name state is RUNNING only if the migration copied the old-name state to it.
+        _assert_sensor_state(
+            instance,
+            "default_automation_condition_sensor",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.RUNNING,
+        )
 
 
 def test_copy_default_auto_materialize_sensor_states_skips_non_matching_sensors() -> None:

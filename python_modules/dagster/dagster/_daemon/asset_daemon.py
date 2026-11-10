@@ -481,6 +481,16 @@ class AssetDaemon(DagsterDaemon):
     ) -> None:
         pass
 
+    def get_sensor_states(self, instance: DagsterInstance) -> Sequence[InstigatorState]:
+        """Saved state of every sensor (status, last evaluation time, cursor).
+
+        The asset daemon evaluates a sensor only if its status isn't STOPPED and its minimum
+        interval has passed since its last evaluation. Subclasses may return slightly stale
+        states, e.g. from a read replica. This is safe because each evaluation re-reads the
+        sensor's state from storage before acting on it.
+        """
+        return instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+
     def _get_print_sensor_name(self, sensor: RemoteSensor | None) -> str:
         if not sensor:
             return ""
@@ -607,9 +617,7 @@ class AssetDaemon(DagsterDaemon):
 
             all_sensor_states = {
                 sensor_state.selector_id: sensor_state
-                for sensor_state in instance.all_instigator_state(
-                    instigator_type=InstigatorType.SENSOR
-                )
+                for sensor_state in self.get_sensor_states(instance)
             }
 
             if not self._checked_migrations:
@@ -698,7 +706,21 @@ class AssetDaemon(DagsterDaemon):
                         sensor_type=sensor.sensor_type,
                     ),
                 )
-                instance.add_instigator_state(auto_materialize_state)
+                # Add the sensor's state if it doesn't exist yet. all_sensor_states may be out of
+                # date (e.g. read from a replica, or a user saved the state after the read), so the
+                # state may already exist. If it does, the jobs table's unique constraint rejects
+                # the insert and leaves the saved state unchanged, and add_instigator_state raises
+                # DagsterInvariantViolationError. The asset daemon then skips the sensor until its
+                # next iteration.
+                try:
+                    instance.add_instigator_state(auto_materialize_state)
+                except DagsterInvariantViolationError:
+                    self._logger.warning(
+                        f"Skipping sensor evaluation{self._get_print_sensor_name(sensor)}: its"
+                        " state already exists in storage but was missing from the sensor states"
+                        " read for this iteration."
+                    )
+                    continue
             elif is_under_min_interval(
                 auto_materialize_state,
                 sensor,
@@ -877,6 +899,18 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_instigator_state = check.not_none(
                 instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
+            # The asset daemon submitted this call to its thread pool's queue because the sensor's
+            # status was not STOPPED. That status may now be stale, or a user may have stopped the
+            # sensor while this call waited in the queue. Skip the evaluation so a stopped sensor
+            # doesn't launch runs.
+            if not sensor.get_current_instigator_state(
+                auto_materialize_instigator_state
+            ).is_running:
+                self._logger.info(
+                    f"Skipping sensor evaluation{self._get_print_sensor_name(sensor)}: the sensor"
+                    " is no longer running."
+                )
+                return
             if is_under_min_interval(
                 auto_materialize_instigator_state,
                 sensor,
