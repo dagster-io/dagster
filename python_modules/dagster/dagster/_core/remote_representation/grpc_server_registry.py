@@ -146,6 +146,21 @@ class GrpcServerRegistry(AbstractContextManager):
 
             return self._get_grpc_endpoint(code_location_origin)
 
+    def get_active_process_exit_code(
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+    ) -> int | None:
+        """Exit code of the server process currently returned for this origin, or None if it is
+        still running or there is no such process (never loaded, or the last load failed).
+
+        Unlike get_grpc_endpoint, never starts a process.
+        """
+        check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
+        with self._lock:
+            entry = self._active_entries.get(code_location_origin.get_id())
+            if not isinstance(entry, ServerRegistryEntry):
+                return None
+            return entry.process.server_process.poll()
+
     def get_grpc_endpoint(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
