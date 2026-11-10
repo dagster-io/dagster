@@ -447,6 +447,46 @@ def test_resources_snowflake_additional_snowflake_connection_args():
             assert snowflake_conn_mock.call_args[1]["foo"] == "bar"
 
 
+def test_resources_snowflake_adbc_connection():
+    """Tests that the ADBC connector uses the Snowflake driver and closes the connection."""
+    adbc_manager = mock.MagicMock()
+    adbc_connection = mock.MagicMock()
+    adbc_manager.dbapi.connect.return_value = adbc_connection
+
+    resource = SnowflakeResource(
+        connector="adbc",
+        account="test_account",
+        user="test_user",
+        password="test_password",
+        database="TESTDB",
+        schema="TESTSCHEMA",
+        warehouse="TEST_WAREHOUSE",
+        role="TEST_ROLE",
+    )
+
+    with mock.patch.dict("sys.modules", {"adbc_driver_manager": adbc_manager}):
+        with resource.get_connection() as conn:
+            assert conn is adbc_connection
+
+            adbc_manager.dbapi.connect.assert_called_once_with(
+                driver="snowflake",
+                db_kwargs={
+                    "adbc.snowflake.sql.account": "test_account",
+                    "username": "test_user",
+                    "password": "test_password",
+                    "adbc.snowflake.sql.db": "TESTDB",
+                    "adbc.snowflake.sql.schema": "TESTSCHEMA",
+                    "adbc.snowflake.sql.warehouse": "TEST_WAREHOUSE",
+                    "adbc.snowflake.sql.role": "TEST_ROLE",
+                    "adbc.snowflake.sql.client_option.app_name": (
+                        SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+                    ),
+                },
+            )
+
+        adbc_connection.close.assert_called_once()
+
+
 @pytest.mark.skip_if_no_snowflake_credentials
 @pytest.mark.integration
 def test_snowpark_session_integration():
