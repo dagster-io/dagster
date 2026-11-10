@@ -649,15 +649,26 @@ class DgContext:
         # level. Unfortunately there is no setting reliably present in pyproject.toml or setup.py
         # that can be relied on to know in advance the package root (src or root level).
 
-        base_path = self.root_path / "src" if (self.root_path / "src").exists() else self.root_path
-        path = base_path / Path(*module_name.split("."))
-        if path.with_suffix(".py").exists():
-            return path.with_suffix(".py")
+        # A `src` directory does not by itself mean the package lives under it: a flat-layout
+        # project can have an unrelated top-level `src` directory. Prefer `src` when the module
+        # is there, otherwise fall back to the root level.
+        src_path = self.root_path / "src"
+        base_paths = [src_path, self.root_path] if src_path.exists() else [self.root_path]
+        for base_path in base_paths:
+            path = base_path / Path(*module_name.split("."))
+            if path.with_suffix(".py").exists():
+                return path.with_suffix(".py")
+            elif path.exists():
+                return path
 
         # Note that when `require_exists` is False, the returned path assumes a directory
-        # instead of a py file.
-        elif path.exists() or not require_exists:
-            return path
+        # instead of a py file. Place it next to the project's root package.
+        if not require_exists:
+            root_package = self.root_module_name.split(".")[0]
+            base_path = next(
+                (base for base in base_paths if (base / root_package).exists()), base_paths[0]
+            )
+            return base_path / Path(*module_name.split("."))
 
         raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
