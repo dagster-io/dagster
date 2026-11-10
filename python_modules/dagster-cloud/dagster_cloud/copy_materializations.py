@@ -434,6 +434,10 @@ def _format_ts(timestamp: float) -> str:
     return datetime_from_timestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
+
+
 def _print_plan(plan: AssetCopyPlan) -> None:
     key = plan.asset_key.to_user_string()
     if plan.skip_reason is not None:
@@ -448,7 +452,7 @@ def _print_plan(plan: AssetCopyPlan) -> None:
         return
     first, last = plan.events_to_write[0].timestamp, plan.events_to_write[-1].timestamp
     ui.print(
-        f"  WRITE  {key}: {len(plan.events_to_write)} events"
+        f"  WRITE  {key}: {_count(len(plan.events_to_write), 'event')}"
         f" ({_format_ts(first)} -> {_format_ts(last)}), {skipped}"
     )
 
@@ -593,9 +597,9 @@ def copy_materializations_command(
         to_write = [plan for plan in plans if plan.events_to_write]
         total = sum(len(plan.events_to_write) for plan in to_write)
         ui.print(
-            f"\n{total} events across {len(to_write)} assets;"
-            f" {len(undefined_keys)} assets not defined in target;"
-            f" {sum(1 for plan in plans if plan.skip_reason)} assets skipped."
+            f"\n{_count(total, 'event')} across {_count(len(to_write), 'asset')};"
+            f" {_count(len(undefined_keys), 'asset')} not defined in target;"
+            f" {_count(sum(1 for plan in plans if plan.skip_reason), 'asset')} skipped."
         )
         if dry_run:
             ui.print("Dry run: nothing written.")
@@ -639,11 +643,11 @@ def copy_materializations_command(
                         continue
                     written += len(plan.events_to_write)
                     ui.print(
-                        f"  wrote {len(plan.events_to_write)} events for"
+                        f"  wrote {_count(len(plan.events_to_write), 'event')} for"
                         f" {plan.asset_key.to_user_string()} ({written}/{total})"
                     )
             except BaseException:
                 # Stop queued writes; a rerun resumes from what was written.
                 pool.shutdown(wait=True, cancel_futures=True)
                 raise
-        ui.print(f"Done: wrote {written} events in {time.monotonic() - started:.0f}s.")
+        ui.print(f"Done: wrote {_count(written, 'event')} in {time.monotonic() - started:.0f}s.")
