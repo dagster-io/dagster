@@ -637,6 +637,25 @@ class DgContext:
     def setup_cfg_path(self) -> Path:
         return self.root_path / "setup.cfg"
 
+    @property
+    def _package_base_path(self) -> Path:
+        """The directory the project package lives in: `src/` for a src layout, the project root
+        for a flat layout.
+
+        There is no setting reliably present in pyproject.toml or setup.py that says where the
+        package root is, so it is decided once from where the root module actually is. A
+        top-level `src/` directory alone does not mean a src layout: a flat-layout project can
+        have an unrelated `src/` directory. When the root module does not exist yet, fall back
+        to `src/` if it exists, otherwise the project root.
+        """
+        src_path = self.root_path / "src"
+        root_module_path = Path(*self.root_module_name.split("."))
+        for base_path in (src_path, self.root_path):
+            module_path = base_path / root_module_path
+            if module_path.exists() or module_path.with_suffix(".py").exists():
+                return base_path
+        return src_path if src_path.exists() else self.root_path
+
     def get_path_for_local_module(self, module_name: str, require_exists: bool = True) -> Path:
         if not self.is_project and not self.has_registry_module_entry_point:
             raise DgError(
@@ -645,12 +664,7 @@ class DgContext:
         if not module_name.startswith(self.root_module_name):
             raise DgError(f"Module `{module_name}` is not part of the current project.")
 
-        # Attempt to resolve the path for a local module by looking in both `src` and the root
-        # level. Unfortunately there is no setting reliably present in pyproject.toml or setup.py
-        # that can be relied on to know in advance the package root (src or root level).
-
-        base_path = self.root_path / "src" if (self.root_path / "src").exists() else self.root_path
-        path = base_path / Path(*module_name.split("."))
+        path = self._package_base_path / Path(*module_name.split("."))
         if path.with_suffix(".py").exists():
             return path.with_suffix(".py")
 
