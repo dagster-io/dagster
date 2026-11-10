@@ -121,8 +121,6 @@ class GithubClient:
         app_private_rsa_key (str): The private RSA key for the GitHub App.
         default_installation_id (Optional[int]): The default installation ID for the GitHub App.
         hostname (Optional[str]): The GitHub hostname, defaults to None.
-        installation_tokens (Dict[Any, Any]): A dictionary to store installation tokens.
-        app_token (Dict[str, Any]): A dictionary to store the app token.
     """
 
     def __init__(

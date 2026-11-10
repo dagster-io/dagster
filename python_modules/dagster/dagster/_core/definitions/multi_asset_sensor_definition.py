@@ -1113,7 +1113,7 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
 
     Args:
         name (str): The name of the sensor to create.
-        asset_keys (Sequence[AssetKey]): The asset_keys this sensor monitors.
+        monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets this sensor monitors.
         asset_materialization_fn (Callable[[MultiAssetSensorEvaluationContext], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
