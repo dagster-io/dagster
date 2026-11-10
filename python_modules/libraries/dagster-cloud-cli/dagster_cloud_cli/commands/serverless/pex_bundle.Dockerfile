@@ -29,3 +29,7 @@ RUN set -eux; \
       done; \
     done; \
     rm -rf /pexes /tmp/deps /tmp/source /root/.pex
+
+# The project copy in source.pex, where PEX code servers run from. Code that is not installed as a
+# package, or that opens files by relative path, depends on it.
+WORKDIR /usr/local/lib/python${PYTHON_VERSION}/site-packages/working_directory/root
