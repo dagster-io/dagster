@@ -510,10 +510,11 @@ def copy_materializations_command(
     that graph, such as ones removed from the code, are skipped. Partitions the target already has
     are skipped, as are assets the target materialized itself unless --merge-partitions is passed.
 
-    Copied events are processed like new events in the target. Declarative Automation and
-    sensors treat them as new materializations, so pause automation in the target deployment
-    before confirming the copy. Asset health, freshness and table schema tracking also update,
-    so alerts on those can fire. Copied events don't use credits or trigger materialization
+    Copied events are processed like new events in the target. Sensors that read the event log,
+    such as asset sensors, treat them as new materializations, so pause them in the target
+    deployment before confirming the copy. Declarative Automation doesn't react to them, since
+    their timestamps predate its latest evaluation. Asset health, freshness and table schema
+    tracking also update, so alerts on those can fire. Copied events don't use credits or trigger materialization
     success or failure alerts, which are evaluated per run.
 
     Prints what will be copied and asks for confirmation before writing.
