@@ -102,6 +102,10 @@ if TYPE_CHECKING:
     from .rerun_backfill import RerunBackfill
     from .rerun_run import RerunRun
     from .set_deployment_settings import SetDeploymentSettings
+    from .start_schedule import StartSchedule
+    from .start_sensor import StartSensor
+    from .stop_schedule import StopSchedule
+    from .stop_sensor import StopSensor
     from .terminate_run import TerminateRun
     from .update_issue import UpdateIssue
     from .update_organization_settings import UpdateOrganizationSettings
@@ -3920,6 +3924,72 @@ class Client(BaseClient):
         data = self.get_data(response)
         return GetSchedule.model_validate(data)
 
+    def start_schedule(
+        self, schedule_selector: "ScheduleSelector", **kwargs: Any
+    ) -> "StartSchedule":
+        from .start_schedule import StartSchedule
+
+        query = gql("""
+            mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
+              startSchedule(scheduleSelector: $scheduleSelector) {
+                __typename
+                ... on ScheduleStateResult {
+                  scheduleState {
+                    name
+                    status
+                  }
+                }
+                ... on ScheduleNotFoundError {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"scheduleSelector": schedule_selector}
+        response = self.execute(
+            query=query, operation_name="StartSchedule", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return StartSchedule.model_validate(data)
+
+    def stop_schedule(self, id: str, **kwargs: Any) -> "StopSchedule":
+        from .stop_schedule import StopSchedule
+
+        query = gql("""
+            mutation StopSchedule($id: String!) {
+              stopRunningSchedule(id: $id) {
+                __typename
+                ... on ScheduleStateResult {
+                  scheduleState {
+                    name
+                    status
+                  }
+                }
+                ... on ScheduleNotFoundError {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"id": id}
+        response = self.execute(
+            query=query, operation_name="StopSchedule", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return StopSchedule.model_validate(data)
+
     def list_secrets(
         self,
         location_name: Union[Optional[str], "UnsetType"] = UNSET,
@@ -4157,6 +4227,69 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return GetSensor.model_validate(data)
+
+    def start_sensor(
+        self, sensor_selector: "SensorSelector", **kwargs: Any
+    ) -> "StartSensor":
+        from .start_sensor import StartSensor
+
+        query = gql("""
+            mutation StartSensor($sensorSelector: SensorSelector!) {
+              startSensor(sensorSelector: $sensorSelector) {
+                __typename
+                ... on Sensor {
+                  name
+                  sensorState {
+                    status
+                  }
+                }
+                ... on SensorNotFoundError {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"sensorSelector": sensor_selector}
+        response = self.execute(
+            query=query, operation_name="StartSensor", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return StartSensor.model_validate(data)
+
+    def stop_sensor(self, id: str, **kwargs: Any) -> "StopSensor":
+        from .stop_sensor import StopSensor
+
+        query = gql("""
+            mutation StopSensor($id: String!) {
+              stopSensor(id: $id) {
+                __typename
+                ... on StopSensorMutationResult {
+                  instigationState {
+                    name
+                    status
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"id": id}
+        response = self.execute(
+            query=query, operation_name="StopSensor", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return StopSensor.model_validate(data)
 
     def list_repositories_for_ticks(self, **kwargs: Any) -> "ListRepositoriesForTicks":
         from .list_repositories_for_ticks import ListRepositoriesForTicks

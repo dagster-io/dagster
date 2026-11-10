@@ -19,3 +19,8 @@ class DgApiSensor(BaseModel):
 
 class DgApiSensorList(DgApiList["DgApiSensor"]):
     pass
+
+
+class DgApiSensorStateResult(BaseModel):
+    name: str
+    status: DgApiInstigationStatus

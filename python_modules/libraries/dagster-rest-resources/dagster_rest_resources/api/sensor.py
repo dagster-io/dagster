@@ -10,7 +10,11 @@ from dagster_rest_resources.schemas.exception import (
     DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
-from dagster_rest_resources.schemas.sensor import DgApiSensor, DgApiSensorList
+from dagster_rest_resources.schemas.sensor import (
+    DgApiSensor,
+    DgApiSensorList,
+    DgApiSensorStateResult,
+)
 
 if TYPE_CHECKING:
     from dagster_rest_resources.__generated__.get_sensor import GetSensorSensorOrErrorSensor
@@ -138,6 +142,52 @@ class DgApiSensorApi:
                 raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
                 raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_start_sensor(
+        self,
+        sensor_name: str,
+        repository_location_name: str,
+        repository_name: str,
+    ) -> DgApiSensorStateResult:
+        result = self._client.start_sensor(
+            sensor_selector=SensorSelector(
+                repositoryLocationName=repository_location_name,
+                repositoryName=repository_name,
+                sensorName=sensor_name,
+            )
+        ).start_sensor
+
+        match result.typename__:
+            case "Sensor":
+                return DgApiSensorStateResult(
+                    name=result.name,  # ty: ignore[unresolved-attribute]
+                    status=result.sensor_state.status,  # ty: ignore[unresolved-attribute]
+                )
+            case "SensorNotFoundError":
+                raise DagsterPlusClientError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error starting sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error starting sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_stop_sensor(self, sensor_id: str) -> DgApiSensorStateResult:
+        """Stop a sensor by its id, as returned on `DgApiSensor.id`."""
+        result = self._client.stop_sensor(id=sensor_id).stop_sensor
+
+        match result.typename__:
+            case "StopSensorMutationResult":
+                state = result.instigation_state  # ty: ignore[unresolved-attribute]
+                if state is None:
+                    raise DagsterPlusServerError("Error stopping sensor: no sensor state returned")
+                return DgApiSensorStateResult(name=state.name, status=state.status)
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error stopping sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error stopping sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

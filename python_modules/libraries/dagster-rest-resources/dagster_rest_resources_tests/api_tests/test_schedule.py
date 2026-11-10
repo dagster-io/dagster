@@ -28,9 +28,30 @@ from dagster_rest_resources.__generated__.list_schedules import (
     ListSchedulesSchedulesOrErrorSchedulesResults,
     ListSchedulesSchedulesOrErrorSchedulesResultsScheduleState,
 )
+from dagster_rest_resources.__generated__.start_schedule import (
+    StartSchedule,
+    StartScheduleStartSchedulePythonError,
+    StartScheduleStartScheduleScheduleNotFoundError,
+    StartScheduleStartScheduleScheduleStateResult,
+    StartScheduleStartScheduleScheduleStateResultScheduleState,
+    StartScheduleStartScheduleUnauthorizedError,
+)
+from dagster_rest_resources.__generated__.stop_schedule import (
+    StopSchedule,
+    StopScheduleStopRunningSchedulePythonError,
+    StopScheduleStopRunningScheduleScheduleNotFoundError,
+    StopScheduleStopRunningScheduleScheduleStateResult,
+    StopScheduleStopRunningScheduleScheduleStateResultScheduleState,
+    StopScheduleStopRunningScheduleUnauthorizedError,
+)
 from dagster_rest_resources.api.schedule import DgApiScheduleApi
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import (
+    DagsterPlusClientError,
+    DagsterPlusGraphqlError,
+    DagsterPlusServerError,
+    DagsterPlusUnauthorizedError,
+)
 from dagster_rest_resources.schemas.schedule import DgApiScheduleList
 
 
@@ -382,3 +403,107 @@ class TestGetScheduleByName:
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error listing repositories"):
             DgApiScheduleApi(_client=client).get_schedule_by_name("test_schedule")
+
+
+class TestStartSchedule:
+    def test_starts_by_selector(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_schedule.return_value = StartSchedule(
+            startSchedule=StartScheduleStartScheduleScheduleStateResult(
+                __typename="ScheduleStateResult",
+                scheduleState=StartScheduleStartScheduleScheduleStateResultScheduleState(
+                    name="daily", status=InstigationStatus.RUNNING
+                ),
+            )
+        )
+
+        result = DgApiScheduleApi(_client=client).action_start_schedule(
+            schedule_name="daily", repository_location_name="loc", repository_name="repo"
+        )
+
+        client.start_schedule.assert_called_once_with(
+            schedule_selector=ScheduleSelector(
+                repositoryLocationName="loc", repositoryName="repo", scheduleName="daily"
+            )
+        )
+        assert result.name == "daily"
+        assert result.status == InstigationStatus.RUNNING
+
+    def test_schedule_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_schedule.return_value = StartSchedule(
+            startSchedule=StartScheduleStartScheduleScheduleNotFoundError(
+                __typename="ScheduleNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Schedule not found"):
+            DgApiScheduleApi(_client=client).action_start_schedule("daily", "loc", "repo")
+
+    def test_unauthorized_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_schedule.return_value = StartSchedule(
+            startSchedule=StartScheduleStartScheduleUnauthorizedError(
+                __typename="UnauthorizedError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusUnauthorizedError, match="Error starting schedule"):
+            DgApiScheduleApi(_client=client).action_start_schedule("daily", "loc", "repo")
+
+    def test_python_error_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_schedule.return_value = StartSchedule(
+            startSchedule=StartScheduleStartSchedulePythonError(
+                __typename="PythonError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusServerError, match="Error starting schedule"):
+            DgApiScheduleApi(_client=client).action_start_schedule("daily", "loc", "repo")
+
+
+class TestStopSchedule:
+    def test_stops_by_id(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_schedule.return_value = StopSchedule(
+            stopRunningSchedule=StopScheduleStopRunningScheduleScheduleStateResult(
+                __typename="ScheduleStateResult",
+                scheduleState=StopScheduleStopRunningScheduleScheduleStateResultScheduleState(
+                    name="daily", status=InstigationStatus.STOPPED
+                ),
+            )
+        )
+
+        result = DgApiScheduleApi(_client=client).action_stop_schedule("schedule-id")
+
+        client.stop_schedule.assert_called_once_with(id="schedule-id")
+        assert result.name == "daily"
+        assert result.status == InstigationStatus.STOPPED
+
+    def test_schedule_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_schedule.return_value = StopSchedule(
+            stopRunningSchedule=StopScheduleStopRunningScheduleScheduleNotFoundError(
+                __typename="ScheduleNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Schedule not found"):
+            DgApiScheduleApi(_client=client).action_stop_schedule("schedule-id")
+
+    def test_unauthorized_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_schedule.return_value = StopSchedule(
+            stopRunningSchedule=StopScheduleStopRunningScheduleUnauthorizedError(
+                __typename="UnauthorizedError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusUnauthorizedError, match="Error stopping schedule"):
+            DgApiScheduleApi(_client=client).action_stop_schedule("schedule-id")
+
+    def test_python_error_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_schedule.return_value = StopSchedule(
+            stopRunningSchedule=StopScheduleStopRunningSchedulePythonError(
+                __typename="PythonError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusServerError, match="Error stopping schedule"):
+            DgApiScheduleApi(_client=client).action_stop_schedule("schedule-id")
