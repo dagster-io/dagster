@@ -48,7 +48,7 @@ from dagster._core.test_utils import (
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon import get_default_daemon_logger
+from dagster._daemon import SensorDaemon, get_default_daemon_logger
 from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._record import copy
@@ -1912,6 +1912,84 @@ def test_custom_interval_sensor_with_offset(
         ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
         assert sum(sleeps) == 65
+
+
+@pytest.mark.parametrize("stale_status", [InstigatorStatus.RUNNING, None])
+def test_stale_sensor_states_do_not_evaluate_a_stopped_sensor(
+    executor, instance, caplog, stale_status
+):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+    with (
+        create_test_daemon_workspace_context(
+            create_workspace_load_target(attribute="the_status_in_code_repo"),
+            instance=instance,
+        ) as workspace_context,
+        freeze_time(freeze_datetime),
+    ):
+        remote_repo = next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location.get_repository("the_status_in_code_repo")  # ty: ignore[unresolved-attribute]
+
+        # always_running_sensor is running by default, and a user has stopped it.
+        stopped_sensor = remote_repo.get_sensor("always_running_sensor")
+        instance.stop_sensor(
+            stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id, stopped_sensor
+        )
+        running_sensor = remote_repo.get_sensor("never_running_sensor")
+        instance.start_sensor(running_sensor)
+
+        # The sensor daemon sees the stopped sensor as still running, or as having no saved state,
+        # and sees never_running_sensor's state correctly.
+        stale_states = []
+        for state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR):
+            if state.instigator_name != "always_running_sensor":
+                stale_states.append(state)
+            elif stale_status:
+                stale_states.append(state.with_status(stale_status))
+
+        futures = {}
+        # Process always_running_sensor first, so skipping it must not skip the sensors after it.
+        with mock.patch(
+            "dagster._daemon.sensor.shuffled_round_robin_by_key",
+            side_effect=lambda items, key: sorted(items, key=lambda item: item.name),
+        ):
+            list(
+                execute_sensor_iteration(
+                    workspace_context,
+                    get_default_daemon_logger("SensorDaemon"),
+                    threadpool_executor=executor,
+                    submit_threadpool_executor=None,
+                    sensor_tick_futures=futures,
+                    get_sensor_states=lambda _: stale_states,
+                )
+            )
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+    stored_state = instance.get_instigator_state(
+        stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id
+    )
+    assert stored_state and stored_state.status == InstigatorStatus.STOPPED
+    assert not instance.get_ticks(stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id)
+    running_sensor_ticks = instance.get_ticks(
+        running_sensor.get_remote_origin_id(), running_sensor.selector_id
+    )
+    assert len(running_sensor_ticks) == 1
+    skipped_missing_state = "its state already exists in storage" in caplog.text
+    assert skipped_missing_state == (stale_status is None)
+
+
+def test_sensor_daemon_iteration_uses_get_sensor_states(instance, workspace_context):
+    with (
+        SensorDaemon(settings={}) as daemon,
+        mock.patch.object(
+            daemon, "get_sensor_states", wraps=daemon.get_sensor_states
+        ) as get_sensor_states,
+    ):
+        for result in daemon.core_loop(workspace_context, threading.Event()):
+            if result == SpanMarker.END_SPAN:
+                break
+
+    get_sensor_states.assert_called_once_with(workspace_context.instance)
 
 
 def test_sensor_start_stop(executor, instance, workspace_context, remote_repo):

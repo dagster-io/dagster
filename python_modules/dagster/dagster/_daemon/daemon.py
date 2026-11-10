@@ -7,7 +7,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
@@ -18,6 +18,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.remote_representation.external import RemoteSensor
+from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
@@ -27,7 +28,7 @@ from dagster._daemon.monitoring import (
     execute_concurrency_slots_iteration,
     execute_run_monitoring_iteration,
 )
-from dagster._daemon.sensor import execute_sensor_iteration_loop
+from dagster._daemon.sensor import default_get_sensor_states, execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
@@ -322,6 +323,16 @@ class SensorDaemon(DagsterDaemon):
     ) -> None:
         pass
 
+    def get_sensor_states(self, instance: DagsterInstance) -> Sequence[InstigatorState]:
+        """Saved state of every sensor (status, last evaluation time, cursor).
+
+        The sensor daemon evaluates a sensor only if its status isn't STOPPED and its minimum
+        interval has passed since its last evaluation. Subclasses may return slightly stale
+        states, e.g. from a read replica. This is safe because each evaluation re-reads the
+        sensor's state from storage before acting on it.
+        """
+        return default_get_sensor_states(instance)
+
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
@@ -342,6 +353,7 @@ class SensorDaemon(DagsterDaemon):
             threadpool_executor=self._threadpool_executor,
             submit_threadpool_executor=self._submit_threadpool_executor,
             instrument_elapsed=self.instrument_elapsed,
+            get_sensor_states=self.get_sensor_states,
         )
 
 

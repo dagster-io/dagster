@@ -32,6 +32,7 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
     DagsterRunTooLargeError,
     DagsterUserCodeUnreachableError,
 )
@@ -98,6 +99,10 @@ def default_elapsed_instrumentation(
     sensor: RemoteSensor, elapsed: float | None, min_interval: int
 ) -> None:
     pass
+
+
+def default_get_sensor_states(instance: DagsterInstance) -> Sequence[InstigatorState]:
+    return instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -356,6 +361,10 @@ def execute_sensor_iteration_loop(
     threadpool_executor: ThreadPoolExecutor | None = None,
     submit_threadpool_executor: ThreadPoolExecutor | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
+    *,
+    get_sensor_states: Callable[
+        [DagsterInstance], Sequence[InstigatorState]
+    ] = default_get_sensor_states,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -381,6 +390,7 @@ def execute_sensor_iteration_loop(
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
                 instrument_elapsed=instrument_elapsed,
+                get_sensor_states=get_sensor_states,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -409,6 +419,10 @@ def execute_sensor_iteration(
     sensor_tick_futures: dict[str, Future] | None = None,
     debug_crash_flags: DebugCrashFlags | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
+    *,
+    get_sensor_states: Callable[
+        [DagsterInstance], Sequence[InstigatorState]
+    ] = default_get_sensor_states,
 ):
     instance = workspace_process_context.instance
 
@@ -420,8 +434,7 @@ def execute_sensor_iteration(
     }
 
     all_sensor_states = {
-        sensor_state.selector_id: sensor_state
-        for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+        sensor_state.selector_id: sensor_state for sensor_state in get_sensor_states(instance)
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
@@ -466,7 +479,20 @@ def execute_sensor_iteration(
                     sensor_type=sensor.sensor_type,
                 ),
             )
-            instance.add_instigator_state(sensor_state)
+            # Add the sensor's state if it doesn't exist yet. all_sensor_states may be out of date
+            # (e.g. read from a replica, or a user saved the state after the read), so the state
+            # may already exist. If it does, the jobs table's unique constraint rejects the insert
+            # and leaves the saved state unchanged, and add_instigator_state raises
+            # DagsterInvariantViolationError. The sensor daemon then skips the sensor until its
+            # next iteration.
+            try:
+                instance.add_instigator_state(sensor_state)
+            except DagsterInvariantViolationError:
+                logger.warning(
+                    f"Skipping sensor evaluation for {sensor.name}: its state already exists in"
+                    " storage but was missing from the sensor states read for this iteration."
+                )
+                continue
         elif is_under_min_interval(sensor_state, sensor):
             continue
 
@@ -605,6 +631,14 @@ def _process_tick_generator(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
     )
+    # The sensor daemon submitted this call to its thread pool's queue because the sensor's status
+    # was not STOPPED. That status may now be stale, or a user may have stopped the sensor while
+    # this call waited in the queue. Skip the evaluation so a stopped sensor doesn't launch runs.
+    if not remote_sensor.get_current_instigator_state(sensor_state).is_running:
+        logger.info(
+            f"Skipping sensor evaluation for {remote_sensor.name}: the sensor is no longer running."
+        )
+        return
     if is_under_min_interval(sensor_state, remote_sensor):
         # check the since we might have been queued before processing
         return
