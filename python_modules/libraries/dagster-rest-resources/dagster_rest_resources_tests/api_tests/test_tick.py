@@ -34,6 +34,7 @@ from dagster_rest_resources.__generated__.list_repositories_for_ticks import (
 from dagster_rest_resources.api.tick import DgApiTickApi
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
+    DagsterPlusClientError,
     DagsterPlusGraphqlError,
     DagsterPlusUnauthorizedError,
 )
@@ -171,6 +172,39 @@ class TestGetSensorTicks:
 
         assert result.cursor == "tick-3"
 
+    def test_given_repository_skips_the_name_lookup(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_sensor_ticks.return_value = _make_sensor_ticks_result(_SAMPLE_SENSOR_TICKS)
+
+        DgApiTickApi(_client=client).get_sensor_ticks(
+            sensor_name="test_sensor",
+            repository_location_name="loc",
+            repository_name="repo",
+        )
+
+        client.list_repositories_for_ticks.assert_not_called()
+        assert client.get_sensor_ticks.call_args.kwargs["sensor_selector"] == SensorSelector(
+            repositoryLocationName="loc", repositoryName="repo", sensorName="test_sensor"
+        )
+
+    @pytest.mark.parametrize(
+        "repo_kwargs",
+        [{"repository_location_name": "loc"}, {"repository_name": "repo"}],
+    )
+    def test_partial_repository_falls_back_to_the_name_lookup(self, repo_kwargs):
+        client = Mock(spec=IGraphQLClient)
+        client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
+        client.get_sensor_ticks.return_value = _make_sensor_ticks_result(_SAMPLE_SENSOR_TICKS)
+
+        DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor", **repo_kwargs)
+
+        client.list_repositories_for_ticks.assert_called_once()
+        assert client.get_sensor_ticks.call_args.kwargs["sensor_selector"] == SensorSelector(
+            repositoryLocationName="test_name",
+            repositoryName="__repository__",
+            sensorName="test_sensor",
+        )
+
     def test_empty_ticks(self):
         client = Mock(spec=IGraphQLClient)
         client.list_repositories_for_ticks.return_value = _make_repos(sensors=["test_sensor"])
@@ -285,6 +319,17 @@ class TestGetSensorTicks:
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching sensor ticks"):
             DgApiTickApi(_client=client).get_sensor_ticks(sensor_name="test_sensor")
 
+    def test_cursor_with_before_timestamp_raises(self):
+        client = Mock(spec=IGraphQLClient)
+
+        with pytest.raises(DagsterPlusClientError, match="cursor or before_timestamp, not both"):
+            DgApiTickApi(_client=client).get_sensor_ticks(
+                sensor_name="test_sensor", cursor="origin:2.0", before_timestamp=1.0
+            )
+
+        client.list_repositories_for_ticks.assert_not_called()
+        client.get_sensor_ticks.assert_not_called()
+
 
 class TestGetScheduleTicks:
     def test_returns_ticks(self):
@@ -309,6 +354,41 @@ class TestGetScheduleTicks:
 
         assert len(result.items) == 1
         assert result.items[0].id == "tick-1"
+
+    def test_given_repository_skips_the_name_lookup(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_schedule_ticks.return_value = _make_schedule_ticks_result(_SAMPLE_SCHEDULE_TICKS)
+
+        DgApiTickApi(_client=client).get_schedule_ticks(
+            schedule_name="test_schedule",
+            repository_location_name="loc",
+            repository_name="repo",
+        )
+
+        client.list_repositories_for_ticks.assert_not_called()
+        assert client.get_schedule_ticks.call_args.kwargs["schedule_selector"] == ScheduleSelector(
+            repositoryLocationName="loc", repositoryName="repo", scheduleName="test_schedule"
+        )
+
+    @pytest.mark.parametrize(
+        "repo_kwargs",
+        [{"repository_location_name": "loc"}, {"repository_name": "repo"}],
+    )
+    def test_partial_repository_falls_back_to_the_name_lookup(self, repo_kwargs):
+        client = Mock(spec=IGraphQLClient)
+        client.list_repositories_for_ticks.return_value = _make_repos(schedules=["test_schedule"])
+        client.get_schedule_ticks.return_value = _make_schedule_ticks_result(_SAMPLE_SCHEDULE_TICKS)
+
+        DgApiTickApi(_client=client).get_schedule_ticks(
+            schedule_name="test_schedule", **repo_kwargs
+        )
+
+        client.list_repositories_for_ticks.assert_called_once()
+        assert client.get_schedule_ticks.call_args.kwargs["schedule_selector"] == ScheduleSelector(
+            repositoryLocationName="test_name",
+            repositoryName="__repository__",
+            scheduleName="test_schedule",
+        )
 
     def test_empty_ticks(self):
         client = Mock(spec=IGraphQLClient)
@@ -411,3 +491,14 @@ class TestGetScheduleTicks:
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching schedule ticks"):
             DgApiTickApi(_client=client).get_schedule_ticks(schedule_name="test_schedule")
+
+    def test_cursor_with_before_timestamp_raises(self):
+        client = Mock(spec=IGraphQLClient)
+
+        with pytest.raises(DagsterPlusClientError, match="cursor or before_timestamp, not both"):
+            DgApiTickApi(_client=client).get_schedule_ticks(
+                schedule_name="test_schedule", cursor="origin:2.0", before_timestamp=1.0
+            )
+
+        client.list_repositories_for_ticks.assert_not_called()
+        client.get_schedule_ticks.assert_not_called()

@@ -35,8 +35,13 @@ class DgApiTickApi:
         statuses: list[InstigationTickStatus] | None = None,
         before_timestamp: float | None = None,
         after_timestamp: float | None = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> DgApiTickList:
-        location_name, repo_name = self._find_repo_info(sensor_name, "sensor")
+        _check_paging(cursor, before_timestamp)
+        location_name, repo_name = self._repo_info(
+            sensor_name, "sensor", repository_location_name, repository_name
+        )
         result = self._client.get_sensor_ticks(
             sensor_selector=SensorSelector(
                 repositoryLocationName=location_name,
@@ -71,8 +76,13 @@ class DgApiTickApi:
         statuses: list[InstigationTickStatus] | None = None,
         before_timestamp: float | None = None,
         after_timestamp: float | None = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> DgApiTickList:
-        location_name, repo_name = self._find_repo_info(schedule_name, "schedule")
+        _check_paging(cursor, before_timestamp)
+        location_name, repo_name = self._repo_info(
+            schedule_name, "schedule", repository_location_name, repository_name
+        )
         result = self._client.get_schedule_ticks(
             schedule_selector=ScheduleSelector(
                 repositoryLocationName=location_name,
@@ -95,6 +105,18 @@ class DgApiTickApi:
                 raise DagsterPlusServerError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
+
+    def _repo_info(
+        self,
+        name: str,
+        entity_type: Literal["sensor", "schedule"],
+        repository_location_name: str | None,
+        repository_name: str | None,
+    ) -> tuple[str, str]:
+        """Use the given repository, or look it up by name when none is given."""
+        if repository_location_name and repository_name:
+            return repository_location_name, repository_name
+        return self._find_repo_info(name, entity_type)
 
     def _find_repo_info(
         self, name: str, entity_type: Literal["sensor", "schedule"]
@@ -137,3 +159,9 @@ class DgApiTickApi:
             total=len(items),
             cursor=items[-1].id if items else None,
         )
+
+
+def _check_paging(cursor: str | None, before_timestamp: float | None) -> None:
+    # The server ignores the cursor when before_timestamp is set.
+    if cursor is not None and before_timestamp is not None:
+        raise DagsterPlusClientError("Pass cursor or before_timestamp, not both.")
