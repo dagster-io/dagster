@@ -9,7 +9,7 @@ on:
 
 concurrency:
   # Cancel in-progress deploys to same branch
-  group: ${{ github.ref }}/deploy
+  group: ${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 env:
   # The organization name in Dagster Cloud
@@ -39,12 +39,14 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v6
+        if: steps.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
       # Detect if this is branch deployment and initialize the build session
       - name: Initialize build session
         id: ci-init
+        if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
