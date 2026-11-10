@@ -11,6 +11,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
     get_expanded_label,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -49,10 +50,10 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 
     def __init__(self, evaluation: AutomationConditionEvaluation):
         self._evaluation = evaluation
-        if evaluation.true_subset.size > 0:
+        if _get_historical_subset_size(evaluation.true_subset) > 0:
             status = AssetConditionEvaluationStatus.TRUE
         elif isinstance(evaluation.candidate_subset, SerializableEntitySubset) and (
-            evaluation.candidate_subset.size > 0
+            _get_historical_subset_size(evaluation.candidate_subset) > 0
         ):
             status = AssetConditionEvaluationStatus.FALSE
         else:
@@ -110,11 +111,11 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         )
 
     def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
-        return self._evaluation.true_subset.size
+        return _get_historical_subset_size(self._evaluation.true_subset)
 
     def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
         return (
-            self._evaluation.candidate_subset.size
+            _get_historical_subset_size(self._evaluation.candidate_subset)
             if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
             else None
         )
@@ -143,12 +144,11 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
             # where a sub-condition is not partitioned. In these cases, we can treat the expression
             # as SKIPPED
             status = AssetConditionEvaluationStatus.SKIPPED
-        elif partition_key in evaluation.true_subset.subset_value:
+        elif _historical_subset_contains_partition(evaluation.true_subset, partition_key):
             status = AssetConditionEvaluationStatus.TRUE
-        elif (
-            not isinstance(evaluation.candidate_subset, SerializableEntitySubset)
-            or partition_key in evaluation.candidate_subset.subset_value
-        ):
+        elif not isinstance(
+            evaluation.candidate_subset, SerializableEntitySubset
+        ) or _historical_subset_contains_partition(evaluation.candidate_subset, partition_key):
             status = AssetConditionEvaluationStatus.FALSE
         else:
             status = AssetConditionEvaluationStatus.SKIPPED
@@ -171,7 +171,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
             (
                 subset.metadata
                 for subset in self._evaluation.subsets_with_metadata
-                if self._partition_key in subset.subset.subset_value
+                if _historical_subset_contains_partition(subset.subset, self._partition_key)
             ),
             {},
         )
@@ -281,11 +281,11 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
         )
 
     def resolve_numTrue(self, graphene_info: ResolveInfo) -> int | None:
-        return self._evaluation.true_subset.size
+        return _get_historical_subset_size(self._evaluation.true_subset)
 
     def resolve_numCandidates(self, graphene_info: ResolveInfo) -> int | None:
         return (
-            self._evaluation.candidate_subset.size
+            _get_historical_subset_size(self._evaluation.candidate_subset)
             if isinstance(self._evaluation.candidate_subset, SerializableEntitySubset)
             else None
         )
@@ -362,7 +362,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
         )
 
     def resolve_numRequested(self, graphene_info: ResolveInfo) -> int | None:
-        return self._root_evaluation.true_subset.size
+        return _get_historical_subset_size(self._root_evaluation.true_subset)
 
 
 class GrapheneAssetConditionEvaluationRecords(graphene.ObjectType):
@@ -388,3 +388,19 @@ def _flatten_evaluation(
     import itertools
 
     return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
+
+
+def _get_historical_subset_size(subset: SerializableEntitySubset) -> int:
+    try:
+        return subset.size
+    except DagsterInvalidInvocationError:
+        return 0
+
+
+def _historical_subset_contains_partition(
+    subset: SerializableEntitySubset, partition_key: str
+) -> bool:
+    try:
+        return subset.is_partitioned and partition_key in subset.subset_value
+    except DagsterInvalidInvocationError:
+        return False
