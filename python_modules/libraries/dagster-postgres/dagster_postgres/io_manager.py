@@ -27,7 +27,10 @@ from sqlalchemy.engine import Connection
 
 from dagster_postgres.utils import create_pg_connection, create_pg_engine, get_conn_string
 
-POSTGRES_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+# ``%z`` keeps the UTC offset of timezone-aware partition bounds so that comparisons against
+# ``timestamptz`` columns do not depend on the session time zone. It renders as an empty string
+# for naive datetimes, and PostgreSQL ignores the offset when casting to ``timestamp``.
+POSTGRES_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
 def quote_identifier(name: str) -> str:
@@ -350,7 +353,14 @@ class PostgresDbClient(DbClient[Connection]):
         ).scalar()
         if exists is None:
             return
-        connection.execute(sqlalchemy.text(_get_cleanup_statement(table_slice)))
+        # The cleanup statement embeds partition keys as quoted literals, so it is sent to the
+        # driver as-is without parameters: ``sqlalchemy.text`` would treat a key such as ``:foo``
+        # as a bind parameter. The DBAPI cursor shares this connection's open transaction.
+        cursor = connection.connection.cursor()
+        try:
+            cursor.execute(_get_cleanup_statement(table_slice))
+        finally:
+            cursor.close()
 
     @staticmethod
     def ensure_schema_exists(

@@ -49,7 +49,7 @@ resource_config = {
 }
 
 
-def test_handle_output_empty_dataframe():
+def test_handle_output_empty_dataframe_creates_table():
     handler = PostgresPandasTypeHandler()
     df = pd.DataFrame({"a": pd.Series([], dtype="int64"), "b": pd.Series([], dtype="int64")})
     connection = MagicMock()
@@ -60,6 +60,29 @@ def test_handle_output_empty_dataframe():
             output_context,
             TableSlice(table="my_table", schema="my_schema", database="my_db"),
             df,
+            connection,
+        )
+
+    mock_to_sql.assert_called_once_with(
+        name="my_table",
+        schema="my_schema",
+        con=connection,
+        if_exists="append",
+        index=False,
+    )
+    assert metadata["dagster/row_count"] == 0
+
+
+def test_handle_output_dataframe_without_columns():
+    handler = PostgresPandasTypeHandler()
+    connection = MagicMock()
+    output_context = build_output_context(resource_config=resource_config)
+
+    with patch.object(pd.DataFrame, "to_sql") as mock_to_sql:
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(table="my_table", schema="my_schema", database="my_db"),
+            pd.DataFrame(),
             connection,
         )
 
@@ -141,7 +164,7 @@ def a_df() -> pd.DataFrame:
     return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
 
-@op
+@op(out=Out(metadata={"schema": SCHEMA}))
 def add_one(df: pd.DataFrame) -> pd.DataFrame:
     return df + 1
 
@@ -151,10 +174,18 @@ def add_one_to_dataframe():
     add_one(a_df())
 
 
+def _drop_schema(conn_str: str) -> None:
+    engine = create_pg_engine(conn_str)
+    try:
+        with engine.begin() as conn:
+            conn.execute(sqlalchemy.text(f'DROP SCHEMA IF EXISTS "{SCHEMA}" CASCADE'))
+    finally:
+        engine.dispose()
+
+
 @pytest.fixture
 def io_managers(postgres_conn_str):
-    with create_pg_engine(postgres_conn_str).begin() as conn:
-        conn.execute(sqlalchemy.text(f'DROP SCHEMA IF EXISTS "{SCHEMA}" CASCADE'))
+    _drop_schema(postgres_conn_str)
     return [
         PostgresPandasIOManager(postgres_url=postgres_conn_str),
         postgres_pandas_io_manager.configured({"postgres_url": postgres_conn_str}),
@@ -173,6 +204,7 @@ def _read_table(conn_str: str, table: str) -> pd.DataFrame:
 @pytest.mark.integration
 def test_postgres_io_manager_with_ops(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         job = add_one_to_dataframe.to_job(resource_defs={"io_manager": io_manager})
 
         # run the job twice to ensure that tables get properly deleted
@@ -200,6 +232,7 @@ def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
 @pytest.mark.integration
 def test_postgres_io_manager_with_assets(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         resource_defs = {"io_manager": io_manager}
 
         # materialize asset twice to ensure that tables get properly deleted
@@ -225,6 +258,27 @@ def test_postgres_io_manager_with_assets(postgres_conn_str, io_managers):
         assert metadata["dagster/table_name"] == MetadataValue.text(f"{SCHEMA}.b_df")
 
 
+@asset(key_prefix=[SCHEMA])
+def empty_df() -> pd.DataFrame:
+    return pd.DataFrame({"a": pd.Series([], dtype="int64"), "b": pd.Series([], dtype="int64")})
+
+
+@asset(key_prefix=[SCHEMA])
+def empty_df_downstream(empty_df: pd.DataFrame) -> pd.DataFrame:
+    assert empty_df.empty
+    assert list(empty_df.columns) == ["a", "b"]
+    return empty_df
+
+
+@pytest.mark.integration
+def test_empty_output_round_trip(postgres_conn_str, io_managers):
+    for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
+        res = materialize([empty_df, empty_df_downstream], resources={"io_manager": io_manager})
+        assert res.success
+        assert list(_read_table(postgres_conn_str, "empty_df_downstream").columns) == ["a", "b"]
+
+
 @asset(key_prefix=[SCHEMA], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
 def b_df_only_a(b_df: pd.DataFrame) -> pd.DataFrame:
     assert list(b_df.columns) == ["a"]
@@ -234,6 +288,7 @@ def b_df_only_a(b_df: pd.DataFrame) -> pd.DataFrame:
 @pytest.mark.integration
 def test_load_input_with_columns(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         res = materialize([b_df, b_df_only_a], resources={"io_manager": io_manager})
         assert res.success
         assert list(_read_table(postgres_conn_str, "b_df_only_a").columns) == ["a"]
@@ -261,6 +316,7 @@ def daily_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
 @pytest.mark.integration
 def test_time_window_partitioned_asset(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         resource_defs = {"io_manager": io_manager}
 
         result = materialize(
@@ -323,6 +379,7 @@ def static_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
 @pytest.mark.integration
 def test_static_partitioned_asset(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         resource_defs = {"io_manager": io_manager}
 
         materialize(
@@ -382,6 +439,7 @@ def multi_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
 @pytest.mark.integration
 def test_multi_partitioned_asset(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         resource_defs = {"io_manager": io_manager}
 
         materialize(
@@ -426,7 +484,7 @@ def test_multi_partitioned_asset(postgres_conn_str, io_managers):
 
 
 @asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+    partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
     key_prefix=[SCHEMA],
     ins={
         "self_dependent_asset": AssetIn(
@@ -463,6 +521,7 @@ def self_dependent_asset(
 @pytest.mark.integration
 def test_self_dependent_asset(postgres_conn_str, io_managers):
     for io_manager in io_managers:
+        _drop_schema(postgres_conn_str)
         resource_defs = {"io_manager": io_manager}
 
         materialize(

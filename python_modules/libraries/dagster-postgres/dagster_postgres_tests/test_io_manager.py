@@ -1,5 +1,6 @@
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 
 import pytest
 from dagster import InputContext, OutputContext, build_output_context
@@ -171,6 +172,60 @@ def test_get_cleanup_statement():
         )
         == 'DELETE FROM "schema1"."table1" WHERE\nmy_fruit_col in (\'apple\')'
     )
+
+
+def test_time_window_bounds_keep_utc_offset():
+    new_york = timezone(timedelta(hours=-5))
+    window = TimeWindow(
+        datetime(2020, 1, 2, tzinfo=new_york), datetime(2020, 1, 3, tzinfo=new_york)
+    )
+    table_slice = TableSlice(
+        database="my_db",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(partitions=window, partition_expr="my_timestamp_col")
+        ],
+    )
+    assert (
+        _get_cleanup_statement(table_slice)
+        == 'DELETE FROM "schema1"."table1" WHERE\nmy_timestamp_col >='
+        " '2020-01-02 00:00:00-0500' AND my_timestamp_col < '2020-01-03 00:00:00-0500'"
+    )
+
+
+def test_delete_table_slice_sends_statement_without_bind_parsing():
+    connection = MagicMock()
+    connection.execute.return_value.scalar.return_value = "schema1.table1"
+    cursor = connection.connection.cursor.return_value
+    table_slice = TableSlice(
+        database="my_db",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(partition_expr="my_fruit_col", partitions=[":foo"])
+        ],
+    )
+
+    PostgresDbClient.delete_table_slice(build_output_context(), table_slice, connection)
+
+    cursor.execute.assert_called_once_with(
+        'DELETE FROM "schema1"."table1" WHERE\nmy_fruit_col in (\':foo\')'
+    )
+    cursor.close.assert_called_once()
+
+
+def test_delete_table_slice_missing_table():
+    connection = MagicMock()
+    connection.execute.return_value.scalar.return_value = None
+
+    PostgresDbClient.delete_table_slice(
+        build_output_context(),
+        TableSlice(database="my_db", schema="schema1", table="table1"),
+        connection,
+    )
+
+    connection.connection.cursor.assert_not_called()
 
 
 def test_postgres_url_from_resource_config():

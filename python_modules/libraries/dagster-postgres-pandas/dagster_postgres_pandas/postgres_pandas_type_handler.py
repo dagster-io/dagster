@@ -53,13 +53,14 @@ class PostgresPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         connection: Connection,
     ) -> Mapping[str, RawMetadataValue]:
         """Stores the pandas DataFrame in PostgreSQL."""
-        if obj.empty:
+        if len(obj.columns) == 0:
             context.log.warning(
-                "Skipping PostgreSQL write for empty DataFrame. An empty table will not be created."
+                "Skipping PostgreSQL write for DataFrame without columns. No table will be created."
             )
         else:
             # The table is created on first write and appended to afterwards; the I/O manager has
             # already deleted the rows belonging to this output (or partition) in this transaction.
+            # An empty DataFrame with columns still creates the table so downstream reads succeed.
             obj.to_sql(
                 name=table_slice.table,
                 schema=table_slice.schema,
