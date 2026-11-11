@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -50,23 +50,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/33/d6/e9cb77e9840b12382da49cc22a93c224d9607969b76b0062bf6114119f61/adbc_driver_manager-1.11.0-cp314-cp314t-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dfb736661f95eb8fc185a4b9951b2e61734633c7448e8d3d937e93ef1d9e5c08", size = 4738703, upload-time = "2026-04-07T00:16:34.416Z" },
     { url = "https://files.pythonhosted.org/packages/c0/b3/c1b800c313e4e2cb7bec4a5334d4c89329eb021317c9fb3e3794a49e02d0/adbc_driver_manager-1.11.0-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e87a6f2b70baf21d3c52b280a17e2e8516197a4670b9a080a07dd255f2ab6e9d", size = 4778585, upload-time = "2026-04-07T00:16:37.775Z" },
     { url = "https://files.pythonhosted.org/packages/04/3d/dc32f50d0ad1d748461422c7a6cad2a49b778aa4fdcbebe08e38789d7898/adbc_driver_manager-1.11.0-cp314-cp314t-win_amd64.whl", hash = "sha256:b853e613c6c8afbe7a3fcea0098c88b935a4d1e1b046813aed1fe7363c7b8fc7", size = 830178, upload-time = "2026-04-07T00:16:40.247Z" },
-]
-
-[[package]]
-name = "adbc-driver-snowflake"
-version = "1.11.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "adbc-driver-manager" },
-    { name = "importlib-resources" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fd/c1/561549e36abe8644bedc6b4848abb79ab41a6b0fc4b106ceef944b0c3493/adbc_driver_snowflake-1.11.0.tar.gz", hash = "sha256:7fce54ae7540c6c63aad6cc9ec2795a05647cc147c8af41ca2bd4e95455e8eae", size = 30570, upload-time = "2026-04-07T00:17:30.403Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/f3/1125c7929faf750e7a5bdcec33ca22259ce040338dae12f75f3eb8080def/adbc_driver_snowflake-1.11.0-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:5ebddfa5fc0b5cd7c86b5cce17bb578889c8db5ff2b756903b64e684b56829e8", size = 15094744, upload-time = "2026-04-07T00:16:55.86Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/1d/88d564a8941607e6e555a3d3290ecb92852d4aa5a926a1cdbe86b17a8424/adbc_driver_snowflake-1.11.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:be862f8d0b6a507dae5c0644e13be79290180532c097d97c5a95a294c0bb5302", size = 13517204, upload-time = "2026-04-07T00:17:00.137Z" },
-    { url = "https://files.pythonhosted.org/packages/6f/26/baa44b8b9faaf26846dd8c0e513c7ce6862d7f35de46ee61175ac976699f/adbc_driver_snowflake-1.11.0-py3-none-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:7c7d7ecef7246303648a08cee3d78c383133bea8f2e1568cf6e8750ab94b5a57", size = 27574063, upload-time = "2026-04-07T00:17:04.862Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/41/fe557f0d8414037dfe86fcba6338eb094a51da894050ec9a4c9f4504513d/adbc_driver_snowflake-1.11.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:07b5edbeb1b85be0882d7095641df26a24b3b4c2ba4d8edda35e3bbe89e70a06", size = 24767291, upload-time = "2026-04-07T00:17:09.763Z" },
-    { url = "https://files.pythonhosted.org/packages/e9/ca/542793fc9a164f013e3248061e922ac5d5246ce93718a5c0cb44bbd2219e/adbc_driver_snowflake-1.11.0-py3-none-win_amd64.whl", hash = "sha256:83b1a363a44ae4cb1e4956f9cc6c4e44dddd7c768a0f0a8b42d9cb8eb8906305", size = 27264722, upload-time = "2026-04-07T00:17:14.083Z" },
 ]
 
 [[package]]
@@ -838,7 +821,7 @@ name = "dagster-snowflake-polars"
 version = "1!0+dev"
 source = { editable = "." }
 dependencies = [
-    { name = "adbc-driver-snowflake" },
+    { name = "adbc-driver-manager" },
     { name = "dagster" },
     { name = "dagster-snowflake" },
     { name = "polars" },
@@ -856,7 +839,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adbc-driver-snowflake", specifier = ">=1.6.0" },
+    { name = "adbc-driver-manager", specifier = ">=1.8.0" },
     { name = "dagster", editable = "../../dagster" },
     { name = "dagster-snowflake", editable = "../dagster-snowflake" },
     { name = "polars", specifier = ">=1.0.0" },
@@ -1114,15 +1097,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5f/f7/abb373e5757eaec4b922b92f97ec8d6d7e057cf06778247604fbc4e7c3f3/idna-3.19.tar.gz", hash = "sha256:5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15", size = 215237, upload-time = "2026-08-18T05:14:24.27Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl", hash = "sha256:815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4", size = 68550, upload-time = "2026-08-18T05:14:22.343Z" },
-]
-
-[[package]]
-name = "importlib-resources"
-version = "7.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/06/b56dfa750b44e86157093bc8fca0ab81dccbf5260510de4eaf1cb69b5b99/importlib_resources-7.1.0.tar.gz", hash = "sha256:0722d4c6212489c530f2a145a34c0a7a3b4721bc96a15fada5930e2a0b760708", size = 44985, upload-time = "2026-04-12T16:36:09.232Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/db/55a262f3606bebcae07cc14095338471ad7c0bbcaa37707e6f0ee49725b7/importlib_resources-7.1.0-py3-none-any.whl", hash = "sha256:1bd7b48b4088eddb2cd16382150bb515af0bd2c70128194392725f82ad2c96a1", size = 37232, upload-time = "2026-04-12T16:36:08.219Z" },
 ]
 
 [[package]]

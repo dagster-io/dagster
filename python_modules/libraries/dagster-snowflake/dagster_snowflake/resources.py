@@ -565,10 +565,11 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             conn.close()
             engine.dispose()
         elif self.connector == "adbc":
-            import adbc_driver_snowflake.dbapi
+            from adbc_driver_manager import dbapi
 
-            conn = adbc_driver_snowflake.dbapi.connect(
-                db_kwargs=self._adbc_connection_args,  # ty: ignore[invalid-argument-type]
+            conn = dbapi.connect(
+                driver="snowflake",
+                db_kwargs=self._adbc_connection_args,
             )
 
             yield conn
