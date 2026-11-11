@@ -225,6 +225,14 @@ class RunStatusSensorContext:
 
     @public
     @property
+    def run(self) -> DagsterRun:
+        """The run of the job. Same as ``dagster_run``, under the name the execution and
+        resource contexts use for their run.
+        """
+        return self._dagster_run
+
+    @public
+    @property
     def dagster_run(self) -> DagsterRun:
         """The run of the job."""
         return self._dagster_run

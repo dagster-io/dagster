@@ -707,6 +707,8 @@ def test_run_status_sensor():
     @dg.run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert context.run is context.dagster_run
+        assert context.run.run_id == dagster_run.run_id
 
     @dg.op
     def succeeds():
@@ -736,6 +738,8 @@ def test_run_failure_sensor():
     @dg.run_failure_sensor
     def failure_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+        assert context.run is context.dagster_run
+        assert context.run.run_id == dagster_run.run_id
         error = cast("JobFailureData", context.failure_event.event_specific_data).error
         assert error is not None
         assert error.cause is not None
