@@ -30,4 +30,18 @@ auth_provider:
     region: {{ .Values.postgresql.authProvider.awsRegion | quote }}
   {{- end }}
 {{- end }}
+{{- if .Values.postgresql.pool }}
+{{- if not (kindIs "invalid" .Values.postgresql.pool.size) }}
+pool_size: {{ .Values.postgresql.pool.size }}
+{{- end }}
+{{- if not (kindIs "invalid" .Values.postgresql.pool.maxOverflow) }}
+max_overflow: {{ .Values.postgresql.pool.maxOverflow }}
+{{- end }}
+{{- if not (kindIs "invalid" .Values.postgresql.pool.recycle) }}
+pool_recycle: {{ .Values.postgresql.pool.recycle }}
+{{- end }}
+{{- with .Values.postgresql.pool.mode }}
+pool_mode: {{ . }}
+{{- end }}
+{{- end }}
 {{- end }}
