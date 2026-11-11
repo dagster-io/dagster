@@ -337,6 +337,54 @@ def test_dbt_asset_selection_selector(
     assert selected_asset_keys == expected_asset_keys
 
 
+@pytest.mark.parametrize(
+    "selector, expected_names",
+    [
+        ("nested", {"stg_customers", "customers"}),
+        ("union", {"stg_customers", "customers", "orders"}),
+        ("chained", {"stg_customers", "customers"}),
+    ],
+)
+def test_dbt_asset_selection_nested_selector(
+    test_jaffle_shop_manifest: dict[str, Any], selector: str, expected_names: set[str]
+) -> None:
+    manifest = {
+        **test_jaffle_shop_manifest,
+        "selectors": {
+            **test_jaffle_shop_manifest["selectors"],
+            "nested": {
+                "name": "nested",
+                "definition": {"method": "selector", "value": "raw_customer_child_models"},
+            },
+            "union": {
+                "name": "union",
+                "definition": {
+                    "union": [
+                        {"method": "selector", "value": "raw_customer_child_models"},
+                        {"method": "fqn", "value": "orders"},
+                    ]
+                },
+            },
+            "chained": {
+                "name": "chained",
+                "definition": {"method": "selector", "value": "nested"},
+            },
+        },
+    }
+    expected_keys = {AssetKey(name) for name in expected_names}
+
+    @dbt_assets(manifest=manifest, selector=selector)
+    def selected_dbt_assets(): ...
+
+    assert selected_dbt_assets.keys == expected_keys
+
+    @dbt_assets(manifest=manifest)
+    def all_dbt_assets(): ...
+
+    selection = build_dbt_asset_selection([all_dbt_assets], dbt_selector=selector)
+    assert selection.resolve([all_dbt_assets]) == expected_keys
+
+
 def test_dbt_asset_selection_path_selector_without_project_reproduces_issue(
     test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
