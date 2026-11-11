@@ -49,7 +49,7 @@ def serialize_to_query_filename(dagster_version: str, date: str) -> str:
 
 
 def deserialize_from_query_filename(query_filename: str) -> tuple[str, str]:
-    parts = tuple(query_filename.rstrip(".graphql").split("-"))
+    parts = tuple(query_filename.removesuffix(".graphql").split("-"))
     check.invariant(
         len(parts) == 2,
         f"Invalid query filename {query_filename}; must have 2 '-' separated parts.",
