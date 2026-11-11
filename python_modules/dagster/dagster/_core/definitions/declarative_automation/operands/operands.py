@@ -357,9 +357,12 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetOrCheckKey]):
 @record
 class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
     passed: bool
+    treat_warn_as_passed: bool = False
 
     @property
     def name(self) -> str:
+        if self.passed and self.treat_warn_as_passed:
+            return "check_passed_or_warned"
         return "check_passed" if self.passed else "check_failed"
 
     async def compute_subset(  # ty: ignore[invalid-method-override]
@@ -374,6 +377,39 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
             if self.passed
             else AssetCheckExecutionResolvedStatus.FAILED
         )
-        return await context.asset_graph_view.compute_subset_with_status(
+        subset = await context.asset_graph_view.compute_subset_with_status(
             key=context.key, status=target_status, from_subset=context.candidate_subset
         )
+        if self.passed and self.treat_warn_as_passed and subset.is_empty:
+            return await self._compute_warned_subset(context)
+        return subset
+
+    async def _compute_warned_subset(
+        self, context: AutomationContext[AssetCheckKey]
+    ) -> EntitySubset[AssetCheckKey]:
+        """Returns the full subset if the latest evaluation of this check failed with WARN
+        severity against the latest materialization of the asset.
+        """
+        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionRecord,
+            AssetCheckExecutionResolvedStatus,
+        )
+
+        empty = context.asset_graph_view.get_empty_subset(key=context.key)
+        # Partitioned check statuses are read from a cached rollup that does not store severity.
+        if context.asset_graph.get(context.key).partitions_def is not None:
+            return empty
+
+        failed = await context.asset_graph_view.compute_subset_with_status(
+            key=context.key,
+            status=AssetCheckExecutionResolvedStatus.FAILED,
+            from_subset=context.candidate_subset,
+        )
+        if failed.is_empty:
+            return empty
+        record = await AssetCheckExecutionRecord.gen(context.asset_graph_view, context.key)
+        evaluation = record.evaluation if record else None
+        if evaluation and evaluation.severity == AssetCheckSeverity.WARN:
+            return failed
+        return empty

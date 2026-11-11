@@ -99,3 +99,131 @@ def test_partitioned_check_result_conditions(passed: bool) -> None:
     instance.report_runless_asset_event(dg.AssetMaterialization("A", partition="b"))
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
+
+
+@pytest.mark.parametrize(
+    "passed, severity, treat_warn_as_passed, expected_requested",
+    [
+        (True, dg.AssetCheckSeverity.ERROR, False, 1),
+        (True, dg.AssetCheckSeverity.ERROR, True, 1),
+        (False, dg.AssetCheckSeverity.WARN, False, 0),
+        (False, dg.AssetCheckSeverity.WARN, True, 1),
+        (False, dg.AssetCheckSeverity.ERROR, False, 0),
+        (False, dg.AssetCheckSeverity.ERROR, True, 0),
+    ],
+)
+def test_check_passed_treat_warn_as_passed(
+    passed: bool,
+    severity: dg.AssetCheckSeverity,
+    treat_warn_as_passed: bool,
+    expected_requested: int,
+) -> None:
+    @dg.asset
+    def A() -> None: ...
+
+    @dg.asset_check(
+        asset=A,
+        automation_condition=AutomationCondition.check_passed(
+            treat_warn_as_passed=treat_warn_as_passed
+        ),
+    )
+    def foo_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=passed, severity=severity)
+
+    defs = dg.Definitions(assets=[A], asset_checks=[foo_check])
+    instance = DagsterInstance.ephemeral()
+    check_job = defs.resolve_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={foo_check.check_key}
+    )
+
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    check_job.execute_in_process(instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == expected_requested
+
+    # a new materialization makes the check result stale, so nothing matches
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+
+@pytest.mark.parametrize(
+    "severity, treat_warn_as_passed, expected_requested",
+    [
+        # a WARN on an upstream blocking check holds the child by default
+        (dg.AssetCheckSeverity.WARN, False, 0),
+        (dg.AssetCheckSeverity.WARN, True, 1),
+        # an ERROR always holds the child
+        (dg.AssetCheckSeverity.ERROR, False, 0),
+        (dg.AssetCheckSeverity.ERROR, True, 0),
+    ],
+)
+def test_all_deps_blocking_checks_passed_treat_warn_as_passed(
+    severity: dg.AssetCheckSeverity, treat_warn_as_passed: bool, expected_requested: int
+) -> None:
+    @dg.asset
+    def parent() -> None: ...
+
+    @dg.asset_check(asset=parent, blocking=True)
+    def parent_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=False, severity=severity)
+
+    @dg.asset(
+        deps=[parent],
+        automation_condition=AutomationCondition.all_deps_blocking_checks_passed(
+            treat_warn_as_passed=treat_warn_as_passed
+        ),
+    )
+    def child() -> None: ...
+
+    defs = dg.Definitions(assets=[parent, child], asset_checks=[parent_check])
+    instance = DagsterInstance.ephemeral()
+
+    # materialize the parent and run its blocking check in the same run
+    result = dg.materialize([parent, parent_check], instance=instance, raise_on_error=False)
+    assert result.get_asset_check_evaluations()[0].severity == severity
+
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(child.key) == expected_requested
+
+
+def test_treat_warn_as_passed_not_applied_to_partitioned_checks() -> None:
+    partitions_def = dg.StaticPartitionsDefinition(["a"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def A() -> None: ...
+
+    @dg.asset_check(
+        asset=A,
+        automation_condition=AutomationCondition.check_passed(treat_warn_as_passed=True),
+        partitions_def=partitions_def,
+    )
+    def foo_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.WARN)
+
+    defs = dg.Definitions(assets=[A], asset_checks=[foo_check])
+    instance = DagsterInstance.ephemeral()
+    check_job = defs.resolve_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={foo_check.check_key}
+    )
+    check_job.execute_in_process(instance=instance, partition_key="a")
+
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+
+def test_check_result_condition_serdes() -> None:
+    from dagster._core.definitions.declarative_automation.operands import CheckResultCondition
+    from dagster_shared.serdes import deserialize_value, serialize_value
+
+    condition = CheckResultCondition(passed=True, treat_warn_as_passed=True)
+    assert deserialize_value(serialize_value(condition), CheckResultCondition) == condition
+    assert condition.name == "check_passed_or_warned"
+
+    # payloads serialized before the field existed still load with the default
+    old_payload = '{"__class__": "CheckResultCondition", "passed": true}'
+    loaded = deserialize_value(old_payload, CheckResultCondition)
+    assert loaded == CheckResultCondition(passed=True)
+    assert loaded.treat_warn_as_passed is False

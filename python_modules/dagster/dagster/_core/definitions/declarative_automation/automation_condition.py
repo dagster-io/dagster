@@ -610,13 +610,21 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def check_passed() -> "BuiltinAutomationCondition[AssetCheckKey]":
+    def check_passed(
+        *, treat_warn_as_passed: bool = False
+    ) -> "BuiltinAutomationCondition[AssetCheckKey]":
         """Returns an AutomationCondition that is true for an asset check if it has evaluated against
         the latest materialization of an asset and passed.
+
+        Args:
+            treat_warn_as_passed (bool): If True, a check whose latest evaluation failed with
+                ``AssetCheckSeverity.WARN`` is also treated as passed. This matches how blocking
+                checks behave within a run, where only ``ERROR`` severity failures stop downstream
+                assets. Not supported for partitioned asset checks. Defaults to False.
         """
         from dagster._core.definitions.declarative_automation.operands import CheckResultCondition
 
-        return CheckResultCondition(passed=True)
+        return CheckResultCondition(passed=True, treat_warn_as_passed=treat_warn_as_passed)
 
     @public
     @staticmethod
@@ -890,7 +898,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def all_deps_blocking_checks_passed() -> "DepsAutomationCondition[AssetOrCheckKey]":
+    def all_deps_blocking_checks_passed(
+        *, treat_warn_as_passed: bool = False
+    ) -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true for any partition where all upstream
         blocking checks have passed, or will be requested on this tick.
 
@@ -898,10 +908,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         blocking checks and a child. Even though the checks have not currently passed, if
         they fail within the run, the run machinery will prevent the child from being
         materialized.
+
+        Args:
+            treat_warn_as_passed (bool): If True, an upstream blocking check whose latest
+                evaluation failed with ``AssetCheckSeverity.WARN`` does not block the target. This
+                matches how blocking checks behave within a run. Not supported for partitioned
+                asset checks. Defaults to False.
         """
         return AutomationCondition.all_deps_match(
             AutomationCondition.all_checks_match(
-                AutomationCondition.check_passed() | AutomationCondition.will_be_requested(),
+                AutomationCondition.check_passed(treat_warn_as_passed=treat_warn_as_passed)
+                | AutomationCondition.will_be_requested(),
                 blocking_only=True,
             ).with_label("all_blocking_checks_passed")
         ).with_label("all_deps_blocking_checks_passed")
