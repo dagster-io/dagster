@@ -707,6 +707,7 @@ def test_run_status_sensor():
     @dg.run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert context.run.run_id == dagster_run.run_id
 
     @dg.op
     def succeeds():
@@ -736,6 +737,7 @@ def test_run_failure_sensor():
     @dg.run_failure_sensor
     def failure_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+        assert context.run.run_id == dagster_run.run_id
         error = cast("JobFailureData", context.failure_event.event_specific_data).error
         assert error is not None
         assert error.cause is not None
@@ -764,6 +766,29 @@ def test_run_failure_sensor():
     ).for_run_failure()
 
     failure_sensor(context)
+
+
+def test_run_status_sensor_context_dagster_run_deprecated():
+    @dg.op
+    def succeeds():
+        return 1
+
+    @dg.job
+    def my_job():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job.execute_in_process(instance=instance)
+
+    context = dg.build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=result.dagster_run,
+        dagster_event=result.get_run_success_event(),
+    )
+
+    with pytest.warns(DeprecationWarning, match="RunStatusSensorContext.dagster_run"):
+        assert context.dagster_run.run_id == context.run.run_id
 
 
 def test_run_status_sensor_run_request():
