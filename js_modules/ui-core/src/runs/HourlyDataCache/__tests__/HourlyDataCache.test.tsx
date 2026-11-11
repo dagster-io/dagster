@@ -98,6 +98,39 @@ describe('HourlyDataCache', () => {
   });
 });
 
+describe('HourlyDataCache with getItemKey', () => {
+  type Item = {id: string; status: string};
+
+  it('keeps the latest copy of an item when overlapping ranges are merged', () => {
+    const cache = new HourlyDataCache<Item>({version: VERSION, getItemKey: (item) => item.id});
+
+    cache.addData(0, ONE_HOUR_S / 2, [
+      {id: 'a', status: 'STARTED'},
+      {id: 'b', status: 'SUCCESS'},
+    ]);
+    cache.addData(ONE_HOUR_S / 4, ONE_HOUR_S, [
+      {id: 'a', status: 'SUCCESS'},
+      {id: 'c', status: 'SUCCESS'},
+    ]);
+
+    expect(cache.getHourData(0)).toEqual([
+      {id: 'b', status: 'SUCCESS'},
+      {id: 'a', status: 'SUCCESS'},
+      {id: 'c', status: 'SUCCESS'},
+    ]);
+    expect(cache.isCompleteRange(0, ONE_HOUR_S)).toBe(true);
+  });
+
+  it('keeps every item when no key function is given', () => {
+    const cache = new HourlyDataCache<number>({version: VERSION});
+
+    cache.addData(0, ONE_HOUR_S / 2, [1, 2]);
+    cache.addData(ONE_HOUR_S / 4, ONE_HOUR_S, [2, 3]);
+
+    expect(cache.getHourData(0)).toEqual([1, 2, 2, 3]);
+  });
+});
+
 describe('getHourlyBuckets', () => {
   it('should break the range into correct hourly buckets', () => {
     const startTime = 0;

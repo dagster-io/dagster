@@ -18,23 +18,28 @@ export class HourlyDataCache<T> {
   private indexedDBCache?: ReturnType<typeof cache<CacheType<T>>>;
   private indexedDBKey: string;
   private version: string | number;
+  private getItemKey?: (item: T) => string | number;
 
   /**
    * @param id A unique ID for the hourly data cache in this deployment
    * @param [keyPrefix=''] A unique key identifying the timeline view [incorporating filters, etc.]
+   * @param [getItemKey] Identifies an item. When ranges overlap, one copy of each item is kept.
    */
   constructor({
     id,
     keyPrefix = '',
     keyMaxCount = 1,
     version,
+    getItemKey,
   }: {
     id?: string | false;
     keyPrefix?: string;
     keyMaxCount?: number;
     version: string | number;
+    getItemKey?: (item: T) => string | number;
   }) {
     this.version = version;
+    this.getItemKey = getItemKey;
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
 
     if (id) {
@@ -77,29 +82,37 @@ export class HourlyDataCache<T> {
 
   private saveTimeout?: ReturnType<typeof setTimeout>;
   private registeredUnload: boolean = false;
+
+  private persist() {
+    if (!this.indexedDBCache) {
+      return;
+    }
+    return this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
+  }
+
   private async saveCacheToIndexedDB() {
     if (typeof jest !== 'undefined') {
-      if (!this.indexedDBCache) {
-        return;
-      }
-      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
+      this.persist();
       return;
     }
     clearTimeout(this.saveTimeout);
     this.saveTimeout = setTimeout(() => {
-      if (!this.indexedDBCache) {
-        return;
-      }
-      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
+      this.persist();
     }, 10000);
     if (!this.registeredUnload) {
       this.registeredUnload = true;
-      window.addEventListener('beforeunload', () => {
+      // pagehide also fires when the page enters the back/forward cache, where beforeunload does
+      // not. The underlying write is debounced, so it has to be flushed or it never starts.
+      const persistNow = async () => {
         if (!this.indexedDBCache) {
           return;
         }
-        this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
-      });
+        clearTimeout(this.saveTimeout);
+        await this.persist();
+        await this.indexedDBCache.flush();
+      };
+      window.addEventListener('pagehide', persistNow);
+      window.addEventListener('beforeunload', persistNow);
     }
   }
 
@@ -269,13 +282,29 @@ export class HourlyDataCache<T> {
 
       if (current.start <= lastMerged.end) {
         lastMerged.end = Math.max(lastMerged.end, current.end);
-        lastMerged.data = lastMerged.data.concat(current.data);
+        lastMerged.data = this.uniqueItems(lastMerged.data.concat(current.data));
       } else {
         mergedIntervals.push(current);
       }
     }
 
     return mergedIntervals;
+  }
+
+  /**
+   * Overlapping ranges return some of the same items. Keeps the most recently added copy of each.
+   */
+  private uniqueItems(items: T[]): T[] {
+    const getItemKey = this.getItemKey;
+    if (!getItemKey) {
+      return items;
+    }
+    const lastIndexByKey = new Map<string | number, number>();
+    items.forEach((item, index) => lastIndexByKey.set(getItemKey(item), index));
+    if (lastIndexByKey.size === items.length) {
+      return items;
+    }
+    return items.filter((item, index) => lastIndexByKey.get(getItemKey(item)) === index);
   }
 
   /**
