@@ -5,7 +5,6 @@ from collections.abc import Callable
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.workspace import CodeLocationEntry
 from dagster._grpc.client import DagsterGrpcClient
 
@@ -82,7 +81,10 @@ def watch_grpc_server_thread(
     The same check also refreshes a location whose server ID differs from the one GetServerId
     now returns. During a Kubernetes rolling deployment the old pod can still answer for a few
     seconds after the new pod's ID has triggered `on_updated`, so the refresh that follows can
-    load from the old pod, after which the ID never changes again.
+    load from the old pod, after which the ID never changes again. Because each poll opens a
+    fresh channel, a poll that reaches the old pod while both pods still back the Service can also
+    refresh a location that loaded correctly from the new pod. This settles once the old pod
+    leaves, so an extra refresh and its info log during a rollout are expected.
 
     The thread only exits when shutdown_event is set. on_updated, on_disconnect, and
     on_reconnected may fire multiple times over the thread's lifetime; on_error fires at most
@@ -134,6 +136,8 @@ def watch_grpc_server_thread(
         Runs on its own fixed cadence, independent of the server-id watch/reconnect logic. Does
         not fire any on_* event — the refresh itself emits whatever state events are warranted.
         """
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+
         location_entry = get_location_entry(location_name)
         if location_entry is None:
             return

@@ -729,61 +729,62 @@ class GrpcServerCodeLocation(CodeLocation):
                         raise startup_error from None
                     raise
                 list_repositories_response = sync_list_repositories_grpc(self.client)
-
                 self.repository_names = set(
                     symbol.repository_name
                     for symbol in list_repositories_response.repository_symbols
                 )
-
-                if self._heartbeat:
-                    self._heartbeat_shutdown_event = threading.Event()
-
-                    self._heartbeat_thread = threading.Thread(
-                        target=client_heartbeat_thread,
-                        args=(
-                            self.client,
-                            self._heartbeat_shutdown_event,
-                        ),
-                        name="grpc-client-heartbeat",
-                        daemon=True,
-                    )
-                    self._heartbeat_thread.start()
-
-                self._executable_path = list_repositories_response.executable_path
-                self._repository_code_pointer_dict = (
-                    list_repositories_response.repository_code_pointer_dict
-                )
-                self._entry_point = list_repositories_response.entry_point
-                self._dagster_library_versions = list_repositories_response.dagster_library_versions
-                self._container_image = (
+                container_image = (
                     list_repositories_response.container_image
                     or self._reload_current_image()  # Back-compat for older gRPC servers that did not include container_image in ListRepositoriesResponse
                 )
-
-                self._container_context = list_repositories_response.container_context
-
-                self._job_snaps_by_name = defaultdict(dict)
-                self._job_snaps_by_snapshot_id = {}
-
-                self.remote_repositories = {}
-
-                for repo_name, (repo_data, job_snaps) in sync_get_external_repositories_data_grpc(
+                repositories_data = sync_get_external_repositories_data_grpc(
                     self.client,
                     self,
                     defer_snapshots=True,
-                ).items():
-                    self.remote_repositories[repo_name] = RemoteRepository(
-                        repo_data,
-                        RepositoryHandle.from_location(
-                            repository_name=repo_name,
-                            code_location=self,
-                        ),
-                        auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
-                        ref_to_data_fn=partial(self._job_ref_to_snap, repo_name),
-                    )
-                    for job_snap in job_snaps.values():
-                        self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
-                        self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
+                )
+
+            if self._heartbeat:
+                self._heartbeat_shutdown_event = threading.Event()
+
+                self._heartbeat_thread = threading.Thread(
+                    target=client_heartbeat_thread,
+                    args=(
+                        self.client,
+                        self._heartbeat_shutdown_event,
+                    ),
+                    name="grpc-client-heartbeat",
+                    daemon=True,
+                )
+                self._heartbeat_thread.start()
+
+            self._executable_path = list_repositories_response.executable_path
+            self._repository_code_pointer_dict = (
+                list_repositories_response.repository_code_pointer_dict
+            )
+            self._entry_point = list_repositories_response.entry_point
+            self._dagster_library_versions = list_repositories_response.dagster_library_versions
+            self._container_image = container_image
+
+            self._container_context = list_repositories_response.container_context
+
+            self._job_snaps_by_name = defaultdict(dict)
+            self._job_snaps_by_snapshot_id = {}
+
+            self.remote_repositories = {}
+
+            for repo_name, (repo_data, job_snaps) in repositories_data.items():
+                self.remote_repositories[repo_name] = RemoteRepository(
+                    repo_data,
+                    RepositoryHandle.from_location(
+                        repository_name=repo_name,
+                        code_location=self,
+                    ),
+                    auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
+                    ref_to_data_fn=partial(self._job_ref_to_snap, repo_name),
+                )
+                for job_snap in job_snaps.values():
+                    self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
+                    self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
 
         except:
             self.cleanup()
