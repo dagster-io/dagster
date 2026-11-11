@@ -23,8 +23,8 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
 
     return "<br>".join(
         [
-            f"Job {context.dagster_run.job_name} failed!",
-            f"Run ID: {context.dagster_run.run_id}",
+            f"Job {context.run.job_name} failed!",
+            f"Run ID: {context.run.run_id}",
             f"Mode: {DEFAULT_MODE_NAME}",
             f"Error: {context.failure_event.message}",
         ]
@@ -32,7 +32,7 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
 
 
 def _default_failure_email_subject(context: "RunFailureSensorContext") -> str:
-    return f"Dagster Run Failed: {context.dagster_run.job_name}"
+    return f"Dagster Run Failed: {context.run.job_name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}
@@ -178,7 +178,7 @@ def make_email_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.dagster_run.job_name} failed!"
+                    f"Job {context.run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
@@ -211,7 +211,7 @@ def make_email_on_run_failure_sensor(
         email_body = email_body_fn(context)
         if webserver_base_url:
             email_body += (
-                f'<p><a href="{webserver_base_url}/runs/{context.dagster_run.run_id}">View in'
+                f'<p><a href="{webserver_base_url}/runs/{context.run.run_id}">View in'
                 " the Dagster UI</a></p>"
             )
 
