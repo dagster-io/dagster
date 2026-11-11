@@ -56,6 +56,80 @@ def test_cron_iterator_leap_day():
         assert next_datetime.minute == 2
 
 
+@pytest.mark.parametrize("execution_timezone", ["UTC", "Europe/Berlin"])
+@pytest.mark.parametrize("ascending", [True, False])
+@pytest.mark.parametrize("start_offset", [0, -1, -2])
+@pytest.mark.parametrize(
+    "min_hour,minutes,hours",
+    [
+        ("0 0", [0], [0]),
+        ("2 4", [2], [4]),
+        ("0,30 0,12", [0, 30], [0, 12]),
+        ("*/20 *", list(range(0, 60, 20)), list(range(24))),
+    ],
+)
+def test_cron_iterator_leap_day_boundaries(
+    execution_timezone: str,
+    ascending: bool,
+    start_offset: int,
+    min_hour: str,
+    minutes: list[int],
+    hours: list[int],
+) -> None:
+    times = [
+        create_datetime(year, 2, 29, hour, minute, tz=execution_timezone)
+        for year in [2020, 2024, 2028, 2032, 2036, 2040]
+        for hour in hours
+        for minute in minutes
+    ]
+    boundary = create_datetime(2028, 2, 29, hours[0], minutes[0], tz=execution_timezone)
+    start_timestamps = [
+        create_datetime(2027, 1, 1, tz=execution_timezone).timestamp(),
+        create_datetime(2028, 2, 28, 12, tz=execution_timezone).timestamp(),
+        create_datetime(2028, 2, 29, 12, tz=execution_timezone).timestamp(),
+        create_datetime(2028, 3, 1, tz=execution_timezone).timestamp(),
+        *(boundary.timestamp() + offset for offset in [-1, 0, 1]),
+    ]
+    if not ascending:
+        times.reverse()
+
+    for start_timestamp in start_timestamps:
+        first_index = next(
+            i
+            for i, time in enumerate(times)
+            if (
+                time.timestamp() >= start_timestamp
+                if ascending
+                else time.timestamp() <= start_timestamp
+            )
+        )
+        # Offsets count actual leap-day ticks, rather than intervening February 28 ticks.
+        first_index += start_offset
+        iterator = cron_string_iterator(
+            start_timestamp,
+            f"{min_hour} 29 2 *",
+            execution_timezone,
+            ascending=ascending,
+            start_offset=start_offset,
+        )
+        assert [next(iterator) for _ in range(3)] == times[first_index : first_index + 3]
+
+
+@pytest.mark.parametrize("execution_timezone", ["UTC", "Europe/Berlin"])
+@pytest.mark.parametrize("ascending", [True, False])
+@pytest.mark.parametrize("years", [[2096, 2104], [2396, 2400, 2404]], ids=["2100", "2400"])
+def test_cron_iterator_leap_day_centuries(
+    execution_timezone: str, ascending: bool, years: list[int]
+) -> None:
+    times = [create_datetime(year, 2, 29, tz=execution_timezone) for year in years]
+    if not ascending:
+        times.reverse()
+    iterator = cron_string_iterator(
+        times[0].timestamp(), "0 0 29 2 *", execution_timezone, ascending=ascending
+    )
+    assert [next(iterator) for _ in times] == times
+
+
 # Fall back: In Europe/Berlin on Sunday 10/29, 2AM-3AM happen twice (first with fold=0 / +2 offset,
 # then fold=1, +1 offset)
 # Spring forward: In Europe/Berlin on Sunday 3/26, 2AM jumps ahead to 3AM
