@@ -78,7 +78,7 @@ def test_cron_iterator_leap_day_boundaries(
 ) -> None:
     times = [
         create_datetime(year, 2, 29, hour, minute, tz=execution_timezone)
-        for year in [2020, 2024, 2028, 2032, 2036, 2040]
+        for year in [2012, 2016, 2020, 2024, 2028, 2032, 2036, 2040]
         for hour in hours
         for minute in minutes
     ]
