@@ -56,3 +56,23 @@ To get this behavior, you need to:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/backfills/single_run_backfill_asset.py" startAfter="start_marker" endBefore="end_marker" title="src/<project_name>/defs/assets.py" />
 
+## Handling code locations that fail to load
+
+Before processing each iteration of an asset backfill, Dagster validates the backfill targets against the current asset graph. If an asset or partition targeted by the backfill can't be found - for example, because the code location it belongs to is temporarily failing to load - the backfill will fail with a `DagsterAssetBackfillDataLoadError` and any queued runs will be canceled.
+
+This can happen even when your definitions haven't actually changed. For example, a transient error - such as an intermittent gRPC deserialization failure while fetching data from a code server ([GitHub issue #34338](https://github.com/dagster-io/dagster/issues/34338)) - can make the assets in a code location temporarily invisible to the backfill validation step, which would otherwise fail the backfill.
+
+To make asset backfills resilient to this, set the `DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR` environment variable on the Dagster daemon:
+
+```bash
+export DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR=1
+```
+
+When this variable is set and at least one code location is failing to load, the daemon won't fail the backfill when validation finds a missing asset or partition. Instead, it will log a warning and skip the current backfill iteration. The backfill will remain active and will resume once the code location loads successfully.
+
+Note that this variable:
+
+- Only applies to asset backfills, and only when the missing asset or partition coincides with a code location that is failing to load. If all code locations load successfully and the definition has actually changed - for example, an asset was removed or its partitions changed - the backfill will still fail.
+- Doesn't fix the underlying error that caused the code location to fail to load. It only keeps the backfill from being canceled while the location is temporarily unavailable.
+- Is opt-in. Unless it's set, backfills behave as described above and fail immediately on a validation error.
+
