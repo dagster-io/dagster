@@ -1114,8 +1114,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         )
                     )
 
+                # A self-dependent asset's first partitions map to partitions of itself
+                # that precede its partitions definition start. Those can never exist and
+                # must not block execution: the input simply loads from the (possibly
+                # empty) valid subset (mirrors BaseAssetGraph.get_parents_partitions).
+                is_self_input = (
+                    assets_def is not None
+                    and upstream_asset_key in assets_def.keys
+                    and upstream_asset_key in assets_def.asset_deps.get(upstream_asset_key, set())
+                )
                 if (
                     require_valid_partitions
+                    and not is_self_input
                     and not mapped_partitions_result.required_but_nonexistent_subset.is_empty
                 ):
                     raise DagsterInvariantViolationError(

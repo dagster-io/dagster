@@ -696,12 +696,17 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                         for valid_partition in mapped_partitions_result.partitions_subset.get_partition_keys()
                     }
                 )
-                required_but_nonexistent_parent_partitions.update(
-                    {
-                        AssetKeyPartitionKey(parent_asset_key, invalid_partition)
-                        for invalid_partition in mapped_partitions_result.required_but_nonexistent_subset.get_partition_keys()
-                    }
-                )
+                # A self-dependent asset's first partitions map to partitions of itself
+                # that precede its partitions definition start. Those can never exist and
+                # must not block the asset from materializing, so they are not reported
+                # as required but nonexistent parents.
+                if parent_asset_key != asset_key:
+                    required_but_nonexistent_parent_partitions.update(
+                        {
+                            AssetKeyPartitionKey(parent_asset_key, invalid_partition)
+                            for invalid_partition in mapped_partitions_result.required_but_nonexistent_subset.get_partition_keys()
+                        }
+                    )
             else:
                 valid_parent_partitions.add(AssetKeyPartitionKey(parent_asset_key))
 

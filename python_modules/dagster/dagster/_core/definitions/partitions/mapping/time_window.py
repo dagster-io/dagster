@@ -305,11 +305,15 @@ class TimeWindowPartitionMapping(
             )
 
             if mapping_downstream_to_upstream:
-                offsetted_from_start_dt = _offsetted_datetime_with_bounds(
-                    from_partitions_def, from_start_dt, start_offset, full_window
+                # Do not clamp to the target definition's bounds here: clamping would erase
+                # offset overflow before required-but-nonexistent partitions are computed
+                # below. Out-of-bounds portions are filtered from the valid subset and
+                # reported as required-but-nonexistent by the logic after this loop.
+                offsetted_from_start_dt = _offsetted_datetime(
+                    from_partitions_def, from_start_dt, start_offset
                 )
-                offsetted_from_end_dt = _offsetted_datetime_with_bounds(
-                    from_partitions_def, from_end_dt, end_offset, full_window
+                offsetted_from_end_dt = _offsetted_datetime(
+                    from_partitions_def, from_end_dt, end_offset
                 )
             else:
                 # we'll apply the offsets later, after we've found the corresponding windows
@@ -374,24 +378,49 @@ class TimeWindowPartitionMapping(
                 # out of range partitions to be invalid
                 continue
             else:
-                invalid_time_window = None
-                if not (first_window and last_window) or (
+                invalid_time_windows: list[TimeWindow] = []
+                if not (first_window and last_window):
+                    invalid_time_windows = [time_window]
+                elif (
                     time_window.start.timestamp() < first_window.start.timestamp()
                     and time_window.end.timestamp() > last_window.end.timestamp()
                 ):
-                    invalid_time_window = time_window
+                    # The mapped window contains the entire existence range: only the
+                    # portions outside that range are nonexistent.
+                    invalid_time_windows = [
+                        TimeWindow(time_window.start, first_window.start),
+                        TimeWindow(last_window.end, time_window.end),
+                    ]
                 elif time_window.start.timestamp() < first_window.start.timestamp():
-                    invalid_time_window = TimeWindow(
-                        time_window.start,
-                        min(time_window.end, first_window.start, key=lambda d: d.timestamp()),
-                    )
+                    invalid_time_windows = [
+                        TimeWindow(
+                            time_window.start,
+                            min(
+                                time_window.end,
+                                first_window.start,
+                                key=lambda d: d.timestamp(),
+                            ),
+                        )
+                    ]
                 elif time_window.end.timestamp() > last_window.end.timestamp():
-                    invalid_time_window = TimeWindow(
-                        max(time_window.start, last_window.end, key=lambda d: d.timestamp()),
-                        time_window.end,
-                    )
+                    invalid_time_windows = [
+                        TimeWindow(
+                            max(
+                                time_window.start,
+                                last_window.end,
+                                key=lambda d: d.timestamp(),
+                            ),
+                            time_window.end,
+                        )
+                    ]
 
-                if invalid_time_window:
+                for invalid_time_window in invalid_time_windows:
+                    # An invalid window holding no partitions at all (e.g. it
+                    # covers only excluded partitions) contributes no
+                    # nonexistent keys; adding it would leave a non-empty
+                    # subset whose partition keys are empty.
+                    if not to_partitions_def.has_any_partitions_in_window(invalid_time_window):
+                        continue
                     required_but_nonexistent_subset = (
                         required_but_nonexistent_subset
                         | to_partitions_def.get_partition_subset_in_time_window(
@@ -494,11 +523,12 @@ class TimeWindowPartitionMapping(
             else:
                 required_but_nonexistent_subset = to_partitions_def.empty_subset()
                 for time_window in from_partitions_subset.included_time_windows:
+                    public_time_window = time_window.to_public_time_window()
+                    if not to_partitions_def.has_any_partitions_in_window(public_time_window):
+                        continue
                     required_but_nonexistent_subset = (
                         required_but_nonexistent_subset
-                        | to_partitions_def.get_partition_subset_in_time_window(
-                            time_window.to_public_time_window()
-                        )
+                        | to_partitions_def.get_partition_subset_in_time_window(public_time_window)
                     )
 
             return UpstreamPartitionsResult(
