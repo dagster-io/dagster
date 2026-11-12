@@ -114,3 +114,7 @@ db.Index(
     mysql_length={"asset_key": 64},
     unique=True,
 )
+db.Index(
+    "idx_asset_daemon_asset_evaluations_create_timestamp",
+    AssetDaemonAssetEvaluationsTable.c.create_timestamp,
+)
