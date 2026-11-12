@@ -74,6 +74,14 @@ export class HourlyDataCache<T> {
       const cachedData = await this.indexedDBCache.get(this.indexedDBKey);
       if (cachedData && cachedData.value.version === this.version) {
         this.cache = new Map(cachedData.value.cache);
+        if (this.getItemKey) {
+          // Ranges stored by an earlier version can hold several copies of an item.
+          for (const intervals of this.cache.values()) {
+            for (const interval of intervals) {
+              interval.data = this.uniqueItems(interval.data);
+            }
+          }
+        }
       }
       res();
     });
@@ -82,15 +90,19 @@ export class HourlyDataCache<T> {
 
   private saveTimeout?: ReturnType<typeof setTimeout>;
   private registeredUnload: boolean = false;
+  // True while the cache holds data that persist() has not been called for.
+  private hasUnsavedData: boolean = false;
 
   private persist() {
     if (!this.indexedDBCache) {
       return;
     }
+    this.hasUnsavedData = false;
     return this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
   }
 
   private async saveCacheToIndexedDB() {
+    this.hasUnsavedData = true;
     if (typeof jest !== 'undefined') {
       this.persist();
       return;
@@ -103,12 +115,16 @@ export class HourlyDataCache<T> {
       this.registeredUnload = true;
       // pagehide also fires when the page enters the back/forward cache, where beforeunload does
       // not. The underlying write is debounced, so it has to be flushed or it never starts.
+      // A page exit usually fires both events; the second finds nothing unsaved and nothing to
+      // flush, so the cache is written once.
       const persistNow = async () => {
         if (!this.indexedDBCache) {
           return;
         }
-        clearTimeout(this.saveTimeout);
-        await this.persist();
+        if (this.hasUnsavedData) {
+          clearTimeout(this.saveTimeout);
+          await this.persist();
+        }
         await this.indexedDBCache.flush();
       };
       window.addEventListener('pagehide', persistNow);
@@ -260,39 +276,44 @@ export class HourlyDataCache<T> {
   }
 
   /**
-   * Merges overlapping intervals.
+   * Merges overlapping intervals. The last interval is the one being added: the others were
+   * merged when they were added, so only it can overlap them, and its items are the newest.
    * @param intervals - The intervals to merge.
    * @returns An array of merged intervals.
    */
   private mergeIntervals(intervals: Array<TimeWindow<T>>): Array<TimeWindow<T>> {
-    if (intervals.length === 0) {
+    const added = intervals[intervals.length - 1];
+    if (!added) {
       return [];
     }
+    const addedData = added.data;
+    added.data = [];
 
     intervals.sort((a, b) => a.start - b.start);
-    const mergedIntervals: Array<TimeWindow<T>> = [
-      assertExists(intervals[0], 'Expected intervals to be non-empty'),
-    ];
+    const mergedIntervals: Array<TimeWindow<T>> = [];
+    let mergedWithAdded = added;
 
-    for (const current of intervals.slice(1)) {
-      const lastMerged = assertExists(
-        mergedIntervals[mergedIntervals.length - 1],
-        'Expected merged intervals to be non-empty',
-      );
-
-      if (current.start <= lastMerged.end) {
-        lastMerged.end = Math.max(lastMerged.end, current.end);
-        lastMerged.data = this.uniqueItems(lastMerged.data.concat(current.data));
+    for (const current of intervals) {
+      let merged = mergedIntervals[mergedIntervals.length - 1];
+      if (merged && current.start <= merged.end) {
+        merged.end = Math.max(merged.end, current.end);
+        merged.data = merged.data.concat(current.data);
       } else {
-        mergedIntervals.push(current);
+        merged = current;
+        mergedIntervals.push(merged);
+      }
+      if (current === added) {
+        mergedWithAdded = merged;
       }
     }
 
+    // Appended last so that, for an item both ranges returned, the added copy is the one kept.
+    mergedWithAdded.data = this.uniqueItems(mergedWithAdded.data.concat(addedData));
     return mergedIntervals;
   }
 
   /**
-   * Overlapping ranges return some of the same items. Keeps the most recently added copy of each.
+   * Overlapping ranges return some of the same items. Keeps the last copy of each.
    */
   private uniqueItems(items: T[]): T[] {
     const getItemKey = this.getItemKey;

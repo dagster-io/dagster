@@ -121,6 +121,15 @@ describe('HourlyDataCache with getItemKey', () => {
     expect(cache.isCompleteRange(0, ONE_HOUR_S)).toBe(true);
   });
 
+  it('keeps the added copy when the added range starts before the cached one', () => {
+    const cache = new HourlyDataCache<Item>({version: VERSION, getItemKey: (item) => item.id});
+
+    cache.addData(ONE_HOUR_S / 4, ONE_HOUR_S, [{id: 'a', status: 'STARTED'}]);
+    cache.addData(0, ONE_HOUR_S / 2, [{id: 'a', status: 'SUCCESS'}]);
+
+    expect(cache.getHourData(0)).toEqual([{id: 'a', status: 'SUCCESS'}]);
+  });
+
   it('keeps every item when no key function is given', () => {
     const cache = new HourlyDataCache<number>({version: VERSION});
 
@@ -287,6 +296,29 @@ describe('HourlyDataCache with IndexedDB', () => {
     expect(cache.getHourData(sec)).toEqual([1, 2, 3]);
     expect(mockedCache.has).toHaveBeenCalledWith('hourlyData');
     expect(mockedCache.get).toHaveBeenCalledWith('hourlyData');
+  });
+
+  it('removes duplicate items from ranges loaded from IndexedDB', async () => {
+    mockedCache.has.mockResolvedValue(true);
+
+    const sec = Date.now() / 1000;
+    const nowHour = Math.floor(sec / ONE_HOUR_S);
+    mockedCache.get.mockResolvedValue({
+      value: {
+        version: VERSION,
+        cache: new Map([[nowHour, [{start: nowHour, end: nowHour + ONE_HOUR_S, data: [1, 2, 1]}]]]),
+      },
+    });
+
+    const cache = new HourlyDataCache<number>({
+      id: 'test',
+      version: VERSION,
+      getItemKey: (item) => item,
+    });
+
+    await cache.loadCacheFromIndexedDB();
+
+    expect(cache.getHourData(sec)).toEqual([2, 1]);
   });
 
   it('should save cache to IndexedDB when data is added', async () => {
