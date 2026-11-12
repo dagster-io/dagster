@@ -84,6 +84,7 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 | <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse_pandas" object="ClickhousePandasIOManager" />           | Stores Pandas DataFrame outputs in ClickHouse.                                |
 | <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse_polars" object="ClickhousePolarsIOManager" />           | Stores Polars DataFrame outputs in ClickHouse.                                |
 | <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
+| <PyObject section="libraries" integration="postgres" module="dagster_postgres_pandas" object="PostgresPandasIOManager" />               | Stores Pandas DataFrame outputs in PostgreSQL.                                |
 | <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
 | <PyObject section="libraries" integration="motherduck" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
 
