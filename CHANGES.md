@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.13.30 (core) / 0.29.30 (libraries)
+
+### New
+
+- Dropped support for Python 3.10. Dagster now requires Python 3.11 or later.
+- [ui] The asset catalog and asset graph no longer poll asset health data for assets whose health isn't shown, which reduces load when browsing large workspaces.
+- [dagster-cloud-cli] Added a `dagster-cloud deployment copy-materializations` command, which copies the latest asset materializations from one deployment to another and keeps their original timestamps.
+
+### Bugfixes
+
+- [dagster-cloud-cli] Fixed Serverless fast deploys failing with `No module named ...` when the project's code is not installed as a package.
+
+### Dagster Plus
+
+- Users with the "Edit concurrency limits" permission can now edit concurrency limits from the Concurrency settings page.
+- The Dagster+ MCP server now has tools to read schedules, sensors, and their ticks, to start and stop schedules and sensors, and to work with asset partitions, including adding and deleting dynamic partitions.
+- Serverless code locations that take more than 3 minutes to load no longer fail to deploy.
+- Serverless base images are no longer built for Python 3.10. Existing Python 3.10 PEX code locations keep running on the last Python 3.10 base image.
+- Fixed the "Send Sample Alert" button on the alert policy details page not sending Slack alerts.
+- Alert emails and Microsoft Teams alerts now escape customer-provided values such as job names and asset keys, so those values can no longer inject HTML.
+
 ## 1.13.29 (core) / 0.29.29 (libraries)
 
 ### New
