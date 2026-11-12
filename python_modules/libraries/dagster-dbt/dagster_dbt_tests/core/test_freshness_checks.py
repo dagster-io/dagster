@@ -14,6 +14,7 @@ from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKe
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.freshness_builder import build_freshness_checks_from_dbt_assets
 
 
@@ -232,3 +233,43 @@ def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: dict[str, An
             DEADLINE_CRON_PARAM_KEY: "1 1 * * *",
         }
     )
+
+
+def test_last_update_multiple_assets_defs_custom_translator(
+    test_last_update_freshness_manifest_multiple_assets_defs: dict[str, Any],
+) -> None:
+    class PrefixedTranslator(DagsterDbtTranslator):
+        def get_asset_key(self, dbt_resource_props) -> AssetKey:
+            return super().get_asset_key(dbt_resource_props).with_prefix("prefixed")
+
+    @dbt_assets(
+        manifest=test_last_update_freshness_manifest_multiple_assets_defs, select="customers"
+    )
+    def my_dbt_assets(): ...
+
+    @dbt_assets(
+        manifest=test_last_update_freshness_manifest_multiple_assets_defs,
+        select="orders",
+        dagster_dbt_translator=PrefixedTranslator(),
+    )
+    def my_dbt_assets2(): ...
+
+    freshness_checks = build_freshness_checks_from_dbt_assets(
+        dbt_assets=[my_dbt_assets, my_dbt_assets2]
+    )
+    assert len(freshness_checks) == 2
+
+    customers_checks = [
+        check
+        for check in freshness_checks
+        if AssetCheckKey(asset_key=AssetKey(["customers"]), name="freshness_check")
+        in check.check_keys
+    ]
+    assert len(customers_checks) == 1
+    orders_checks = [
+        check
+        for check in freshness_checks
+        if AssetCheckKey(asset_key=AssetKey(["prefixed", "orders"]), name="freshness_check")
+        in check.check_keys
+    ]
+    assert len(orders_checks) == 1
