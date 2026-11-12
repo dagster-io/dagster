@@ -1063,12 +1063,6 @@
   }
 }
 
-@keyframes slideFade {
-  from {
-    opacity: 0;
-  }
-}
-
 .slide {
   --slide-ease-out: cubic-bezier(0.2, 0, 0, 1);
   transition:
@@ -1116,13 +1110,33 @@
   animation: slideEnterRight 400ms var(--slide-ease-out) 500ms backwards;
 }
 
+/* The trend line is traced left to right like a heart-rate monitor: it is
+   uncovered at constant speed, and each point pops in as the line reaches it.
+   Timings match SWEEP_* in JobTimingsRoot. */
+@keyframes slideTrace {
+  from {
+    clip-path: inset(-4px 100% -4px -4px);
+  }
+}
+
+@keyframes slidePop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  60% {
+    transform: scale(1.6);
+  }
+}
+
 .slide .trendSvg {
-  transform-origin: left;
-  animation: growX 700ms var(--slide-ease-out) 500ms backwards;
+  clip-path: inset(-4px);
+  animation: slideTrace 1400ms linear 500ms backwards;
 }
 
 .slide .point {
-  animation: slideFade 300ms var(--slide-ease-out) var(--enter-delay, 500ms) backwards;
+  animation: slidePop 260ms var(--slide-ease-out) var(--enter-delay, 500ms) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

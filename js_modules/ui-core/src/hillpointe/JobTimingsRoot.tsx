@@ -47,8 +47,12 @@ const IMMEDIATE_FAILURE_SECS = 120;
 const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
 // How long the outgoing job takes to fade away before the next one is shown.
 const EXIT_MS = 300;
-// The whole cascade of points or rows finishes within this, however many there are.
+// The whole cascade of rows finishes within this, however many there are.
 const CASCADE_MS = 450;
+// The sweep that traces the trend line: when it starts and how long it takes
+// to cross the chart. These match the stylesheet's slideTrace animation.
+const SWEEP_START_MS = 500;
+const SWEEP_MS = 1400;
 
 /** Sets when an element's enter animation starts; the stylesheet does the rest. */
 const enterDelay = (ms: number) => ({'--enter-delay': `${Math.round(ms)}ms`}) as CSSProperties;
@@ -465,7 +469,7 @@ const JobTimings = ({
                   style={{
                     top: `${(1 - p.seconds / top) * 100}%`,
                     background: pointColor(p.run.status),
-                    ...enterDelay(500 + (i / points.length) * CASCADE_MS),
+                    ...enterDelay(SWEEP_START_MS + ((i + 0.5) / points.length) * SWEEP_MS),
                   }}
                 />
               </Link>
