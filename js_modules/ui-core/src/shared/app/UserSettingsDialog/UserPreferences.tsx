@@ -38,7 +38,6 @@ export const UserPreferences = ({
   );
   const {theme, setTheme} = useThemeState();
   const [fallLeavesEnabled, setFallLeavesEnabled] = useFallLeavesEnabled();
-  const [rotateSecs, setRotateSecs] = useTimingsRotateSecs();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
@@ -124,6 +123,34 @@ export const UserPreferences = ({
         <Checkbox checked={shortcutsEnabled} format="switch" onChange={toggleKeyboardShortcuts} />
       </Box>
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+        <div>Build</div>
+        <BuildInfo />
+      </Box>
+    </>
+  );
+};
+
+/** Settings only someone maintaining the site needs; the dialog keeps them folded away. */
+export const DeveloperPreferences = () => {
+  const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
+    useShowAssetsWithoutDefinitions();
+  const [rotateSecs, setRotateSecs] = useTimingsRotateSecs();
+  return (
+    <>
+      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <div>Show assets without definitions in catalog</div>
+          <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) to focus on actively managed assets">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+        <Checkbox
+          checked={showAssetsWithoutDefinitions}
+          format="switch"
+          onChange={(e) => setShowAssetsWithoutDefinitions(e.target.checked)}
+        />
+      </Box>
+      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
           <div>Job timings rotation</div>
           <Tooltip content="How long Job timings shows each live job before moving to the next. Drag to zero to turn it off. Saved on this device only.">
@@ -144,33 +171,6 @@ export const UserPreferences = ({
             {rotateSecs ? `Every ${rotateSecs}s` : 'Off'}
           </div>
         </Box>
-      </Box>
-    </>
-  );
-};
-
-/** Settings only someone maintaining the site needs; the dialog keeps them folded away. */
-export const DeveloperPreferences = () => {
-  const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
-    useShowAssetsWithoutDefinitions();
-  return (
-    <>
-      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-          <div>Show assets without definitions in catalog</div>
-          <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) to focus on actively managed assets">
-            <Icon name="info" />
-          </Tooltip>
-        </Box>
-        <Checkbox
-          checked={showAssetsWithoutDefinitions}
-          format="switch"
-          onChange={(e) => setShowAssetsWithoutDefinitions(e.target.checked)}
-        />
-      </Box>
-      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-        <div>Build</div>
-        <BuildInfo />
       </Box>
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
