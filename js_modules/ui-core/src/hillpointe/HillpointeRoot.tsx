@@ -503,7 +503,7 @@ const RunStatusBlock = () => {
 
 type DayCounts = {date: Date; counts: Partial<Record<Bucket, number>>; total: number};
 
-const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 /**
  * A month as a calendar: one dot per day, coloured by that day's health. Arrows
@@ -519,8 +519,8 @@ const RunMonthCalendar = ({days}: {days: DayCounts[]}) => {
   // Can't go further back than the month holding the oldest loaded day.
   const oldest = days[0]?.date ?? today;
   const canGoBack = monthStart > new Date(oldest.getFullYear(), oldest.getMonth(), 1);
-  // Leading blanks so the 1st lands on its weekday, Monday first.
-  const lead = (monthStart.getDay() + 6) % 7;
+  // Leading blanks so the 1st lands on its weekday, Sunday first.
+  const lead = monthStart.getDay();
   const cells = [
     ...Array.from({length: lead}, () => null),
     ...Array.from({length: daysInMonth}, (_, i) => {
