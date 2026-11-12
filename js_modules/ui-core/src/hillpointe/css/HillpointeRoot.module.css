@@ -1078,7 +1078,7 @@
 /* `backwards`, not `both`: `both` would pin the end values and block the exit. */
 .slide .tile,
 .slide > .card,
-.slide .timingsTable tbody tr {
+.slide .timingsTable tbody tr:nth-child(-n + 15) {
   animation: slideEnterUp 300ms var(--slide-ease-out) var(--enter-delay, 200ms) backwards;
 }
 
@@ -1110,33 +1110,56 @@
   animation: slideEnterRight 400ms var(--slide-ease-out) 500ms backwards;
 }
 
-/* The trend line is traced left to right like a heart-rate monitor: it is
-   uncovered at constant speed, and each point pops in as the line reaches it.
-   Timings match SWEEP_* in JobTimingsRoot. */
-@keyframes slideTrace {
+/* The trend line is traced left to right like a heart-rate monitor. A window
+   slides in from the left while its contents shift the opposite way by the
+   same amount, so they hold still and are uncovered at constant speed. Only
+   two transforms animate, however many points the chart has. */
+@keyframes slideTraceWindow {
   from {
-    clip-path: inset(-4px 100% -4px -4px);
+    transform: translateX(-100%);
   }
 }
 
-@keyframes slidePop {
+@keyframes slideTraceHold {
   from {
-    opacity: 0;
-    transform: scale(0);
-  }
-
-  60% {
-    transform: scale(1.6);
+    transform: translateX(100%);
   }
 }
 
-.slide .trendSvg {
-  clip-path: inset(-4px);
-  animation: slideTrace 1400ms linear 500ms backwards;
+/* Slightly larger than the plot so points on its edges are not cut off. */
+.trace {
+  position: absolute;
+  inset: -6px;
+  overflow: hidden;
 }
 
-.slide .point {
-  animation: slidePop 260ms var(--slide-ease-out) var(--enter-delay, 500ms) backwards;
+.traceHold {
+  position: absolute;
+  inset: 0;
+}
+
+.slide .trace {
+  animation: slideTraceWindow 1400ms linear 500ms backwards;
+}
+
+.slide .traceHold {
+  animation: slideTraceHold 1400ms linear 500ms backwards;
+}
+
+/* Lays the hover columns out exactly as the plot itself would. */
+.traceInner {
+  position: absolute;
+  inset: 6px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.traceInner > span {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
 }
 
 @media (prefers-reduced-motion: reduce) {

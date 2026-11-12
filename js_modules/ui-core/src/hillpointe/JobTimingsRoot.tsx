@@ -47,12 +47,8 @@ const IMMEDIATE_FAILURE_SECS = 120;
 const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
 // How long the outgoing job takes to fade away before the next one is shown.
 const EXIT_MS = 300;
-// The whole cascade of rows finishes within this, however many there are.
-const CASCADE_MS = 450;
-// The sweep that traces the trend line: when it starts and how long it takes
-// to cross the chart. These match the stylesheet's slideTrace animation.
-const SWEEP_START_MS = 500;
-const SWEEP_MS = 1400;
+// Only the first rows of the runs table cascade in (see the stylesheet), this far apart.
+const ROW_STAGGER_MS = 30;
 
 /** Sets when an element's enter animation starts; the stylesheet does the rest. */
 const enterDelay = (ms: number) => ({'--enter-delay': `${Math.round(ms)}ms`}) as CSSProperties;
@@ -432,49 +428,57 @@ const JobTimings = ({
               <span className={styles.avgLabel}>avg {formatDuration(avg)}</span>
             </div>
           ) : null}
-          <svg
-            className={styles.trendSvg}
-            viewBox={`0 0 100 ${PLOT_HEIGHT}`}
-            preserveAspectRatio="none"
-          >
-            <path
-              d={path}
-              fill="none"
-              stroke={Colors.dataVizBlue()}
-              strokeWidth={2}
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-          {points.map((p, i) => (
-            <Tooltip
-              key={p.run.runId}
-              content={
-                <div>
-                  <strong>{new Date(p.start * 1000).toLocaleString()}</strong>
-                  <div>
-                    {formatDuration(p.seconds)} · {p.run.status}
-                    {avg !== null ? (
-                      <>
-                        {' · '}
-                        <Delta from={avg} to={p.seconds} label="vs avg" />
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-              }
-            >
-              <Link to={`/runs/${p.run.runId}`} className={styles.column}>
-                <span
-                  className={styles.point}
-                  style={{
-                    top: `${(1 - p.seconds / top) * 100}%`,
-                    background: pointColor(p.run.status),
-                    ...enterDelay(SWEEP_START_MS + ((i + 0.5) / points.length) * SWEEP_MS),
-                  }}
-                />
-              </Link>
-            </Tooltip>
-          ))}
+          {/* The line and its points sit in a window that slides in from the
+              left while its contents hold still, which uncovers them left to
+              right. Two transforms, so the browser never repaints the chart. */}
+          <div className={styles.trace}>
+            <div className={styles.traceHold}>
+              <div className={styles.traceInner}>
+                <svg
+                  className={styles.trendSvg}
+                  viewBox={`0 0 100 ${PLOT_HEIGHT}`}
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={Colors.dataVizBlue()}
+                    strokeWidth={2}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+                {points.map((p) => (
+                  <Tooltip
+                    key={p.run.runId}
+                    content={
+                      <div>
+                        <strong>{new Date(p.start * 1000).toLocaleString()}</strong>
+                        <div>
+                          {formatDuration(p.seconds)} · {p.run.status}
+                          {avg !== null ? (
+                            <>
+                              {' · '}
+                              <Delta from={avg} to={p.seconds} label="vs avg" />
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    }
+                  >
+                    <Link to={`/runs/${p.run.runId}`} className={styles.column}>
+                      <span
+                        className={styles.point}
+                        style={{
+                          top: `${(1 - p.seconds / top) * 100}%`,
+                          background: pointColor(p.run.status),
+                        }}
+                      />
+                    </Link>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
         <div className={styles.xLabels}>
           {points.map((p, i) => (
@@ -510,10 +514,7 @@ const JobTimings = ({
               {[...points].reverse().map((p, i, all) => {
                 const prev = all[i + 1];
                 return (
-                  <tr
-                    key={p.run.runId}
-                    style={enterDelay(540 + i * Math.min(40, CASCADE_MS / all.length))}
-                  >
+                  <tr key={p.run.runId} style={enterDelay(540 + i * ROW_STAGGER_MS)}>
                     <td>
                       <Link to={`/runs/${p.run.runId}`}>
                         {new Date(p.start * 1000).toLocaleString()}
