@@ -6,6 +6,7 @@ import {useEffect, useState} from 'react';
 // and add the result here.
 const DEVELOPER_EMAIL_HASHES = new Set([
   'b6b6fbb98c77846b672f60d59d1bf9db36e56a65f2e47f6debf7f1020200905a',
+  '87f4d56f07ed668da3b365dadfd31b5ce8aea4edcbc7f878f05f098a7b775183',
 ]);
 
 // oauth2-proxy, which sits in front of the site, reports the signed-in user here.
