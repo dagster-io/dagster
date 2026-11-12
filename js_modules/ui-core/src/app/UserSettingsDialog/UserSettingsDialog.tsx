@@ -19,6 +19,7 @@ import {
 import * as React from 'react';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
+import {useIsDeveloper} from '../../hillpointe/useIsDeveloper';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {showCustomAlert} from '../CustomAlertProvider';
 import {
@@ -82,7 +83,9 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   };
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
-  // Everyday settings show by default; the rest sit behind "Developer settings".
+  // Everyday settings show by default; the rest sit behind "Developer settings",
+  // which only people on the developer list are offered.
+  const isDeveloper = useIsDeveloper();
   const [developerOpen, setDeveloperOpen] = useStateWithStorage<boolean>(
     'hillpointe-developer-settings-open',
     (value) => value === true,
@@ -151,15 +154,17 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
           <UserPreferences onChangeRequiresReload={setAreaPreferencesChanged} />
         </Box>
-        <Box padding={{top: 16}} border="top">
-          <ButtonLink onClick={() => setDeveloperOpen((open) => !open)}>
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              <Icon name={developerOpen ? 'expand_more' : 'chevron_right'} />
-              Developer settings
-            </Box>
-          </ButtonLink>
-        </Box>
-        {developerOpen ? (
+        {isDeveloper ? (
+          <Box padding={{top: 16}} border="top">
+            <ButtonLink onClick={() => setDeveloperOpen((open) => !open)}>
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                <Icon name={developerOpen ? 'expand_more' : 'chevron_right'} />
+                Developer settings
+              </Box>
+            </ButtonLink>
+          </Box>
+        ) : null}
+        {isDeveloper && developerOpen ? (
           <>
             <Box padding={{top: 8, bottom: 8}} flex={{direction: 'column', gap: 4}}>
               <DeveloperPreferences />
