@@ -68,11 +68,13 @@ export const useRunsForTimeline = ({
         keyPrefix: JSON.stringify(filter),
         keyMaxCount: 3,
         version: CompletedRunTimelineQueryVersion,
+        getItemKey: (run) => run.id,
       });
     }
     return new HourlyDataCache<RunTimelineFragment>({
       id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
       version: CompletedRunTimelineQueryVersion,
+      getItemKey: (run) => run.id,
     });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);

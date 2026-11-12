@@ -149,6 +149,14 @@ class IDBLRUCache<T> {
     this.syncToDB();
   }
 
+  /**
+   * Writes any pending change now instead of waiting for the debounce. Callers that are about to
+   * lose the page (pagehide) use this; the write is still best-effort.
+   */
+  async flush(): Promise<void> {
+    await this.syncToDB.flush();
+  }
+
   async close(): Promise<void> {
     await this.syncToDB.flush();
     const db = await this.getDB();
