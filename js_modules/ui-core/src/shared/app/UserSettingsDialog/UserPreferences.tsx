@@ -7,6 +7,7 @@ import {
   FontFamily,
   Heading,
   Icon,
+  Slider,
   Tooltip,
 } from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
@@ -21,6 +22,7 @@ import {localTimezoneLabel, orgTimezoneLabel} from '../../../app/time/browserTim
 import {requestRefreshEverywhere} from '../../../app/useReloadOnNewBuild';
 import {useThemeState} from '../../../app/useThemeState';
 import {useFallLeavesEnabled} from '../../../hillpointe/FallLeaves';
+import {ROTATE_MAX_SECS, useTimingsRotateSecs} from '../../../hillpointe/timingsRotation';
 import {useStateWithStorage} from '../../../hooks/useStateWithStorage';
 
 export const UserPreferences = ({
@@ -34,10 +36,9 @@ export const UserPreferences = ({
     SHORTCUTS_STORAGE_KEY,
     (value: any) => (typeof value === 'boolean' ? value : true),
   );
-  const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
-    useShowAssetsWithoutDefinitions();
   const {theme, setTheme} = useThemeState();
   const [fallLeavesEnabled, setFallLeavesEnabled] = useFallLeavesEnabled();
+  const [rotateSecs, setRotateSecs] = useTimingsRotateSecs();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
@@ -83,11 +84,6 @@ export const UserPreferences = ({
     setShortcutsEnabled(checked);
   };
 
-  const toggleShowAssetsWithoutDefinitions = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {checked} = e.target;
-    setShowAssetsWithoutDefinitions(checked);
-  };
-
   return (
     <>
       <Box padding={{bottom: 4}}>
@@ -129,6 +125,38 @@ export const UserPreferences = ({
       </Box>
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <div>Job timings rotation</div>
+          <Tooltip content="How long Job timings shows each live job before moving to the next. Drag to zero to turn it off. Saved on this device only.">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+          <div style={{width: 160}}>
+            <Slider
+              value={rotateSecs}
+              onChange={setRotateSecs}
+              min={0}
+              max={ROTATE_MAX_SECS}
+              step={5}
+            />
+          </div>
+          <div style={{minWidth: 72, textAlign: 'right'}}>
+            {rotateSecs ? `Every ${rotateSecs}s` : 'Off'}
+          </div>
+        </Box>
+      </Box>
+    </>
+  );
+};
+
+/** Settings only someone maintaining the site needs; the dialog keeps them folded away. */
+export const DeveloperPreferences = () => {
+  const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
+    useShowAssetsWithoutDefinitions();
+  return (
+    <>
+      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
           <div>Show assets without definitions in catalog</div>
           <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) to focus on actively managed assets">
             <Icon name="info" />
@@ -137,7 +165,7 @@ export const UserPreferences = ({
         <Checkbox
           checked={showAssetsWithoutDefinitions}
           format="switch"
-          onChange={toggleShowAssetsWithoutDefinitions}
+          onChange={(e) => setShowAssetsWithoutDefinitions(e.target.checked)}
         />
       </Box>
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>

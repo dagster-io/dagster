@@ -8,12 +8,13 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {useMemo, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {useEffect, useMemo, useState} from 'react';
+import {Link, useHistory, useParams} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
 import {durationSec, formatDuration, startOfDay} from './HillpointeRoot';
 import styles from './css/HillpointeRoot.module.css';
+import {ROTATE_LOCATION, nextInRotation, useTimingsRotateSecs} from './timingsRotation';
 import {
   HillpointeJobLocationsQuery,
   HillpointeJobLocationsQueryVariables,
@@ -161,6 +162,26 @@ export const JobTimingsRoot = () => {
   );
 
   const selected = jobName ?? jobs[0]?.name ?? null;
+
+  // Cycle through the live jobs on a timer, so an unattended screen shows each
+  // one in turn. The names are joined so a data refresh does not restart the timer.
+  const [rotateSecs] = useTimingsRotateSecs();
+  const history = useHistory();
+  const rotation = jobs
+    .filter((job) => job.location === ROTATE_LOCATION)
+    .map((job) => job.name)
+    .join(',');
+  useEffect(() => {
+    const next = rotation ? nextInRotation(rotation.split(','), selected) : null;
+    if (!rotateSecs || !next || next === selected) {
+      return;
+    }
+    const timer = setTimeout(
+      () => history.replace(`/hillpointe/timings/${encodeURIComponent(next)}`),
+      rotateSecs * 1000,
+    );
+    return () => clearTimeout(timer);
+  }, [rotateSecs, rotation, selected, history]);
   // The job list can be tucked away to give the chart the full width.
   const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
     typeof value === 'boolean' ? value : true,

@@ -12,10 +12,14 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {FeatureFlag} from '@shared/FeatureFlags';
-import {UserPreferences} from '@shared/app/UserSettingsDialog/UserPreferences';
+import {
+  DeveloperPreferences,
+  UserPreferences,
+} from '@shared/app/UserSettingsDialog/UserPreferences';
 import * as React from 'react';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {showCustomAlert} from '../CustomAlertProvider';
 import {
   getFeatureFlagDefaults,
@@ -78,6 +82,11 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   };
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
+  // Everyday settings show by default; the rest sit behind "Developer settings".
+  const [developerOpen, setDeveloperOpen] = useStateWithStorage<boolean>(
+    'hillpointe-developer-settings-open',
+    (value) => value === true,
+  );
 
   const anyChange = initialFlagState.current !== JSON.stringify(flags) || arePreferencesChanged;
 
@@ -142,49 +151,64 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
           <UserPreferences onChangeRequiresReload={setAreaPreferencesChanged} />
         </Box>
-        <Box padding={{vertical: 16}} border="top">
-          <Box padding={{bottom: 8}}>
-            <Heading size={14} weight={600}>
-              Experimental features
-            </Heading>
-          </Box>
-          {experimentalSettings}
-        </Box>
         <Box padding={{top: 16}} border="top">
-          <ButtonLink
-            onClick={() => {
-              indexedDB.databases().then((databases) => {
-                databases.forEach((db) => {
-                  if (db.name) {
-                    indexedDB.deleteDatabase(db.name);
-                  }
-                });
-              });
-              showCustomAlert({
-                title: 'Caches reset',
-                body: (
-                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                    IndexedDB cache has been reset.
-                    <ButtonLink
-                      onClick={() => {
-                        window.location.reload();
-                      }}
-                    >
-                      Click here to reload the page
-                    </ButtonLink>
-                  </Box>
-                ),
-              });
-            }}
-          >
+          <ButtonLink onClick={() => setDeveloperOpen((open) => !open)}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              Reset IndexedDB cache (Close all other tabs first!)
-              <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
-                <Icon name="info" />
-              </Tooltip>
+              <Icon name={developerOpen ? 'expand_more' : 'chevron_right'} />
+              Developer settings
             </Box>
           </ButtonLink>
         </Box>
+        {developerOpen ? (
+          <>
+            <Box padding={{top: 8, bottom: 8}} flex={{direction: 'column', gap: 4}}>
+              <DeveloperPreferences />
+            </Box>
+            <Box padding={{vertical: 16}} border="top">
+              <Box padding={{bottom: 8}}>
+                <Heading size={14} weight={600}>
+                  Experimental features
+                </Heading>
+              </Box>
+              {experimentalSettings}
+            </Box>
+            <Box padding={{top: 16}} border="top">
+              <ButtonLink
+                onClick={() => {
+                  indexedDB.databases().then((databases) => {
+                    databases.forEach((db) => {
+                      if (db.name) {
+                        indexedDB.deleteDatabase(db.name);
+                      }
+                    });
+                  });
+                  showCustomAlert({
+                    title: 'Caches reset',
+                    body: (
+                      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                        IndexedDB cache has been reset.
+                        <ButtonLink
+                          onClick={() => {
+                            window.location.reload();
+                          }}
+                        >
+                          Click here to reload the page
+                        </ButtonLink>
+                      </Box>
+                    ),
+                  });
+                }}
+              >
+                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                  Reset IndexedDB cache (Close all other tabs first!)
+                  <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
+                    <Icon name="info" />
+                  </Tooltip>
+                </Box>
+              </ButtonLink>
+            </Box>
+          </>
+        ) : null}
       </DialogBody>
       <DialogFooter topBorder>
         <Button intent="primary" onClick={handleClose} disabled={reloading}>
