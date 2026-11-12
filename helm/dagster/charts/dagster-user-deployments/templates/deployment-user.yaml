@@ -227,5 +227,8 @@ spec:
       {{- if $deployment.schedulerName }}
       schedulerName: {{ $deployment.schedulerName }}
       {{- end }}
+      {{- if $deployment.priorityClassName }}
+      priorityClassName: {{ $deployment.priorityClassName | quote }}
+      {{- end }}
 ---
 {{ end }}

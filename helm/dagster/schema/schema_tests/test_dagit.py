@@ -485,6 +485,22 @@ def test_webserver_scheduler_name_override(deployment_template: HelmTemplate):
     assert webserver_deployment.spec.template.spec.scheduler_name == "myscheduler"
 
 
+def test_webserver_priority_class_name(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(priorityClassName="high-priority"),
+    )
+
+    [webserver_deployment] = deployment_template.render(helm_values)
+    assert webserver_deployment.spec.template.spec.priority_class_name == "high-priority"
+
+
+def test_webserver_priority_class_name_default(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+
+    [webserver_deployment] = deployment_template.render(helm_values)
+    assert webserver_deployment.spec.template.spec.priority_class_name is None
+
+
 def test_automount_svc_acct_token(deployment_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
 
