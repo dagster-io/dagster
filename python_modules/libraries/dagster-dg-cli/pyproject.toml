@@ -4,16 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-dg-cli"
-version = "1!0+dev"
+version = "1.13.30"
 requires-python = ">=3.11,<3.15"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
-    "dagster-cloud-cli==1!0+dev",
-    "dagster-dg-core==1!0+dev",
-    "dagster-rest-resources==1!0+dev",
-    "dagster==1!0+dev",
+    "dagster-cloud-cli==1.13.30",
+    "dagster-dg-core==1.13.30",
+    "dagster-rest-resources==0.29.30",
+    "dagster==1.13.30",
     "requests",
     # typer 0.26 vendors its own click fork, which breaks our click-based help rendering.
     "typer<0.26",
