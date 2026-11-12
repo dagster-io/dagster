@@ -13,7 +13,8 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled, liveDataPollRate, instanceId} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, liveDataPollRate, instanceId, uiLabel, uiIntent} =
+  extractInitializationData();
 
 const apolloLinks = [logLink, createErrorLink(true), timeStartLink];
 
@@ -31,6 +32,8 @@ const config = {
   telemetryEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
   idempotentMutations: false,
+  uiLabel,
+  uiIntent,
 };
 
 const appCache = createAppCache();
