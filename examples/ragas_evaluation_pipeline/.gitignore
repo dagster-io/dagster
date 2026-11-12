@@ -1,0 +1,24 @@
+.env
+.env.local
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- Virtual env ---
+.venv/
+venv/
+
+# --- Dagster local state ---
+.dagster_home/
+.tmp_dagster_home*/
+tmp*/
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
