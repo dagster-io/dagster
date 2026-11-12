@@ -1046,3 +1046,89 @@
   max-height: 480px;
   overflow: auto;
 }
+
+/* Job timings: animate the change from one job to the next. The outgoing job
+   fades left, then the new one cascades in. Only opacity and transform move. */
+@keyframes slideEnterRight {
+  from {
+    opacity: 0;
+    transform: translateX(3rem);
+  }
+}
+
+@keyframes slideEnterUp {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@keyframes slideFade {
+  from {
+    opacity: 0;
+  }
+}
+
+.slide {
+  --slide-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    opacity 300ms cubic-bezier(0.4, 0, 1, 1),
+    transform 300ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.slideExit {
+  opacity: 0;
+  transform: translateX(-2rem);
+}
+
+/* `backwards`, not `both`: `both` would pin the end values and block the exit. */
+.slide .tile,
+.slide > .card,
+.slide .timingsTable tbody tr {
+  animation: slideEnterUp 300ms var(--slide-ease-out) var(--enter-delay, 200ms) backwards;
+}
+
+.slide .tile:nth-child(2) {
+  --enter-delay: 240ms;
+}
+
+.slide .tile:nth-child(3) {
+  --enter-delay: 280ms;
+}
+
+.slide .tile:nth-child(4) {
+  --enter-delay: 320ms;
+}
+
+.slide .tile:nth-child(5) {
+  --enter-delay: 360ms;
+}
+
+.slide > .card {
+  --enter-delay: 400ms;
+}
+
+.slide > .card ~ .card {
+  --enter-delay: 440ms;
+}
+
+.slideTitle {
+  animation: slideEnterRight 400ms var(--slide-ease-out) 500ms backwards;
+}
+
+.slide .trendSvg {
+  transform-origin: left;
+  animation: growX 700ms var(--slide-ease-out) 500ms backwards;
+}
+
+.slide .point {
+  animation: slideFade 300ms var(--slide-ease-out) var(--enter-delay, 500ms) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide,
+  .slide * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

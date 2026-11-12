@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {useEffect, useMemo, useState} from 'react';
+import {CSSProperties, useEffect, useMemo, useState} from 'react';
 import {Link, useHistory, useParams} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
@@ -45,6 +45,13 @@ const PARTIAL_RUN_FRACTION = 0.5;
 // A failure that died this quickly never did real work; it is left off the chart.
 const IMMEDIATE_FAILURE_SECS = 120;
 const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
+// How long the outgoing job takes to fade away before the next one is shown.
+const EXIT_MS = 300;
+// The whole cascade of points or rows finishes within this, however many there are.
+const CASCADE_MS = 450;
+
+/** Sets when an element's enter animation starts; the stylesheet does the rest. */
+const enterDelay = (ms: number) => ({'--enter-delay': `${Math.round(ms)}ms`}) as CSSProperties;
 
 type TimedRun = Extract<
   HillpointeJobTimingsQuery['runsOrError'],
@@ -167,6 +174,7 @@ export const JobTimingsRoot = () => {
   // one in turn. The names are joined so a data refresh does not restart the timer.
   const [rotateSecs] = useTimingsRotateSecs();
   const history = useHistory();
+  const [exiting, setExiting] = useState(false);
   const rotation = jobs
     .filter((job) => job.location === ROTATE_LOCATION)
     .map((job) => job.name)
@@ -176,11 +184,20 @@ export const JobTimingsRoot = () => {
     if (!rotateSecs || !next || next === selected) {
       return;
     }
-    const timer = setTimeout(
-      () => history.replace(`/hillpointe/timings/${encodeURIComponent(next)}`),
-      rotateSecs * 1000,
-    );
-    return () => clearTimeout(timer);
+    // Fade the current job out, then swap; the new one animates in as it mounts.
+    let swap: ReturnType<typeof setTimeout>;
+    const timer = setTimeout(() => {
+      setExiting(true);
+      swap = setTimeout(() => {
+        history.replace(`/hillpointe/timings/${encodeURIComponent(next)}`);
+        setExiting(false);
+      }, EXIT_MS);
+    }, rotateSecs * 1000);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(swap);
+      setExiting(false);
+    };
   }, [rotateSecs, rotation, selected, history]);
   // The job list can be tucked away to give the chart the full width.
   const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
@@ -289,6 +306,8 @@ export const JobTimingsRoot = () => {
         </div>
         {selected ? (
           <JobTimings
+            key={selected}
+            exiting={exiting}
             job={selected}
             points={points}
             partialCount={partialCount}
@@ -305,7 +324,9 @@ const JobTimings = ({
   points,
   partialCount,
   checkingPartial,
+  exiting,
 }: {
+  exiting: boolean;
   job: string;
   points: Point[];
   partialCount: number;
@@ -333,7 +354,7 @@ const JobTimings = ({
 
   if (!points.length) {
     return (
-      <div className={styles.card}>
+      <div className={clsx(styles.card, styles.slide, exiting && styles.slideExit)}>
         <NonIdealState
           icon="timer"
           title="No finished runs"
@@ -344,7 +365,7 @@ const JobTimings = ({
   }
 
   return (
-    <div className={styles.timingsMain}>
+    <div className={clsx(styles.timingsMain, styles.slide, exiting && styles.slideExit)}>
       <div className={styles.tiles}>
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Last run</div>
@@ -380,7 +401,7 @@ const JobTimings = ({
       </div>
 
       <div className={styles.card}>
-        <div className={styles.cardTitle}>
+        <div className={clsx(styles.cardTitle, styles.slideTitle)}>
           {job}
           <span className={styles.cardSub}>
             Successful runs, oldest to newest. Canceled, quickly failed and partial runs are left
@@ -420,7 +441,7 @@ const JobTimings = ({
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-          {points.map((p) => (
+          {points.map((p, i) => (
             <Tooltip
               key={p.run.runId}
               content={
@@ -444,6 +465,7 @@ const JobTimings = ({
                   style={{
                     top: `${(1 - p.seconds / top) * 100}%`,
                     background: pointColor(p.run.status),
+                    ...enterDelay(500 + (i / points.length) * CASCADE_MS),
                   }}
                 />
               </Link>
@@ -484,7 +506,10 @@ const JobTimings = ({
               {[...points].reverse().map((p, i, all) => {
                 const prev = all[i + 1];
                 return (
-                  <tr key={p.run.runId}>
+                  <tr
+                    key={p.run.runId}
+                    style={enterDelay(540 + i * Math.min(40, CASCADE_MS / all.length))}
+                  >
                     <td>
                       <Link to={`/runs/${p.run.runId}`}>
                         {new Date(p.start * 1000).toLocaleString()}
