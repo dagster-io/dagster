@@ -40,6 +40,11 @@ CLOUD_MAP_OPERATION_STATUS_SUCCESS = "SUCCESS"
 CLOUD_MAP_OPERATION_STATUS_FAIL = "FAIL"
 CLOUD_MAP_INSTANCE_IPV4_ATTRIBUTE = "AWS_INSTANCE_IPV4"
 ECS_ENI_ATTACHMENT_TYPE = "ElasticNetworkInterface"
+
+# ECS list APIs accept maxResults of 1-100; ListServices defaults to 10 per page.
+ECS_LIST_PAGE_SIZE = 100
+# DescribeServices accepts at most 10 services per call.
+ECS_DESCRIBE_SERVICES_MAX_BATCH = 10
 ECS_PRIVATE_IPV4_ATTACHMENT_DETAIL = "privateIPv4Address"
 
 
@@ -521,14 +526,8 @@ class Client:
         if tags:
             if not self._use_legacy_tag_filtering:
                 try:
-                    # obtain services present in the cluster
-                    ecs_services_paginator = self.ecs.get_paginator("list_services")
-                    actual_services = []
-                    for page in ecs_services_paginator.paginate(cluster=self.cluster_name):
-                        actual_services.extend(page["serviceArns"])
-
-                    # obtain services with the specified tags
                     tag_paginator = self.tags_client.get_paginator("get_resources")
+                    tagged_arns = []
                     for page in tag_paginator.paginate(
                         TagFilters=[
                             {
@@ -539,12 +538,18 @@ class Client:
                         ],
                         ResourceTypeFilters=["ecs:service"],
                     ):
-                        for resource in page["ResourceTagMappingList"]:
-                            resource_arn = resource["ResourceARN"]
-                            # note: the Resource Group Tagging API may return resources corresponding to services
-                            # that are no longer present in the cluster, so we filter out those that are not present
-                            if resource_arn in actual_services:
-                                services.append(Service(client=self, arn=resource_arn))
+                        tagged_arns.extend(
+                            resource["ResourceARN"] for resource in page["ResourceTagMappingList"]
+                        )
+
+                    # The tagging API may still return services that have since been deleted or
+                    # that live in another cluster, so confirm each one is active here. Checking
+                    # the handful of tagged ARNs directly is far cheaper than listing the whole
+                    # cluster, which this method is called for once per location per reconcile.
+                    services = [
+                        Service(client=self, arn=arn)
+                        for arn in self._filter_to_active_services_in_cluster(tagged_arns)
+                    ]
 
                 except botocore.exceptions.ClientError as error:
                     if error.response["Error"]["Code"] == "AccessDeniedException":
@@ -571,12 +576,44 @@ class Client:
 
         else:
             service_paginator = self.ecs.get_paginator("list_services")
-            for page in service_paginator.paginate(cluster=self.cluster_name):
+            for page in service_paginator.paginate(
+                cluster=self.cluster_name, PaginationConfig={"PageSize": ECS_LIST_PAGE_SIZE}
+            ):
                 for service_arn in page.get("serviceArns"):
                     service = Service(client=self, arn=service_arn)
                     services.append(service)
 
         return services
+
+    def _filter_to_active_services_in_cluster(self, service_arns: Sequence[str]) -> list[str]:
+        """Return the subset of ARNs that are ACTIVE services in this cluster, in input order.
+
+        Only ACTIVE services show up in ListServices; DRAINING and INACTIVE ones are deleted or
+        on the way out.
+        """
+        candidates = [
+            arn
+            for arn in service_arns
+            if self._service_arn_cluster(arn) in (None, self.cluster_name)
+        ]
+        active_names: set[str] = set()
+        for start in range(0, len(candidates), ECS_DESCRIBE_SERVICES_MAX_BATCH):
+            response = self.ecs.describe_services(
+                cluster=self.cluster_name,
+                services=candidates[start : start + ECS_DESCRIBE_SERVICES_MAX_BATCH],
+            )
+            active_names.update(
+                service["serviceName"]
+                for service in response.get("services", [])
+                if service.get("status") == "ACTIVE"
+            )
+        return [arn for arn in candidates if arn.split("/")[-1] in active_names]
+
+    @staticmethod
+    def _service_arn_cluster(arn: str) -> str | None:
+        """Cluster name embedded in a long service ARN, or None for a short ARN."""
+        parts = arn.split("/")
+        return parts[1] if len(parts) == 3 else None
 
     def _run_task(self, name, image, command, execution_role_arn):
         """This is no longer used except as an integration test util
@@ -1049,7 +1086,7 @@ class Client:
             cluster=self.cluster_name,
             serviceName=service.name,
             desiredStatus="RUNNING",
-            PaginationConfig={"PageSize": 100},
+            PaginationConfig={"PageSize": ECS_LIST_PAGE_SIZE},
         ):
             if not page["taskArns"]:
                 continue

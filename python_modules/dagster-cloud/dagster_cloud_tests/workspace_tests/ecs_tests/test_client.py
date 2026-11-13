@@ -973,6 +973,55 @@ def test_list_services(aws_mock, monkeypatch, caplog):
         assert result[0].name == "tagged"
 
 
+def test_list_services_validates_tagged_arns_with_describe_services(client):
+    """The tagged path must not list the whole cluster; it confirms each tagged ARN with
+    DescribeServices, ten at a time, keeping only ACTIVE services in this cluster.
+    """
+    account = "arn:aws:ecs:us-east-1:123456789012:service"
+    tagged_arns = [f"{account}/test/svc-{i}" for i in range(20)] + [
+        f"{account}/test/inactive",
+        f"{account}/other-cluster/svc-elsewhere",
+        f"{account}/short-arn",
+    ]
+    describe_calls = []
+
+    def _describe_services(cluster, services):
+        describe_calls.append(services)
+        assert cluster == "test"
+        return {
+            "services": [
+                {
+                    "serviceName": arn.split("/")[-1],
+                    "serviceArn": arn,
+                    "status": "INACTIVE" if arn.endswith("/inactive") else "ACTIVE",
+                }
+                for arn in services
+            ],
+            "failures": [],
+        }
+
+    with (
+        mock.patch.object(client.tags_client, "get_paginator") as mock_tag_paginator,
+        mock.patch.object(client.ecs, "describe_services", side_effect=_describe_services),
+        mock.patch.object(client.ecs, "get_paginator") as mock_ecs_paginator,
+    ):
+        mock_tag_paginator.return_value.paginate.return_value = [
+            {"ResourceTagMappingList": [{"ResourceARN": arn} for arn in tagged_arns[:15]]},
+            {"ResourceTagMappingList": [{"ResourceARN": arn} for arn in tagged_arns[15:]]},
+        ]
+        result = client.list_services(tags={"foo": "bar"})
+
+    mock_ecs_paginator.assert_not_called()
+    # 20 in-cluster + 1 inactive + 1 short ARN are checked; the other-cluster ARN is dropped
+    # up front without a call.
+    assert [len(batch) for batch in describe_calls] == [10, 10, 2]
+    assert all(f"{account}/other-cluster/svc-elsewhere" not in batch for batch in describe_calls)
+    assert [service.name for service in result] == [f"svc-{i}" for i in range(20)] + ["short-arn"]
+    assert result[0].arn == f"{account}/test/svc-0"
+    # A short ARN is expanded to this cluster, matching how Service normalizes it.
+    assert result[-1].arn == f"{account}/test/short-arn"
+
+
 def test_delete_service_golden_path(aws_mock):
     """Test complete usual case where a service exist and is active, with a service discovery registration."""
     # Create VPC for service discovery namespace (moto 5 requires a real VPC)
