@@ -872,6 +872,13 @@ class TestRunStorage:
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
+        record_two = storage.get_run_records(
+            filters=dg.RunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
+        )[0]
+        run_two_update_timestamp = record_two.update_timestamp
+
+        # Anchor event times to the stored timestamp so ordering does not depend on
+        # the database and Python clocks being synchronized.
         instance.handle_new_event(
             self._get_run_event_entry(
                 dg.DagsterEvent(
@@ -880,7 +887,7 @@ class TestRunStorage:
                     job_name="some_pipeline",
                 ),
                 three,  # three succeeds
-            ),
+            )._replace(timestamp=(run_two_update_timestamp + timedelta(seconds=1)).timestamp()),
         )
         instance.handle_new_event(
             self._get_run_event_entry(
@@ -890,13 +897,9 @@ class TestRunStorage:
                     job_name="some_pipeline",
                 ),
                 one,  # fail one after two has fails and three has succeeded
-            )
+            )._replace(timestamp=(run_two_update_timestamp + timedelta(seconds=2)).timestamp())
         )
 
-        record_two = storage.get_run_records(
-            filters=dg.RunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
-        )[0]
-        run_two_update_timestamp = record_two.update_timestamp
         record_three = storage.get_run_records(filters=dg.RunsFilter(run_ids=[three]))[0]
         record_one = storage.get_run_records(
             filters=dg.RunsFilter(run_ids=[one], updated_after=datetime(2020, 1, 1))
