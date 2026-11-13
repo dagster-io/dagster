@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from typing import cast
 
 import pytest
 import responses
@@ -180,20 +181,19 @@ def test_refreshable_semantic_model(
         url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
         json={"notifyOption": "NoNotification"},
         status=202,
+        headers={"x-ms-request-id": "refresh-request-id"},
     )
 
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={"value": [{"status": "Unknown"}]},
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes/refresh-request-id",
+        json={"status": "Unknown"},
         status=200,
     )
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={
-            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
-        },
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes/refresh-request-id",
+        json={"status": "Completed" if success else "Failed", "serviceExceptionJson": {}},
         status=200,
     )
 
@@ -205,6 +205,42 @@ def test_refreshable_semantic_model(
         [semantic_model_asset], raise_on_error=False, resources={"powerbi": resource}
     )
     assert result.success is success
+
+
+def test_semantic_model_refresh_polls_the_triggered_refresh(
+    workspace_data_api_mocks: responses.RequestsMock, workspace_id: str
+) -> None:
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=uuid.uuid4().hex),
+        workspace_id=workspace_id,
+        refresh_poll_interval=0,
+    )
+    dataset_id = cast("str", SAMPLE_SEMANTIC_MODEL["id"])
+    refreshes_url = f"{BASE_API_URL}/groups/{workspace_id}/datasets/{dataset_id}/refreshes"
+    request_id = "new-refresh"
+
+    workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=refreshes_url,
+        status=202,
+        headers={"x-ms-request-id": request_id},
+    )
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{refreshes_url}/{request_id}",
+        json={"status": "Unknown"},
+        status=200,
+    )
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{refreshes_url}/{request_id}",
+        json={"status": "Completed"},
+        status=200,
+    )
+
+    resource.trigger_and_poll_refresh(dataset_id)
+
+    assert len(workspace_data_api_mocks.calls) == 3
 
 
 @definitions
