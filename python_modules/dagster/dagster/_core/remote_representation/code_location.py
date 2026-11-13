@@ -18,7 +18,11 @@ from dagster._core.definitions.reconstruct import ReconstructableJob, Reconstruc
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterInvalidSubsetError,
+    DagsterUserCodeProcessError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -659,6 +663,8 @@ class GrpcServerCodeLocation(CodeLocation):
         grpc_server_registry: GrpcServerRegistry | None = None,
         grpc_metadata: Sequence[tuple[str, str]] | None = None,
     ):
+        import grpc
+
         from dagster._api.get_server_id import sync_get_server_id
         from dagster._api.list_repositories import sync_list_repositories_grpc
         from dagster._api.snapshot_repository import sync_get_external_repositories_data_grpc
@@ -705,12 +711,37 @@ class GrpcServerCodeLocation(CodeLocation):
                 metadata=grpc_metadata,
             )
 
-            list_repositories_response = sync_list_repositories_grpc(self.client)
-
-            self._server_id = sync_get_server_id(self.client)
-            self.repository_names = set(
-                symbol.repository_name for symbol in list_repositories_response.repository_symbols
-            )
+            # One channel, so the whole load comes from the server that reported _server_id
+            with self.client.shared_channel():
+                try:
+                    self._server_id = sync_get_server_id(self.client)
+                except DagsterUserCodeUnreachableError as e:
+                    # A `dagster code-server start` whose code server failed to start fails
+                    # every call with UNKNOWN except ListRepositories, which returns the reason
+                    if not (
+                        isinstance(e.__cause__, grpc.RpcError)
+                        and cast("grpc.Call", e.__cause__).code() == grpc.StatusCode.UNKNOWN
+                    ):
+                        raise
+                    try:
+                        sync_list_repositories_grpc(self.client)
+                    except DagsterUserCodeProcessError as startup_error:
+                        raise startup_error from None
+                    raise
+                list_repositories_response = sync_list_repositories_grpc(self.client)
+                self.repository_names = set(
+                    symbol.repository_name
+                    for symbol in list_repositories_response.repository_symbols
+                )
+                container_image = (
+                    list_repositories_response.container_image
+                    or self._reload_current_image()  # Back-compat for older gRPC servers that did not include container_image in ListRepositoriesResponse
+                )
+                repositories_data = sync_get_external_repositories_data_grpc(
+                    self.client,
+                    self,
+                    defer_snapshots=True,
+                )
 
             if self._heartbeat:
                 self._heartbeat_shutdown_event = threading.Event()
@@ -732,10 +763,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
             self._entry_point = list_repositories_response.entry_point
             self._dagster_library_versions = list_repositories_response.dagster_library_versions
-            self._container_image = (
-                list_repositories_response.container_image
-                or self._reload_current_image()  # Back-compat for older gRPC servers that did not include container_image in ListRepositoriesResponse
-            )
+            self._container_image = container_image
 
             self._container_context = list_repositories_response.container_context
 
@@ -744,11 +772,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
             self.remote_repositories = {}
 
-            for repo_name, (repo_data, job_snaps) in sync_get_external_repositories_data_grpc(
-                self.client,
-                self,
-                defer_snapshots=True,
-            ).items():
+            for repo_name, (repo_data, job_snaps) in repositories_data.items():
                 self.remote_repositories[repo_name] = RemoteRepository(
                     repo_data,
                     RepositoryHandle.from_location(
