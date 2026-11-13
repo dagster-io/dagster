@@ -365,6 +365,9 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("examples/with_wandb"),
+            unsupported_python_versions=[
+                AvailablePythonVersion.V3_11,  # example requires python 3.12+
+            ],
         ),
         PackageSpec(
             oss_path("examples/assets_modern_data_stack"),
