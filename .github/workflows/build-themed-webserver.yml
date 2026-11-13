@@ -54,6 +54,9 @@ jobs:
       - name: Build production JS bundle
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+          # A build with no Next.js cache needs more than Node's default ~2 GB heap;
+          # without this it dies with "JavaScript heap out of memory" (exit 134).
+          NODE_OPTIONS: --max-old-space-size=6144
           # Shown under Settings in the UI so a running site can be matched to a commit.
           NEXT_PUBLIC_BUILD_COMMIT: ${{ github.sha }}
           NEXT_PUBLIC_BUILD_REPO: ${{ github.repository }}
