@@ -183,6 +183,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
 
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     def __init__(self, **config_dict) -> None:
         """This constructor is overridden to handle any remapping of raw config dicts to
         the appropriate config classes. For example, discriminated unions are represented
