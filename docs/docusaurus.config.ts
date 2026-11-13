@@ -3,10 +3,35 @@ import type * as Preset from '@docusaurus/preset-classic';
 import type {Config} from '@docusaurus/types';
 import AnnouncementBar from '@theme/AnnouncementBar';
 import {themes as prismThemes} from 'prism-react-renderer';
+import {execSync} from 'node:child_process';
 
 const BASE_URL = '/docs/';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
+
+/**
+ * `lastmod: 'date'` makes the sitemap plugin run `git log` for every page, which only gives real dates
+ * in a full clone. The docs are deployed with the Vercel CLI from GitHub Actions (.github/workflows/
+ * build-docs.yml), so the Vercel build has no `.git` at all (git exits 128 and Docusaurus aborts the
+ * build), and the Actions checkout is shallow (`fetch-depth` = PR commits + 1), where every untouched
+ * file would report the boundary commit. Only ask for lastmod when git history can answer truthfully;
+ * otherwise the sitemap is emitted without `<lastmod>`, as before.
+ */
+function hasFullGitHistory(): boolean {
+  const git = (args: string) => execSync(`git ${args}`, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim();
+  try {
+    return git('rev-parse --is-inside-work-tree') === 'true' && git('rev-parse --is-shallow-repository') === 'false';
+  } catch {
+    return false;
+  }
+}
+
+const SITEMAP_LASTMOD = hasFullGitHistory() ? 'date' : null;
+if (SITEMAP_LASTMOD === null) {
+  console.warn(
+    '[sitemap] No full git history available (no repository, or a shallow clone): sitemap.xml is generated without <lastmod>.',
+  );
+}
 
 const config: Config = {
   title: 'Dagster Docs',
@@ -264,10 +289,10 @@ const config: Config = {
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
-          //lastmod: 'date',
+          lastmod: SITEMAP_LASTMOD,
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: [`${BASE_URL}tags/**`],
+          ignorePatterns: [`${BASE_URL}tags/**`, `${BASE_URL}search`],
           filename: 'sitemap.xml',
           createSitemapItems: async (params) => {
             const {defaultCreateSitemapItems, ...rest} = params;
