@@ -22,21 +22,24 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
         _etl_assets = []
 
         for etl in self.etl_steps:
-
-            @dg.asset(
-                name=etl.table,
-            )
-            def _table(duckdb: DuckDBResource):
-                with duckdb.get_connection() as conn:
-                    conn.execute(
-                        f"""
-                        create or replace table {etl.table} as (
-                            select * from read_csv_auto('{etl.url_path}')
+            # Bug #34076: Inner factory function binds etl_step to avoid Python closure late-binding
+            def create_etl_asset(etl_step: ETL):
+                @dg.asset(
+                    name=etl_step.table,
+                )
+                def _table(duckdb: DuckDBResource):
+                    with duckdb.get_connection() as conn:
+                        conn.execute(
+                            f"""
+                            create or replace table {etl_step.table} as (
+                                select * from read_csv_auto('{etl_step.url_path}')
+                            )
+                            """
                         )
-                        """
-                    )
 
-            _etl_assets.append(_table)
+                return _table
+
+            _etl_assets.append(create_etl_asset(etl))
 
         return dg.Definitions(
             assets=_etl_assets,
