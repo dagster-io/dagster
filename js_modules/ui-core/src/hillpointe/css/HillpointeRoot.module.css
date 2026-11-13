@@ -1169,3 +1169,11 @@
     transition: none !important;
   }
 }
+
+/* The Job timings card on the metrics page keeps its height while jobs swap. */
+.timingsCardBody {
+  min-height: 228px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

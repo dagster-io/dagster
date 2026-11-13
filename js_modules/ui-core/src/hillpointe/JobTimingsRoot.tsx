@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {CSSProperties, useEffect, useMemo, useState} from 'react';
+import {CSSProperties, useCallback, useEffect, useMemo, useState} from 'react';
 import {Link, useHistory, useParams} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
@@ -94,11 +94,11 @@ const average = (values: number[]) =>
 const pointColor = (status: RunStatus) =>
   status === RunStatus.SUCCESS ? Colors.dataVizGreen() : Colors.dataVizRed();
 
-export const JobTimingsRoot = () => {
-  useTrackPageView();
-  useDocumentTitle('Job timings');
-  const {jobName} = useParams<{jobName?: string}>();
-
+/**
+ * Every job's runs for the last TIMINGS_DAYS days, grouped by the code location
+ * that defines the job today. Shared by the Job timings page and the metrics card.
+ */
+const useTimingsData = () => {
   const [after] = useState(() => startOfDay(TIMINGS_DAYS - 1).getTime() / 1000);
   const queryResult = useQuery<HillpointeJobTimingsQuery, HillpointeJobTimingsQueryVariables>(
     HILLPOINTE_JOB_TIMINGS_QUERY,
@@ -168,17 +168,22 @@ export const JobTimingsRoot = () => {
     [jobs, locationOrder],
   );
 
-  const selected = jobName ?? jobs[0]?.name ?? null;
+  // The jobs shown in turn on an unattended screen: the live location's, or
+  // every job where there is no such location (local development). Joined into
+  // one string so a data refresh does not restart the rotation timer.
+  const live = jobs.filter((job) => job.location === ROTATE_LOCATION);
+  const rotation = (live.length ? live : jobs).map((job) => job.name).join(',');
 
-  // Cycle through the live jobs on a timer, so an unattended screen shows each
-  // one in turn. The names are joined so a data refresh does not restart the timer.
+  return {queryResult, refreshState, runs, jobs, locations, rotation};
+};
+
+/**
+ * Moves to the next job in `rotation` on a timer. Returns true for the moment
+ * the current job should fade out, just before `show` is called with the next.
+ */
+const useJobRotation = (rotation: string, selected: string | null, show: (job: string) => void) => {
   const [rotateSecs] = useTimingsRotateSecs();
-  const history = useHistory();
   const [exiting, setExiting] = useState(false);
-  const rotation = jobs
-    .filter((job) => job.location === ROTATE_LOCATION)
-    .map((job) => job.name)
-    .join(',');
   useEffect(() => {
     const next = rotation ? nextInRotation(rotation.split(','), selected) : null;
     if (!rotateSecs || !next || next === selected) {
@@ -189,7 +194,7 @@ export const JobTimingsRoot = () => {
     const timer = setTimeout(() => {
       setExiting(true);
       swap = setTimeout(() => {
-        history.replace(`/hillpointe/timings/${encodeURIComponent(next)}`);
+        show(next);
         setExiting(false);
       }, EXIT_MS);
     }, rotateSecs * 1000);
@@ -198,11 +203,12 @@ export const JobTimingsRoot = () => {
       clearTimeout(swap);
       setExiting(false);
     };
-  }, [rotateSecs, rotation, selected, history]);
-  // The job list can be tucked away to give the chart the full width.
-  const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
-    typeof value === 'boolean' ? value : true,
-  );
+  }, [rotateSecs, rotation, selected, show]);
+  return exiting;
+};
+
+/** Which of a job's runs were partial, and whether that is still being worked out. */
+const usePartialRuns = (selected: string | null) => {
   // A run that materialised well under half the assets of the job's biggest
   // successful run was a partial run (someone picked one or two assets), so it
   // is left out. Half, not "fewer", so a full run with one asset more or less
@@ -236,6 +242,44 @@ export const JobTimingsRoot = () => {
     });
     return set;
   }, [statsResult.data]);
+  return {partial, checking: statsResult.loading && !statsResult.data};
+};
+
+/** The figures both the page and the card quote for one job's runs. */
+const summarize = (points: Point[]) => {
+  // Only successful runs feed the numbers; failures on the chart are context.
+  const good = points.filter((p) => p.run.status === RunStatus.SUCCESS);
+  const seconds = good.map((p) => p.seconds);
+  return {
+    good,
+    seconds,
+    avg: average(seconds),
+    last: good[good.length - 1] ?? null,
+    previous: good[good.length - 2] ?? null,
+    top: Math.max(1, ...seconds),
+  };
+};
+
+export const JobTimingsRoot = () => {
+  useTrackPageView();
+  useDocumentTitle('Job timings');
+  const {jobName} = useParams<{jobName?: string}>();
+
+  const {queryResult, refreshState, runs, jobs, locations, rotation} = useTimingsData();
+
+  const selected = jobName ?? jobs[0]?.name ?? null;
+
+  const history = useHistory();
+  const show = useCallback(
+    (job: string) => history.replace(`/hillpointe/timings/${encodeURIComponent(job)}`),
+    [history],
+  );
+  const exiting = useJobRotation(rotation, selected, show);
+  // The job list can be tucked away to give the chart the full width.
+  const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
+    typeof value === 'boolean' ? value : true,
+  );
+  const {partial, checking: checkingPartial} = usePartialRuns(selected);
 
   const points = useMemo(
     () => (selected ? pointsFor(runs, selected, partial) : []),
@@ -311,10 +355,63 @@ export const JobTimingsRoot = () => {
             job={selected}
             points={points}
             partialCount={partialCount}
-            checkingPartial={statsResult.loading && !statsResult.data}
+            checkingPartial={checkingPartial}
           />
         ) : null}
       </div>
+    </div>
+  );
+};
+
+// The metrics page shows one job at a time in a card this tall.
+const CARD_PLOT_HEIGHT = 160;
+
+/**
+ * Job timings for the metrics page: one job's trend at a time, moving through
+ * the same jobs, at the same pace and with the same animation, as the full page.
+ */
+export const JobTimingsCard = () => {
+  const {runs, jobs, rotation} = useTimingsData();
+  const [shown, setShown] = useState<string | null>(null);
+  // A job with no successful run has nothing to chart, so the card skips it.
+  const charted = new Set(jobs.filter((job) => job.count > 0).map((job) => job.name));
+  const names = (rotation ? rotation.split(',') : []).filter((name) => charted.has(name));
+  const selected = shown && names.includes(shown) ? shown : (names[0] ?? null);
+  const exiting = useJobRotation(names.join(','), selected, setShown);
+  const {partial} = usePartialRuns(selected);
+  const points = useMemo(
+    () => (selected ? pointsFor(runs, selected, partial) : []),
+    [runs, selected, partial],
+  );
+  const {good, avg, last} = summarize(points);
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardTitle}>
+          Job timings
+          <span className={styles.cardSub}>How long each run took, last {TIMINGS_DAYS} days</span>
+        </div>
+        <Link to="/hillpointe/timings">All jobs</Link>
+      </div>
+      {selected ? (
+        <div
+          key={selected}
+          className={clsx(styles.timingsCardBody, styles.slide, exiting && styles.slideExit)}
+        >
+          <div className={clsx(styles.cardTitle, styles.slideTitle)}>
+            <Link to={`/hillpointe/timings/${encodeURIComponent(selected)}`}>{selected}</Link>
+            <span className={styles.cardSub}>
+              {good.length
+                ? `Last run ${formatDuration(last?.seconds ?? null)} · average ${formatDuration(avg)} · ${good.length} successful runs`
+                : 'No finished runs'}
+            </span>
+          </div>
+          {points.length ? <TimingsPlot points={points} height={CARD_PLOT_HEIGHT} /> : null}
+        </div>
+      ) : (
+        <div className={styles.muted}>No runs in the last {TIMINGS_DAYS} days.</div>
+      )}
     </div>
   );
 };
@@ -332,25 +429,15 @@ const JobTimings = ({
   partialCount: number;
   checkingPartial: boolean;
 }) => {
-  // Only successful runs feed the numbers; failures on the chart are context.
-  const good = points.filter((p) => p.run.status === RunStatus.SUCCESS);
-  const seconds = good.map((p) => p.seconds);
-  const avg = average(seconds);
+  const {good, seconds, avg, last, previous} = summarize(points);
   const fastest = good.length ? good.reduce((a, b) => (b.seconds < a.seconds ? b : a)) : null;
   const slowest = good.length ? good.reduce((a, b) => (b.seconds > a.seconds ? b : a)) : null;
-  const last = good[good.length - 1] ?? null;
-  const previous = good[good.length - 2] ?? null;
 
   // Trend: the newest TREND_WINDOW runs against the TREND_WINDOW before them.
   const recent = average(seconds.slice(-TREND_WINDOW));
   const before = average(seconds.slice(-2 * TREND_WINDOW, -TREND_WINDOW));
   const trend =
     recent !== null && before !== null && before > 0 ? (recent - before) / before : null;
-
-  const top = Math.max(1, ...seconds);
-  const x = (i: number) => (i + 0.5) * (100 / Math.max(1, points.length));
-  const y = (s: number) => PLOT_HEIGHT - (s / top) * PLOT_HEIGHT;
-  const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.seconds)}`).join(' ');
 
   if (!points.length) {
     return (
@@ -413,85 +500,7 @@ const JobTimings = ({
                 : ''}
           </span>
         </div>
-        <div className={styles.plot} style={{height: PLOT_HEIGHT}}>
-          <div className={styles.gridline}>
-            <span className={styles.gridLabel}>{formatDuration(top)}</span>
-          </div>
-          <div className={styles.gridline} style={{top: '50%'}}>
-            <span className={styles.gridLabel}>{formatDuration(top / 2)}</span>
-          </div>
-          {avg !== null ? (
-            <div
-              className={clsx(styles.gridline, styles.avgLine)}
-              style={{top: `${(1 - avg / top) * 100}%`}}
-            >
-              <span className={styles.avgLabel}>avg {formatDuration(avg)}</span>
-            </div>
-          ) : null}
-          {/* The line and its points sit in a window that slides in from the
-              left while its contents hold still, which uncovers them left to
-              right. Two transforms, so the browser never repaints the chart. */}
-          <div className={styles.trace}>
-            <div className={styles.traceHold}>
-              <div className={styles.traceInner}>
-                <svg
-                  className={styles.trendSvg}
-                  viewBox={`0 0 100 ${PLOT_HEIGHT}`}
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d={path}
-                    fill="none"
-                    stroke={Colors.dataVizBlue()}
-                    strokeWidth={2}
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-                {points.map((p) => (
-                  <Tooltip
-                    key={p.run.runId}
-                    content={
-                      <div>
-                        <strong>{new Date(p.start * 1000).toLocaleString()}</strong>
-                        <div>
-                          {formatDuration(p.seconds)} · {p.run.status}
-                          {avg !== null ? (
-                            <>
-                              {' · '}
-                              <Delta from={avg} to={p.seconds} label="vs avg" />
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <Link to={`/runs/${p.run.runId}`} className={styles.column}>
-                      <span
-                        className={styles.point}
-                        style={{
-                          top: `${(1 - p.seconds / top) * 100}%`,
-                          background: pointColor(p.run.status),
-                        }}
-                      />
-                    </Link>
-                  </Tooltip>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className={styles.xLabels}>
-          {points.map((p, i) => (
-            <div key={p.run.runId} className={styles.xLabel}>
-              {i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 6) === 0
-                ? new Date(p.start * 1000).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : ''}
-            </div>
-          ))}
-        </div>
+        <TimingsPlot points={points} height={PLOT_HEIGHT} />
       </div>
 
       <div className={styles.card}>
@@ -538,6 +547,98 @@ const JobTimings = ({
         </div>
       </div>
     </div>
+  );
+};
+
+/** One job's run durations as a line with a point per run, traced in from the left. */
+const TimingsPlot = ({points, height}: {points: Point[]; height: number}) => {
+  const {avg} = summarize(points);
+  const top = summarize(points).top;
+  const x = (i: number) => (i + 0.5) * (100 / Math.max(1, points.length));
+  const y = (s: number) => height - (s / top) * height;
+  const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.seconds)}`).join(' ');
+  return (
+    <>
+      <div className={styles.plot} style={{height}}>
+        <div className={styles.gridline}>
+          <span className={styles.gridLabel}>{formatDuration(top)}</span>
+        </div>
+        <div className={styles.gridline} style={{top: '50%'}}>
+          <span className={styles.gridLabel}>{formatDuration(top / 2)}</span>
+        </div>
+        {avg !== null ? (
+          <div
+            className={clsx(styles.gridline, styles.avgLine)}
+            style={{top: `${(1 - avg / top) * 100}%`}}
+          >
+            <span className={styles.avgLabel}>avg {formatDuration(avg)}</span>
+          </div>
+        ) : null}
+        {/* The line and its points sit in a window that slides in from the
+          left while its contents hold still, which uncovers them left to
+          right. Two transforms, so the browser never repaints the chart. */}
+        <div className={styles.trace}>
+          <div className={styles.traceHold}>
+            <div className={styles.traceInner}>
+              <svg
+                className={styles.trendSvg}
+                viewBox={`0 0 100 ${height}`}
+                preserveAspectRatio="none"
+              >
+                <path
+                  d={path}
+                  fill="none"
+                  stroke={Colors.dataVizBlue()}
+                  strokeWidth={2}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {points.map((p) => (
+                <Tooltip
+                  key={p.run.runId}
+                  content={
+                    <div>
+                      <strong>{new Date(p.start * 1000).toLocaleString()}</strong>
+                      <div>
+                        {formatDuration(p.seconds)} · {p.run.status}
+                        {avg !== null ? (
+                          <>
+                            {' · '}
+                            <Delta from={avg} to={p.seconds} label="vs avg" />
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  }
+                >
+                  <Link to={`/runs/${p.run.runId}`} className={styles.column}>
+                    <span
+                      className={styles.point}
+                      style={{
+                        top: `${(1 - p.seconds / top) * 100}%`,
+                        background: pointColor(p.run.status),
+                      }}
+                    />
+                  </Link>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className={styles.xLabels}>
+        {points.map((p, i) => (
+          <div key={p.run.runId} className={styles.xLabel}>
+            {i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 6) === 0
+              ? new Date(p.start * 1000).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : ''}
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 

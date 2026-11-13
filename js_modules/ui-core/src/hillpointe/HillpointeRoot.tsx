@@ -15,6 +15,7 @@ import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
+import {JobTimingsCard} from './JobTimingsRoot';
 import styles from './css/HillpointeRoot.module.css';
 import {
   HillpointeRowCountQuery,
@@ -46,8 +47,6 @@ import {TimeFromNow} from '../ui/TimeFromNow';
 // Runs are scoped to the current month; the limit is a safety cap.
 const MONTH_RUN_LIMIT = 5000;
 const TABLE_ROWS = 50;
-const TREND_DAYS = 30;
-const ROLLING_DAYS = 7;
 const HISTORY_DAYS = 90;
 
 type Run = Extract<
@@ -185,7 +184,7 @@ export const HillpointeRoot = () => {
           <TrendCard runs={runs} />
           <div className={styles.stack}>
             <RunStatusBlock />
-            <SuccessRateCard />
+            <JobTimingsCard />
           </div>
         </div>
         {selectedRun ? (
@@ -609,21 +608,6 @@ const TREND_MODES: {id: TrendMode; label: string; sub: string}[] = [
   {id: 'replay', label: 'Replay last night', sub: 'Midnight to noon today, sped up'},
   {id: 'schedule', label: "Tonight's schedule", sub: 'Last night, and what runs next'},
 ];
-
-/** Success rate gets its own card, placed under Pipeline runs. */
-const SuccessRateCard = () => (
-  <div className={styles.card}>
-    <div className={styles.cardHeader}>
-      <div className={styles.cardTitle}>
-        Success rate
-        <span className={styles.cardSub}>
-          {ROLLING_DAYS}-day rolling, last {TREND_DAYS} days
-        </span>
-      </div>
-    </div>
-    <SuccessRateTrend />
-  </div>
-);
 
 /** One card that switches between the replay and today's timeline. */
 // The card rotates between its views on its own, for wall screens.
@@ -1191,138 +1175,6 @@ const ReplayNight = ({runs}: {runs: Run[]}) => {
             </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-};
-
-const TREND_HEIGHT = 160;
-
-/**
- * Rolling success rate over the last TREND_DAYS days, as a line. Each point is
- * the share of finished runs that succeeded in the ROLLING_DAYS days ending on
- * that day, so one bad run nudges the line rather than dropping it to zero.
- */
-const SuccessRateTrend = () => {
-  // Same variables as RunStatusBlock's history query, so Apollo serves it from cache.
-  const [historyStart] = useState(() => startOfDay(HISTORY_DAYS - 1));
-  const queryResult = useQuery<HillpointeRunHistoryQuery, HillpointeRunHistoryQueryVariables>(
-    HILLPOINTE_RUN_HISTORY_QUERY,
-    {variables: {after: historyStart.getTime() / 1000}},
-  );
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-
-  const days = useMemo(() => {
-    const result = queryResult.data?.runsOrError;
-    const runs = result?.__typename === 'Runs' ? result.results : [];
-    // Daily counts reach back an extra window so the first point has a full one.
-    const span = TREND_DAYS + ROLLING_DAYS - 1;
-    const daily = Array.from({length: span}, (_, i) => ({
-      date: startOfDay(span - 1 - i),
-      succeeded: 0,
-      finished: 0,
-    }));
-    const byKey = new Map(daily.map((d) => [dayKey(d.date), d]));
-    runs.forEach((r) => {
-      const day = byKey.get(dayKey(new Date(r.creationTime * 1000)));
-      const bucket = bucketFor(r.status);
-      if (day && (bucket === 'success' || bucket === 'failure')) {
-        day.finished++;
-        day.succeeded += bucket === 'success' ? 1 : 0;
-      }
-    });
-    return daily.slice(ROLLING_DAYS - 1).map((d, i) => {
-      const window = daily.slice(i, i + ROLLING_DAYS);
-      const succeeded = window.reduce((sum, w) => sum + w.succeeded, 0);
-      const finished = window.reduce((sum, w) => sum + w.finished, 0);
-      return {date: d.date, succeeded, finished, rate: finished ? succeeded / finished : null};
-    });
-  }, [queryResult.data]);
-
-  const latest = days[days.length - 1];
-  const pct = (rate: number | null) => (rate === null ? '—' : `${Math.round(rate * 100)}%`);
-
-  // Points sit at column centres; a window with no finished runs breaks the line.
-  const step = 100 / TREND_DAYS;
-  const x = (i: number) => (i + 0.5) * step;
-  const y = (rate: number) => TREND_HEIGHT - rate * TREND_HEIGHT;
-  const path = days
-    .map((d, i) => (d.rate === null ? '' : `${x(i)},${y(d.rate)}`))
-    .reduce((acc, point, i, all) => {
-      if (!point) {
-        return acc;
-      }
-      const prev = i > 0 ? all[i - 1] : '';
-      return `${acc}${prev ? 'L' : 'M'}${point} `;
-    }, '');
-
-  return (
-    <>
-      <Box flex={{alignItems: 'baseline', gap: 12}}>
-        <div className={styles.tileValue}>{pct(latest?.rate ?? null)}</div>
-        <div className={styles.tileSub}>
-          Last {ROLLING_DAYS} days
-          {latest?.finished ? ` · ${latest.succeeded} of ${latest.finished} runs succeeded` : ''}
-        </div>
-      </Box>
-      <div className={styles.tileSub}>
-        Each point is the share of runs that succeeded in the {ROLLING_DAYS} days ending on that
-        day, so one bad run nudges the line instead of dropping it to zero.
-      </div>
-      <div className={styles.plot}>
-        <div className={styles.gridline}>
-          <span className={styles.gridLabel}>100%</span>
-        </div>
-        <div className={styles.gridline} style={{top: '50%'}}>
-          <span className={styles.gridLabel}>50%</span>
-        </div>
-        <svg
-          className={styles.trendSvg}
-          viewBox={`0 0 100 ${TREND_HEIGHT}`}
-          preserveAspectRatio="none"
-        >
-          <path
-            d={path}
-            fill="none"
-            stroke={Colors.dataVizGreen()}
-            strokeWidth={2}
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-        {days.map((day) => (
-          <Tooltip
-            key={day.date.toISOString()}
-            content={
-              <div>
-                <strong>{day.date.toLocaleDateString()}</strong>:{' '}
-                {day.finished
-                  ? `${pct(day.rate)} · ${day.succeeded} of ${day.finished} runs succeeded in the ${ROLLING_DAYS} days ending here`
-                  : `No finished runs in the ${ROLLING_DAYS} days ending here`}
-              </div>
-            }
-          >
-            <div className={styles.column}>
-              {day.rate !== null ? (
-                <span
-                  className={styles.point}
-                  style={{
-                    top: `${(1 - day.rate) * 100}%`,
-                    background: Colors.dataVizGreen(),
-                  }}
-                />
-              ) : null}
-            </div>
-          </Tooltip>
-        ))}
-      </div>
-      <div className={styles.xLabels}>
-        {days.map((day, i) => (
-          <div key={day.date.toISOString()} className={styles.xLabel}>
-            {(TREND_DAYS - 1 - i) % 7 === 0
-              ? day.date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})
-              : ''}
-          </div>
-        ))}
       </div>
     </>
   );
