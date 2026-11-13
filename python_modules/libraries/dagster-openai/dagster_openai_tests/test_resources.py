@@ -577,3 +577,32 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
             partition_key=partition_key
         )
         assert result.success
+
+
+@patch("dagster.AssetExecutionContext", autospec=AssetExecutionContext)
+def test_openai_wrapper_returns_streamed_response_unchanged(mock_context):
+    # A streamed response is an iterator of chunks: it has no `model` or `usage` attribute.
+    stream = iter([MagicMock()])
+    func = MagicMock(return_value=stream)
+
+    wrapped = with_usage_metadata(
+        context=mock_context, output_name="some_output_name", func=func
+    )
+
+    assert wrapped(model=TEST_MODEL, stream=True) is stream
+    mock_context.add_output_metadata.assert_not_called()
+
+
+@patch("dagster.AssetExecutionContext", autospec=AssetExecutionContext)
+def test_openai_wrapper_skips_response_without_usage(mock_context):
+    completion = MagicMock()
+    completion.model = TEST_MODEL
+    completion.usage = None
+    func = MagicMock(return_value=completion)
+
+    wrapped = with_usage_metadata(
+        context=mock_context, output_name="some_output_name", func=func
+    )
+
+    assert wrapped(model=TEST_MODEL) is completion
+    mock_context.add_output_metadata.assert_not_called()
