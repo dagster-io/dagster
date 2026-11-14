@@ -394,3 +394,19 @@ def test_report_asset_observation_endpoint_read_only_forbidden(
     response = read_only_test_client.post(f"/report_asset_observation/{asset_key}")
     assert response.status_code == 401
     assert response.json() == {"error": "Not authorized to report runless asset events."}
+
+
+def test_report_asset_endpoints_malformed_json_body(test_client: TestClient):
+    for endpoint in (
+        "/report_asset_materialization/my_asset",
+        "/report_asset_check/my_asset",
+        "/report_asset_observation/my_asset",
+    ):
+        for body in (b'{"asset_key": ["my_asset", "part', b'{"asset_key": ["\xff"]}'):
+            response = test_client.post(
+                endpoint,
+                content=body,
+                headers={"content-type": "application/json"},
+            )
+            assert response.status_code == 400, (endpoint, body)
+            assert "Error parsing request body as JSON" in response.json()["error"]
