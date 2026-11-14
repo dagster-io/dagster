@@ -88,6 +88,12 @@ class SnapshotType(Enum):
     EXECUTION_PLAN = "EXECUTION_PLAN"
 
 
+# Concurrent writers can interleave between the UPDATE, INSERT, and
+# recovery statements in _upsert_run_tag; retry the cycle this many times
+# before surfacing the error instead of silently dropping the tag.
+_ADD_RUN_TAGS_UPSERT_ATTEMPTS = 5
+
+
 class SqlRunStorage(RunStorage):
     """Base class for SQL based run storages."""
 
@@ -534,76 +540,76 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-            current_tags_set = set(current_tags.keys())
-            new_tags_set = set(new_tags.keys())
+            for tag in new_tags:
+                self._upsert_run_tag(conn, run_id, tag, new_tags[tag])
 
-            existing_tags = current_tags_set & new_tags_set
-            added_tags = new_tags_set.difference(existing_tags)
+    def _upsert_run_tag(self, conn: Connection, run_id: str, key: str, value: str) -> None:
+        """Insert or update a single run_tags row, tolerating concurrent writers.
 
-            for tag in existing_tags:
-                conn.execute(
+        A plain UPDATE-then-INSERT is not atomic: between the two statements
+        another writer can insert, delete, or change the row, and on
+        Postgres (AUTOCOMMIT) each statement is its own transaction. The
+        cycle below retries the UPDATE/INSERT pair a few times, and an
+        IntegrityError is only treated as "already there" once a SELECT
+        proves the exact (run_id, key, value) row exists. Any other outcome
+        either retries the UPDATE or re-raises the error, so recovery can
+        never silently drop the tag, and a MySQL prefix-index collision with
+        a different key is never swallowed.
+        """
+        for attempt in range(_ADD_RUN_TAGS_UPSERT_ATTEMPTS):
+            try:
+                updated = conn.execute(
                     RunTagsTable.update()
-                    .where(db.and_(RunTagsTable.c.run_id == run_id, RunTagsTable.c.key == tag))
-                    .values(value=new_tags[tag])
+                    .where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
+                        )
+                    )
+                    .values(value=value)
                 )
-
-            for tag in added_tags:
-                try:
-                    updated = conn.execute(
-                        RunTagsTable.update()
-                        .where(
-                            db.and_(
-                                RunTagsTable.c.run_id == run_id,
-                                RunTagsTable.c.key == tag,
-                            )
-                        )
-                        .values(value=new_tags[tag])
-                    )
-                except db_exc.IntegrityError:
-                    # Duplicate rows with different values already exist for
-                    # this key (left by an earlier race); drop them all and
-                    # insert the single current value.
-                    conn.execute(
-                        db.delete(RunTagsTable).where(
-                            db.and_(
-                                RunTagsTable.c.run_id == run_id,
-                                RunTagsTable.c.key == tag,
-                            )
+            except db_exc.IntegrityError:
+                # Several rows with different values already exist for this
+                # key (left by an earlier race); remove them all and fall
+                # through to the insert below, which verifies the outcome.
+                conn.execute(
+                    db.delete(RunTagsTable).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
                         )
                     )
-                    try:
-                        conn.execute(
-                            RunTagsTable.insert().values(
-                                run_id=run_id, key=tag, value=new_tags[tag]
-                            )
-                        )
-                    except db_exc.IntegrityError:
-                        # A concurrent writer inserted this tag/value in the
-                        # meantime; the row we want already exists.
-                        pass
-                    continue
+                )
+                updated = None
 
-                if updated.rowcount == 0:
-                    try:
-                        conn.execute(
-                            RunTagsTable.insert().values(
-                                run_id=run_id, key=tag, value=new_tags[tag]
-                            )
+            if updated is not None and updated.rowcount > 0:
+                return
+
+            try:
+                conn.execute(RunTagsTable.insert().values(run_id=run_id, key=key, value=value))
+                return
+            except db_exc.IntegrityError:
+                # A concurrent writer inserted a conflicting row, or the
+                # index conflict is unrelated to this tag (e.g. a MySQL
+                # prefix-index collision with a different key sharing the
+                # first 64 characters). Only swallow the error once the
+                # exact row we want is verified to exist.
+                row = conn.execute(
+                    db.select(RunTagsTable.c.value).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
                         )
-                    except db_exc.IntegrityError:
-                        # A concurrent writer inserted the same tag/value
-                        # after our UPDATE found nothing. The row now holds
-                        # the value we want; drop any rows for the key with a
-                        # different value so exactly one row remains.
-                        conn.execute(
-                            db.delete(RunTagsTable).where(
-                                db.and_(
-                                    RunTagsTable.c.run_id == run_id,
-                                    RunTagsTable.c.key == tag,
-                                    RunTagsTable.c.value != new_tags[tag],
-                                )
-                            )
-                        )
+                    )
+                ).first()
+                if row is not None and row[0] == value:
+                    return
+                if row is None:
+                    raise
+                if attempt >= _ADD_RUN_TAGS_UPSERT_ATTEMPTS - 1:
+                    raise
+                # A row exists with a different value: another writer
+                # changed it after our INSERT failed. Loop and UPDATE it.
 
     def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
