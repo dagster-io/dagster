@@ -6,14 +6,17 @@ from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster import DagsterEventType
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
 )
 from dagster._daemon.daemon import IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
+from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
@@ -22,6 +25,13 @@ _INTERVAL_SECONDS = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_INTERV
 _EVENT_LOG_FETCH_LIMIT = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_FETCH_LIMIT", "500"))
 
 DAGSTER_EVENT_TYPES = [DagsterEventType.RUN_FAILURE, DagsterEventType.RUN_SUCCESS]
+
+# The run worker stores a RUN_FAILURE event before it updates the run status to FAILURE. The daemon
+# waits at most this long for the run status to be updated before handling the run anyway, so that
+# a run that never reaches FAILURE cannot block the handling of later RUN_FAILURE events.
+_MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS = int(
+    os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS", "5")
+)
 
 
 class EventLogConsumerDaemon(IntervalDaemon):
@@ -75,6 +85,11 @@ class EventLogConsumerDaemon(IntervalDaemon):
                 limit=self._event_log_fetch_limit,
             )
 
+            if event_type == DagsterEventType.RUN_FAILURE:
+                events_by_log_id_for_type = _get_run_failure_events_ready_to_handle(
+                    instance, events_by_log_id_for_type, self._logger
+                )
+
             events.extend(events_by_log_id_for_type.values())
 
             # calculate the new cursor for this event type
@@ -100,6 +115,62 @@ class EventLogConsumerDaemon(IntervalDaemon):
 
         # persist cursors now that we've processed all the events through the handlers
         _persist_cursors(instance, new_cursors)
+
+
+def _get_run_failure_events_ready_to_handle(
+    instance: DagsterInstance,
+    events_by_log_id: Mapping[int, "EventLogEntry"],
+    logger: logging.Logger,
+) -> Mapping[int, "EventLogEntry"]:
+    """Return the RUN_FAILURE events up to (excluding) the first one whose run status has not been
+    updated to FAILURE yet.
+
+    The run worker stores the RUN_FAILURE event before it updates the run status and adds the
+    WILL_RETRY_TAG. A run read in between looks like it was not failed and would be skipped, while
+    the cursor moves past its event, so it would never be retried. Stopping at that event keeps the
+    cursor before it, so the run is handled in a later iteration.
+    """
+    if not events_by_log_id:
+        return events_by_log_id
+
+    run_ids = list({event.run_id for event in events_by_log_id.values()})
+    run_by_id = {
+        record.dagster_run.run_id: record.dagster_run
+        for record in instance.get_run_records(filters=RunsFilter(run_ids=run_ids))
+    }
+    now = get_current_timestamp()
+
+    ready_events_by_log_id: dict[int, EventLogEntry] = {}
+    for storage_id in sorted(events_by_log_id.keys()):
+        event = events_by_log_id[storage_id]
+        run = run_by_id.get(event.run_id)
+        if run is not None and run.status != DagsterRunStatus.FAILURE:
+            waited_seconds = now - event.timestamp
+            if waited_seconds < _MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS:
+                logger.info(
+                    f"Run {run.run_id} has a run failure event, but its status is still"
+                    f" {run.status.value}. Waiting for the status to be updated before handling it."
+                )
+                break
+            message = (
+                f"Run has a run failure event, but its status is still {run.status.value} after"
+                f" {_MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS} seconds. Handling it anyway."
+            )
+            logger.warning(f"Run {run.run_id}: {message}")
+            instance.report_engine_event(
+                message,
+                run,
+                engine_event_data=EngineEventData(
+                    {
+                        "run status": MetadataValue.text(run.status.value),
+                        "waited seconds": MetadataValue.float(waited_seconds),
+                        "run failure event storage id": MetadataValue.int(storage_id),
+                    }
+                ),
+            )
+        ready_events_by_log_id[storage_id] = event
+
+    return ready_events_by_log_id
 
 
 def _create_cursor_key(event_type: DagsterEventType) -> str:
