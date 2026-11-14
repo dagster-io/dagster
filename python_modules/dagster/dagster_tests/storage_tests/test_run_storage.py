@@ -4,12 +4,13 @@ from contextlib import contextmanager
 
 import dagster as dg
 import pytest
+import sqlalchemy as db
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.legacy_storage import LegacyRunStorage
-from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
+from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage, SqlRunStorage
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 from dagster._core.test_utils import BasicLoadingContext, environ
 from dagster_test.utils.data_factory import dagster_run
@@ -53,6 +54,18 @@ class TestSqliteRunStorage(TestRunStorage):
 
     def supports_concurrent_add_run_tags(self) -> bool:
         return True
+
+    def prepare_concurrent_add_run_tags(self, storage) -> None:
+        # A SQLite db bootstrapped from RunStorageSqlMetadata.create_all is stamped at head and
+        # skips the alembic revisions, so it only has the indexes declared in schema.py. Create
+        # idx_run_tags_run_id here so the schema matches a migrated instance (alembic 047).
+        assert isinstance(storage, SqlRunStorage)
+        with storage.connect() as conn:
+            conn.execute(
+                db.text(
+                    'CREATE UNIQUE INDEX IF NOT EXISTS idx_run_tags_run_id ON run_tags ("key", value, run_id)'
+                )
+            )
 
     def supports_backfill_job_name_filtering_queries(self) -> bool:
         return True
