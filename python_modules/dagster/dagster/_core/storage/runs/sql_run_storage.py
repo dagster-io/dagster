@@ -540,8 +540,66 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-            for tag in new_tags:
-                self._upsert_run_tag(conn, run_id, tag, new_tags[tag])
+            # A blind batch INSERT cannot tell "key exists with a different
+            # value" from "key is new": the unique index only conflicts on
+            # the full (key, value, run_id) triple, so inserting a new value
+            # for an existing key would silently add a second row for it.
+            # Split first: keys already present go through the UPDATE-first
+            # per-tag cycle; only genuinely new keys take the batch path.
+            existing_keys = {
+                row[0]
+                for row in conn.execute(
+                    db_select([RunTagsTable.c.key]).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key.in_(list(new_tags)),
+                        )
+                    )
+                ).fetchall()
+            }
+            batch_tags = {k: v for k, v in new_tags.items() if k not in existing_keys}
+            pending = dict(new_tags)
+            if batch_tags:
+                try:
+                    conn.execute(
+                        RunTagsTable.insert().values(
+                            [
+                                {"run_id": run_id, "key": key, "value": value}
+                                for key, value in batch_tags.items()
+                            ]
+                        )
+                    )
+                except db_exc.IntegrityError:
+                    # A concurrent writer raced us (or the batch collided
+                    # on an unrelated unique row, e.g. a MySQL
+                    # prefix-index collision): fall through to the per-tag
+                    # cycle for all tags, which verifies the exact row
+                    # before swallowing a conflict.
+                    pass
+                else:
+                    # A concurrent writer may have inserted a row for one
+                    # of the batch keys between the pre-check and the
+                    # INSERT (same key, different value — no index
+                    # conflict). Verify each batch key ended up with
+                    # exactly the requested row and converge any mismatch
+                    # through the per-tag cycle.
+                    rows = conn.execute(
+                        db_select([RunTagsTable.c.key, RunTagsTable.c.value]).where(
+                            db.and_(
+                                RunTagsTable.c.run_id == run_id,
+                                RunTagsTable.c.key.in_(list(batch_tags)),
+                            )
+                        )
+                    ).fetchall()
+                    by_key: dict[str, list[str]] = {}
+                    for key, value in rows:
+                        by_key.setdefault(key, []).append(value)
+                    for key, value in batch_tags.items():
+                        if by_key.get(key) != [value]:
+                            self._upsert_run_tag(conn, run_id, key, value)
+                    pending = {k: v for k, v in new_tags.items() if k in existing_keys}
+            for tag, value in pending.items():
+                self._upsert_run_tag(conn, run_id, tag, value)
 
     def _upsert_run_tag(self, conn: Connection, run_id: str, key: str, value: str) -> None:
         """Insert or update a single run_tags row, tolerating concurrent writers.
@@ -595,7 +653,7 @@ class SqlRunStorage(RunStorage):
                 # first 64 characters). Only swallow the error once the
                 # exact row we want is verified to exist.
                 row = conn.execute(
-                    db.select(RunTagsTable.c.value).where(
+                    db_select([RunTagsTable.c.value]).where(
                         db.and_(
                             RunTagsTable.c.run_id == run_id,
                             RunTagsTable.c.key == key,
