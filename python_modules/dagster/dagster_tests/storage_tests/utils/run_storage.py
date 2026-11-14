@@ -1,5 +1,6 @@
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from contextlib import contextmanager
@@ -24,7 +25,9 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.schema import RunTagsTable
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
@@ -118,6 +121,15 @@ class TestRunStorage:
     # Override for storages that support getting backfill counts
     def supports_backfills_count(self) -> bool:
         return False
+
+    # Override for database-backed storages where concurrent writers get their own connection,
+    # so two add_run_tags calls can interleave their read-modify-write
+    def supports_concurrent_add_run_tags(self) -> bool:
+        return False
+
+    # Override for storages that need extra schema setup before exercising concurrent tag writes
+    def prepare_concurrent_add_run_tags(self, storage: RunStorage) -> None:
+        pass
 
     # Override for storages that support adding a historical run
     def supports_add_historical_run(self) -> bool:
@@ -356,6 +368,80 @@ class TestRunStorage:
             "tag3": "val3",
             "tag4": "val4",
         }
+
+    def test_concurrent_add_run_tags_same_value(self, storage: RunStorage):
+        """Two writers recording the same tag for one run, e.g. a run worker and the monitoring
+        daemon both writing ``dagster/will_retry`` for the same failed run (#34436).
+
+        Both writers compute their tag set from the same read, so both take the INSERT path.
+        ``idx_run_tags_run_id`` is unique on (key, value, run_id) since migration 047, so the
+        losing writer's INSERT raises IntegrityError (UniqueViolation on Postgres) unless the
+        storage treats a row another writer already stored with the same value as a no-op. One
+        writer also adds a tag the other never writes, so the losing batch still has to store
+        the tag that did not race.
+        """
+        if not self.supports_concurrent_add_run_tags():
+            pytest.skip("storage does not support concurrent writers")
+        assert isinstance(storage, SqlRunStorage)
+
+        self.prepare_concurrent_add_run_tags(storage)
+
+        run_id = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="foo"))
+
+        # Gate the first read in each thread so both writers finish reading before either one
+        # writes -- the interleaving the race needs, made deterministic.
+        barrier = threading.Barrier(2, timeout=30)
+        first_read = threading.local()
+        orig_get_run_by_id = storage._get_run_by_id  # noqa: SLF001
+
+        def _gated_get_run_by_id(rid):
+            run = orig_get_run_by_id(rid)
+            if not getattr(first_read, "done", False):
+                first_read.done = True
+                barrier.wait()
+            return run
+
+        errors = []
+
+        def _write_tags(tags):
+            try:
+                storage.add_run_tags(run_id, tags)
+            except Exception as e:
+                errors.append(e)
+
+        writer_tags = [
+            {"dagster/will_retry": "true"},
+            {"dagster/will_retry": "true", "dagster/retry_number": "1"},
+        ]
+
+        storage._get_run_by_id = _gated_get_run_by_id  # type: ignore[method-assign]  # noqa: SLF001
+        try:
+            threads = [threading.Thread(target=_write_tags, args=(tags,)) for tags in writer_tags]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        finally:
+            storage._get_run_by_id = orig_get_run_by_id  # type: ignore[method-assign]  # noqa: SLF001
+
+        assert errors == [], f"concurrent add_run_tags raised: {errors}"
+
+        test_run = _get_run_by_id(storage, run_id)
+        assert test_run
+        assert test_run.tags["dagster/will_retry"] == "true"
+
+        # Each tag is stored once, not once per writer, including the tag only one writer added
+        with storage.connect() as conn:
+            rows = conn.execute(
+                db_select([RunTagsTable.c.key, RunTagsTable.c.value])
+                .select_from(RunTagsTable)
+                .where(RunTagsTable.c.run_id == run_id)
+            ).fetchall()
+        assert sorted((row[0], row[1]) for row in rows) == [
+            ("dagster/retry_number", "1"),
+            ("dagster/will_retry", "true"),
+        ]
 
     def test_get_run_tags(self, storage: RunStorage):
         one = make_new_run_id()

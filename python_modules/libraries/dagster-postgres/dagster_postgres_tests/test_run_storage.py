@@ -1,4 +1,7 @@
 import pytest
+import sqlalchemy as db
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+from dagster._core.storage.sql import safe_commit
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_shared.yaml_utils import safe_load_yaml
@@ -9,6 +12,21 @@ from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
 class TestPostgresRunStorage(TestRunStorage):
     __test__ = True
+
+    def supports_concurrent_add_run_tags(self) -> bool:
+        return True
+
+    def prepare_concurrent_add_run_tags(self, storage) -> None:
+        # create_clean_storage stamps the alembic head without running the revisions, so create
+        # idx_run_tags_run_id, the unique index added in alembic 047, here.
+        assert isinstance(storage, SqlRunStorage)
+        with storage.connect() as conn:
+            conn.execute(
+                db.text(
+                    'CREATE UNIQUE INDEX IF NOT EXISTS idx_run_tags_run_id ON run_tags ("key", value, run_id)'
+                )
+            )
+            safe_commit(conn)
 
     def supports_backfill_tags_filtering_queries(self) -> bool:
         return True
