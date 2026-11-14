@@ -323,3 +323,77 @@ def test_failure_on_open_server_process(instance):
                 loadable_target_origin=loadable_target_origin,
             ):
                 pass
+
+
+def test_open_server_process_sets_refresh_local_defs_state_env():
+    """The reload-spawn flag is forwarded to the code server env — and only then
+    (issue #34434).
+    """
+    from dagster._grpc.server import open_server_process
+
+    with (
+        mock.patch("dagster._grpc.server.open_ipc_subprocess") as mock_open_ipc_subprocess,
+        mock.patch("dagster._grpc.server.wait_for_grpc_server"),
+    ):
+        mock_open_ipc_subprocess.return_value = mock.MagicMock()
+        open_server_process(
+            instance_ref=None,
+            port=8888,
+            socket=None,
+            server_command=GrpcServerCommand.API_GRPC,
+            loadable_target_origin=None,
+        )
+        env = mock_open_ipc_subprocess.call_args.kwargs["env"]
+        assert "DAGSTER_REFRESH_LOCAL_DEFS_STATE_ON_LOAD" not in env
+
+        open_server_process(
+            instance_ref=None,
+            port=8888,
+            socket=None,
+            server_command=GrpcServerCommand.API_GRPC,
+            loadable_target_origin=None,
+            refresh_local_defs_state_on_load=True,
+        )
+        env = mock_open_ipc_subprocess.call_args.kwargs["env"]
+        assert env["DAGSTER_REFRESH_LOCAL_DEFS_STATE_ON_LOAD"] == "1"
+
+
+def test_reload_grpc_endpoint_spawns_with_refresh_local_defs_state_flag():
+    """Code servers spawned for a user-initiated reload carry the refresh flag;
+    ordinary endpoint fetches do not (issue #34434).
+    """
+    captured: list = []
+
+    class StubGrpcServerProcess:
+        def __init__(self, **kwargs):
+            captured.append(kwargs)
+            self.port = 4321
+            self.socket = None
+            self.server_process = mock.MagicMock()
+
+        def shutdown_server(self):
+            pass
+
+        def wait(self, timeout=30):
+            pass
+
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="repo",
+            python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
+        ),
+    )
+    with mock.patch("dagster._grpc.server.GrpcServerProcess", StubGrpcServerProcess):
+        with GrpcServerRegistry(
+            instance_ref=None,
+            server_command=GrpcServerCommand.API_GRPC,
+            heartbeat_ttl=10,
+            startup_timeout=5,
+            wait_for_processes_on_shutdown=False,
+        ) as registry:
+            registry.get_grpc_endpoint(origin)
+            assert not captured[-1].get("refresh_local_defs_state_on_load")
+
+            registry.reload_grpc_endpoint(origin)
+            assert captured[-1].get("refresh_local_defs_state_on_load") is True

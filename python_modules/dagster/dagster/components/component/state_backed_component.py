@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import shutil
 import tempfile
+import warnings
 from abc import abstractmethod
 from collections.abc import Awaitable
 from pathlib import Path
@@ -24,7 +25,7 @@ from dagster._core.definitions.definitions_load_context import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._symbol_annotations.public import public
-from dagster._utils.env import using_dagster_dev
+from dagster._utils.env import refresh_local_defs_state_on_load, using_dagster_dev
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.utils.defs_state import DefsStateConfig
@@ -32,6 +33,13 @@ from dagster.components.utils.project_paths import get_local_state_path
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+
+class StaleLocalDefsStateWarning(UserWarning):
+    """Warning emitted when a code location reload could not refresh a component's
+    local defs state, so its definitions are served from the existing
+    ``.local_defs_state`` snapshot, which may predate recent source changes.
+    """
 
 
 @public
@@ -207,18 +215,50 @@ class StateBackedComponent(Component):
         state_storage = DefsStateStorage.get()
 
         if defs_load_context.load_type == DefinitionsLoadType.INITIALIZATION:
-            if (
-                # for code server state management, we always refresh the state
-                (
-                    self.defs_state_config.management_type
-                    == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
+            # for code server state management, we always refresh the state
+            always_refresh = (
+                self.defs_state_config.management_type
+                == DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS
+            )
+            # automatically refresh in local dev unless the user opts out
+            dev_refresh = using_dagster_dev() and self.defs_state_config.refresh_if_dev
+            # a user-initiated code location reload (the "Reload definitions"
+            # button in the UI) spawns code servers with this flag set, so
+            # regenerate `.local_defs_state` from current sources instead of
+            # silently serving a snapshot that may predate them (#34434)
+            reload_load = (
+                refresh_local_defs_state_on_load()
+                and self.defs_state_config.management_type
+                == DefsStateManagementType.LOCAL_FILESYSTEM
+            )
+            reload_refresh = reload_load and self.defs_state_config.refresh_if_dev
+            if always_refresh or dev_refresh or reload_refresh:
+                reload_only = reload_refresh and not always_refresh and not dev_refresh
+                try:
+                    version = asyncio.run(self.refresh_state(context.project_root))
+                except Exception as e:
+                    if not reload_only:
+                        raise
+                    # Never fail a reload because the refresh failed: fall back to
+                    # the existing snapshot and surface the staleness loudly.
+                    warnings.warn(
+                        f"Reload definitions could not refresh local defs state for key"
+                        f" '{key}' ({e}). Definitions are built from the existing"
+                        " snapshot in .local_defs_state, which may be out of date with"
+                        " your code. Run `dg utils refresh-defs-state` to regenerate it.",
+                        StaleLocalDefsStateWarning,
+                    )
+                else:
+                    defs_load_context.add_defs_state_info(key, version)
+            elif reload_load:
+                warnings.warn(
+                    f"Reload definitions did not refresh local defs state for key '{key}'"
+                    " because this component sets `defs_state.refresh_if_dev` to false."
+                    " Definitions are built from the existing snapshot in"
+                    " .local_defs_state, which may be out of date with your code. Run"
+                    " `dg utils refresh-defs-state` to regenerate it.",
+                    StaleLocalDefsStateWarning,
                 )
-                or
-                # automatically refresh in local dev unless the user opts out
-                (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
-            ):
-                version = asyncio.run(self.refresh_state(context.project_root))
-                defs_load_context.add_defs_state_info(key, version)
 
         with DefinitionsLoadContext.get().state_path(
             self.defs_state_config, state_storage, context.project_root

@@ -144,7 +144,9 @@ class GrpcServerRegistry(AbstractContextManager):
                 # a new process
                 del self._active_entries[origin_id]
 
-            return self._get_grpc_endpoint(code_location_origin)
+            return self._get_grpc_endpoint(
+                code_location_origin, refresh_local_defs_state_on_load=True
+            )
 
     def get_grpc_endpoint(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
@@ -173,7 +175,9 @@ class GrpcServerRegistry(AbstractContextManager):
         return code_location_origin.loadable_target_origin
 
     def _get_grpc_server_entry(
-        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+        self,
+        code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin,
+        refresh_local_defs_state_on_load: bool = False,
     ) -> ServerRegistryEntry | ErrorRegistryEntry:
         # deferred for import perf
         from dagster._grpc.server import GrpcServerProcess
@@ -208,6 +212,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     container_context=self._container_context,
                     additional_timeout_msg=self._additional_timeout_msg,
                     defs_state_info=self._defs_state_info,
+                    refresh_local_defs_state_on_load=refresh_local_defs_state_on_load,
                 )
                 self._all_processes.append(server_process)
                 self._active_entries[origin_id] = ServerRegistryEntry(
@@ -225,9 +230,14 @@ class GrpcServerRegistry(AbstractContextManager):
         return self._active_entries[origin_id]
 
     def _get_grpc_endpoint(
-        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+        self,
+        code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin,
+        refresh_local_defs_state_on_load: bool = False,
     ) -> GrpcServerEndpoint:
-        active_entry = self._get_grpc_server_entry(code_location_origin)
+        active_entry = self._get_grpc_server_entry(
+            code_location_origin,
+            refresh_local_defs_state_on_load=refresh_local_defs_state_on_load,
+        )
 
         if isinstance(active_entry, ErrorRegistryEntry):
             raise DagsterUserCodeProcessError(
