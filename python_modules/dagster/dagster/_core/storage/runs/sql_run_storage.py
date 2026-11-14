@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 import zlib
 from abc import abstractmethod
@@ -507,10 +508,28 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return sorted([r["key"] for r in rows])
 
+    # Concurrent writers (a run worker and the monitoring daemon can both record
+    # ``dagster/will_retry`` for the same run) may compute their tag set from the same stale
+    # read, and idx_run_tags_run_id -- unique on (key, value, run_id) since migration 047 --
+    # then rejects the losing writer's INSERT. Rather than surfacing that IntegrityError to
+    # the caller, re-read and re-apply the write in a fresh transaction: the retry sees the
+    # winner's row and takes the "existing tag" UPDATE path.
+    _RUN_TAGS_WRITE_ATTEMPTS = 5
+
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
+        for attempt in range(self._RUN_TAGS_WRITE_ATTEMPTS):
+            try:
+                self._add_run_tags(run_id, new_tags)
+                return
+            except db_exc.IntegrityError:
+                if attempt == self._RUN_TAGS_WRITE_ATTEMPTS - 1:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+
+    def _add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         run = self._get_run_by_id(run_id)
         if not run:
             raise DagsterRunNotFoundError(

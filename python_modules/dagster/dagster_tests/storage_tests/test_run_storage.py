@@ -51,6 +51,9 @@ class TestSqliteRunStorage(TestRunStorage):
     def supports_backfill_tags_filtering_queries(self) -> bool:
         return True
 
+    def supports_concurrent_add_run_tags(self) -> bool:
+        return True
+
     def supports_backfill_job_name_filtering_queries(self) -> bool:
         return True
 
