@@ -21,8 +21,11 @@ def format_duration(milliseconds: float) -> str:
     # between one second and one minute
     # ex: 5.6s
     if milliseconds < 1000 * 60:
-        seconds = milliseconds / 1000
-        return f"{round(seconds, 2)}s"
+        seconds = round(milliseconds / 1000, 2)
+        if seconds < 60:
+            return f"{seconds}s"
+        # rounding to 2 decimals pushed us up to a full minute (e.g. 59999 ms -> 60.0s)
+        return "1m0s"
 
     # between one minute and 60 minutes
     # 5m42s
