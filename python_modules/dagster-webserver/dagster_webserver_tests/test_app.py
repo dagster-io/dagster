@@ -14,6 +14,7 @@ from dagster_shared import seven
 from dagster_shared.telemetry import cleanup_telemetry_logger, get_telemetry_logger
 from dagster_webserver.app import create_app_from_workspace_process_context
 from dagster_webserver.cli import (
+    DEFAULT_TIMEOUT_KEEP_ALIVE,
     DEFAULT_WEBSERVER_PORT,
     dagster_webserver,
     host_dagster_ui_with_workspace_process_context,
@@ -163,7 +164,13 @@ def test_successful_host_dagster_ui_from_workspace():
                 log_level="warning",
             )
 
-        server_call.assert_called_with(mock.ANY, host="127.0.0.1", port=2343, log_level="warning")
+        server_call.assert_called_with(
+            mock.ANY,
+            host="127.0.0.1",
+            port=2343,
+            log_level="warning",
+            timeout_keep_alive=DEFAULT_TIMEOUT_KEEP_ALIVE,
+        )
 
 
 @pytest.fixture
@@ -197,7 +204,11 @@ def test_host_dagster_webserver_choose_port(mock_is_port_in_use, mock_find_free_
             )
 
         server_call.assert_called_with(
-            mock.ANY, host="127.0.0.1", port=DEFAULT_WEBSERVER_PORT, log_level="warning"
+            mock.ANY,
+            host="127.0.0.1",
+            port=DEFAULT_WEBSERVER_PORT,
+            log_level="warning",
+            timeout_keep_alive=DEFAULT_TIMEOUT_KEEP_ALIVE,
         )
 
         mock_is_port_in_use.return_value = True
@@ -212,7 +223,13 @@ def test_host_dagster_webserver_choose_port(mock_is_port_in_use, mock_find_free_
                 log_level="warning",
             )
 
-        server_call.assert_called_with(mock.ANY, host="127.0.0.1", port=1234, log_level="warning")
+        server_call.assert_called_with(
+            mock.ANY,
+            host="127.0.0.1",
+            port=1234,
+            log_level="warning",
+            timeout_keep_alive=DEFAULT_TIMEOUT_KEEP_ALIVE,
+        )
 
 
 def test_successful_host_dagster_ui_from_multiple_workspace_files():
