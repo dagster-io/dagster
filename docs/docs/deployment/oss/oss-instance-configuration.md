@@ -394,3 +394,5 @@ To process multiple backfills in parallel simultaneously, set the `use_threads` 
 />
 
 You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs.
+
+Additionally, the `DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR` environment variable can be set on the Dagster daemon to keep asset backfills from failing when a code location is temporarily unavailable. For more information, see [Handling code locations that fail to load](/guides/build/partitions-and-backfills/backfilling-data#handling-code-locations-that-fail-to-load).
