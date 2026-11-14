@@ -245,7 +245,7 @@ def compute_logical_data_version(
     all_inputs = (code_version, *(v.value for v in ordered_input_versions))
 
     hash_sig = sha256()
-    hash_sig.update(bytearray("".join(all_inputs), "utf8"))
+    hash_sig.update(bytearray("".join(f"{len(s)}:{s}" for s in all_inputs), "utf8"))
     return DataVersion(hash_sig.hexdigest())
 
 
