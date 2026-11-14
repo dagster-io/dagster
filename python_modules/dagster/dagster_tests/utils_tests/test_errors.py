@@ -117,3 +117,27 @@ def test_truncate_serialized_error():
         truncate_serialized_error(error._replace(cls_name="A" * 1001), 10000, max_depth=0).cls_name
         == "A" * 1000 + " (TRUNCATED)"
     )
+
+
+def test_truncate_serialized_error_none_message():
+    """Test that truncate_serialized_error handles None message without raising TypeError.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/33662.
+    During deserialization of older event log entries, the message field of
+    SerializableErrorInfo can be None, causing `len(None)` to raise
+    `TypeError: object of type 'NoneType' has no len()`.
+    """
+    error_with_none_message = SerializableErrorInfo(
+        message=None,
+        stack=["some stack"],
+        cls_name="Exception",
+        cause=None,
+        context=None,
+    )
+
+    result = truncate_serialized_error(
+        error_with_none_message, field_size_limit=150, max_depth=0
+    )
+    assert result.message is None
+    assert result.stack == ["some stack"]
+    assert result.cls_name == "Exception"
