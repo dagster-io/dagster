@@ -96,6 +96,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._time import get_current_datetime
 from dagster._utils.concurrency import ConcurrencySlotStatus
 from dagster_shared import seven
+from sqlalchemy.sql import Select
 
 # py36 & 37 list.append not hashable
 
@@ -6020,9 +6021,12 @@ class TestEventLogStorage:
             assert foo_info.pending_step_count == 0
             assert foo_info.assigned_step_count == 0
 
-    def test_simultaneous_slot_claims_single_slot_pool(self, storage: EventLogStorage):
+    def test_simultaneous_slot_claims_single_slot_pool(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
+        storage = check.inst(storage, SqlEventLogStorage)
 
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
@@ -6032,9 +6036,10 @@ class TestEventLogStorage:
         storage.add_pending_step("foo", run_id_one, "step_1", should_assign=True)
         storage.add_pending_step("foo", run_id_two, "step_2", should_assign=True)
 
-        # hold both claims between the free-slot SELECT and the claim UPDATE, so each thread
-        # picks the same slot row before either one writes to it; each thread waits at most
-        # once so a losing claim's retry does not deadlock the barrier
+        # Hold both claims between the free-slot SELECT and the claim UPDATE. SQLite and
+        # autocommit Postgres both select the same row, while MySQL's transaction keeps the
+        # row locked so the second SELECT skips it. Wait even for an empty result so both
+        # backends can reach the barrier, and only wait once per thread to allow retries.
         barrier = threading.Barrier(2)
         waited: set[int] = set()
 
@@ -6044,7 +6049,7 @@ class TestEventLogStorage:
 
             def execute(self, clauseelement, *args, **kwargs):
                 result = self._conn.execute(clauseelement, *args, **kwargs)
-                if isinstance(clauseelement, db.Select) and "concurrency_slots.id" in str(
+                if isinstance(clauseelement, Select) and "concurrency_slots.id" in str(
                     clauseelement
                 ):
                     ident = threading.get_ident()
@@ -6056,30 +6061,40 @@ class TestEventLogStorage:
             def __getattr__(self, name):
                 return getattr(self._conn, name)
 
-        original_index_connection = storage.index_connection
-
         @contextmanager
-        def barred_index_connection():
+        def barred_index_connection(original_index_connection):
             with original_index_connection() as conn:
                 yield BarrierConnection(conn)
 
-        claims: dict[str, ConcurrencySlotStatus] = {}
-        with mock.patch.object(storage, "index_connection", barred_index_connection):
+        # Use independent storage objects against the same database, as separate run workers
+        # do. Sharing a SqliteEventLogStorage would hold its _db_lock at the barrier and stop
+        # the other thread from opening a connection.
+        with DagsterInstance.from_ref(instance.get_ref()) as other_instance, ExitStack() as stack:
+            other_storage = check.inst(other_instance.event_log_storage, SqlEventLogStorage)
+            for claim_storage in (storage, other_storage):
+                original_index_connection = claim_storage.index_connection
+                stack.enter_context(
+                    mock.patch.object(
+                        claim_storage,
+                        "index_connection",
+                        lambda connect=original_index_connection: barred_index_connection(connect),
+                    )
+                )
 
-            def claim(run_id, step_key):
-                claims[step_key] = storage.claim_concurrency_slot(
-                    "foo", run_id, step_key
-                ).slot_status
-
-            threads = [
-                threading.Thread(target=claim, args=(run_id_one, "step_1")),
-                threading.Thread(target=claim, args=(run_id_two, "step_2")),
-            ]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join(timeout=60)
-            assert not any(thread.is_alive() for thread in threads)
+            # Futures propagate exceptions in either claimant to the test, rather than losing
+            # them in background threads and failing later on an incomplete claims mapping.
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                futures = {
+                    "step_1": executor.submit(
+                        storage.claim_concurrency_slot, "foo", run_id_one, "step_1"
+                    ),
+                    "step_2": executor.submit(
+                        other_storage.claim_concurrency_slot, "foo", run_id_two, "step_2"
+                    ),
+                }
+                claims = {
+                    step: future.result(timeout=60).slot_status for step, future in futures.items()
+                }
 
         # exactly one step may hold the single slot: the other claim must come back BLOCKED,
         # and the slot row must end up owned by the step whose claim succeeded
