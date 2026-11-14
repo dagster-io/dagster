@@ -1,13 +1,17 @@
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 import dagster as dg
 import pytest
+import sqlalchemy as db
+import sqlalchemy.exc as db_exc
 from dagster._core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
@@ -24,7 +28,9 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.schema import RunTagsTable
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
@@ -43,8 +49,15 @@ from dagster._serdes import serialize_pp
 from dagster._time import create_datetime, datetime_from_timestamp
 from dagster_shared import seven
 from dagster_test.utils.data_factory import dagster_run as create_dagster_run
+from sqlalchemy.sql.dml import (
+    Insert as _SAInsert,
+    Update as _SAUpdate,
+)
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _get_run_by_id(storage, run_id) -> dg.DagsterRun | None:
@@ -69,6 +82,98 @@ def instance_for_storage(storage):
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=SyncInMemoryRunLauncher(),
             )
+
+
+def _ensure_unique_run_tags_index(sql_storage: "SqlRunStorage") -> None:
+    # Fresh DBs do not carry the migration-047 unique index on run_tags (it
+    # is created by Alembic migration 047), so create it here with raw DDL
+    # to mirror a production database that went through the migration.
+    # (Do not build a sqlalchemy Index against RunTagsTable: constructing
+    # one mutates the shared table metadata, and a second test in the same
+    # process would attach a duplicate index of the same name.)
+    with sql_storage.connect() as conn:
+        # Dialect.has_index does not exist on SQLAlchemy 1.3, so inspect
+        # the table's indexes instead (available on 1.3, 1.4, and 2.x).
+        index_names = {index["name"] for index in db.inspect(conn).get_indexes("run_tags")}
+        if "idx_run_tags_run_id" not in index_names:
+            if conn.dialect.name == "mysql":
+                conn.execute(
+                    db.text(
+                        "CREATE UNIQUE INDEX idx_run_tags_run_id ON run_tags"
+                        " (`key`(64), `value`(64), `run_id`(255))"
+                    )
+                )
+            else:
+                conn.execute(
+                    db.text(
+                        "CREATE UNIQUE INDEX idx_run_tags_run_id ON run_tags"
+                        ' ("key", "value", "run_id")'
+                    )
+                )
+
+
+def _run_tag_values(sql_storage: "SqlRunStorage", run_id: str, key: str):
+    with sql_storage.connect() as conn:
+        rows = conn.execute(
+            db_select([RunTagsTable.c.value]).where(
+                db.and_(
+                    RunTagsTable.c.run_id == run_id,
+                    RunTagsTable.c.key == key,
+                )
+            )
+        ).fetchall()
+    return sorted(row[0] for row in rows)
+
+
+class _HookedConnection:
+    """Wraps a SQLAlchemy connection to script writer interleavings.
+
+    On Postgres/MySQL the interleaving writer would be a separate
+    connection; on SQLite the same connection reproduces the exact
+    statement ordering the recovery logic depends on, which is what
+    these tests pin down.
+    """
+
+    def __init__(
+        self,
+        conn: "db.Connection",
+        after_empty_update: "Callable[[db.Connection], None] | None" = None,
+        before_insert: "Callable[[db.Connection, _SAInsert], None] | None" = None,
+        on_insert_error: "Callable[[db.Connection], None] | None" = None,
+    ):
+        self._conn = conn
+        self._after_empty_update = after_empty_update
+        self._before_insert = before_insert
+        self._on_insert_error = on_insert_error
+
+    def execute(self, statement, *args, **kwargs):
+        if (
+            self._before_insert is not None
+            and isinstance(statement, _SAInsert)
+            and getattr(statement, "table", None) is RunTagsTable
+        ):
+            self._before_insert(self._conn, statement)
+        try:
+            result = self._conn.execute(statement, *args, **kwargs)
+        except db_exc.IntegrityError:
+            if (
+                self._on_insert_error is not None
+                and isinstance(statement, _SAInsert)
+                and getattr(statement, "table", None) is RunTagsTable
+            ):
+                self._on_insert_error(self._conn)
+            raise
+        if (
+            self._after_empty_update is not None
+            and isinstance(statement, _SAUpdate)
+            and getattr(statement, "table", None) is RunTagsTable
+            and result.rowcount == 0
+        ):
+            self._after_empty_update(self._conn)
+        return result
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
 
 
 class TestRunStorage:
@@ -356,6 +461,219 @@ class TestRunStorage:
             "tag3": "val3",
             "tag4": "val4",
         }
+
+    def test_add_run_tags_concurrent_same_tag(self, storage: RunStorage):
+        # Regression test for https://github.com/dagster-io/dagster/issues/34436:
+        # concurrent add_run_tags calls for the same tag raised UniqueViolation
+        # on idx_run_tags_run_id.
+        sql_storage = cast(
+            "SqlRunStorage",
+            storage if hasattr(storage, "connect") else getattr(storage, "_storage").run_storage,
+        )
+        _ensure_unique_run_tags_index(sql_storage)
+
+        def _tag_values(run_id: str, key: str):
+            return _run_tag_values(sql_storage, run_id, key)
+
+        def _insert_tag_row(run_id: str, key: str, value: str):
+            # A concurrent writer's committed tag row. The run_body still has
+            # no such tag, so a later add_run_tags call reads a stale view of
+            # the run's tags and classifies the key as new.
+            with sql_storage.connect() as conn:
+                conn.execute(RunTagsTable.insert().values(run_id=run_id, key=key, value=value))
+
+        # Same value, stale read: the second write must be a no-op, not an
+        # IntegrityError.
+        one = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=one, job_name="foo"))
+        _insert_tag_row(one, "tag1", "val1")
+        storage.add_run_tags(one, {"tag1": "val1"})
+        assert _tag_values(one, "tag1") == ["val1"]
+
+        # Differing value, stale read: exactly one row with the last value.
+        two = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=two, job_name="foo"))
+        _insert_tag_row(two, "tag1", "val1")
+        storage.add_run_tags(two, {"tag1": "val2"})
+        assert _tag_values(two, "tag1") == ["val2"]
+
+        # Two threads adding the same new tag at the same time.
+        three = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=three, job_name="foo"))
+        barrier = threading.Barrier(2)
+        errors = []
+
+        def _add_tags():
+            barrier.wait(timeout=60)
+            for attempt in range(5):
+                try:
+                    storage.add_run_tags(three, {"tag1": "val1"})
+                    return
+                except Exception as exc:
+                    # Shared-cache SQLite reports SQLITE_LOCKED ("database
+                    # table is locked") instead of waiting when two
+                    # connections write the same table; retry briefly. The
+                    # IntegrityError this test guards against is not retried.
+                    if "locked" in str(exc) and attempt < 4:
+                        time.sleep(0.05)
+                        continue
+                    errors.append(exc)
+                    return
+
+        threads = [threading.Thread(target=_add_tags) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=60)
+        assert not errors
+        assert _tag_values(three, "tag1") == ["val1"]
+
+    def test_add_run_tags_concurrent_value_change_recovery(self, storage: RunStorage):
+        # Regression test for the independent-review finding on
+        # https://github.com/dagster-io/dagster/issues/34436: after writer A's
+        # INSERT fails, a third writer can change the row's value before A's
+        # recovery runs. Recovery must leave exactly one row with the value A
+        # asked for, never zero rows.
+        sql_storage = cast(
+            "SqlRunStorage",
+            storage if hasattr(storage, "connect") else getattr(storage, "_storage").run_storage,
+        )
+        _ensure_unique_run_tags_index(sql_storage)
+
+        run_id = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="foo"))
+
+        fired = {"b": False, "c": False}
+
+        def _writer_b(conn):
+            # Writer B inserts the tag just before A's batch INSERT runs,
+            # so A's INSERT raises IntegrityError.
+            conn.execute(RunTagsTable.insert().values(run_id=run_id, key="tag1", value="val1"))
+            fired["b"] = True
+
+        def _writer_c(conn):
+            # Writer C changes the row's value after A's INSERT failed and
+            # before A's recovery runs.
+            conn.execute(
+                RunTagsTable.update()
+                .where(
+                    db.and_(
+                        RunTagsTable.c.run_id == run_id,
+                        RunTagsTable.c.key == "tag1",
+                    )
+                )
+                .values(value="val2")
+            )
+            fired["c"] = True
+
+        def _maybe_writer_b(conn, statement=None):
+            if not fired["b"]:
+                _writer_b(conn)
+
+        def _maybe_writer_c(conn):
+            if not fired["c"]:
+                _writer_c(conn)
+
+        orig_connect = sql_storage.connect
+
+        @contextmanager
+        def _hooked_connect():
+            with orig_connect() as real_conn:
+                yield _HookedConnection(
+                    real_conn,
+                    before_insert=_maybe_writer_b,
+                    on_insert_error=_maybe_writer_c,
+                )
+
+        try:
+            sql_storage.connect = _hooked_connect
+            storage.add_run_tags(run_id, {"tag1": "val1"})
+        finally:
+            sql_storage.connect = orig_connect
+
+        assert fired["b"] and fired["c"]
+        assert _run_tag_values(sql_storage, run_id, "tag1") == ["val1"]
+
+    def test_add_run_tags_prefix_collision_not_swallowed(self, storage: RunStorage):
+        # Regression test for the independent-review finding on
+        # https://github.com/dagster-io/dagster/issues/34436: on MySQL,
+        # migration 047's index is a prefix index (key(64), value(64)), so
+        # two distinct keys sharing the first 64 characters collide and the
+        # INSERT raises IntegrityError even though the exact requested row
+        # does not exist. add_run_tags must re-raise that error instead of
+        # swallowing it. There is no MySQL server in this environment, so
+        # the collision is simulated by failing the run_tags INSERT with a
+        # fabricated IntegrityError; the production code's decision depends
+        # only on the exact-row check that follows it.
+        sql_storage = cast(
+            "SqlRunStorage",
+            storage if hasattr(storage, "connect") else getattr(storage, "_storage").run_storage,
+        )
+        _ensure_unique_run_tags_index(sql_storage)
+
+        run_id = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="foo"))
+
+        def _fail_insert(conn, statement):
+            raise db_exc.IntegrityError(
+                "INSERT INTO run_tags (run_id, key, value) VALUES (?, ?, ?)",
+                None,
+                Exception(
+                    "UNIQUE constraint failed: run_tags.key, run_tags.value, run_tags.run_id"
+                ),
+            )
+
+        orig_connect = sql_storage.connect
+
+        @contextmanager
+        def _hooked_connect():
+            with orig_connect() as real_conn:
+                yield _HookedConnection(real_conn, before_insert=_fail_insert)
+
+        try:
+            sql_storage.connect = _hooked_connect
+            with pytest.raises(db_exc.IntegrityError):
+                storage.add_run_tags(run_id, {"tag1": "val1"})
+        finally:
+            sql_storage.connect = orig_connect
+
+        assert _run_tag_values(sql_storage, run_id, "tag1") == []
+
+    def test_add_run_tags_batch_insert_single_statement(self, storage: RunStorage):
+        # Regression test for Greptile P2 on
+        # https://github.com/dagster-io/dagster/pull/34439: adding many new
+        # tags must batch them into a single INSERT statement instead of
+        # one statement per tag.
+        sql_storage = cast(
+            "SqlRunStorage",
+            storage if hasattr(storage, "connect") else getattr(storage, "_storage").run_storage,
+        )
+        _ensure_unique_run_tags_index(sql_storage)
+
+        run_id = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="foo"))
+
+        insert_statements = []
+
+        orig_connect = sql_storage.connect
+
+        @contextmanager
+        def _hooked_connect():
+            with orig_connect() as real_conn:
+                yield _HookedConnection(
+                    real_conn,
+                    before_insert=lambda conn, statement: insert_statements.append(statement),
+                )
+
+        try:
+            sql_storage.connect = _hooked_connect
+            storage.add_run_tags(run_id, {f"tag{i}": f"val{i}" for i in range(10)})
+        finally:
+            sql_storage.connect = orig_connect
+
+        assert len(insert_statements) == 1
+        for i in range(10):
+            assert _run_tag_values(sql_storage, run_id, f"tag{i}") == [f"val{i}"]
 
     def test_get_run_tags(self, storage: RunStorage):
         one = make_new_run_id()
