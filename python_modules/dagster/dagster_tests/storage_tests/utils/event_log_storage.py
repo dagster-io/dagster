@@ -3,6 +3,7 @@ import random
 import re
 import string
 import sys
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Sequence
@@ -6018,6 +6019,93 @@ class TestEventLogStorage:
             assert foo_info.active_slot_count == 0
             assert foo_info.pending_step_count == 0
             assert foo_info.assigned_step_count == 0
+
+    def test_simultaneous_slot_claims_single_slot_pool(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id_one = make_new_run_id()
+        run_id_two = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 1)
+        # register both steps up front so each claim proceeds straight to the slot claim path
+        storage.add_pending_step("foo", run_id_one, "step_1", should_assign=True)
+        storage.add_pending_step("foo", run_id_two, "step_2", should_assign=True)
+
+        # hold both claims between the free-slot SELECT and the claim UPDATE, so each thread
+        # picks the same slot row before either one writes to it; each thread waits at most
+        # once so a losing claim's retry does not deadlock the barrier
+        barrier = threading.Barrier(2)
+        waited: set[int] = set()
+
+        class BarrierConnection:
+            def __init__(self, conn):
+                self._conn = conn
+
+            def execute(self, clauseelement, *args, **kwargs):
+                result = self._conn.execute(clauseelement, *args, **kwargs)
+                if isinstance(clauseelement, db.Select) and "concurrency_slots.id" in str(
+                    clauseelement
+                ):
+                    ident = threading.get_ident()
+                    if ident not in waited:
+                        waited.add(ident)
+                        barrier.wait(timeout=10)
+                return result
+
+            def __getattr__(self, name):
+                return getattr(self._conn, name)
+
+        original_index_connection = storage.index_connection
+
+        @contextmanager
+        def barred_index_connection():
+            with original_index_connection() as conn:
+                yield BarrierConnection(conn)
+
+        claims: dict[str, ConcurrencySlotStatus] = {}
+        with mock.patch.object(storage, "index_connection", barred_index_connection):
+
+            def claim(run_id, step_key):
+                claims[step_key] = storage.claim_concurrency_slot(
+                    "foo", run_id, step_key
+                ).slot_status
+
+            threads = [
+                threading.Thread(target=claim, args=(run_id_one, "step_1")),
+                threading.Thread(target=claim, args=(run_id_two, "step_2")),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=60)
+            assert not any(thread.is_alive() for thread in threads)
+
+        # exactly one step may hold the single slot: the other claim must come back BLOCKED,
+        # and the slot row must end up owned by the step whose claim succeeded
+        assert set(claims.values()) == {
+            ConcurrencySlotStatus.BLOCKED,
+            ConcurrencySlotStatus.CLAIMED,
+        }
+        winner = next(
+            step for step, status in claims.items() if status == ConcurrencySlotStatus.CLAIMED
+        )
+        loser = next(
+            step for step, status in claims.items() if status == ConcurrencySlotStatus.BLOCKED
+        )
+        winner_run = run_id_one if winner == "step_1" else run_id_two
+        loser_run = run_id_two if winner == "step_1" else run_id_one
+        assert (
+            storage.check_concurrency_claim("foo", winner_run, winner).slot_status
+            == ConcurrencySlotStatus.CLAIMED
+        )
+        assert (
+            storage.check_concurrency_claim("foo", loser_run, loser).slot_status
+            == ConcurrencySlotStatus.BLOCKED
+        )
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.slot_count == 1
+        assert foo_info.active_slot_count == 1
 
     def test_zero_concurrency(self, storage: EventLogStorage):
         assert storage

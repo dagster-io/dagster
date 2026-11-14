@@ -120,6 +120,10 @@ DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 # how many keys a caller validates at once.
 DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE = 1000
 
+# Times a step will re-select a free concurrency slot after losing the claim race for the slot
+# row it originally picked; exhausted attempts fall back to BLOCKED and the next claim poll.
+MAX_CONCURRENCY_CLAIM_ATTEMPTS = 5
+
 
 def get_max_event_records_limit() -> int:
     max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
@@ -2922,29 +2926,43 @@ class SqlEventLogStorage(EventLogStorage):
             step_key (str): The step key to claim a slot for.
         """
         with self.index_connection() as conn:
-            result = conn.execute(
-                db_select([ConcurrencySlotsTable.c.id])
-                .select_from(ConcurrencySlotsTable)
-                .where(
-                    db.and_(
-                        ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
-                        ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
-                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+            # The UPDATE below only matches while the slot is still unclaimed, so two concurrent
+            # claims cannot both flip the same slot row: whoever commits first wins, and the
+            # loser's update matches zero rows and retries against another free slot.
+            # `FOR UPDATE SKIP LOCKED` alone does not provide this guarantee: SQLite ignores it,
+            # and the postgres index engine runs in AUTOCOMMIT, which drops the row lock as soon
+            # as the SELECT returns.
+            for _ in range(MAX_CONCURRENCY_CLAIM_ATTEMPTS):
+                result = conn.execute(
+                    db_select([ConcurrencySlotsTable.c.id])
+                    .select_from(ConcurrencySlotsTable)
+                    .where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.concurrency_key == concurrency_key,
+                            ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
+                            ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                        )
                     )
-                )
-                .with_for_update(skip_locked=True)
-                .limit(1)
-            ).fetchone()
-            if not result or not result[0]:
-                return ConcurrencySlotStatus.BLOCKED
-            if not conn.execute(
-                ConcurrencySlotsTable.update()
-                .values(run_id=run_id, step_key=step_key)
-                .where(ConcurrencySlotsTable.c.id == result[0])
-            ).rowcount:
-                return ConcurrencySlotStatus.BLOCKED
+                    .with_for_update(skip_locked=True)
+                    .limit(1)
+                ).fetchone()
+                if not result or not result[0]:
+                    return ConcurrencySlotStatus.BLOCKED
 
-            return ConcurrencySlotStatus.CLAIMED
+                if conn.execute(
+                    ConcurrencySlotsTable.update()
+                    .values(run_id=run_id, step_key=step_key)
+                    .where(
+                        db.and_(
+                            ConcurrencySlotsTable.c.id == result[0],
+                            ConcurrencySlotsTable.c.run_id == None,  # noqa: E711
+                            ConcurrencySlotsTable.c.step_key == None,  # noqa: E711
+                        )
+                    )
+                ).rowcount:
+                    return ConcurrencySlotStatus.CLAIMED
+
+            return ConcurrencySlotStatus.BLOCKED
 
     def get_pool_limits(self) -> Sequence[PoolLimit]:
         self._reconcile_concurrency_limits_from_slots()
