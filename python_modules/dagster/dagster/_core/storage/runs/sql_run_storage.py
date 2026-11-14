@@ -547,11 +547,63 @@ class SqlRunStorage(RunStorage):
                     .values(value=new_tags[tag])
                 )
 
-            if added_tags:
-                conn.execute(
-                    RunTagsTable.insert(),
-                    [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
-                )
+            for tag in added_tags:
+                try:
+                    updated = conn.execute(
+                        RunTagsTable.update()
+                        .where(
+                            db.and_(
+                                RunTagsTable.c.run_id == run_id,
+                                RunTagsTable.c.key == tag,
+                            )
+                        )
+                        .values(value=new_tags[tag])
+                    )
+                except db_exc.IntegrityError:
+                    # Duplicate rows with different values already exist for
+                    # this key (left by an earlier race); drop them all and
+                    # insert the single current value.
+                    conn.execute(
+                        db.delete(RunTagsTable).where(
+                            db.and_(
+                                RunTagsTable.c.run_id == run_id,
+                                RunTagsTable.c.key == tag,
+                            )
+                        )
+                    )
+                    try:
+                        conn.execute(
+                            RunTagsTable.insert().values(
+                                run_id=run_id, key=tag, value=new_tags[tag]
+                            )
+                        )
+                    except db_exc.IntegrityError:
+                        # A concurrent writer inserted this tag/value in the
+                        # meantime; the row we want already exists.
+                        pass
+                    continue
+
+                if updated.rowcount == 0:
+                    try:
+                        conn.execute(
+                            RunTagsTable.insert().values(
+                                run_id=run_id, key=tag, value=new_tags[tag]
+                            )
+                        )
+                    except db_exc.IntegrityError:
+                        # A concurrent writer inserted the same tag/value
+                        # after our UPDATE found nothing. The row now holds
+                        # the value we want; drop any rows for the key with a
+                        # different value so exactly one row remains.
+                        conn.execute(
+                            db.delete(RunTagsTable).where(
+                                db.and_(
+                                    RunTagsTable.c.run_id == run_id,
+                                    RunTagsTable.c.key == tag,
+                                    RunTagsTable.c.value != new_tags[tag],
+                                )
+                            )
+                        )
 
     def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")

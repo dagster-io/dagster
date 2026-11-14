@@ -1,13 +1,16 @@
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from typing import cast
 from uuid import uuid4
 
 import dagster as dg
 import pytest
+import sqlalchemy as db
 from dagster._core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
@@ -24,6 +27,7 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.schema import RunTagsTable
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
@@ -356,6 +360,101 @@ class TestRunStorage:
             "tag3": "val3",
             "tag4": "val4",
         }
+
+    def test_add_run_tags_concurrent_same_tag(self, storage: RunStorage):
+        # Regression test for https://github.com/dagster-io/dagster/issues/34436:
+        # concurrent add_run_tags calls for the same tag raised UniqueViolation
+        # on idx_run_tags_run_id. Fresh DBs do not carry that unique index (it
+        # is created by Alembic migration 047), so create it here with raw DDL
+        # to mirror a production database that went through the migration.
+        # (Do not build a sqlalchemy Index against RunTagsTable: constructing
+        # one mutates the shared table metadata, and a second test in the same
+        # process would attach a duplicate index of the same name.)
+        sql_storage = cast(
+            "SqlRunStorage",
+            storage if hasattr(storage, "connect") else getattr(storage, "_storage").run_storage,
+        )
+        with sql_storage.connect() as conn:
+            if not conn.dialect.has_index(conn, "run_tags", "idx_run_tags_run_id"):
+                if conn.dialect.name == "mysql":
+                    conn.execute(
+                        db.text(
+                            "CREATE UNIQUE INDEX idx_run_tags_run_id ON run_tags"
+                            " (`key`(64), `value`(64), `run_id`(255))"
+                        )
+                    )
+                else:
+                    conn.execute(
+                        db.text(
+                            "CREATE UNIQUE INDEX idx_run_tags_run_id ON run_tags"
+                            ' ("key", "value", "run_id")'
+                        )
+                    )
+
+        def _tag_values(run_id: str, key: str):
+            with sql_storage.connect() as conn:
+                rows = conn.execute(
+                    db.select(RunTagsTable.c.value).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
+                        )
+                    )
+                ).fetchall()
+            return sorted(row[0] for row in rows)
+
+        def _insert_tag_row(run_id: str, key: str, value: str):
+            # A concurrent writer's committed tag row. The run_body still has
+            # no such tag, so a later add_run_tags call reads a stale view of
+            # the run's tags and classifies the key as new.
+            with sql_storage.connect() as conn:
+                conn.execute(RunTagsTable.insert().values(run_id=run_id, key=key, value=value))
+
+        # Same value, stale read: the second write must be a no-op, not an
+        # IntegrityError.
+        one = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=one, job_name="foo"))
+        _insert_tag_row(one, "tag1", "val1")
+        storage.add_run_tags(one, {"tag1": "val1"})
+        assert _tag_values(one, "tag1") == ["val1"]
+
+        # Differing value, stale read: exactly one row with the last value.
+        two = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=two, job_name="foo"))
+        _insert_tag_row(two, "tag1", "val1")
+        storage.add_run_tags(two, {"tag1": "val2"})
+        assert _tag_values(two, "tag1") == ["val2"]
+
+        # Two threads adding the same new tag at the same time.
+        three = make_new_run_id()
+        storage.add_run(create_dagster_run(run_id=three, job_name="foo"))
+        barrier = threading.Barrier(2)
+        errors = []
+
+        def _add_tags():
+            barrier.wait(timeout=60)
+            for attempt in range(5):
+                try:
+                    storage.add_run_tags(three, {"tag1": "val1"})
+                    return
+                except Exception as exc:
+                    # Shared-cache SQLite reports SQLITE_LOCKED ("database
+                    # table is locked") instead of waiting when two
+                    # connections write the same table; retry briefly. The
+                    # IntegrityError this test guards against is not retried.
+                    if "locked" in str(exc) and attempt < 4:
+                        time.sleep(0.05)
+                        continue
+                    errors.append(exc)
+                    return
+
+        threads = [threading.Thread(target=_add_tags) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=60)
+        assert not errors
+        assert _tag_values(three, "tag1") == ["val1"]
 
     def test_get_run_tags(self, storage: RunStorage):
         one = make_new_run_id()
