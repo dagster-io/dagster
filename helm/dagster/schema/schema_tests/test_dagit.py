@@ -276,8 +276,10 @@ def test_webserver_service_read_only(service_template):
     ]
 
 
-def test_webserver_db_statement_timeout(deployment_template: HelmTemplate):
-    db_statement_timeout_ms = 9000
+@pytest.mark.parametrize("db_statement_timeout_ms", [0, 9000, 2147483647, "2147483647"])
+def test_webserver_db_statement_timeout(
+    deployment_template: HelmTemplate, db_statement_timeout_ms: int | str
+):
     helm_values = DagsterHelmValues.construct(
         dagsterWebserver=Webserver.construct(dbStatementTimeout=db_statement_timeout_ms)
     )
