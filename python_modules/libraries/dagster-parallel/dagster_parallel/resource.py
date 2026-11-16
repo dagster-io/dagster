@@ -1,6 +1,7 @@
 import asyncio
 from builtins import ExceptionGroup
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
+from functools import partial
 from typing import Literal
 
 import httpx
@@ -29,14 +30,16 @@ class _SearchResponse(BaseModel):
 
 
 class _BoundedStream(httpx.AsyncByteStream):
-    def __init__(self, stream: httpx.AsyncByteStream):
+    def __init__(self, stream: httpx.AsyncByteStream, on_oversized: Callable[[], None]):
         self._stream = stream
+        self._on_oversized = on_oversized
 
     async def __aiter__(self) -> AsyncIterator[bytes]:
         remaining = _MAX_RESPONSE_BYTES
         async for chunk in self._stream:
             remaining -= len(chunk)
             if remaining < 0:
+                self._on_oversized()
                 raise RuntimeError("Parallel Search returned an oversized response.")
             yield chunk
 
@@ -44,7 +47,7 @@ class _BoundedStream(httpx.AsyncByteStream):
         await self._stream.aclose()
 
 
-async def _check_response(response: httpx.Response) -> None:
+async def _check_response(response: httpx.Response, *, on_oversized: Callable[[], None]) -> None:
     # The MCP SDK can follow same-origin redirects itself, so reject them before
     # the SDK receives the response and can send the query to another URL.
     if response.is_redirect:
@@ -53,7 +56,7 @@ async def _check_response(response: httpx.Response) -> None:
         raise RuntimeError("Parallel Search returned an unsupported content encoding.")
     if not isinstance(response.stream, httpx.AsyncByteStream):
         raise RuntimeError("Parallel Search returned an invalid response stream.")
-    response.stream = _BoundedStream(response.stream)
+    response.stream = _BoundedStream(response.stream, on_oversized)
     if response.headers.get("Content-Type", "").lower().startswith("application/json"):
         # Fail here on a truncated or oversized JSON body. The SDK treats
         # exceptions during JSON parsing as stream events and may wait for a reply.
@@ -76,6 +79,8 @@ class ParallelSearchResource(ConfigurableResource):
         self, *, objective: str, search_queries: Sequence[str]
     ) -> list[ParallelSearchResult]:
         """Find sources for a public search objective using one or more keyword queries."""
+        if isinstance(search_queries, str):
+            raise ValueError("Pass search_queries as a sequence of strings, such as ['my query'].")
         if (
             not objective.strip()
             or not search_queries
@@ -83,9 +88,19 @@ class ParallelSearchResource(ConfigurableResource):
         ):
             raise ValueError("Provide a search objective and at least one nonempty keyword query.")
 
+        deadline = asyncio.timeout(30)
+        response_too_large = False
+
+        def stop_oversized_response() -> None:
+            nonlocal response_too_large
+            response_too_large = True
+            # The SDK catches read errors in SSE streams while the call keeps waiting.
+            if not deadline.expired():
+                deadline.reschedule(asyncio.get_running_loop().time())
+
         try:
             async with (
-                asyncio.timeout(30),
+                deadline,
                 httpx.AsyncClient(
                     headers={
                         "User-Agent": f"Dagster/{dagster_version}",
@@ -94,7 +109,9 @@ class ParallelSearchResource(ConfigurableResource):
                     timeout=15,
                     follow_redirects=False,
                     trust_env=False,
-                    event_hooks={"response": [_check_response]},
+                    event_hooks={
+                        "response": [partial(_check_response, on_oversized=stop_oversized_response)]
+                    },
                 ) as client,
             ):
                 async with streamable_http_client(self.endpoint, http_client=client) as (
@@ -108,9 +125,11 @@ class ParallelSearchResource(ConfigurableResource):
                             "web_search",
                             {"objective": objective, "search_queries": list(search_queries)},
                         )
-        except TimeoutError:
-            raise RuntimeError("Parallel Search timed out.") from None
-        except (ExceptionGroup, httpx.HTTPError):
+        except (TimeoutError, ExceptionGroup, httpx.HTTPError) as error:
+            if response_too_large:
+                raise RuntimeError("Parallel Search returned an oversized response.") from None
+            if isinstance(error, TimeoutError):
+                raise RuntimeError("Parallel Search timed out.") from None
             raise RuntimeError("Could not complete a request to Parallel Search.") from None
 
         if result.isError:

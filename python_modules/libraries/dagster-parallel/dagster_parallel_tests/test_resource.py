@@ -19,10 +19,13 @@ OBJECTIVE = "Find the official Dagster 1.13.0 release notes."
 QUERIES = ["site:github.com Dagster 1.13.0 release notes"]
 
 
-class _OversizedBody(httpx.AsyncByteStream):
+class _ResponseBody(httpx.AsyncByteStream):
+    def __init__(self, *chunks: bytes):
+        self._chunks = chunks
+
     async def __aiter__(self) -> AsyncIterator[bytes]:
-        for _ in range(17):
-            yield b" " * 65536
+        for chunk in self._chunks:
+            yield chunk
 
 
 @pytest.fixture
@@ -58,7 +61,9 @@ def server(monkeypatch):
                     return httpx.Response(307, headers={"Location": f"{ENDPOINT}/redirect"})
                 if response == "oversized":
                     return httpx.Response(
-                        200, headers={"Content-Type": "application/json"}, stream=_OversizedBody()
+                        200,
+                        headers={"Content-Type": "application/json"},
+                        stream=_ResponseBody(*([b" " * 65536] * 17)),
                     )
                 if response == "invalid":
                     result = {"content": [{"type": "text", "text": "unexpected response"}]}
@@ -73,9 +78,23 @@ def server(monkeypatch):
                     }
                 else:
                     result = {"content": [], "structuredContent": {"results": [SOURCE]}}
-            return httpx.Response(
-                200, json={"id": message["id"], "jsonrpc": "2.0", "result": result}
-            )
+            payload = {"id": message["id"], "jsonrpc": "2.0", "result": result}
+            if method == "tools/call" and response in {"streamed", "oversized_streamed"}:
+                comments = (
+                    [b":" + b" " * 65534 + b"\n"] * 17 if response == "oversized_streamed" else []
+                )
+                return httpx.Response(
+                    200,
+                    headers={"Content-Type": "text/event-stream"},
+                    stream=_ResponseBody(
+                        *comments,
+                        b"event: message\n",
+                        b"data: ",
+                        json.dumps(payload).encode(),
+                        b"\n\n",
+                    ),
+                )
+            return httpx.Response(200, json=payload)
 
         monkeypatch.setattr(
             httpx, "AsyncClient", partial(client, transport=httpx.MockTransport(handle))
@@ -85,7 +104,7 @@ def server(monkeypatch):
     return install
 
 
-@pytest.mark.parametrize("response", ["text", "structured"])
+@pytest.mark.parametrize("response", ["text", "structured", "streamed"])
 def test_search_passes_release_notes_through_materialization(server, response):
     requests = server(response)
     resource = ParallelSearchResource(endpoint=ENDPOINT)
@@ -118,7 +137,7 @@ def test_search_passes_release_notes_through_materialization(server, response):
     ("response", "message"),
     [
         ("redirect", "Could not complete a request"),
-        ("oversized", "Could not complete a request"),
+        ("oversized", "returned an oversized response"),
         ("invalid", "returned an invalid search result"),
         ("error", "rejected the search request"),
     ],
@@ -130,6 +149,29 @@ def test_search_failures_do_not_echo_query_or_repeat_request(server, response, m
         asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES))
     assert OBJECTIVE not in str(failure.value)
     assert sum(request["method"] == "tools/call" for request in requests) == 1
+
+
+def test_oversized_event_stream_fails_promptly(server):
+    requests = server("oversized_streamed")
+    resource = ParallelSearchResource(endpoint=ENDPOINT)
+
+    async def search():
+        async with asyncio.timeout(5):
+            await resource.search(objective=OBJECTIVE, search_queries=QUERIES)
+
+    with pytest.raises(RuntimeError, match=r"^Parallel Search returned an oversized response\.$"):
+        asyncio.run(search())
+    assert sum(request["method"] == "tools/call" for request in requests) == 1
+
+
+def test_search_rejects_a_bare_query_string_before_connecting(server):
+    requests = server("structured")
+    resource = ParallelSearchResource(endpoint=ENDPOINT)
+
+    with pytest.raises(ValueError, match="Pass search_queries as a sequence of strings"):
+        asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES[0]))
+
+    assert requests == []
 
 
 @pytest.mark.parametrize("endpoint", ["http://mcp.parallel.ai/mcp", f"{ENDPOINT}?login"])
