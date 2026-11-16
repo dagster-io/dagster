@@ -67,6 +67,13 @@ def server(monkeypatch):
                     )
                 if response == "invalid":
                     result = {"content": [{"type": "text", "text": "unexpected response"}]}
+                elif response == "invalid_source":
+                    result = {
+                        "content": [],
+                        "structuredContent": {
+                            "results": [{**SOURCE, "url": "/release-notes"}],
+                        },
+                    }
                 elif response == "error":
                     result = {
                         "content": [{"type": "text", "text": OBJECTIVE}],
@@ -139,6 +146,7 @@ def test_search_passes_release_notes_through_materialization(server, response):
         ("redirect", "Could not complete a request"),
         ("oversized", "returned an oversized response"),
         ("invalid", "returned an invalid search result"),
+        ("invalid_source", "returned an invalid search result"),
         ("error", "rejected the search request"),
     ],
 )
@@ -164,12 +172,23 @@ def test_oversized_event_stream_fails_promptly(server):
     assert sum(request["method"] == "tools/call" for request in requests) == 1
 
 
-def test_search_rejects_a_bare_query_string_before_connecting(server):
+@pytest.mark.parametrize(
+    ("objective", "queries", "message"),
+    [
+        (OBJECTIVE, QUERIES[0], "Pass search_queries as a sequence of strings"),
+        (OBJECTIVE, {"release notes": 1}, "Pass search_queries as a sequence of strings"),
+        (OBJECTIVE, ["release notes", None], "nonempty keyword string"),
+        (OBJECTIVE, [" "], "nonempty keyword string"),
+        (None, QUERIES, "nonempty search objective"),
+        (" ", QUERIES, "nonempty search objective"),
+    ],
+)
+def test_search_rejects_invalid_arguments_before_connecting(server, objective, queries, message):
     requests = server("structured")
     resource = ParallelSearchResource(endpoint=ENDPOINT)
 
-    with pytest.raises(ValueError, match="Pass search_queries as a sequence of strings"):
-        asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES[0]))
+    with pytest.raises(ValueError, match=message):
+        asyncio.run(resource.search(objective=objective, search_queries=queries))
 
     assert requests == []
 

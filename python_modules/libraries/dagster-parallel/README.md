@@ -7,14 +7,20 @@ notes into a review queue even when it does not know the page URLs in advance.
 From a Dagster source checkout, install the library with
 `uv sync --group test --project python_modules/libraries/dagster-parallel`.
 
-Register the resource with the exact endpoint shown below. The asset sends its
-objective and keyword queries to the keyless Parallel MCP service when it
-materializes. Use public search terms and keep private asset data out of them.
-The keyless service is subject to rate limits.
+Register the resource with the endpoint shown below. The asset sends its
+objective and keyword queries to the [keyless Parallel MCP service](https://docs.parallel.ai/integrations/mcp/installation)
+when it materializes. Use public search terms and keep private asset data out of
+them. The keyless service is subject to rate limits.
 
-Save this as `definitions.py` and run `dagster asset materialize -f definitions.py --select dagster_release_sources`.
-The asset returns rows for downstream review. Results are ranked search hits, so
-the example checks the repository and path before retaining a source.
+Save the example as `definitions.py` at the root of the Dagster checkout and run:
+
+```sh
+uv run --project python_modules/libraries/dagster-parallel \
+  dagster asset materialize -f definitions.py --select dagster_release_sources
+```
+
+The asset returns rows for downstream review. It keeps hits for the requested
+Dagster release that include an excerpt.
 
 ```python
 from urllib.parse import urlsplit
@@ -39,13 +45,15 @@ async def dagster_release_sources(parallel_search: ParallelSearchResource):
     for result in results:
         source = urlsplit(result.url)
         if (
-            source.scheme == "https"
-            and source.netloc == "github.com"
-            and source.path.startswith("/dagster-io/dagster/releases/tag/")
-            and result.excerpts
+            source.scheme != "https"
+            or source.netloc != "github.com"
+            or source.path != "/dagster-io/dagster/releases/tag/1.13.0"
         ):
+            continue
+        excerpt = next((passage for passage in result.excerpts if passage.strip()), "")
+        if excerpt:
             rows.append(
-                {"url": result.url, "title": result.title, "excerpt": result.excerpts[0][:500]}
+                {"url": result.url, "title": result.title, "excerpt": excerpt.strip()[:500]}
             )
     return rows
 

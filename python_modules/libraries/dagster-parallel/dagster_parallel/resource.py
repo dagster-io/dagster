@@ -12,9 +12,10 @@ from dagster import (
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import TextContent
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, TypeAdapter, field_validator
 
 _MAX_RESPONSE_BYTES = 1024 * 1024
+_SOURCE_URL = TypeAdapter(AnyHttpUrl)
 
 
 class ParallelSearchResult(BaseModel):
@@ -23,6 +24,12 @@ class ParallelSearchResult(BaseModel):
     url: str
     title: str
     excerpts: list[str]
+
+    @field_validator("url")
+    @classmethod
+    def _validate_source_url(cls, url: str) -> str:
+        _SOURCE_URL.validate_python(url)
+        return url
 
 
 class _SearchResponse(BaseModel):
@@ -79,14 +86,14 @@ class ParallelSearchResource(ConfigurableResource):
         self, *, objective: str, search_queries: Sequence[str]
     ) -> list[ParallelSearchResult]:
         """Find sources for a public search objective using one or more keyword queries."""
-        if isinstance(search_queries, str):
+        if not isinstance(objective, str) or not objective.strip():
+            raise ValueError("Provide a nonempty search objective string.")
+        if not isinstance(search_queries, Sequence) or isinstance(search_queries, (str, bytes)):
             raise ValueError("Pass search_queries as a sequence of strings, such as ['my query'].")
-        if (
-            not objective.strip()
-            or not search_queries
-            or any(not query.strip() for query in search_queries)
-        ):
-            raise ValueError("Provide a search objective and at least one nonempty keyword query.")
+
+        queries = list(search_queries)
+        if not queries or any(not isinstance(query, str) or not query.strip() for query in queries):
+            raise ValueError("Provide at least one nonempty keyword string in search_queries.")
 
         deadline = asyncio.timeout(30)
         response_too_large = False
@@ -123,7 +130,7 @@ class ParallelSearchResource(ConfigurableResource):
                         await session.initialize()
                         result = await session.call_tool(
                             "web_search",
-                            {"objective": objective, "search_queries": list(search_queries)},
+                            {"objective": objective, "search_queries": queries},
                         )
         except (TimeoutError, ExceptionGroup, httpx.HTTPError) as error:
             if response_too_large:
