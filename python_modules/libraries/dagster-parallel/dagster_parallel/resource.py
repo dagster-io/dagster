@@ -3,8 +3,9 @@ from builtins import ExceptionGroup
 from collections.abc import AsyncIterator, Callable, Sequence
 from functools import partial
 from typing import Literal
+from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 from dagster import (
     ConfigurableResource,
     __version__ as dagster_version,
@@ -28,6 +29,16 @@ class ParallelSearchResult(BaseModel):
     @field_validator("url")
     @classmethod
     def _validate_source_url(cls, url: str) -> str:
+        # Validate the original string that downstream assets will receive.
+        if (
+            not urlsplit(url).hostname
+            or "\\" in url
+            or any(
+                character.isspace() or ord(character) < 32 or ord(character) == 127
+                for character in url
+            )
+        ):
+            raise ValueError("Expected an absolute HTTP or HTTPS source URL.")
         _SOURCE_URL.validate_python(url)
         return url
 
@@ -36,8 +47,8 @@ class _SearchResponse(BaseModel):
     results: list[ParallelSearchResult]
 
 
-class _BoundedStream(httpx.AsyncByteStream):
-    def __init__(self, stream: httpx.AsyncByteStream, on_oversized: Callable[[], None]):
+class _BoundedStream(httpx2.AsyncByteStream):
+    def __init__(self, stream: httpx2.AsyncByteStream, on_oversized: Callable[[], None]):
         self._stream = stream
         self._on_oversized = on_oversized
 
@@ -54,14 +65,14 @@ class _BoundedStream(httpx.AsyncByteStream):
         await self._stream.aclose()
 
 
-async def _check_response(response: httpx.Response, *, on_oversized: Callable[[], None]) -> None:
+async def _check_response(response: httpx2.Response, *, on_oversized: Callable[[], None]) -> None:
     # The MCP SDK can follow same-origin redirects itself, so reject them before
     # the SDK receives the response and can send the query to another URL.
     if response.is_redirect:
         raise RuntimeError("Parallel Search returned an unexpected redirect.")
     if response.headers.get("Content-Encoding", "identity").lower() != "identity":
         raise RuntimeError("Parallel Search returned an unsupported content encoding.")
-    if not isinstance(response.stream, httpx.AsyncByteStream):
+    if not isinstance(response.stream, httpx2.AsyncByteStream):
         raise RuntimeError("Parallel Search returned an invalid response stream.")
     response.stream = _BoundedStream(response.stream, on_oversized)
     if response.headers.get("Content-Type", "").lower().startswith("application/json"):
@@ -108,7 +119,7 @@ class ParallelSearchResource(ConfigurableResource):
         try:
             async with (
                 deadline,
-                httpx.AsyncClient(
+                httpx2.AsyncClient(
                     headers={
                         "User-Agent": f"Dagster/{dagster_version}",
                         "Accept-Encoding": "identity",
@@ -124,7 +135,6 @@ class ParallelSearchResource(ConfigurableResource):
                 async with streamable_http_client(self.endpoint, http_client=client) as (
                     read,
                     write,
-                    _,
                 ):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
@@ -132,19 +142,19 @@ class ParallelSearchResource(ConfigurableResource):
                             "web_search",
                             {"objective": objective, "search_queries": queries},
                         )
-        except (TimeoutError, ExceptionGroup, httpx.HTTPError) as error:
+        except (TimeoutError, ExceptionGroup, httpx2.HTTPError) as error:
             if response_too_large:
                 raise RuntimeError("Parallel Search returned an oversized response.") from None
             if isinstance(error, TimeoutError):
                 raise RuntimeError("Parallel Search timed out.") from None
             raise RuntimeError("Could not complete a request to Parallel Search.") from None
 
-        if result.isError:
+        if result.is_error:
             raise RuntimeError("Parallel Search rejected the search request.")
 
         try:
-            if result.structuredContent is not None:
-                return _SearchResponse.model_validate(result.structuredContent).results
+            if result.structured_content is not None:
+                return _SearchResponse.model_validate(result.structured_content).results
             if len(result.content) == 1 and isinstance(result.content[0], TextContent):
                 return _SearchResponse.model_validate_json(result.content[0].text).results
         except ValueError:

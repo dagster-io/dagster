@@ -3,15 +3,17 @@ import json
 from collections.abc import AsyncIterator
 from functools import partial
 from typing import Literal
+from urllib.parse import urlsplit
 
 import dagster as dg
-import httpx
+import httpx2
 import pytest
 from dagster_parallel import ParallelSearchResource
 
 ENDPOINT: Literal["https://mcp.parallel.ai/mcp"] = "https://mcp.parallel.ai/mcp"
+SOURCE_URL = "https://github.com/dagster-io/dagster/releases/tag/1.13.0"
 SOURCE = {
-    "url": "https://github.com/dagster-io/dagster/releases/tag/1.13.0",
+    "url": SOURCE_URL,
     "title": "Dagster 1.13.0",
     "excerpts": ["Partitioned asset checks can target specific partitions of an upstream asset."],
 }
@@ -19,7 +21,7 @@ OBJECTIVE = "Find the official Dagster 1.13.0 release notes."
 QUERIES = ["site:github.com Dagster 1.13.0 release notes"]
 
 
-class _ResponseBody(httpx.AsyncByteStream):
+class _ResponseBody(httpx2.AsyncByteStream):
     def __init__(self, *chunks: bytes):
         self._chunks = chunks
 
@@ -30,11 +32,13 @@ class _ResponseBody(httpx.AsyncByteStream):
 
 @pytest.fixture
 def server(monkeypatch):
-    client = httpx.AsyncClient
+    client = httpx2.AsyncClient
     requests = []
 
-    def install(response: str):
-        def handle(request: httpx.Request) -> httpx.Response:
+    def install(response: str, *, source_url: str = SOURCE_URL):
+        source = {**SOURCE, "url": source_url}
+
+        def handle(request: httpx2.Request) -> httpx2.Response:
             assert str(request.url) == ENDPOINT
             assert request.headers["User-Agent"] == f"Dagster/{dg.__version__}"
             assert "Authorization" not in request.headers
@@ -42,7 +46,7 @@ def server(monkeypatch):
             requests.append(message)
             method = message["method"]
             if method == "notifications/initialized":
-                return httpx.Response(202)
+                return httpx2.Response(202)
             if method == "initialize":
                 result = {
                     "protocolVersion": message["params"]["protocolVersion"],
@@ -58,22 +62,15 @@ def server(monkeypatch):
                     "arguments": {"objective": OBJECTIVE, "search_queries": QUERIES},
                 }
                 if response == "redirect":
-                    return httpx.Response(307, headers={"Location": f"{ENDPOINT}/redirect"})
+                    return httpx2.Response(307, headers={"Location": f"{ENDPOINT}/redirect"})
                 if response == "oversized":
-                    return httpx.Response(
+                    return httpx2.Response(
                         200,
                         headers={"Content-Type": "application/json"},
                         stream=_ResponseBody(*([b" " * 65536] * 17)),
                     )
                 if response == "invalid":
                     result = {"content": [{"type": "text", "text": "unexpected response"}]}
-                elif response == "invalid_source":
-                    result = {
-                        "content": [],
-                        "structuredContent": {
-                            "results": [{**SOURCE, "url": "/release-notes"}],
-                        },
-                    }
                 elif response == "error":
                     result = {
                         "content": [{"type": "text", "text": OBJECTIVE}],
@@ -81,16 +78,16 @@ def server(monkeypatch):
                     }
                 elif response == "text":
                     result = {
-                        "content": [{"type": "text", "text": json.dumps({"results": [SOURCE]})}]
+                        "content": [{"type": "text", "text": json.dumps({"results": [source]})}]
                     }
                 else:
-                    result = {"content": [], "structuredContent": {"results": [SOURCE]}}
+                    result = {"content": [], "structuredContent": {"results": [source]}}
             payload = {"id": message["id"], "jsonrpc": "2.0", "result": result}
             if method == "tools/call" and response in {"streamed", "oversized_streamed"}:
                 comments = (
                     [b":" + b" " * 65534 + b"\n"] * 17 if response == "oversized_streamed" else []
                 )
-                return httpx.Response(
+                return httpx2.Response(
                     200,
                     headers={"Content-Type": "text/event-stream"},
                     stream=_ResponseBody(
@@ -101,10 +98,10 @@ def server(monkeypatch):
                         b"\n\n",
                     ),
                 )
-            return httpx.Response(200, json=payload)
+            return httpx2.Response(200, json=payload)
 
         monkeypatch.setattr(
-            httpx, "AsyncClient", partial(client, transport=httpx.MockTransport(handle))
+            httpx2, "AsyncClient", partial(client, transport=httpx2.MockTransport(handle))
         )
         return requests
 
@@ -146,7 +143,6 @@ def test_search_passes_release_notes_through_materialization(server, response):
         ("redirect", "Could not complete a request"),
         ("oversized", "returned an oversized response"),
         ("invalid", "returned an invalid search result"),
-        ("invalid_source", "returned an invalid search result"),
         ("error", "rejected the search request"),
     ],
 )
@@ -157,6 +153,34 @@ def test_search_failures_do_not_echo_query_or_repeat_request(server, response, m
         asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES))
     assert OBJECTIVE not in str(failure.value)
     assert sum(request["method"] == "tools/call" for request in requests) == 1
+
+
+@pytest.mark.parametrize(
+    "source_url",
+    [
+        "/release-notes",
+        "https:/example.com/release-notes",
+        " https://example.com/release-notes",
+        "https://example.com/release notes",
+    ],
+)
+def test_search_rejects_malformed_source_urls(server, source_url):
+    server("structured", source_url=source_url)
+    resource = ParallelSearchResource(endpoint=ENDPOINT)
+
+    with pytest.raises(RuntimeError, match="returned an invalid search result"):
+        asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES))
+
+
+def test_search_preserves_valid_source_url(server):
+    source_url = "HTTPS://Example.com/release%20notes?version=1.13.0#assets"
+    server("structured", source_url=source_url)
+    resource = ParallelSearchResource(endpoint=ENDPOINT)
+
+    results = asyncio.run(resource.search(objective=OBJECTIVE, search_queries=QUERIES))
+
+    assert [result.url for result in results] == [source_url]
+    assert urlsplit(results[0].url).hostname == "example.com"
 
 
 def test_oversized_event_stream_fails_promptly(server):

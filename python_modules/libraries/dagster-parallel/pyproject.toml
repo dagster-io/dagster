@@ -11,8 +11,8 @@ license = "Apache-2.0"
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
-    "httpx>=0.28,<1",
-    "mcp>=1.30,<2",
+    "httpx2>=2.12,<3",
+    "mcp>=2.3,<3",
     "pydantic>=2",
 ]
 readme = "README.md"
