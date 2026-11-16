@@ -153,7 +153,7 @@ export const DeveloperPreferences = () => {
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
           <div>Job timings rotation</div>
-          <Tooltip content="How long Job timings shows each live job before moving to the next. Drag to zero to turn it off. Saved on this device only.">
+          <Tooltip content="How long the Job timings card on the metrics page shows each live job before moving to the next. Drag to zero to turn it off. Saved on this device only.">
             <Icon name="info" />
           </Tooltip>
         </Box>

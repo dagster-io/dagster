@@ -8,8 +8,8 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {CSSProperties, useCallback, useEffect, useMemo, useState} from 'react';
-import {Link, useHistory, useParams} from 'react-router-dom';
+import {CSSProperties, useEffect, useMemo, useState} from 'react';
+import {Link, useParams} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
 import {durationSec, formatDuration, startOfDay} from './HillpointeRoot';
@@ -265,16 +265,11 @@ export const JobTimingsRoot = () => {
   useDocumentTitle('Job timings');
   const {jobName} = useParams<{jobName?: string}>();
 
-  const {queryResult, refreshState, runs, jobs, locations, rotation} = useTimingsData();
+  // This page stays on the job you picked; only the metrics card rotates.
+  const {queryResult, refreshState, runs, jobs, locations} = useTimingsData();
 
   const selected = jobName ?? jobs[0]?.name ?? null;
 
-  const history = useHistory();
-  const show = useCallback(
-    (job: string) => history.replace(`/hillpointe/timings/${encodeURIComponent(job)}`),
-    [history],
-  );
-  const exiting = useJobRotation(rotation, selected, show);
   // The job list can be tucked away to give the chart the full width.
   const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
     typeof value === 'boolean' ? value : true,
@@ -351,7 +346,6 @@ export const JobTimingsRoot = () => {
         {selected ? (
           <JobTimings
             key={selected}
-            exiting={exiting}
             job={selected}
             points={points}
             partialCount={partialCount}
@@ -421,9 +415,7 @@ const JobTimings = ({
   points,
   partialCount,
   checkingPartial,
-  exiting,
 }: {
-  exiting: boolean;
   job: string;
   points: Point[];
   partialCount: number;
@@ -441,7 +433,7 @@ const JobTimings = ({
 
   if (!points.length) {
     return (
-      <div className={clsx(styles.card, styles.slide, exiting && styles.slideExit)}>
+      <div className={clsx(styles.card, styles.slide)}>
         <NonIdealState
           icon="timer"
           title="No finished runs"
@@ -452,7 +444,7 @@ const JobTimings = ({
   }
 
   return (
-    <div className={clsx(styles.timingsMain, styles.slide, exiting && styles.slideExit)}>
+    <div className={clsx(styles.timingsMain, styles.slide)}>
       <div className={styles.tiles}>
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Last run</div>

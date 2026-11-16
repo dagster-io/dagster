@@ -1,6 +1,6 @@
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-// Job timings cycles through the jobs of this code location on its own.
+// The Job timings card on the metrics page cycles through this code location's jobs.
 export const ROTATE_LOCATION = 'live';
 export const ROTATE_MAX_SECS = 120;
 const ROTATE_DEFAULT_SECS = 30;
