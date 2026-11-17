@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {useAllAssets} from '../useAllAssets';
 
 export type StorageAddressLike = {tableName: string; storageKind: string | null};
@@ -54,6 +55,29 @@ export function filterConnectionDuplicates<T extends AssetWithDefinition>(
   });
 }
 
+type LinkableAsset = {
+  key: {path: string[]};
+  definition?: {storageAddress?: StorageAddressLike | null} | null;
+};
+
+// Built once per `assets` array so per-row lookups don't rescan every asset.
+const getAssetsByTableName = weakMapMemoize((assets: ReadonlyArray<LinkableAsset>) => {
+  const byTableName = new Map<string, LinkableAsset[]>();
+  for (const asset of assets) {
+    const tableName = storageAddressKey(asset.definition?.storageAddress);
+    if (!tableName) {
+      continue;
+    }
+    const existing = byTableName.get(tableName);
+    if (existing) {
+      existing.push(asset);
+    } else {
+      byTableName.set(tableName, [asset]);
+    }
+  }
+  return byTableName;
+});
+
 export type LinkedAssetResult =
   | {type: 'linked'; linkedAssetKey: {path: string[]}}
   | {type: 'ambiguous'}
@@ -70,12 +94,9 @@ export type LinkedAssetResult =
 export function findLinkedAssetResult(
   currentAssetKey: {path: string[]},
   storageAddress: StorageAddressLike | null | undefined,
-  assets: ReadonlyArray<{
-    key: {path: string[]};
-    definition?: {storageAddress?: StorageAddressLike | null} | null;
-  }>,
+  assets: ReadonlyArray<LinkableAsset>,
 ): LinkedAssetResult {
-  const currentTableName = storageAddress?.tableName?.toLowerCase();
+  const currentTableName = storageAddressKey(storageAddress);
   if (!currentTableName) {
     return {type: 'none'};
   }
@@ -84,15 +105,12 @@ export function findLinkedAssetResult(
   const tableMatches: Array<{path: string[]}> = [];
   const fullMatches: Array<{path: string[]}> = [];
 
-  for (const asset of assets) {
+  for (const asset of getAssetsByTableName(assets).get(currentTableName) ?? []) {
     if (tokenForAssetKey(asset.key) === currentToken) {
       continue;
     }
     const candidateAddr = asset.definition?.storageAddress;
-    if (!candidateAddr?.tableName) {
-      continue;
-    }
-    if (candidateAddr.tableName.toLowerCase() !== currentTableName) {
+    if (!candidateAddr) {
       continue;
     }
 

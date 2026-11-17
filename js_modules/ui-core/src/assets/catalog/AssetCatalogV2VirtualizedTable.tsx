@@ -283,13 +283,10 @@ const AssetRow = forwardRef(
         ? latestInfo
         : undefined;
 
-    const {assets} = useAllAssets();
+    const {assets, assetsByAssetKey} = useAllAssets();
     const definition = useMemo(
-      () =>
-        assets?.find(
-          (workspaceAsset) => tokenForAssetKey(workspaceAsset.key) === tokenForAssetKey(asset.key),
-        )?.definition,
-      [assets, asset.key],
+      () => assetsByAssetKey.get(tokenForAssetKey(asset.key))?.definition,
+      [assetsByAssetKey, asset.key],
     );
 
     const repoAddress = definition?.repository

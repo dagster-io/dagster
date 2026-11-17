@@ -387,21 +387,3 @@ export const groupedAssetsWithAncestors = (nodes: GraphNode[]): Record<string, G
   }
   return grouped;
 };
-
-// Inclusive
-export const getUpstreamNodes = memoize(
-  (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
-    const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
-    const currentUpstream = upstream.map((graphId) => fromGraphId(graphId));
-    return [
-      assetKey,
-      ...currentUpstream,
-      ...currentUpstream.map((graphId) => getUpstreamNodes(graphId, graphData)).flat(),
-    ].filter(
-      (key, index, arr) =>
-        // Filter out non uniques
-        arr.findIndex((key2) => JSON.stringify(key2) === JSON.stringify(key)) === index,
-    );
-  },
-  (key, data) => JSON.stringify({key, data}),
-);

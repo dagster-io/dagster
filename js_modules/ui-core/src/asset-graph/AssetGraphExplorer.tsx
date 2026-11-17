@@ -222,11 +222,12 @@ const AssetGraphExplorerWithData = ({
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
-  const selectedTokens =
+  const selectedTokens = new Set(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
+    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean),
+  );
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
-    selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
+    selectedTokens.has(tokenForAssetKey(node.definition.assetKey)),
   );
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
@@ -883,7 +884,7 @@ const AssetGraphExplorerWithData = ({
           // go ahead and place an empty div so that the drawer doesn't animate out
           // when the page loads. The animation causes "zoom-to-center selected node"
           // to fail because the viewport size is still the full width.
-          return selectedTokens.length === 1 ? <div /> : null;
+          return selectedTokens.size === 1 ? <div /> : null;
         }
         if (selectedGraphNodes.length === 1 && selectedGraphNodes[0]) {
           return (
