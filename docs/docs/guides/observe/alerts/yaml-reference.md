@@ -62,9 +62,9 @@ alert_policies:
 
 ### Asset schema events
 
-| Event type                  | Description                |
-| --------------------------- | -------------------------- |
-| `ASSET_TABLE_SCHEMA_CHANGE` | Asset table schema changed |
+| Event type                  | Description                               |
+| --------------------------- | ----------------------------------------- |
+| `ASSET_TABLE_SCHEMA_CHANGE` | Asset table schema changed (Early Access) |
 
 ### Schedule and sensor events
 
@@ -402,7 +402,7 @@ policy_options:
 
 3. **Long-running job requirements:** `JOB_LONG_RUNNING` event type requires a `long_running_job_threshold_target` with `threshold_seconds` specified.
 
-4. **Table schema change requirements:** `ASSET_TABLE_SCHEMA_CHANGE` event type requires at least one entry in `policy_options.table_schema_change_types`.
+4. **Table schema change requirements (Early Access):** `ASSET_TABLE_SCHEMA_CHANGE` event type requires at least one entry in `policy_options.table_schema_change_types`.
 
 5. **Insights/Metric alert targets:** Policies with `INSIGHTS_*` or `METRIC_MONITOR_ALERT` event types require exactly one alert target.
 
@@ -507,7 +507,7 @@ alert_policies:
       include_description_in_notification: true
 ```
 
-### Table schema change monitoring
+### Table schema change monitoring (Early Access)
 
 ```yaml
 alert_policies:

@@ -111,7 +111,7 @@ All status tokens can be one of: `HEALTHY`, `WARNING`, `DEGRADED`, `UNKNOWN`, or
 | `{{checks_status}}`          | Asset checks health status.    | `WARNING`  |
 | `{{freshness_status}}`       | Freshness health status.       | `UNKNOWN`  |
 
-### Table schema tokens
+### Table schema tokens (Early Access)
 
 | Token                             | Description                                                             |
 | :-------------------------------- | :---------------------------------------------------------------------- |
