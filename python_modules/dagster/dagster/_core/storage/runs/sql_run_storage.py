@@ -88,6 +88,12 @@ class SnapshotType(Enum):
     EXECUTION_PLAN = "EXECUTION_PLAN"
 
 
+# Concurrent writers can interleave between the UPDATE, INSERT, and
+# recovery statements in _upsert_run_tag; retry the cycle this many times
+# before surfacing the error instead of silently dropping the tag.
+_ADD_RUN_TAGS_UPSERT_ATTEMPTS = 5
+
+
 class SqlRunStorage(RunStorage):
     """Base class for SQL based run storages."""
 
@@ -534,24 +540,134 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-            current_tags_set = set(current_tags.keys())
-            new_tags_set = set(new_tags.keys())
+            # A blind batch INSERT cannot tell "key exists with a different
+            # value" from "key is new": the unique index only conflicts on
+            # the full (key, value, run_id) triple, so inserting a new value
+            # for an existing key would silently add a second row for it.
+            # Split first: keys already present go through the UPDATE-first
+            # per-tag cycle; only genuinely new keys take the batch path.
+            existing_keys = {
+                row[0]
+                for row in conn.execute(
+                    db_select([RunTagsTable.c.key]).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key.in_(list(new_tags)),
+                        )
+                    )
+                ).fetchall()
+            }
+            batch_tags = {k: v for k, v in new_tags.items() if k not in existing_keys}
+            pending = dict(new_tags)
+            if batch_tags:
+                try:
+                    conn.execute(
+                        RunTagsTable.insert().values(
+                            [
+                                {"run_id": run_id, "key": key, "value": value}
+                                for key, value in batch_tags.items()
+                            ]
+                        )
+                    )
+                except db_exc.IntegrityError:
+                    # A concurrent writer raced us (or the batch collided
+                    # on an unrelated unique row, e.g. a MySQL
+                    # prefix-index collision): fall through to the per-tag
+                    # cycle for all tags, which verifies the exact row
+                    # before swallowing a conflict.
+                    pass
+                else:
+                    # A concurrent writer may have inserted a row for one
+                    # of the batch keys between the pre-check and the
+                    # INSERT (same key, different value — no index
+                    # conflict). Verify each batch key ended up with
+                    # exactly the requested row and converge any mismatch
+                    # through the per-tag cycle.
+                    rows = conn.execute(
+                        db_select([RunTagsTable.c.key, RunTagsTable.c.value]).where(
+                            db.and_(
+                                RunTagsTable.c.run_id == run_id,
+                                RunTagsTable.c.key.in_(list(batch_tags)),
+                            )
+                        )
+                    ).fetchall()
+                    by_key: dict[str, list[str]] = {}
+                    for key, value in rows:
+                        by_key.setdefault(key, []).append(value)
+                    for key, value in batch_tags.items():
+                        if by_key.get(key) != [value]:
+                            self._upsert_run_tag(conn, run_id, key, value)
+                    pending = {k: v for k, v in new_tags.items() if k in existing_keys}
+            for tag, value in pending.items():
+                self._upsert_run_tag(conn, run_id, tag, value)
 
-            existing_tags = current_tags_set & new_tags_set
-            added_tags = new_tags_set.difference(existing_tags)
+    def _upsert_run_tag(self, conn: Connection, run_id: str, key: str, value: str) -> None:
+        """Insert or update a single run_tags row, tolerating concurrent writers.
 
-            for tag in existing_tags:
-                conn.execute(
+        A plain UPDATE-then-INSERT is not atomic: between the two statements
+        another writer can insert, delete, or change the row, and on
+        Postgres (AUTOCOMMIT) each statement is its own transaction. The
+        cycle below retries the UPDATE/INSERT pair a few times, and an
+        IntegrityError is only treated as "already there" once a SELECT
+        proves the exact (run_id, key, value) row exists. Any other outcome
+        either retries the UPDATE or re-raises the error, so recovery can
+        never silently drop the tag, and a MySQL prefix-index collision with
+        a different key is never swallowed.
+        """
+        for attempt in range(_ADD_RUN_TAGS_UPSERT_ATTEMPTS):
+            try:
+                updated = conn.execute(
                     RunTagsTable.update()
-                    .where(db.and_(RunTagsTable.c.run_id == run_id, RunTagsTable.c.key == tag))
-                    .values(value=new_tags[tag])
+                    .where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
+                        )
+                    )
+                    .values(value=value)
                 )
-
-            if added_tags:
+            except db_exc.IntegrityError:
+                # Several rows with different values already exist for this
+                # key (left by an earlier race); remove them all and fall
+                # through to the insert below, which verifies the outcome.
                 conn.execute(
-                    RunTagsTable.insert(),
-                    [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
+                    db.delete(RunTagsTable).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
+                        )
+                    )
                 )
+                updated = None
+
+            if updated is not None and updated.rowcount > 0:
+                return
+
+            try:
+                conn.execute(RunTagsTable.insert().values(run_id=run_id, key=key, value=value))
+                return
+            except db_exc.IntegrityError:
+                # A concurrent writer inserted a conflicting row, or the
+                # index conflict is unrelated to this tag (e.g. a MySQL
+                # prefix-index collision with a different key sharing the
+                # first 64 characters). Only swallow the error once the
+                # exact row we want is verified to exist.
+                row = conn.execute(
+                    db_select([RunTagsTable.c.value]).where(
+                        db.and_(
+                            RunTagsTable.c.run_id == run_id,
+                            RunTagsTable.c.key == key,
+                        )
+                    )
+                ).first()
+                if row is not None and row[0] == value:
+                    return
+                if row is None:
+                    raise
+                if attempt >= _ADD_RUN_TAGS_UPSERT_ATTEMPTS - 1:
+                    raise
+                # A row exists with a different value: another writer
+                # changed it after our INSERT failed. Loop and UPDATE it.
 
     def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
