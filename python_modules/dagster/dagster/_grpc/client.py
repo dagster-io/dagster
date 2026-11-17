@@ -137,7 +137,7 @@ class DagsterGrpcClient:
             yield channel
 
     @asynccontextmanager
-    async def _async_channel(self) -> AsyncIterator[grpc.Channel]:
+    async def _async_channel(self) -> AsyncIterator[grpc.aio.Channel]:
         options = [
             ("grpc.max_receive_message_length", max_rx_bytes()),
             ("grpc.max_send_message_length", max_send_bytes()),
