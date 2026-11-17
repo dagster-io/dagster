@@ -202,28 +202,42 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
 
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
-  return (
-    <WorkspaceContext.Provider
-      value={{
-        loadingNonAssets,
-        loadingAssets,
-        assetEntries,
-        locationEntries,
-        locationStatuses,
-        allRepos,
-        visibleRepos,
-        toggleVisible,
-        setVisible,
-        setHidden,
-        data: fullLocationEntryData,
-        refetch: useCallback(async () => {
-          await managerRef.current?.refetchAll();
-        }, []),
-      }}
-    >
-      {children}
-    </WorkspaceContext.Provider>
+  const refetch = useCallback(async () => {
+    await managerRef.current?.refetchAll();
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      loadingNonAssets,
+      loadingAssets,
+      assetEntries,
+      locationEntries,
+      locationStatuses,
+      allRepos,
+      visibleRepos,
+      toggleVisible,
+      setVisible,
+      setHidden,
+      data: fullLocationEntryData,
+      refetch,
+    }),
+    [
+      loadingNonAssets,
+      loadingAssets,
+      assetEntries,
+      locationEntries,
+      locationStatuses,
+      allRepos,
+      visibleRepos,
+      toggleVisible,
+      setVisible,
+      setHidden,
+      fullLocationEntryData,
+      refetch,
+    ],
   );
+
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 };
 
 /**

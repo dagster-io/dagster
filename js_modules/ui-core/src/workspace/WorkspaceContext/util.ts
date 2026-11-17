@@ -47,7 +47,7 @@ export const useVisibleRepos = (
     validateHiddenKeys,
   );
 
-  const hiddenKeysJSON = JSON.stringify([...hiddenKeys.sort()]);
+  const hiddenKeysJSON = JSON.stringify([...hiddenKeys].sort());
 
   const toggleVisible = React.useCallback(
     (repoAddresses: RepoAddress[]) => {
