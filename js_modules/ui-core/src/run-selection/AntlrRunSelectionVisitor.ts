@@ -60,11 +60,9 @@ export class AntlrRunSelectionVisitor
     const downTraversal = ctx.downTraversal();
     const up_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
     const down_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
-    const selection_copy = new Set(selection);
-    for (const item of selection_copy) {
-      this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
-      this.traverser.fetchDownstream(item, down_depth).forEach((i) => selection.add(i));
-    }
+    const roots = [...selection];
+    this.traverser.fetchUpstream(roots, up_depth).forEach((i) => selection.add(i));
+    this.traverser.fetchDownstream(roots, down_depth).forEach((i) => selection.add(i));
     return selection;
   }
 
@@ -72,10 +70,7 @@ export class AntlrRunSelectionVisitor
     const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const upTraversal = ctx.upTraversal();
     const traversal_depth = upTraversal ? getTraversalDepth(upTraversal) : 0;
-    const selection_copy = new Set(selection);
-    for (const item of selection_copy) {
-      this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
-    }
+    this.traverser.fetchUpstream([...selection], traversal_depth).forEach((i) => selection.add(i));
     return selection;
   }
 
@@ -83,10 +78,9 @@ export class AntlrRunSelectionVisitor
     const selection = this.visitOrDefault(ctx.traversalAllowedExpr());
     const downTraversal = ctx.downTraversal();
     const traversal_depth = downTraversal ? getTraversalDepth(downTraversal) : 0;
-    const selection_copy = new Set(selection);
-    for (const item of selection_copy) {
-      this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));
-    }
+    this.traverser
+      .fetchDownstream([...selection], traversal_depth)
+      .forEach((i) => selection.add(i));
     return selection;
   }
 
@@ -120,28 +114,10 @@ export class AntlrRunSelectionVisitor
     const function_name = funcName ? getFunctionName(funcName) : '';
     const selection = this.visitOrDefault(ctx.expr());
     if (function_name === 'sinks') {
-      const sinks = new Set<RunGraphQueryItem>();
-      for (const item of selection) {
-        const downstream = this.traverser
-          .fetchDownstream(item, Number.MAX_VALUE)
-          .filter((i) => selection.has(i));
-        if (downstream.length === 0 || (downstream.length === 1 && downstream[0] === item)) {
-          sinks.add(item);
-        }
-      }
-      return sinks;
+      return this.traverser.sinks(selection);
     }
     if (function_name === 'roots') {
-      const roots = new Set<RunGraphQueryItem>();
-      for (const item of selection) {
-        const upstream = this.traverser
-          .fetchUpstream(item, Number.MAX_VALUE)
-          .filter((i) => selection.has(i));
-        if (upstream.length === 0 || (upstream.length === 1 && upstream[0] === item)) {
-          roots.add(item);
-        }
-      }
-      return roots;
+      return this.traverser.roots(selection);
     }
     throw new Error(`Unknown function: ${function_name}`);
   }
