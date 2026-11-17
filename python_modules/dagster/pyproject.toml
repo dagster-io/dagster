@@ -9,7 +9,7 @@ description = "Dagster is an orchestration platform for the development, product
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 readme = "README.md"
-requires-python = ">=3.11,<3.15"
+requires-python = ">=3.11,<4"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -22,7 +22,7 @@ classifiers = [
 dependencies = [
     # cli
     "click>=5.0,<9.0",
-    "coloredlogs>=6.1,<=14.0",
+    "coloredlogs>=6.1,<16",
     "Jinja2",
     # core
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
