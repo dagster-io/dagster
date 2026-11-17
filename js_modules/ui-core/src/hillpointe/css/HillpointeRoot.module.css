@@ -1152,7 +1152,15 @@
   inset: 6px;
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  /* No gap: the line is drawn at even fractions of the width, and with many
+     runs the gaps alone would be wider than the chart and push the points
+     off the line. */
+}
+
+/* Date labels under the chart, matching its inset and gapless columns. */
+.traceLabels {
+  gap: 0;
+  padding: 0 6px;
 }
 
 .traceInner > span {

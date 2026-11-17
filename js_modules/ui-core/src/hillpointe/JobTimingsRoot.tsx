@@ -256,7 +256,6 @@ const summarize = (points: Point[]) => {
     avg: average(seconds),
     last: good[good.length - 1] ?? null,
     previous: good[good.length - 2] ?? null,
-    top: Math.max(1, ...seconds),
   };
 };
 
@@ -381,6 +380,9 @@ export const JobTimingsRoot = () => {
 
 // The metrics page shows one job at a time in a card this tall.
 const CARD_PLOT_HEIGHT = 160;
+// A job that runs many times a day has too many runs to tell apart in the card,
+// so it charts only the newest ones.
+const CARD_MAX_POINTS = 60;
 
 /**
  * Job timings for the metrics page: one job's trend at a time, moving through
@@ -396,7 +398,7 @@ export const JobTimingsCard = () => {
   const exiting = useJobRotation(names.join(','), selected, setShown);
   const {partial} = usePartialRuns(selected);
   const points = useMemo(
-    () => (selected ? pointsFor(runs, selected, partial) : []),
+    () => (selected ? pointsFor(runs, selected, partial).slice(-CARD_MAX_POINTS) : []),
     [runs, selected, partial],
   );
   const {good, avg, last} = summarize(points);
@@ -406,7 +408,9 @@ export const JobTimingsCard = () => {
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           Job timings
-          <span className={styles.cardSub}>How long each run took, last {TIMINGS_DAYS} days</span>
+          <span className={styles.cardSub}>
+            How long each run took, up to the latest {CARD_MAX_POINTS} runs
+          </span>
         </div>
         <Link to="/hillpointe/timings">All jobs</Link>
       </div>
@@ -567,7 +571,8 @@ const JobTimings = ({
 /** One job's run durations as a line with a point per run, traced in from the left. */
 const TimingsPlot = ({points, height}: {points: Point[]; height: number}) => {
   const {avg} = summarize(points);
-  const top = summarize(points).top;
+  // Failures are drawn too, so the scale has to fit them, not just the successes.
+  const top = Math.max(1, ...points.map((p) => p.seconds));
   const x = (i: number) => (i + 0.5) * (100 / Math.max(1, points.length));
   const y = (s: number) => height - (s / top) * height;
   const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.seconds)}`).join(' ');
@@ -640,7 +645,7 @@ const TimingsPlot = ({points, height}: {points: Point[]; height: number}) => {
           </div>
         </div>
       </div>
-      <div className={styles.xLabels}>
+      <div className={clsx(styles.xLabels, styles.traceLabels)}>
         {points.map((p, i) => (
           <div key={p.run.runId} className={styles.xLabel}>
             {i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 6) === 0
