@@ -142,10 +142,38 @@ pex_build_method_option_group = make_option_group(
 )
 
 
+pex_deps_cache_option_group = make_option_group(
+    {
+        not_none(option.name): option
+        for option in [
+            click.Option(
+                ["--pex-deps-cache-from"],
+                help=(
+                    "Reuse a deps.pex previously published under this tag when the dependency "
+                    "requirements are unchanged, instead of rebuilding it. "
+                    "Only applies when --build-strategy=python-executable."
+                ),
+                envvar="DAGSTER_PEX_DEPS_CACHE_FROM",
+            ),
+            click.Option(
+                ["--pex-deps-cache-to"],
+                help=(
+                    "Publish the built deps.pex under this tag, so later builds can reuse it "
+                    "with --pex-deps-cache-from. "
+                    "Only applies when --build-strategy=python-executable."
+                ),
+                envvar="DAGSTER_PEX_DEPS_CACHE_TO",
+            ),
+        ]
+    }
+)
+
+
 @click.group(name="deploy", cls=DgClickGroup, invoke_without_command=True)
 @org_and_deploy_option_group
 @build_strategy_option_group
 @pex_build_method_option_group
+@pex_deps_cache_option_group
 @click.option(
     "--python-version",
     "python_version",
@@ -208,6 +236,8 @@ def deploy_group(
     deployment: str | None,
     build_strategy: str,
     pex_build_method: str,
+    pex_deps_cache_from: str | None,
+    pex_deps_cache_to: str | None,
     python_version: str | None,
     agent_type_str: str,
     deployment_type_str: str | None,
@@ -290,6 +320,8 @@ def deploy_group(
         agent_type=agent_type,
         build_strategy=build_strategy_enum,
         pex_build_method=pex_build_method_enum,
+        pex_deps_cache_from=pex_deps_cache_from,
+        pex_deps_cache_to=pex_deps_cache_to,
         statedir=statedir,
         use_editable_dagster=bool(use_editable_dagster),
         python_version=python_version,
@@ -429,6 +461,7 @@ def start_deploy_session_command(
 )
 @build_strategy_option_group
 @pex_build_method_option_group
+@pex_deps_cache_option_group
 @click.option(
     "--python-version",
     "python_version",
@@ -452,6 +485,8 @@ def build_and_push_command(
     agent_type_str: str,
     build_strategy: str,
     pex_build_method: str,
+    pex_deps_cache_from: str | None,
+    pex_deps_cache_to: str | None,
     python_version: str | None,
     use_editable_dagster: str | None,
     location_names: tuple[str],
@@ -485,6 +520,8 @@ def build_and_push_command(
         agent_type=agent_type,
         build_strategy=build_strategy_enum,
         pex_build_method=pex_build_method_enum,
+        pex_deps_cache_from=pex_deps_cache_from,
+        pex_deps_cache_to=pex_deps_cache_to,
         statedir=statedir,
         use_editable_dagster=bool(use_editable_dagster),
         python_version=python_version,

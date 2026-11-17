@@ -347,6 +347,64 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
 
+def test_plus_deploy_command_serverless_pex_deps_cache(
+    logged_in_dg_cli_config, project: Path, runner, monkeypatch
+):
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+
+    expected_build_call = dict(
+        statedir=DEFAULT_STATEDIR_PATH,
+        build_directory=str(project.resolve()),
+        dockerfile_path=str((project / "Dockerfile").absolute()),
+        use_editable_dagster=False,
+        build_strategy=BuildStrategy.pex,
+        docker_image_tag=None,
+        docker_base_image=None,
+        docker_env=[],
+        python_version=PYTHON_VERSION,
+        pex_build_method=BuildMethod.DOCKER_FALLBACK,
+        pex_deps_cache_from="deps-tag",
+        pex_deps_cache_to="deps-tag",
+        pex_base_image_tag=None,
+        location_name=["foo-bar"],
+    )
+
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke(
+            "plus",
+            "deploy",
+            "--agent-type",
+            "serverless",
+            "--build-strategy",
+            "python-executable",
+            "--pex-deps-cache-from",
+            "deps-tag",
+            "--pex-deps-cache-to",
+            "deps-tag",
+            "--yes",
+        )
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        mocked_cloud_cli_commands.build.assert_called_once_with(**expected_build_call)
+
+    # The build-and-push subcommand takes them too, here from the environment.
+    monkeypatch.setenv("DAGSTER_PEX_DEPS_CACHE_FROM", "deps-tag")
+    monkeypatch.setenv("DAGSTER_PEX_DEPS_CACHE_TO", "deps-tag")
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        result = runner.invoke("plus", "deploy", "start", "--yes")
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        result = runner.invoke(
+            "plus",
+            "deploy",
+            "build-and-push",
+            "--agent-type",
+            "serverless",
+            "--build-strategy",
+            "python-executable",
+        )
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        mocked_cloud_cli_commands.build.assert_called_once_with(**expected_build_call)
+
+
 def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, workspace, runner):
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
