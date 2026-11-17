@@ -5,7 +5,7 @@ import {Link, useParams} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
 import {durationSec, formatDuration} from './HillpointeRoot';
-import {Delta, JobList, average, useTimingsData} from './JobTimingsRoot';
+import {Delta, JobList, useTimingsData} from './JobTimingsRoot';
 import styles from './css/HillpointeRoot.module.css';
 import {
   HillpointeRunCompareQuery,
@@ -19,8 +19,6 @@ import {RunStatusTag} from '../runs/RunStatusTag';
 
 // How many of a job's most recent finished runs can be picked for comparison.
 const RECENT_RUNS = 12;
-// The picked run is compared with the average of up to this many successful runs before it.
-const BASELINE_RUNS = 5;
 // An asset counts as slower or faster only when it moved by at least this share
 // and this many seconds, so a 1s asset taking 2s is not flagged.
 const NOTABLE_FRACTION = 0.1;
@@ -72,7 +70,7 @@ export const RunCompareRoot = () => {
         <div className={styles.cardTitle}>
           Compare runs
           <span className={styles.cardSub}>
-            How long each asset took in one run, against the runs before it
+            Pick two runs of a job to see how long each asset took in one against the other
           </span>
         </div>
         <QueryRefreshCountdown refreshState={refreshState} />
@@ -84,6 +82,54 @@ export const RunCompareRoot = () => {
     </div>
   );
 };
+
+/** One row of run chips; the picked run is highlighted. */
+const RunPicker = ({
+  label,
+  runs,
+  picked,
+  onPick,
+}: {
+  label: string;
+  runs: ComparedRun[];
+  picked: ComparedRun;
+  onPick: (runId: string) => void;
+}) => (
+  <div className={styles.runPickerRow}>
+    <div className={styles.runPickerLabel}>{label}</div>
+    <div className={styles.runPicker}>
+      {runs.map((run) => (
+        <button
+          key={run.runId}
+          type="button"
+          className={clsx(styles.runChip, run === picked && styles.runChipActive)}
+          onClick={() => onPick(run.runId)}
+        >
+          <span
+            className={styles.runChipDot}
+            style={{
+              background:
+                run.status === RunStatus.SUCCESS ? Colors.dataVizGreen() : Colors.dataVizRed(),
+            }}
+          />
+          {runLabel(run)}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const RunTile = ({label, run}: {label: string; run: ComparedRun}) => (
+  <div className={styles.tile}>
+    <div className={styles.tileLabel}>{label}</div>
+    <div className={styles.tileValue}>
+      {formatDuration(durationSec(run.startTime, run.endTime))}
+    </div>
+    <div className={styles.tileSub}>
+      <RunStatusTag status={run.status} /> <Link to={`/runs/${run.runId}`}>{runLabel(run)}</Link>
+    </div>
+  </div>
+);
 
 const JobComparison = ({job}: {job: string}) => {
   const result = useQuery<HillpointeRunCompareQuery, HillpointeRunCompareQueryVariables>(
@@ -97,48 +143,42 @@ const JobComparison = ({job}: {job: string}) => {
     return all.filter((r) => r.startTime && r.endTime);
   }, [result.data]);
 
-  const [pickedId, setPickedId] = useState<string | null>(null);
-  const index = Math.max(
-    0,
-    runs.findIndex((r) => r.runId === pickedId),
-  );
-  const picked = runs[index] ?? null;
+  // Until two are picked, the latest run is compared with the one before it.
+  const [runId, setRunId] = useState<string | null>(null);
+  const [otherId, setOtherId] = useState<string | null>(null);
+  const run = runs.find((r) => r.runId === runId) ?? runs[0] ?? null;
+  const other = runs.find((r) => r.runId === otherId) ?? runs.find((r) => r !== run) ?? null;
 
   const comparison = useMemo(() => {
-    if (!picked) {
+    if (!run || !other) {
       return null;
     }
-    // The baseline is successful runs only: a failed run stops early, which
-    // would make everything after it look slow by comparison.
-    const earlier = runs
-      .slice(index + 1)
-      .filter((r) => r.status === RunStatus.SUCCESS)
-      .slice(0, BASELINE_RUNS);
-    const now = stepSeconds(picked);
-    const before = earlier.map(stepSeconds);
-    const rows = [...now.entries()]
-      .map(([stepKey, seconds]) => ({
+    const now = stepSeconds(run);
+    const then = stepSeconds(other);
+    // Every asset either run touched, longest first by whichever run took longer on it.
+    const rows = [...new Set([...now.keys(), ...then.keys()])]
+      .map((stepKey) => ({
         stepKey,
-        seconds,
-        previous: before[0]?.get(stepKey) ?? null,
-        avg: average(before.flatMap((m) => (m.has(stepKey) ? [m.get(stepKey) as number] : []))),
+        seconds: now.get(stepKey) ?? null,
+        otherSeconds: then.get(stepKey) ?? null,
       }))
-      .sort((a, b) => b.seconds - a.seconds);
-    const totals = earlier.map((r) => durationSec(r.startTime, r.endTime) ?? 0);
+      .sort(
+        (a, b) =>
+          Math.max(b.seconds ?? 0, b.otherSeconds ?? 0) -
+          Math.max(a.seconds ?? 0, a.otherSeconds ?? 0),
+      );
     const notable = (row: (typeof rows)[number], sign: 1 | -1) =>
-      row.avg !== null &&
-      sign * (row.seconds - row.avg) >= Math.max(NOTABLE_SECS, row.avg * NOTABLE_FRACTION);
+      row.seconds !== null &&
+      row.otherSeconds !== null &&
+      sign * (row.seconds - row.otherSeconds) >=
+        Math.max(NOTABLE_SECS, row.otherSeconds * NOTABLE_FRACTION);
     return {
-      earlier,
       rows,
-      total: durationSec(picked.startTime, picked.endTime),
-      previousTotal: totals[0] ?? null,
-      avgTotal: average(totals),
       slower: rows.filter((row) => notable(row, 1)).length,
       faster: rows.filter((row) => notable(row, -1)).length,
-      longest: Math.max(1, ...rows.map((row) => Math.max(row.seconds, row.avg ?? 0))),
+      longest: Math.max(1, ...rows.map((row) => Math.max(row.seconds ?? 0, row.otherSeconds ?? 0))),
     };
-  }, [runs, index, picked]);
+  }, [run, other]);
 
   if (result.loading && !result.data) {
     return (
@@ -149,89 +189,56 @@ const JobComparison = ({job}: {job: string}) => {
       </div>
     );
   }
-  if (!picked || !comparison) {
+  if (!run || !other || !comparison) {
     return (
       <div className={styles.card}>
         <NonIdealState
           icon="timer"
-          title="No finished runs"
-          description={`${job} has no finished runs to compare.`}
+          title="Not enough runs"
+          description={`${job} needs at least two finished runs to compare.`}
         />
       </div>
     );
   }
 
-  const {earlier, rows, total, previousTotal, avgTotal, slower, faster, longest} = comparison;
-  const baseline = earlier.length;
+  const {rows, slower, faster, longest} = comparison;
+  const total = durationSec(run.startTime, run.endTime);
+  const otherTotal = durationSec(other.startTime, other.endTime);
 
   return (
     <div className={clsx(styles.timingsMain, styles.slide)}>
       <div className={styles.card}>
         <div className={styles.cardTitle}>
           {job}
-          <span className={styles.cardSub}>Pick the run to look at</span>
+          <span className={styles.cardSub}>Pick one run on each row</span>
         </div>
-        <div className={styles.runPicker}>
-          {runs.map((run, i) => (
-            <button
-              key={run.runId}
-              type="button"
-              className={clsx(styles.runChip, i === index && styles.runChipActive)}
-              onClick={() => setPickedId(run.runId)}
-            >
-              <span
-                className={styles.runChipDot}
-                style={{
-                  background:
-                    run.status === RunStatus.SUCCESS ? Colors.dataVizGreen() : Colors.dataVizRed(),
-                }}
-              />
-              {runLabel(run)}
-            </button>
-          ))}
-        </div>
+        <RunPicker label="Run" runs={runs} picked={run} onPick={setRunId} />
+        <RunPicker label="Compared with" runs={runs} picked={other} onPick={setOtherId} />
       </div>
 
       <div className={styles.tiles}>
+        <RunTile label="Run" run={run} />
+        <RunTile label="Compared with" run={other} />
         <div className={styles.tile}>
-          <div className={styles.tileLabel}>This run</div>
-          <div className={styles.tileValue}>{formatDuration(total)}</div>
-          <div className={styles.tileSub}>
-            <RunStatusTag status={picked.status} />{' '}
-            <Link to={`/runs/${picked.runId}`}>Open run</Link>
+          <div className={styles.tileLabel}>Difference</div>
+          <div className={styles.tileValue}>
+            {total !== null && otherTotal ? <Delta from={otherTotal} to={total} big /> : '—'}
           </div>
-        </div>
-        <div className={styles.tile}>
-          <div className={styles.tileLabel}>Previous run</div>
-          <div className={styles.tileValue}>{formatDuration(previousTotal)}</div>
           <div className={styles.tileSub}>
-            {total !== null && previousTotal ? (
-              <Delta from={previousTotal} to={total} />
-            ) : (
-              'No earlier run'
-            )}
-          </div>
-        </div>
-        <div className={styles.tile}>
-          <div className={styles.tileLabel}>Average before</div>
-          <div className={styles.tileValue}>{formatDuration(avgTotal)}</div>
-          <div className={styles.tileSub}>
-            {total !== null && avgTotal ? (
-              <Delta from={avgTotal} to={total} label={`vs last ${baseline}`} />
-            ) : (
-              'No earlier run'
-            )}
+            {total !== null && otherTotal !== null
+              ? `${formatDuration(Math.abs(total - otherTotal))} ${total >= otherTotal ? 'longer' : 'shorter'} overall`
+              : ''}
           </div>
         </div>
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Assets slower</div>
           <div className={clsx(styles.tileValue, slower > 0 && styles.deltaSlower)}>{slower}</div>
-          <div className={styles.tileSub}>of {rows.length}, against the average</div>
+          <div className={styles.tileSub}>of {rows.length}</div>
         </div>
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Assets faster</div>
           <div className={clsx(styles.tileValue, faster > 0 && styles.deltaFaster)}>{faster}</div>
-          <div className={styles.tileSub}>of {rows.length}, against the average</div>
+          <div className={styles.tileSub}>of {rows.length}</div>
         </div>
       </div>
 
@@ -239,8 +246,7 @@ const JobComparison = ({job}: {job: string}) => {
         <div className={styles.cardTitle}>
           Assets
           <span className={styles.cardSub}>
-            Longest first. Top bar is this run; the bar under it is the average of the{' '}
-            {baseline === 1 ? 'successful run' : `${baseline} successful runs`} before it.
+            Longest first. The top bar is the run; the bar under it is the run it is compared with.
           </span>
         </div>
         <div className={styles.tableWrap}>
@@ -249,45 +255,51 @@ const JobComparison = ({job}: {job: string}) => {
               <tr>
                 <th>Asset</th>
                 <th className={styles.compareBarCol} />
-                <th className={styles.boardNum}>This run</th>
-                <th className={styles.boardNum}>Previous</th>
-                <th className={styles.boardNum}>Average</th>
-                <th className={styles.boardNum}>vs previous</th>
-                <th className={styles.boardNum}>vs average</th>
+                <th className={styles.boardNum}>{runLabel(run)}</th>
+                <th className={styles.boardNum}>{runLabel(other)}</th>
+                <th className={styles.boardNum}>Difference</th>
+                <th className={styles.boardNum}>Change</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.stepKey}>
-                  <td className={styles.compareName} title={row.stepKey}>
-                    {row.stepKey}
-                  </td>
-                  <td>
-                    <div className={styles.compareBars}>
-                      <div
-                        className={styles.compareBar}
-                        style={{
-                          width: `${(row.seconds / longest) * 100}%`,
-                          background: Colors.dataVizBlue(),
-                        }}
-                      />
-                      <div
-                        className={clsx(styles.compareBar, styles.compareBarBaseline)}
-                        style={{width: `${((row.avg ?? 0) / longest) * 100}%`}}
-                      />
-                    </div>
-                  </td>
-                  <td className={styles.boardNum}>{formatDuration(row.seconds)}</td>
-                  <td className={styles.boardNum}>{formatDuration(row.previous)}</td>
-                  <td className={styles.boardNum}>{formatDuration(row.avg)}</td>
-                  <td className={styles.boardNum}>
-                    {row.previous ? <Delta from={row.previous} to={row.seconds} /> : '—'}
-                  </td>
-                  <td className={styles.boardNum}>
-                    {row.avg ? <Delta from={row.avg} to={row.seconds} /> : '—'}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const both = row.seconds !== null && row.otherSeconds !== null;
+                const diff = both ? (row.seconds as number) - (row.otherSeconds as number) : 0;
+                return (
+                  <tr key={row.stepKey}>
+                    <td className={styles.compareName} title={row.stepKey}>
+                      {row.stepKey}
+                    </td>
+                    <td>
+                      <div className={styles.compareBars}>
+                        <div
+                          className={styles.compareBar}
+                          style={{
+                            width: `${((row.seconds ?? 0) / longest) * 100}%`,
+                            background: Colors.dataVizBlue(),
+                          }}
+                        />
+                        <div
+                          className={clsx(styles.compareBar, styles.compareBarBaseline)}
+                          style={{width: `${((row.otherSeconds ?? 0) / longest) * 100}%`}}
+                        />
+                      </div>
+                    </td>
+                    <td className={styles.boardNum}>{formatDuration(row.seconds)}</td>
+                    <td className={styles.boardNum}>{formatDuration(row.otherSeconds)}</td>
+                    <td className={styles.boardNum}>
+                      {both ? `${diff >= 0 ? '+' : '−'}${formatDuration(Math.abs(diff))}` : '—'}
+                    </td>
+                    <td className={styles.boardNum}>
+                      {both && row.otherSeconds ? (
+                        <Delta from={row.otherSeconds} to={row.seconds as number} />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

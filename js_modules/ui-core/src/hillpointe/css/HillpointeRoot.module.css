@@ -1178,12 +1178,24 @@
   gap: 8px;
 }
 
-/* Compare runs */
+/* Compare runs: one row of run chips per side of the comparison. */
+.runPickerRow {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.runPickerLabel {
+  color: var(--color-text-lighter);
+  font-size: 12px;
+}
+
 .runPicker {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
 }
 
 .runChip {

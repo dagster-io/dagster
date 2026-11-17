@@ -88,7 +88,7 @@ const pointsFor = (runs: TimedRun[], job: string, partial: Set<string>): Point[]
     }))
     .sort((a, b) => a.start - b.start);
 
-export const average = (values: number[]) =>
+const average = (values: number[]) =>
   values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
 const pointColor = (status: RunStatus) =>
