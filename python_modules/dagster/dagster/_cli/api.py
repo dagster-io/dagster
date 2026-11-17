@@ -559,7 +559,11 @@ def _execute_step_command_body(
         raise
 
 
-@api_cli.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
+@api_cli.command(
+    name="grpc",
+    help="Serve the Dagster inter-process API over GRPC",
+    context_settings={"help_option_names": ["--help"]},
+)
 @click.option(
     "--port",
     "-p",
@@ -875,7 +879,11 @@ def grpc_command(
         logger.info("Shutting down %s", server_desc)
 
 
-@api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
+@api_cli.command(
+    name="grpc-health-check",
+    help="Check the status of a dagster GRPC server",
+    context_settings={"help_option_names": ["--help"]},
+)
 @click.option(
     "--port",
     "-p",
