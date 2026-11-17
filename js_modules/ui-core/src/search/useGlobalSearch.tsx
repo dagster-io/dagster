@@ -293,7 +293,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   const [initialized, setInitialized] = useState(false);
   const initialize = useCallback(() => setInitialized(true), []);
 
-  const augmentSearchResults = useAugmentSearchResults();
+  const augmentSearchResults = useAugmentSearchResults({skip: !initialized});
 
   const {locationEntries, loadingNonAssets} = useContext(WorkspaceContext);
 
