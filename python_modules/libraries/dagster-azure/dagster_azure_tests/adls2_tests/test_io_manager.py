@@ -36,6 +36,10 @@ from dagster_azure.blob import create_blob_client
 from dagster_azure.fakes import fake_adls2_resource
 from upath import UPath
 
+skip_storage_account_unavailable = pytest.mark.skip(
+    reason="The dagsterdev storage account rejects the CI key with InsufficientAccountPermissions"
+)
+
 
 def fake_io_manager_factory(io_manager):
     @resource
@@ -78,6 +82,7 @@ def define_inty_job(adls_io_resource=adls2_resource):
     )
 
 
+@skip_storage_account_unavailable
 @pytest.mark.nettest
 def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_system, credential):
     job = define_inty_job()
@@ -144,6 +149,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     io_manager.unlink(recursive_path)
 
 
+@skip_storage_account_unavailable
 @pytest.mark.nettest
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
@@ -225,6 +231,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     assert io_manager.load_input(context) == 2
 
 
+@skip_storage_account_unavailable
 @pytest.mark.nettest
 def test_asset_io_manager(storage_account, file_system, credential):
     # if you add new assets to this test, make sure that the output names include _id so that we don't
