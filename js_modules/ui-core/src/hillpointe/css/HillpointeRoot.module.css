@@ -1177,3 +1177,71 @@
   flex-direction: column;
   gap: 8px;
 }
+
+/* Compare runs */
+.runPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.runChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-keyline-default);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-default);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.runChip:hover {
+  background: var(--color-background-lighter);
+}
+
+.runChipActive,
+.runChipActive:hover {
+  background: var(--color-background-blue);
+  border-color: var(--color-accent-blue);
+}
+
+.runChipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.compareName {
+  font-family: var(--font-mono);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compareBarCol {
+  width: 30%;
+}
+
+.compareBars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.compareBar {
+  height: 6px;
+  min-width: 2px;
+  border-radius: 2px;
+}
+
+.compareBarBaseline {
+  background: var(--color-accent-gray);
+}

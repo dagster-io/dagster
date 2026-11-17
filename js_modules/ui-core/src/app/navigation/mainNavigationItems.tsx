@@ -212,6 +212,20 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           ),
         },
         {
+          key: 'compare-runs',
+          label: 'Compare runs',
+          element: (
+            <NavItemWithLink
+              icon={<Icon name="waterfall_chart" />}
+              label="Compare runs"
+              href="/hillpointe/compare"
+              isActive={(_, currentLocation) =>
+                currentLocation.pathname.startsWith('/hillpointe/compare')
+              }
+            />
+          ),
+        },
+        {
           key: 'friday-report',
           label: 'Friday report',
           element: (

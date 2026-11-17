@@ -88,7 +88,7 @@ const pointsFor = (runs: TimedRun[], job: string, partial: Set<string>): Point[]
     }))
     .sort((a, b) => a.start - b.start);
 
-const average = (values: number[]) =>
+export const average = (values: number[]) =>
   values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 
 const pointColor = (status: RunStatus) =>
@@ -98,7 +98,7 @@ const pointColor = (status: RunStatus) =>
  * Every job's runs for the last TIMINGS_DAYS days, grouped by the code location
  * that defines the job today. Shared by the Job timings page and the metrics card.
  */
-const useTimingsData = () => {
+export const useTimingsData = () => {
   const [after] = useState(() => startOfDay(TIMINGS_DAYS - 1).getTime() / 1000);
   const queryResult = useQuery<HillpointeJobTimingsQuery, HillpointeJobTimingsQueryVariables>(
     HILLPOINTE_JOB_TIMINGS_QUERY,
@@ -260,6 +260,53 @@ const summarize = (points: Point[]) => {
   };
 };
 
+type TimingsData = ReturnType<typeof useTimingsData>;
+
+/** The jobs grouped by code location; each links to `basePath` plus its name. */
+export const JobList = ({
+  jobs,
+  locations,
+  selected,
+  basePath,
+  hidden,
+}: {
+  jobs: TimingsData['jobs'];
+  locations: TimingsData['locations'];
+  selected: string | null;
+  basePath: string;
+  hidden?: boolean;
+}) => (
+  <div className={clsx(styles.card, hidden && styles.hidden)}>
+    <div className={styles.cardTitle}>Jobs</div>
+    <div className={styles.jobList}>
+      {locations.map((location) => (
+        <div key={location}>
+          <div className={styles.jobGroup}>{location || 'No longer defined'}</div>
+          {jobs
+            .filter((job) => job.location === location)
+            .map((job) => (
+              <Link
+                key={job.name}
+                to={`${basePath}/${encodeURIComponent(job.name)}`}
+                className={clsx(styles.jobItem, job.name === selected && styles.jobItemActive)}
+              >
+                <span className={styles.jobItemName} title={job.name}>
+                  {job.name}
+                </span>
+                <span className={styles.jobItemMeta}>
+                  {job.avg === null ? '—' : formatDuration(job.avg)} avg · {job.count} runs
+                </span>
+              </Link>
+            ))}
+        </div>
+      ))}
+      {!jobs.length ? (
+        <div className={styles.muted}>No runs in the last {TIMINGS_DAYS} days.</div>
+      ) : null}
+    </div>
+  </div>
+);
+
 export const JobTimingsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Job timings');
@@ -311,38 +358,13 @@ export const JobTimingsRoot = () => {
         </Box>
       </Box>
       <div className={clsx(styles.timingsGrid, !jobsOpen && styles.timingsGridSolo)}>
-        <div className={clsx(styles.card, !jobsOpen && styles.hidden)}>
-          <div className={styles.cardTitle}>Jobs</div>
-          <div className={styles.jobList}>
-            {locations.map((location) => (
-              <div key={location}>
-                <div className={styles.jobGroup}>{location || 'No longer defined'}</div>
-                {jobs
-                  .filter((job) => job.location === location)
-                  .map((job) => (
-                    <Link
-                      key={job.name}
-                      to={`/hillpointe/timings/${encodeURIComponent(job.name)}`}
-                      className={clsx(
-                        styles.jobItem,
-                        job.name === selected && styles.jobItemActive,
-                      )}
-                    >
-                      <span className={styles.jobItemName} title={job.name}>
-                        {job.name}
-                      </span>
-                      <span className={styles.jobItemMeta}>
-                        {job.avg === null ? '—' : formatDuration(job.avg)} avg · {job.count} runs
-                      </span>
-                    </Link>
-                  ))}
-              </div>
-            ))}
-            {!jobs.length ? (
-              <div className={styles.muted}>No runs in the last {TIMINGS_DAYS} days.</div>
-            ) : null}
-          </div>
-        </div>
+        <JobList
+          jobs={jobs}
+          locations={locations}
+          selected={selected}
+          basePath="/hillpointe/timings"
+          hidden={!jobsOpen}
+        />
         {selected ? (
           <JobTimings
             key={selected}
@@ -638,7 +660,7 @@ const dateLabel = (secs: number) =>
   new Date(secs * 1000).toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
 
 /** "12% faster" in green or "8% slower" in red, comparing a run to a baseline. */
-const Delta = ({
+export const Delta = ({
   from,
   to,
   big,
