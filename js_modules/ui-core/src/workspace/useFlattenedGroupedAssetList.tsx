@@ -6,6 +6,7 @@ import {RepoAddress} from './types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {usePersistedExpansionState} from '../ui/usePersistedExpansionState';
+import {sortByValue} from '../util/sortByValue';
 
 type Asset = RepositoryAssetFragment;
 
@@ -38,15 +39,13 @@ export const useFlattenedGroupedAssetList = ({repoAddress, assets, expandAllGrou
       groups[groupName].push(asset);
     }
 
-    Object.values(groups).forEach((group) => {
-      group.sort((a, b) =>
-        COMMON_COLLATOR.compare(
-          displayNameForAssetKey(a.assetKey),
-          displayNameForAssetKey(b.assetKey),
-        ),
+    for (const [groupName, group] of Object.entries(groups)) {
+      groups[groupName] = sortByValue(
+        group,
+        (asset) => displayNameForAssetKey(asset.assetKey),
+        COMMON_COLLATOR.compare,
       );
-    });
-
+    }
     return groups;
   }, [assets]);
 

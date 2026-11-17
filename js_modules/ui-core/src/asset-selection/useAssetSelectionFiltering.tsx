@@ -5,6 +5,7 @@ import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {WorkspaceAssetNode} from '../assets/useAllAssets';
+import {sortByValue} from '../util/sortByValue';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Nullable<T> = {
@@ -64,17 +65,13 @@ export const useAssetSelectionFiltering = <
   );
 
   const filtered = useMemo(() => {
-    return (
-      graphAssetKeys
-        .map((key) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return assetsByKey.get(tokenForAssetKey(key))!;
-        })
-        .filter(Boolean)
-        .sort((a, b) =>
-          COMMON_COLLATOR.compare(displayNameForAssetKey(a.key), displayNameForAssetKey(b.key)),
-        ) ?? []
-    );
+    const assets = graphAssetKeys
+      .map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return assetsByKey.get(tokenForAssetKey(key))!;
+      })
+      .filter(Boolean);
+    return sortByValue(assets, (a) => displayNameForAssetKey(a.key), COMMON_COLLATOR.compare);
   }, [graphAssetKeys, assetsByKey]);
 
   const filteredByKey = useMemo(

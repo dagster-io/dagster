@@ -2,9 +2,11 @@ import {Box, Button, Heading, MiddleTruncate} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../../asset-graph/Utils';
+import {COMMON_COLLATOR} from '../../app/Util';
+import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {StatusDot} from '../../asset-graph/sidebar/StatusDot';
 import {NoValue} from '../../ui/AttributeAndValue';
+import {sortByValue} from '../../util/sortByValue';
 import {DependsOnSelfBanner} from '../DependsOnSelfBanner';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {WorkspaceAssetNode} from '../useAllAssets';
@@ -66,7 +68,12 @@ const AssetLinksWithStatus = ({
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
 
   const displayed = React.useMemo(
-    () => assets.sort((a, b) => sortAssetKeys(a.assetKey, b.assetKey)).slice(0, displayedCount),
+    () =>
+      sortByValue(
+        assets,
+        (asset) => displayNameForAssetKey(asset.assetKey),
+        COMMON_COLLATOR.compare,
+      ).slice(0, displayedCount),
     [assets, displayedCount],
   );
 

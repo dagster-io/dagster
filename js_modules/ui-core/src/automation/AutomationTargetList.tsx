@@ -18,8 +18,8 @@ import {
   labelForAssetCheck,
   renderItemAssetCheck,
   renderItemAssetKey,
-  sortItemAssetCheck,
-  sortItemAssetKey,
+  sortedAssetChecks,
+  sortedAssetKeys,
 } from '../assets/AssetListUtils';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {AutomationAssetSelectionFragment} from './types/AutomationAssetSelectionFragment.types';
@@ -106,16 +106,14 @@ const AssetSelectionTag = ({
     const assets = assetSelection.assetsOrError.nodes;
 
     return {
-      checks: assetSelection.assetChecks.slice().sort(sortItemAssetCheck),
-      assets: assets.map((a) => a.key).sort(sortItemAssetKey),
-      assetsWithAMP: assets
-        .filter((asset) => !!asset.definition?.automationCondition)
-        .map((a) => a.key)
-        .sort(sortItemAssetKey),
-      assetsWithoutAMP: assets
-        .filter((asset) => !asset.definition?.automationCondition)
-        .map((a) => a.key)
-        .sort(sortItemAssetKey),
+      checks: sortedAssetChecks(assetSelection.assetChecks),
+      assets: sortedAssetKeys(assets.map((a) => a.key)),
+      assetsWithAMP: sortedAssetKeys(
+        assets.filter((asset) => !!asset.definition?.automationCondition).map((a) => a.key),
+      ),
+      assetsWithoutAMP: sortedAssetKeys(
+        assets.filter((asset) => !asset.definition?.automationCondition).map((a) => a.key),
+      ),
     };
   }, [assetSelection]);
 
