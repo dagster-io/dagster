@@ -41,8 +41,8 @@ To run the examples, you'll need to:
 - In the PySpark environment, you'll need to install the `dagster-pipes` Python package, and typically the Java AWS S3 SDK packages. For example:
 
   ```shell
-  curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \
-    -o /opt/bitnami/spark/jars/hadoop-aws-3.5.1.jar
+  curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.4.1/hadoop-aws-3.4.1.jar" \
+    -o /opt/bitnami/spark/jars/hadoop-aws-3.4.1.jar
 
   curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
     -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
