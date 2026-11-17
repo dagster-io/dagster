@@ -113,6 +113,11 @@ ACTUAL_ENTRIES_REFRESH_INTERVAL = 30
 
 DEFAULT_START_RETRY_BACKOFF_SECONDS = 300
 
+# Upper bound on code servers created at once by launchers that allow concurrent spinup.
+DEFAULT_SERVER_SPINUP_MAX_WORKERS = 8
+SERVER_SPINUP_MAX_WORKERS_ENV_VAR = "DAGSTER_CLOUD_CODE_SERVER_SPINUP_MAX_WORKERS"
+SERVER_WAIT_MAX_WORKERS = 32
+
 # Image errors that a retry cannot fix (missing tag, bad name, wrong architecture, bad config).
 # Matched case-insensitively; the ones that need a pull context are ambiguous on their own.
 _PERMANENT_IMAGE_ERROR_MARKERS = (
@@ -179,6 +184,7 @@ CLEANUP_SERVER_GRACE_PERIOD_SECONDS = int(
 )
 
 ServerHandle = TypeVar("ServerHandle")
+T = TypeVar("T")
 
 DEPLOYMENT_INFO_QUERY = """
     query DeploymentInfo {
@@ -2030,7 +2036,59 @@ class DagsterCloudUserCodeLauncher(
 
     async def _gather_tasks(self, tasks):
         # Single async function that can be passed into asyncio.run
+        tasks = list(tasks)
+        # The wait coroutines push blocking calls through asyncio.to_thread, which uses the
+        # loop's default executor. Its default size derives from cpu_count, so on a small
+        # container the waiters would serialize on it. Each call holds a thread only briefly,
+        # so a fixed cap keeps the thread count bounded for very large deployments.
+        asyncio.get_running_loop().set_default_executor(
+            ThreadPoolExecutor(
+                max_workers=max(min(len(tasks), SERVER_WAIT_MAX_WORKERS), 1),
+                thread_name_prefix="dagster_cloud_agent_server_wait",
+            )
+        )
         return await asyncio.gather(*tasks)
+
+    @property
+    def _max_concurrent_server_spinups(self) -> int:
+        """How many locations may be set up at once during a reconcile.
+
+        Defaults to serial. Launchers whose spinup path is safe to run from several threads
+        override this; ones that allocate host ports are not.
+        """
+        return 1
+
+    @staticmethod
+    def _server_spinup_max_workers_from_env() -> int:
+        return int(os.getenv(SERVER_SPINUP_MAX_WORKERS_ENV_VAR, DEFAULT_SERVER_SPINUP_MAX_WORKERS))
+
+    def _map_locations(
+        self,
+        fn: Callable[[DeploymentAndLocation], T],
+        keys: Collection[DeploymentAndLocation],
+    ) -> dict[DeploymentAndLocation, T]:
+        """Call fn once per location, on a thread pool when the launcher allows it.
+
+        Results are collected on the calling thread so workers never write shared state.
+        """
+        max_workers = min(self._max_concurrent_server_spinups, len(keys))
+        if max_workers <= 1:
+            return {key: fn(key) for key in keys}
+        with ThreadPoolExecutor(
+            max_workers=max_workers, thread_name_prefix="dagster_cloud_agent_server_spinup"
+        ) as executor:
+            futures = {key: executor.submit(fn, key) for key in keys}
+
+        # Only the first failure propagates, so log the rest or they would vanish with
+        # their futures.
+        failures = [
+            (key, error) for key, future in futures.items() if (error := future.exception())
+        ]
+        for (deployment_name, location_name), error in failures[1:]:
+            self._logger.error(f"Error while setting up {deployment_name}:{location_name}: {error}")
+        if failures:
+            raise failures[0][1]
+        return {key: future.result() for key, future in futures.items()}
 
     def _reconcile(
         self,
@@ -2125,76 +2183,16 @@ class DagsterCloudUserCodeLauncher(
         # is the same)
         new_multipex_servers: dict[DeploymentAndLocation, DagsterCloudGrpcServer] = {}
 
-        for to_update_key in to_update_keys:
-            deployment_name, location_name = to_update_key
-
-            desired_entry = desired_entries[to_update_key]
-
-            code_location_deploy_data = desired_entry.code_location_deploy_data
-
-            # First check what multipex servers already exist for this location (any that are
-            # no longer used will be cleaned up at the end)
-            existing_multipex_server_handles[to_update_key] = (
-                self._get_multipex_server_handles_for_location(deployment_name, location_name)
-            )
-
-            if code_location_deploy_data.pex_metadata:
-                try:
-                    # See if a multipex server exists that satisfies this new metadata or if
-                    # one needs to be created
-                    multipex_server = self._get_multipex_server(
-                        deployment_name, location_name, desired_entry.code_location_deploy_data
-                    )
-
-                    if multipex_server:
-                        try:
-                            self._check_running_multipex_server(multipex_server)
-                        except:
-                            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                            self._logger.error(
-                                "Spinning up a new multipex server for"
-                                f" {deployment_name}:{location_name} since the existing one failed"
-                                f" with the following error: {error_info}"
-                            )
-                            multipex_server = None
-
-                    desired_pex_metadata = desired_entry.code_location_deploy_data.pex_metadata
-                    desired_python_version = (
-                        desired_pex_metadata.python_version if desired_pex_metadata else None
-                    )
-                    multipex_server_repr = f"{deployment_name}:{location_name} image={desired_entry.code_location_deploy_data.image} python_version={desired_python_version}"
-                    if not multipex_server:
-                        self._logger.info(
-                            f"Creating new multipex server for {multipex_server_repr}"
-                        )
-                        # confirm it's a valid image since _start_new_server_spinup will launch a container
-                        self._check_for_image(desired_entry.code_location_deploy_data)
-
-                        multipex_server = self._start_new_server_spinup(
-                            deployment_name, location_name, desired_entry
-                        )
-                        self._multipex_servers[to_update_key] = multipex_server
-                        assert self._get_multipex_server(
-                            deployment_name,
-                            location_name,
-                            desired_entry.code_location_deploy_data,
-                        )
-                        new_multipex_servers[to_update_key] = multipex_server
-                    else:
-                        self._logger.info(
-                            f"Found running multipex server for {multipex_server_repr}"
-                        )
-
-                except Exception:
-                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                    self._logger.error(
-                        "Error while setting up multipex server for"
-                        f" {deployment_name}:{location_name}: {error_info}"
-                    )
-                    new_dagster_servers[to_update_key] = error_info
-            elif to_update_key in self._multipex_servers:
-                # This key is no longer a multipex server
-                del self._multipex_servers[to_update_key]
+        multipex_results = self._map_locations(
+            lambda key: self._prepare_multipex_server_for_location(key, desired_entries[key]),
+            to_update_keys,
+        )
+        for to_update_key, (handles, new_multipex_server, error_info) in multipex_results.items():
+            existing_multipex_server_handles[to_update_key] = handles
+            if new_multipex_server:
+                new_multipex_servers[to_update_key] = new_multipex_server
+            if error_info:
+                new_dagster_servers[to_update_key] = error_info
 
         # For each new multi-pex server, wait for it to be ready. If it fails, put
         # the location that was planned to use it into an error state
@@ -2234,44 +2232,24 @@ class DagsterCloudUserCodeLauncher(
                 del self._multipex_servers[to_update_key]
 
         # Now that any needed multipex servers have been created, spin up dagster servers
-        # (either as standalone servers or within a multipex server)
-        for to_update_key in to_update_keys:
-            if isinstance(new_dagster_servers.get(to_update_key), SerializableErrorInfo):
-                # Don't keep going for this location if a previous step failed
-                continue
-
-            deployment_name, location_name = to_update_key
-            try:
-                desired_entry = desired_entries[to_update_key]
-                code_location_deploy_data = desired_entry.code_location_deploy_data
-
-                self._logger.info(f"Updating server for {deployment_name}:{location_name}")
-                existing_standalone_dagster_server_handles[to_update_key] = (
-                    self._get_standalone_dagster_server_handles_for_location(
-                        deployment_name, location_name
-                    )
-                )
-
-                existing_pex_server_handles[to_update_key] = self._get_existing_pex_servers(
-                    deployment_name, location_name
-                )
-
-                self._check_for_image(code_location_deploy_data)
-
-                new_dagster_servers[to_update_key] = self._start_new_dagster_server(
-                    deployment_name,
-                    location_name,
-                    desired_entry,
-                )
-
-                self._logger.info(f"Created a new server for {to_update_key}")
-            except Exception:
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                self._logger.error(
-                    f"Error while updating server for {deployment_name}:{location_name}:"
-                    f" {error_info}"
-                )
-                new_dagster_servers[to_update_key] = error_info
+        # (either as standalone servers or within a multipex server). Skip locations where a
+        # previous step already failed.
+        server_results = self._map_locations(
+            lambda key: self._create_dagster_server_for_location(key, desired_entries[key]),
+            [
+                key
+                for key in to_update_keys
+                if not isinstance(new_dagster_servers.get(key), SerializableErrorInfo)
+            ],
+        )
+        for to_update_key, (
+            standalone_handles,
+            pex_handles,
+            server_or_error,
+        ) in server_results.items():
+            existing_standalone_dagster_server_handles[to_update_key] = standalone_handles
+            existing_pex_server_handles[to_update_key] = pex_handles
+            new_dagster_servers[to_update_key] = server_or_error
 
         tasks = {}
 
@@ -2431,6 +2409,116 @@ class DagsterCloudUserCodeLauncher(
             "user_code_launcher.RECONCILED",
             {"event_name": "user_code_launcher.RECONCILED", "duration_seconds": seconds},
         )
+
+    def _prepare_multipex_server_for_location(
+        self,
+        to_update_key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> tuple[
+        Collection[ServerHandle], DagsterCloudGrpcServer | None, SerializableErrorInfo | None
+    ]:
+        """Find or create the multipex server a pex location needs.
+
+        Returns the location's pre-existing multipex handles (cleaned up at the end of the
+        reconcile), the multipex server created here if any, and the error if setup failed.
+        May run on a worker thread; it only touches self._multipex_servers under its own key.
+        """
+        deployment_name, location_name = to_update_key
+        code_location_deploy_data = desired_entry.code_location_deploy_data
+
+        existing_handles = self._get_multipex_server_handles_for_location(
+            deployment_name, location_name
+        )
+
+        if not code_location_deploy_data.pex_metadata:
+            # This key is no longer a multipex server
+            self._multipex_servers.pop(to_update_key, None)
+            return existing_handles, None, None
+
+        try:
+            # See if a multipex server exists that satisfies this new metadata or if
+            # one needs to be created
+            multipex_server = self._get_multipex_server(
+                deployment_name, location_name, code_location_deploy_data
+            )
+
+            if multipex_server:
+                try:
+                    self._check_running_multipex_server(multipex_server)
+                except:
+                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                    self._logger.error(
+                        "Spinning up a new multipex server for"
+                        f" {deployment_name}:{location_name} since the existing one failed"
+                        f" with the following error: {error_info}"
+                    )
+                    multipex_server = None
+
+            desired_pex_metadata = code_location_deploy_data.pex_metadata
+            desired_python_version = (
+                desired_pex_metadata.python_version if desired_pex_metadata else None
+            )
+            multipex_server_repr = f"{deployment_name}:{location_name} image={code_location_deploy_data.image} python_version={desired_python_version}"
+            if multipex_server:
+                self._logger.info(f"Found running multipex server for {multipex_server_repr}")
+                return existing_handles, None, None
+
+            self._logger.info(f"Creating new multipex server for {multipex_server_repr}")
+            # confirm it's a valid image since _start_new_server_spinup will launch a container
+            self._check_for_image(code_location_deploy_data)
+
+            multipex_server = self._start_new_server_spinup(
+                deployment_name, location_name, desired_entry
+            )
+            self._multipex_servers[to_update_key] = multipex_server
+            assert self._get_multipex_server(
+                deployment_name, location_name, code_location_deploy_data
+            )
+            return existing_handles, multipex_server, None
+        except Exception:
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            self._logger.error(
+                "Error while setting up multipex server for"
+                f" {deployment_name}:{location_name}: {error_info}"
+            )
+            return existing_handles, None, error_info
+
+    def _create_dagster_server_for_location(
+        self,
+        to_update_key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> tuple[
+        Collection[ServerHandle],
+        list[PexServerHandle],
+        DagsterCloudGrpcServer | SerializableErrorInfo,
+    ]:
+        """Start the location's dagster server (standalone or on its multipex server).
+
+        Returns the standalone and pex server handles that existed beforehand (cleaned up at
+        the end of the reconcile) and the new server, or the error if it could not be started.
+        May run on a worker thread.
+        """
+        deployment_name, location_name = to_update_key
+        existing_standalone_handles: Collection[ServerHandle] = []
+        existing_pex_handles: list[PexServerHandle] = []
+        try:
+            self._logger.info(f"Updating server for {deployment_name}:{location_name}")
+            existing_standalone_handles = self._get_standalone_dagster_server_handles_for_location(
+                deployment_name, location_name
+            )
+            existing_pex_handles = self._get_existing_pex_servers(deployment_name, location_name)
+
+            self._check_for_image(desired_entry.code_location_deploy_data)
+
+            server = self._start_new_dagster_server(deployment_name, location_name, desired_entry)
+            self._logger.info(f"Created a new server for {to_update_key}")
+            return existing_standalone_handles, existing_pex_handles, server
+        except Exception:
+            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            self._logger.error(
+                f"Error while updating server for {deployment_name}:{location_name}: {error_info}"
+            )
+            return existing_standalone_handles, existing_pex_handles, error_info
 
     def has_grpc_endpoint(self, deployment_name: str, location_name: str) -> bool:
         with self._grpc_servers_lock:
@@ -2736,9 +2824,11 @@ class DagsterCloudUserCodeLauncher(
 
         last_additional_check_time = None
 
+        # Many servers are awaited concurrently on one event loop, and a ping to a server whose
+        # network is not up yet blocks until it times out, so keep the blocking calls off the loop.
         while True:
             try:
-                client.ping("")
+                await asyncio.to_thread(client.ping, "")
                 break
             except Exception:
                 last_error = serializable_error_info_from_exc_info(sys.exc_info())
@@ -2747,7 +2837,7 @@ class DagsterCloudUserCodeLauncher(
                 timeout_debug_info = ""
                 if get_timeout_debug_info:
                     try:
-                        timeout_debug_info = get_timeout_debug_info()
+                        timeout_debug_info = await asyncio.to_thread(get_timeout_debug_info)
                     except Exception:
                         self._logger.exception("Failure fetching debug info after a timeout")
 
@@ -2765,7 +2855,7 @@ class DagsterCloudUserCodeLauncher(
                 or time.time() - last_additional_check_time > additional_check_interval
             ):
                 last_additional_check_time = time.time()
-                additional_check()
+                await asyncio.to_thread(additional_check)
 
     def upload_job_snapshot(
         self,

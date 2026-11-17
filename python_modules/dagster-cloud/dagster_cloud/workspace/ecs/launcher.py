@@ -441,6 +441,12 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
     def _default_sentinel_dir(self) -> str:
         return "/opt"
 
+    @property
+    def _max_concurrent_server_spinups(self) -> int:
+        # Each location registers its own task-definition family and boto3 clients are
+        # thread-safe, so creating services for several locations at once does not race.
+        return self._server_spinup_max_workers_from_env()
+
     def _get_grpc_server_sidecars(
         self, container_context: EcsContainerContext
     ) -> Sequence[Mapping[str, Any]] | None:

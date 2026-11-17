@@ -53,7 +53,9 @@ ECS_EXEC_LINUX_PARAMETERS = {
     "initProcessEnabled": True,
 }
 
-config = Config(retries={"max_attempts": 50, "mode": "standard"})
+# The pool is sized to the launcher's wait executor so concurrent polls reuse connections
+# instead of opening and discarding one per call.
+config = Config(retries={"max_attempts": 50, "mode": "standard"}, max_pool_connections=32)
 
 
 def get_debug_ecs_prompt(cluster: str, task_arn: str) -> str:
@@ -733,7 +735,10 @@ class Client:
         service_name = service.name
         start_time = time.time()
         while True:
-            response = self.ecs.describe_services(
+            # Boto calls block, and many services are awaited concurrently on one event loop,
+            # so every synchronous call in the wait path runs on a thread.
+            response = await asyncio.to_thread(
+                self.ecs.describe_services,
                 cluster=self.cluster_name,
                 services=[service_name],
             )
@@ -808,7 +813,8 @@ class Client:
         while start_time + self.timeout > time.time():
             # Check for running tasks to track
             if not tasks_to_track:
-                services = self.ecs.describe_services(
+                services = await asyncio.to_thread(
+                    self.ecs.describe_services,
                     cluster=self.cluster_name,
                     services=[service_name],
                 )
@@ -823,10 +829,13 @@ class Client:
 
                 # If the service has reached the desired count, we can start tracking the tasks
                 if desired_count and (desired_count > 0) and (desired_count == running_count):
-                    running_tasks = self.ecs.list_tasks(
-                        cluster=self.cluster_name,
-                        serviceName=service_name,
-                        desiredStatus="RUNNING",
+                    running_tasks = (
+                        await asyncio.to_thread(
+                            self.ecs.list_tasks,
+                            cluster=self.cluster_name,
+                            serviceName=service_name,
+                            desiredStatus="RUNNING",
+                        )
                     ).get("taskArns")
 
                     if running_tasks:
@@ -834,7 +843,7 @@ class Client:
 
             if not tasks_to_track and time.time() > start_time + STOPPED_TASK_GRACE_PERIOD:
                 # If there are still no running_tasks tasks after a certain grace period, check for stopped tasks
-                stopped_tasks = self._check_for_stopped_tasks(service_name)
+                stopped_tasks = await asyncio.to_thread(self._check_for_stopped_tasks, service_name)
                 if stopped_tasks:
                     latest_stopped_task = stopped_tasks[0]
                     stopped_reason = latest_stopped_task.get("stoppedReason", "")
@@ -847,15 +856,19 @@ class Client:
                         self._raise_failed_task(stopped_tasks[0], container_name, logger)
 
             if tasks_to_track:
-                tasks = self.ecs.describe_tasks(
-                    cluster=self.cluster_name, tasks=tasks_to_track
+                tasks = (
+                    await asyncio.to_thread(
+                        self.ecs.describe_tasks, cluster=self.cluster_name, tasks=tasks_to_track
+                    )
                 ).get("tasks")
 
                 # Wait for all tasks essential containers to be running
                 all_tasks_running = len(tasks) > 0
                 for task in tasks:
                     if task.get("lastStatus") == "RUNNING":
-                        if not self._check_all_essential_containers_are_running(task):
+                        if not await asyncio.to_thread(
+                            self._check_all_essential_containers_are_running, task
+                        ):
                             all_tasks_running = False
                     elif task.get("lastStatus") == "STOPPED":
                         stopped_reason = task.get("stoppedReason", "")
@@ -884,7 +897,8 @@ class Client:
         # up any tasks
         service_events_str = ""
         try:
-            response = self.ecs.describe_services(
+            response = await asyncio.to_thread(
+                self.ecs.describe_services,
                 cluster=self.cluster_name,
                 services=[service_name],
             )

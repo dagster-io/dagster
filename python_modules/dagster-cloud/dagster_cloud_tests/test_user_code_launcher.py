@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 import datetime
 import logging
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Collection, Generator
@@ -62,6 +63,7 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
         self._mocked_active_agent_ids: set[str] = set()
 
         self._server_create_counter = 0
+        self._server_create_lock = threading.Lock()
         super().__init__(**kwargs)
         self.fail_next_add = False
         self.fail_next_add_after_server_added = set()
@@ -112,6 +114,10 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
     def get_code_server_resource_limits(self, deployment_name, location_name):
         return {}
 
+    @property
+    def _max_concurrent_server_spinups(self) -> int:
+        return self._server_spinup_max_workers_from_env()
+
     def _start_new_server_spinup(
         self,
         deployment_name: str,
@@ -124,7 +130,9 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
             self.fail_next_add = False
             raise Exception(self._start_error_message)
 
-        self._server_create_counter = self._server_create_counter + 1
+        with self._server_create_lock:
+            self._server_create_counter = self._server_create_counter + 1
+            port = 4000 + self._server_create_counter
 
         container_name = unique_resource_name(
             deployment_name, location_name, length_limit=50, sanitize_fn=None
@@ -132,7 +140,7 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
 
         endpoint = ServerEndpoint(
             host=self.get_host_name(deployment_name, location_name, metadata),
-            port=4000 + self._server_create_counter,
+            port=port,
             socket=None,
         )
 
@@ -449,6 +457,64 @@ def test_server_cleanup_parallelized(agent_instance: DagsterCloudAgentInstance):
             {agent_instance.instance_uuid}, include_own_servers=True
         )
         assert time.time() - now < 5
+
+
+def test_server_spinup_parallelized(agent_instance: DagsterCloudAgentInstance):
+    with UserCodeTestLauncher() as user_code_launcher:
+        user_code_launcher.register_instance(agent_instance)
+        user_code_launcher.start(run_reconcile_thread=False)
+
+        spinup_threads = set()
+        original_spinup = user_code_launcher._start_new_server_spinup
+
+        def _slow_spinup(*args, **kwargs):
+            spinup_threads.add(threading.current_thread().name)
+            time.sleep(0.5)
+            return original_spinup(*args, **kwargs)
+
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("test_image:tag1", python_file="foo.py"),
+            time.time(),
+        )
+        entry_map = {(f"dep{i}", f"location{i}"): entry for i in range(20)}
+        user_code_launcher.update_grpc_metadata(
+            entry_map,
+            control_plane_error_locations=set(),
+            control_plane_outdated_locations=set(),
+        )
+
+        with mock.patch.object(user_code_launcher, "_start_new_server_spinup", _slow_spinup):
+            start = time.time()
+            user_code_launcher.reconcile()
+            elapsed = time.time() - start
+
+        # 20 x 0.5s serially is 10s; the default pool of 8 finishes in ~1.5s.
+        assert elapsed < 5
+        assert len(spinup_threads) > 1
+        assert all(name.startswith("dagster_cloud_agent_server_spinup") for name in spinup_threads)
+        user_code_launcher.assert_reconciliation(entry_map, run_reconcile_thread=False)
+        assert len(user_code_launcher.servers) == 20
+        endpoints = user_code_launcher.get_grpc_endpoints().values()
+        assert len({endpoint.port for endpoint in endpoints}) == 20  # ty: ignore[unresolved-attribute]
+
+        # Setting the env var to 1 runs spinup inline on the reconciling thread.
+        with environ({"DAGSTER_CLOUD_CODE_SERVER_SPINUP_MAX_WORKERS": "1"}):
+            threads = user_code_launcher._map_locations(
+                lambda _key: threading.current_thread().name, list(entry_map)[:4]
+            )
+        assert set(threads.values()) == {threading.current_thread().name}
+
+        # The first worker failure is re-raised; the others are logged rather than dropped.
+        def _fail(key):
+            raise RuntimeError(f"boom {key[1]}")
+
+        with mock.patch.object(user_code_launcher, "_logger") as logger:
+            with pytest.raises(RuntimeError, match="boom location0"):
+                user_code_launcher._map_locations(_fail, list(entry_map)[:3])
+        logged = " ".join(str(call) for call in logger.error.call_args_list)
+        assert "location1" in logged
+        assert "location2" in logged
+        assert "location0" not in logged
 
 
 def test_multiple_agents_grpc_spindown(agent_instance: DagsterCloudAgentInstance):
