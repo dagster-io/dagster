@@ -27,6 +27,18 @@ function hasTimingInfo(entry: [string, IStepMetadata]): entry is [string, StepWi
   return entry[1].start !== undefined && entry[1].end !== undefined;
 }
 
+// Keeps the first item for each key, matching the `find` lookups these maps replace.
+const firstByKey = <T>(items: T[], keyFor: (item: T) => string) => {
+  const map = new Map<string, T>();
+  for (const item of items) {
+    const key = keyFor(item);
+    if (!map.has(key)) {
+      map.set(key, item);
+    }
+  }
+  return map;
+};
+
 export interface BuildLayoutParams {
   nodes: IGanttNode[];
   mode: GanttChartMode;
@@ -35,9 +47,11 @@ export interface BuildLayoutParams {
 export const buildLayout = (params: BuildLayoutParams) => {
   const {nodes, mode} = params;
 
+  const nodesByName = firstByKey(nodes, (node) => node.name);
+
   // Step 1: Place the nodes that have no dependencies into the layout.
   const hasNoDependencies = (g: IGanttNode) =>
-    !g.inputs.some((i) => i.dependsOn.some((s) => nodes.find((o) => o.name === s.solid.name)));
+    !g.inputs.some((i) => i.dependsOn.some((s) => nodesByName.has(s.solid.name)));
 
   const boxes: GanttChartBox[] = nodes.filter(hasNoDependencies).map((node) => ({
     node,
@@ -55,7 +69,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
   // always greater than their parent(s) position (which requires correction
   // because boxes can have multiple dependencies.)
   const roots = [...boxes];
-  roots.forEach((box) => addChildren(boxes, box, params));
+  const boxesByNode = new Map(boxes.map((box) => [box.node, box]));
+  roots.forEach((box) => addChildren(boxes, box, {nodesByName, boxesByNode}));
 
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
@@ -80,8 +95,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
   // Step 4: Assign Y values (row numbers not pixel values)
   // First put each box on it's own line. We know this will generate a fine gantt viz
   // because we sorted the boxes array as we built it.
-  boxes.forEach((box, idx) => {
-    box.y = idx;
+  boxes.forEach((box, boxIndex) => {
+    box.y = boxIndex;
     box.children.forEach((child) => {
       const target = parents[child.node.name] || [];
       target.push(box);
@@ -95,56 +110,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
     boxesByY[`${box.y}`] = target;
   });
 
-  // Next, start at the bottom of the viz and "collapse" boxes up on to the previous line
-  // as long as that does not result in them being higher than their parents AND does
-  // not cause them to sit on top of an existing on-the-same-line A ---> B arrow.
-
-  // This makes basic box series (A -> B -> C -> D) one row instead of four rows.
-
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const boxesReversed = [...boxes].reverse();
-    for (const box of boxesReversed) {
-      const boxParents = parents[box.node.name] || [];
-      const highestYParent = boxParents.sort((a, b) => b.y - a.y)[0];
-      if (!highestYParent) {
-        continue;
-      }
-      // Don't re-order the first row of nodes that "fan out" from a dynamic output. this
-      // ensures that these nodes are always "waterfall" visually by ascending index.
-      if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
-        continue;
-      }
-      const onTargetY = boxesByY[`${highestYParent.y}`];
-      if (!onTargetY) {
-        continue;
-      }
-      const taken = onTargetY.find((r) => r.x === box.x);
-      if (taken) {
-        continue;
-      }
-
-      const parentX = highestYParent.x;
-      const willCross = onTargetY.some((r) => r.x > parentX && r.x < box.x);
-      const willCauseCrossing = onTargetY.some(
-        (r) => r.x < box.x && r.children.some((c) => c.y >= highestYParent.y && c.x > box.x),
-      );
-      if (willCross || willCauseCrossing) {
-        continue;
-      }
-
-      const currentRow = boxesByY[`${box.y}`];
-      if (currentRow) {
-        boxesByY[`${box.y}`] = currentRow.filter((b) => b !== box);
-      }
-      box.y = highestYParent.y;
-      onTargetY.push(box);
-
-      changed = true;
-      break;
-    }
-  }
+  // FLAT mode below rewrites `y`, so collapseRows hands back each box's highest parent first.
+  const highestYParents = collapseRows(boxes, parents, boxesByY);
 
   if (mode === GanttChartMode.FLAT) {
     // Now that we've inlined chains of boxes where possible, flatten everything back out onto the
@@ -160,7 +127,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
       if (!firstBox) {
         continue;
       }
-      const [firstParent] = parents[firstBox.node.name] ?? [];
+      const firstParent = highestYParents.get(firstBox);
       let x = firstBox.root ? LEFT_INSET : (firstParent?.x ?? LEFT_INSET) + FLAT_INSET_FROM_PARENT;
       for (const box of row) {
         box.x = x;
@@ -172,22 +139,134 @@ export const buildLayout = (params: BuildLayoutParams) => {
     boxes.sort((a, b) => a.y - b.y || a.x - b.x);
   } else {
     // Since we've inlined boxes, shift rows up and fill empty space until every Y value has a box.
-    changed = true;
-    while (changed) {
-      changed = false;
-      const maxY = boxes.reduce((m, r) => Math.max(m, r.y), 0);
-      for (let y = 0; y < maxY; y++) {
-        const empty = !boxes.some((r) => r.y === y);
-        if (empty) {
-          boxes.filter((r) => r.y > y).forEach((r) => (r.y -= 1));
-          changed = true;
-          break;
-        }
-      }
-    }
+    const usedYs = [...new Set(boxes.map((box) => box.y))].sort((a, b) => a - b);
+    const compactedY = new Map(usedYs.map((y, compactedIndex) => [y, compactedIndex]));
+    boxes.forEach((box) => (box.y = compactedY.get(box.y) ?? box.y));
   }
 
   return {boxes, markers: []} as GanttChartLayout;
+};
+
+// Starting at the bottom of the viz, "collapse" boxes up on to the previous line as long as that
+// does not result in them being higher than their parents AND does not cause them to sit on top
+// of an existing on-the-same-line A ---> B arrow. This makes basic box series (A -> B -> C -> D)
+// one row instead of four rows.
+//
+// Each step moves the last box in `boxes` that can collapse. Rather than re-checking every box
+// after each move, we only re-check the boxes whose answer the move could have changed.
+const collapseRows = (
+  boxes: GanttChartBox[],
+  parents: {[name: string]: GanttChartBox[]},
+  boxesByY: {[y: string]: GanttChartBox[]},
+) => {
+  const indexOfBox = new Map(boxes.map((box, boxIndex) => [box, boxIndex]));
+  const needsCheck = boxes.map(() => true);
+
+  // The parent on the lowest row. Ties go to the parent that moved onto that row most recently
+  // (boxes that haven't moved count as arriving in `boxes` order).
+  const lastMoved = new Map(indexOfBox);
+  let moveCount = boxes.length;
+  const getHighestYParent = (box: GanttChartBox) => {
+    let best: GanttChartBox | undefined;
+    for (const parent of parents[box.node.name] ?? []) {
+      if (
+        !best ||
+        parent.y > best.y ||
+        (parent.y === best.y && (lastMoved.get(parent) ?? 0) > (lastMoved.get(best) ?? 0))
+      ) {
+        best = parent;
+      }
+    }
+    return best;
+  };
+
+  // Boxes whose last check depended on the contents of a row other than their own.
+  const waitingOnRow: {[y: string]: Set<GanttChartBox>} = {};
+  const rowWaitedOn = new Map<GanttChartBox, number>();
+  const waitOnRow = (box: GanttChartBox, y: number | undefined) => {
+    const previous = rowWaitedOn.get(box);
+    if (previous !== undefined) {
+      waitingOnRow[`${previous}`]?.delete(box);
+      rowWaitedOn.delete(box);
+    }
+    if (y !== undefined) {
+      (waitingOnRow[`${y}`] ??= new Set()).add(box);
+      rowWaitedOn.set(box, y);
+    }
+  };
+
+  // Returns the parent whose row `box` can move up to, or undefined if it should stay put.
+  const collapseTarget = (box: GanttChartBox) => {
+    waitOnRow(box, undefined);
+    const highestYParent = getHighestYParent(box);
+    if (!highestYParent) {
+      return undefined;
+    }
+    // Already on its parent's row, so `taken` below would match the box itself.
+    if (highestYParent.y === box.y) {
+      return undefined;
+    }
+    // Don't re-order the first row of nodes that "fan out" from a dynamic output. this
+    // ensures that these nodes are always "waterfall" visually by ascending index.
+    if (isDynamicStep(box.node.name) && !isDynamicStep(highestYParent.node.name)) {
+      return undefined;
+    }
+    const onTargetY = boxesByY[`${highestYParent.y}`];
+    if (!onTargetY) {
+      return undefined;
+    }
+    waitOnRow(box, highestYParent.y);
+
+    const taken = onTargetY.find((r) => r.x === box.x);
+    if (taken) {
+      return undefined;
+    }
+    const parentX = highestYParent.x;
+    const willCross = onTargetY.some((r) => r.x > parentX && r.x < box.x);
+    const willCauseCrossing = onTargetY.some(
+      (r) => r.x < box.x && r.children.some((c) => c.y >= highestYParent.y && c.x > box.x),
+    );
+    if (willCross || willCauseCrossing) {
+      return undefined;
+    }
+    return highestYParent;
+  };
+
+  let nextIndexToCheck = boxes.length - 1;
+  const recheck = (box: GanttChartBox) => {
+    const boxIndex = indexOfBox.get(box);
+    if (boxIndex !== undefined) {
+      needsCheck[boxIndex] = true;
+      nextIndexToCheck = Math.max(nextIndexToCheck, boxIndex);
+    }
+  };
+
+  while (nextIndexToCheck >= 0) {
+    const box = boxes[nextIndexToCheck];
+    const target = box && needsCheck[nextIndexToCheck] ? collapseTarget(box) : undefined;
+    needsCheck[nextIndexToCheck] = false;
+    if (!box || !target) {
+      nextIndexToCheck--;
+      continue;
+    }
+
+    const fromY = box.y;
+    waitOnRow(box, undefined);
+    boxesByY[`${fromY}`] = (boxesByY[`${fromY}`] ?? []).filter((b) => b !== box);
+    box.y = target.y;
+    lastMoved.set(box, moveCount++);
+    boxesByY[`${target.y}`]?.push(box);
+
+    // Re-check the moved box, its children (their highest parent moved), and boxes waiting on
+    // a row whose contents changed or that holds one of this box's parents (`willCauseCrossing`
+    // reads the y of each child on the row).
+    recheck(box);
+    box.children.forEach(recheck);
+    const changedRows = [fromY, target.y, ...(parents[box.node.name] ?? []).map((p) => p.y)];
+    changedRows.forEach((y) => waitingOnRow[`${y}`]?.forEach(recheck));
+  }
+
+  return new Map(boxes.map((box) => [box, getHighestYParent(box)]));
 };
 
 const ensureSubtreeAfterParentInArray = (
@@ -212,36 +291,41 @@ const ensureSubtreeAfterParentInArray = (
   }
 };
 
-const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLayoutParams) => {
-  const seen: string[] = [];
-  const seenSet: Set<string> = new Set();
+type LayoutLookups = {
+  nodesByName: Map<string, IGanttNode>;
+  boxesByNode: Map<IGanttNode, GanttChartBox>;
+};
+
+const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, lookups: LayoutLookups) => {
+  const seen = new Set<string>();
+  const seenDynamicKeys = new Set<string>();
   const added: GanttChartBox[] = [];
 
   for (const out of box.node.outputs) {
     for (const dep of out.dependedBy) {
-      const depNode = params.nodes.find((n) => dep.solid.name === n.name);
+      const depNode = lookups.nodesByName.get(dep.solid.name);
       if (!depNode) {
         continue;
       }
 
-      if (seenSet.has(depNode.name)) {
+      if (seen.has(depNode.name)) {
         continue;
       }
 
       // Hide the unresolved node if any its resolved node exists
       if (
         isPlannedDynamicStep(depNode.name) &&
-        seen
-          .filter((n) => isDynamicStep(n))
-          .some((n) => dynamicKeyWithoutIndex(n) === dynamicKeyWithoutIndex(depNode.name))
+        seenDynamicKeys.has(dynamicKeyWithoutIndex(depNode.name))
       ) {
         continue;
       }
 
-      seen.push(depNode.name);
-      seenSet.add(depNode.name);
+      seen.add(depNode.name);
+      if (isDynamicStep(depNode.name)) {
+        seenDynamicKeys.add(dynamicKeyWithoutIndex(depNode.name));
+      }
 
-      let depBox = boxes.find((r) => r.node === depNode);
+      let depBox = lookups.boxesByNode.get(depNode);
 
       if (!depBox) {
         depBox = {
@@ -255,6 +339,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
           y: -1,
         };
         boxes.push(depBox);
+        lookups.boxesByNode.set(depNode, depBox);
         added.push(depBox);
       } else {
         ensureSubtreeAfterParentInArray(boxes, box, depBox);
@@ -268,7 +353,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
   // ordered (knowing that parents appear before children gives us more opportunities for early
   // returns, etc. elsewhere), we add all of our immediate children and THEN proceed in to the next layer.
   for (const depBox of added) {
-    addChildren(boxes, depBox, params);
+    addChildren(boxes, depBox, lookups);
   }
 };
 
@@ -335,8 +420,8 @@ const cloneLayout = ({boxes, markers}: GanttChartLayout): GanttChartLayout => {
     map.set(box, next);
   }
 
-  boxes.forEach((box, ii) => {
-    const nextBox = nextBoxes[ii];
+  boxes.forEach((box, boxIndex) => {
+    const nextBox = nextBoxes[boxIndex];
     if (nextBox) {
       nextBox.children = box.children.map((c) => map.get(c));
     }
@@ -356,8 +441,8 @@ const positionAndSplitBoxes = (
 ) => {
   // Apply X values + widths to boxes, and break apart retries into their own boxes by looking
   // at the transitions recorded for each step.
-  for (let ii = boxes.length - 1; ii >= 0; ii--) {
-    const box = boxes[ii];
+  for (let boxIndex = boxes.length - 1; boxIndex >= 0; boxIndex--) {
+    const box = boxes[boxIndex];
     if (!box) {
       continue;
     }
@@ -383,9 +468,9 @@ const positionAndSplitBoxes = (
     });
 
     // Move the children (used to draw outbound lines) to the last box
-    for (let jj = 0; jj < runBoxes.length - 1; jj++) {
-      const current = runBoxes[jj];
-      const next = runBoxes[jj + 1];
+    for (let runBoxIndex = 0; runBoxIndex < runBoxes.length - 1; runBoxIndex++) {
+      const current = runBoxes[runBoxIndex];
+      const next = runBoxes[runBoxIndex + 1];
       if (current && next) {
         current.children = [next];
       }
@@ -398,7 +483,7 @@ const positionAndSplitBoxes = (
     Object.assign(box, runBoxes[0]);
     // Add additional boxes we created for retries
     if (runBoxes.length > 1) {
-      boxes.splice(ii, 0, ...runBoxes.slice(1));
+      boxes.splice(boxIndex, 0, ...runBoxes.slice(1));
     }
   }
 };
@@ -413,16 +498,13 @@ const positionUntimedBoxes = (boxes: GanttChartBox[], beginUntimedBoxesAtX = 0) 
   // (waterfall mode) we visit the whole graph once, placing untimed boxes after their
   // timed ancestors.
   const queue = beginUntimedBoxesAtX ? boxes.filter((box) => box.x === 0) : [...boxes];
+  const reachedFirstVisit = new Set<GanttChartBox>();
 
   const visit = (box: GanttChartBox, parentX: number) => {
     if (box.x === 0) {
-      // If we are visiting the box for the first time and it's still in our queue,
-      // remove that planned "visit". This happens if we reach this box by traversing
-      // the tree from another starting box.
-      const idx = queue.indexOf(box);
-      if (idx !== -1) {
-        queue.splice(idx, 1);
-      }
+      // If we are visiting the box for the first time, skip its planned "visit" from the queue.
+      // This happens if we reach this box by traversing the tree from another starting box.
+      reachedFirstVisit.add(box);
     }
 
     box.x = Math.max(box.x, beginUntimedBoxesAtX || LEFT_INSET, parentX);
@@ -435,9 +517,10 @@ const positionUntimedBoxes = (boxes: GanttChartBox[], beginUntimedBoxesAtX = 0) 
     }
   };
 
-  let box: GanttChartBox | undefined;
-  while ((box = queue.shift())) {
-    visit(box, beginUntimedBoxesAtX);
+  for (const box of queue) {
+    if (!reachedFirstVisit.has(box)) {
+      visit(box, beginUntimedBoxesAtX);
+    }
   }
 };
 
@@ -483,12 +566,13 @@ export const adjustLayoutWithRunMetadata = (
         width: widthForMs({start: m.start, end: m.end}),
       });
     });
+    const boxesByName = firstByKey(layout.boxes, (box) => box.node.name);
     Object.entries(metadata.steps).forEach(([name, step]) => {
       for (const m of step.markers) {
         if (m.start === undefined) {
           continue;
         }
-        const stepBox = layout.boxes.find((b) => b.node.name === name);
+        const stepBox = boxesByName.get(name);
         if (!stepBox) {
           continue;
         }
