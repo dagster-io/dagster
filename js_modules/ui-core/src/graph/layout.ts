@@ -1,4 +1,4 @@
-import * as dagre from 'dagre';
+import * as dagre from '@dagrejs/dagre';
 
 import type {IBounds, IPoint} from './common';
 import {titleOfIO} from '../app/titleOfIO';
@@ -179,13 +179,13 @@ export function layoutOpGraph(pipelineOps: ILayoutOp[], opts: LayoutOpGraphOptio
   dagre.layout(g);
 
   const ops: {[opName: string]: OpLayout} = {};
-  const dagreNodes: {[opName: string]: dagre.Node} = {};
+  const dagreNodes: {[opName: string]: {x: number; y: number; width: number; height: number}} = {};
   g.nodes().forEach(function (opName) {
     const node = g.node(opName);
-    if (!node) {
+    if (!node || node.x === undefined || node.y === undefined) {
       return;
     }
-    dagreNodes[opName] = node;
+    dagreNodes[opName] = {x: node.x, y: node.y, width: node.width, height: node.height};
   });
 
   // Due to a bug in Dagre when run without an "align" value, we need to calculate

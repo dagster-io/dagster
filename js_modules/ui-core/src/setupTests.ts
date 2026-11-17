@@ -1,3 +1,5 @@
+import v8 from 'v8';
+
 import '@testing-library/jest-dom';
 import 'jest-canvas-mock';
 import ResizeObserver from 'resize-observer-polyfill';
@@ -29,6 +31,12 @@ afterAll(() => {
 });
 
 global.ResizeObserver = ResizeObserver;
+
+// jsdom doesn't expose structuredClone, which @dagrejs/dagre uses during layout.
+if (typeof global.structuredClone === 'undefined') {
+  global.structuredClone = ((value: unknown) =>
+    v8.deserialize(v8.serialize(value))) as typeof structuredClone;
+}
 
 interface MockMessageEvent extends Event {
   data: unknown;

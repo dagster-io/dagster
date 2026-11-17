@@ -1,4 +1,4 @@
-import * as dagre from 'dagre';
+import * as dagre from '@dagrejs/dagre';
 
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {
@@ -48,18 +48,11 @@ export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
   nodeHeight: number | 'auto';
   /** Our asset groups have "title bars" - use these numbers to adjust the bounding boxes.
-   * Note that these adjustments are applied post-dagre layout. For padding > nodesep, you
-   * may need to set "clusterpaddingtop", "clusterpaddingbottom" so Dagre lays out the boxes
-   * with more spacing.
+   * Note that these adjustments are applied post-dagre layout.
    */
   groupPaddingTop: number;
   groupPaddingBottom: number;
   groupRendering: 'if-varied' | 'always';
-
-  /** Supported in Dagre, just not documented. Additional spacing between group nodes */
-  clusterpaddingtop?: number;
-  clusterpaddingbottom?: number;
-  ranker?: 'tight-tree' | 'longest-path' | 'network-simplex';
 };
 
 export type LayoutAssetGraphOptions = {
@@ -83,7 +76,6 @@ export const Config = {
     groupPaddingTop: 65,
     groupPaddingBottom: 16,
     groupRendering: 'if-varied' as 'if-varied' | 'always',
-    clusterpaddingtop: 100,
   },
   vertical: {
     ranker: 'tight-tree',
@@ -107,16 +99,12 @@ export const layoutAssetGraph = (
   try {
     return layoutAssetGraphImpl(graphData, opts);
   } catch {
-    try {
-      return layoutAssetGraphImpl(graphData, {
-        ...opts,
-        overrides: {
-          ranker: 'longest-path',
-        },
-      });
-    } catch {
-      return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
-    }
+    // tight-tree throws on many grouped graphs. longest-path fails on the same graphs, so
+    // retry once with network-simplex.
+    return layoutAssetGraphImpl(graphData, {
+      ...opts,
+      overrides: {...opts.overrides, ranker: 'network-simplex'},
+    });
   }
 };
 

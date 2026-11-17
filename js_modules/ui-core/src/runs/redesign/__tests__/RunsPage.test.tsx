@@ -173,7 +173,8 @@ describe('RunsPage', () => {
   it('shows the loading skeleton until the first page arrives', async () => {
     renderPage('/runs', [mockFeed({data: FIRST_PAGE, delay: 50})]);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Loading runs');
+    // Check before awaiting: on a slow machine the delayed response can land during the await.
+    expect(screen.getByRole('status')).toHaveTextContent('Loading runs');
     expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
     expect(await screen.findByRole('status')).toBeEmptyDOMElement();
   });
