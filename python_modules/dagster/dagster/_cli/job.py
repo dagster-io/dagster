@@ -981,7 +981,10 @@ def print_partition_format(partitions: Sequence[str], indent_level: int) -> str:
         screen_width = 250
     max_str_len = max(len(x) for x in partitions)
     spacing = 10
-    num_columns = min(10, int((screen_width - indent_level) / (max_str_len + spacing)))
+    num_columns = max(
+        1,
+        min(10, int((screen_width - indent_level) / (max_str_len + spacing))),
+    )
     column_width = int((screen_width - indent_level) / num_columns)
     prefix = " " * max(0, indent_level - spacing)
     lines = [
