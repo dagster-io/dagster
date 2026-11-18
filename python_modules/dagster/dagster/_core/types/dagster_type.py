@@ -802,6 +802,10 @@ _RUNTIME_MAP = {
     BuiltinEnum.NOTHING: Nothing,
 }
 
+_RUNTIME_MAP_BY_ID = {
+    id(annotation): resolved for annotation, resolved in _RUNTIME_MAP.items()
+}
+
 _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: t.Dict[type, DagsterType] = {}
 """Python types corresponding to user-defined RunTime types created using @map_to_dagster_type or
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
@@ -873,6 +877,14 @@ class TypeHintInferredDagsterType(DagsterType):
 
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
+    # Already-resolved types and builtin scalar annotations need no typing introspection.
+    if isinstance(dagster_type, DagsterType):
+        return dagster_type
+    if dagster_type is None:
+        return Any
+    builtin_type = _RUNTIME_MAP_BY_ID.get(id(dagster_type))
+    if builtin_type is not None:
+        return builtin_type
     # circular dep
     from dagster._core.definitions.result import MaterializeResult, ObserveResult
     from dagster._core.types.primitive_mapping import (
