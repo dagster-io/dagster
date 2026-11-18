@@ -17,4 +17,5 @@ from schema.charts.dagster.subschema.run_launcher import RunLauncher as RunLaunc
 from schema.charts.dagster.subschema.scheduler import Scheduler as Scheduler
 from schema.charts.dagster.subschema.service_account import ServiceAccount as ServiceAccount
 from schema.charts.dagster.subschema.telemetry import Telemetry as Telemetry
+from schema.charts.dagster.subschema.ui import UI as UI
 from schema.charts.dagster.subschema.webserver import Webserver as Webserver
