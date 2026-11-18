@@ -5,16 +5,18 @@ from collections.abc import Iterator, Sequence
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterRunNotFoundError
+from dagster._core.errors import DagsterBackfillAdmissionClosed, DagsterRunNotFoundError
 from dagster._core.events import EngineEventData, RunFailureReason
-from dagster._core.execution.backfill import BULK_ACTION_TERMINAL_STATUSES
+from dagster._core.execution.backfill import BulkActionStatus, run_uses_stop_protocol
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
 from dagster._core.storage.tags import (
+    AUTO_RETRY_INTENT_TAG,
     AUTO_RETRY_RUN_ID_TAG,
     BACKFILL_ID_TAG,
+    BACKFILL_TAGS,
     RETRY_NUMBER_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
@@ -54,9 +56,6 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
         should_retry_run = get_boolean_tag_value(will_retry_tag_value, default_value=False)
 
     if should_retry_run:
-        # If the run is part of a backfill that has reached a terminal state (canceled,
-        # failed, completed) or has been deleted, do not auto-retry. Manual retries are
-        # unaffected since they bypass this function entirely.
         backfill_id = run.tags.get(BACKFILL_ID_TAG)
         if backfill_id is not None:
             backfill = instance.get_backfill(backfill_id)
@@ -66,9 +65,9 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
                     run,
                 )
                 return False
-            if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+            if backfill.status != BulkActionStatus.REQUESTED:
                 instance.report_engine_event(
-                    "Not retrying run since it is part of a backfill that is in a terminal"
+                    "Not retrying run since it is part of a backfill that is not accepting runs"
                     f" state ({backfill.status.value}).",
                     run,
                 )
@@ -152,6 +151,8 @@ def retry_run(
 ) -> None:
     """Submit a retry as a re-execute from failure."""
     instance = workspace_context.instance
+    if BACKFILL_ID_TAG in failed_run.tags and not should_retry(failed_run, instance):
+        return
     workspace = workspace_context.create_request_context()
     if not failed_run.remote_job_origin:
         instance.report_engine_event(
@@ -218,6 +219,17 @@ def retry_run(
         instance=instance, run=failed_run, run_group=run_group_list
     )
     if existing_retried_run is not None:
+        backfill_id = failed_run.tags.get(BACKFILL_ID_TAG)
+        if (
+            backfill_id is not None
+            and existing_retried_run.tags.get(BACKFILL_ID_TAG) != backfill_id
+        ):
+            instance.report_engine_event(
+                "Not submitting automatic retry because the existing child is detached from "
+                "its parent's backfill.",
+                failed_run,
+            )
+            return
         # ensure the failed_run has the AUTO_RETRY_RUN_ID_TAG set
         if failed_run.tags.get(AUTO_RETRY_RUN_ID_TAG) is None:
             instance.add_run_tags(
@@ -225,21 +237,34 @@ def retry_run(
             )
         if existing_retried_run.status == DagsterRunStatus.NOT_STARTED:
             # A run already exists but was not submitted.
-            instance.submit_run(existing_retried_run.run_id, workspace)
+            if should_retry(failed_run, instance):
+                instance.submit_run(existing_retried_run.run_id, workspace)
         return
 
     # At this point we know we need to launch a new run for the retry
     strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
     tags = {RETRY_NUMBER_TAG: str(len(run_group_list))}
-    new_run = instance.create_reexecuted_run(
-        parent_run=failed_run,
-        request_context=workspace,
-        code_location=code_location,
-        remote_job=remote_job,
-        strategy=strategy,
-        extra_tags=tags,
-        use_parent_run_tags=True,
-    )
+    if run_uses_stop_protocol(instance, failed_run):
+        tags[AUTO_RETRY_INTENT_TAG] = f"auto-retry:{failed_run.run_id}"
+    # Automatic retries retain ownership even if the backfill closes while the execution plan
+    # is loaded. Storage admits these explicit tags atomically with run registration.
+    if BACKFILL_ID_TAG in failed_run.tags:
+        tags.update({tag: failed_run.tags[tag] for tag in BACKFILL_TAGS if tag in failed_run.tags})
+    try:
+        new_run = instance.create_reexecuted_run(
+            parent_run=failed_run,
+            request_context=workspace,
+            code_location=code_location,
+            remote_job=remote_job,
+            strategy=strategy,
+            extra_tags=tags,
+            use_parent_run_tags=True,
+        )
+    except DagsterBackfillAdmissionClosed:
+        instance.report_engine_event(
+            "Backfill admission closed before retry registration.", failed_run
+        )
+        return
     instance.add_run_tags(failed_run.run_id, {AUTO_RETRY_RUN_ID_TAG: new_run.run_id})
 
     instance.report_engine_event(
@@ -265,9 +290,9 @@ def consume_new_runs_for_automatic_reexecution(
 ) -> Iterator[None]:
     """Check which runs should be retried, and retry them.
 
-    It's safe to call this method on the same run multiple times because once a retry run is created,
-    it won't create another. The only exception is if the new run gets deleted, in which case we'd
-    retry the run again.
+    Repeated input reuses the existing automatic child. Stop-protocol child registration is
+    deduplicated by parent intent, and deletion is forbidden while its backfill can resume.
+    For legacy and non-backfill runs, deleting the child can permit another retry.
     """
     for run in filter_runs_to_should_retry(
         [run_record.dagster_run for run_record in run_records],
