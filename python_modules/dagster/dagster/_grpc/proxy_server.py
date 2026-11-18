@@ -5,6 +5,7 @@ import time
 from contextlib import ExitStack
 from typing import TYPE_CHECKING
 
+import grpc
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
@@ -21,8 +22,11 @@ from dagster._grpc.client import (
 )
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
+    MAX_CANCEL_EXECUTIONS_BATCH_SIZE,
     CancelExecutionRequest,
     CancelExecutionResult,
+    CancelExecutionsRequest,
+    CancelExecutionsResult,
     ExecuteExternalJobArgs,
     SensorExecutionArgs,
     ShutdownServerResult,
@@ -409,6 +413,48 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                     )
                 )
             )
+
+    def CancelExecutions(self, request, context):
+        batch = deserialize_value(
+            request.serialized_cancel_executions_request, CancelExecutionsRequest
+        )
+        if len(batch.run_ids) > MAX_CANCEL_EXECUTIONS_BATCH_SIZE:
+            context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT, "Too many run IDs in cancellation request"
+            )
+        # A proxy can retain runs from several code-server generations after a reload.
+        # Route each run to its original server rather than the current server.
+        by_client: dict[DagsterGrpcClient, list[str]] = {}
+        results: dict[str, CancelExecutionResult] = {}
+        for run_id in dict.fromkeys(batch.run_ids):
+            client = self._run_clients.get(run_id)
+            if client is None:
+                try:
+                    raise Exception(f"Could not find a server for run {run_id}")
+                except Exception:
+                    results[run_id] = CancelExecutionResult(
+                        success=False,
+                        message=None,
+                        serializable_error_info=serializable_error_info_from_exc_info(
+                            sys.exc_info()
+                        ),
+                    )
+            else:
+                by_client.setdefault(client, []).append(run_id)
+        for client, run_ids in by_client.items():
+            try:
+                results.update(client.cancel_executions(run_ids).results)
+            except Exception:
+                error = serializable_error_info_from_exc_info(sys.exc_info())
+                for run_id in run_ids:
+                    results[run_id] = CancelExecutionResult(
+                        success=False, message=None, serializable_error_info=error
+                    )
+        return dagster_api_pb2.CancelExecutionsReply(
+            serialized_cancel_executions_result=serialize_value(
+                CancelExecutionsResult(results=results)
+            )
+        )
 
     def CanCancelExecution(self, request, context):
         return self._query("CanCancelExecution", request, context)

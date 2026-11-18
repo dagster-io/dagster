@@ -905,3 +905,43 @@ class ReloadCodeWithStateReply(google.protobuf.message.Message):
     ) -> None: ...
 
 global___ReloadCodeWithStateReply = ReloadCodeWithStateReply
+
+@typing.final
+class CancelExecutionsRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_CANCEL_EXECUTIONS_REQUEST_FIELD_NUMBER: builtins.int
+    serialized_cancel_executions_request: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_cancel_executions_request: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "serialized_cancel_executions_request", b"serialized_cancel_executions_request"
+        ],
+    ) -> None: ...
+
+global___CancelExecutionsRequest = CancelExecutionsRequest
+
+@typing.final
+class CancelExecutionsReply(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_CANCEL_EXECUTIONS_RESULT_FIELD_NUMBER: builtins.int
+    serialized_cancel_executions_result: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_cancel_executions_result: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "serialized_cancel_executions_result", b"serialized_cancel_executions_result"
+        ],
+    ) -> None: ...
+
+global___CancelExecutionsReply = CancelExecutionsReply

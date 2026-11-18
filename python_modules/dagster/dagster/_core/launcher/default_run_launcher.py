@@ -1,5 +1,5 @@
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster_shared.seven as seven
@@ -14,7 +14,7 @@ from dagster._core.errors import (
     DagsterUserCodeProcessError,
 )
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
@@ -126,23 +126,17 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         self._run_ids.add(run.run_id)
 
     def _get_grpc_client_for_termination(self, run_id):
+        if not self.has_instance:
+            return None
+        return self._get_grpc_client_for_run(self._instance.get_run_by_id(run_id))
+
+    def _get_grpc_client_for_run(self, run: DagsterRun | None) -> "DagsterGrpcClient | None":
         # defer for perf
         from dagster._grpc.client import DagsterGrpcClient
 
-        if not self.has_instance:
+        if not run or run.is_finished or GRPC_INFO_TAG not in run.tags:
             return None
-
-        run = self._instance.get_run_by_id(run_id)
-        if not run or run.is_finished:
-            return None
-
-        tags = run.tags
-
-        if GRPC_INFO_TAG not in tags:
-            return None
-
-        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))  # ty: ignore[invalid-argument-type]
-
+        grpc_info = seven.json.loads(run.tags[GRPC_INFO_TAG])
         return DagsterGrpcClient(
             port=grpc_info.get("port"),
             socket=grpc_info.get("socket"),
@@ -182,6 +176,95 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             raise DagsterUserCodeProcessError.from_error_info(res.serializable_error_info)
 
         return res.success
+
+    def terminate_runs(self, run_ids: Sequence[str]) -> Mapping[str, bool]:
+        from dagster._grpc.types import MAX_CANCEL_EXECUTIONS_BATCH_SIZE
+
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        run_ids = list(dict.fromkeys(run_ids))
+        # Preserve bound-instance overrides as well as subclass customizations. In
+        # particular, custom clients may carry different authorization metadata.
+        if any(
+            getattr(getattr(self, name), "__func__", None) is not getattr(DefaultRunLauncher, name)
+            for name in (
+                "terminate",
+                "_get_grpc_client_for_termination",
+                "_get_grpc_client_for_run",
+            )
+        ):
+            return super().terminate_runs(run_ids)
+        if not run_ids or not self.has_instance:
+            return {run_id: False for run_id in run_ids}
+
+        current_runs: dict[str, DagsterRun] = {}
+        for offset in range(0, len(run_ids), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
+            current_runs.update(
+                {
+                    run.run_id: run
+                    for run in self._instance.get_runs(
+                        RunsFilter(
+                            run_ids=run_ids[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]
+                        )
+                    )
+                }
+            )
+        results = {run_id: False for run_id in run_ids}
+        groups: dict[
+            tuple[str | None, int | None, str | None, bool],
+            tuple[DagsterGrpcClient, list[DagsterRun]],
+        ] = {}
+        for run_id in run_ids:
+            run = current_runs.get(run_id)
+            if not run or run.is_finished:
+                continue
+            client = self._get_grpc_client_for_run(run)
+            if client is None:
+                # Preserve existing status and diagnostic reporting for missing clients.
+                results[run_id] = self.terminate(run_id)
+                continue
+            key = (client.host, client.port, client.socket, client.use_ssl)
+            if key not in groups:
+                groups[key] = (client, [])
+            groups[key][1].append(run)
+
+        for client, runs in groups.values():
+            # Bound request size even for callers other than the backfill daemon.
+            for offset in range(0, len(runs), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
+                page: list[DagsterRun] = []
+                try:
+                    for run in runs[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]:
+                        # Metadata is loaded in bulk, but preserve the single-run path's fresh
+                        # terminal check immediately before reporting cancellation.
+                        current = self._instance.get_run_by_id(run.run_id)
+                        if not current or current.is_finished:
+                            continue
+                        if current.tags.get(GRPC_INFO_TAG) != run.tags.get(GRPC_INFO_TAG):
+                            results[run.run_id] = self.terminate(run.run_id)
+                            continue
+                        try:
+                            self._instance.report_run_canceling(current)
+                        except BaseException:
+                            # Reporting can fail after persisting CANCELING (for example,
+                            # in a listener). Include that run in the first-send drain too.
+                            latest = self._instance.get_run_by_id(current.run_id)
+                            if latest and latest.status == DagsterRunStatus.CANCELING:
+                                page.append(latest)
+                            raise
+                        else:
+                            page.append(current)
+                finally:
+                    # A later preparation failure must not leave earlier runs CANCELING
+                    # without ever sending their requests. This is a first send, not a retry.
+                    if page:
+                        response = client.cancel_executions([run.run_id for run in page])
+                        for run in page:
+                            result = response.results[run.run_id]
+                            if result.serializable_error_info:
+                                raise DagsterUserCodeProcessError.from_error_info(
+                                    result.serializable_error_info
+                                )
+                            results[run.run_id] = result.success
+        return results
 
     def join(self, timeout=30):
         # If this hasn't been initialized at all, we can just do a noop
