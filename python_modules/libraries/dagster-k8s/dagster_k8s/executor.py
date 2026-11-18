@@ -1,3 +1,4 @@
+import logging
 import os
 from collections.abc import Iterator
 from typing import cast
@@ -400,9 +401,20 @@ class K8sStepHandler(StepHandler):
                 reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
             )
         if status.failed:
-            return CheckStepHealthResult.unhealthy(
-                reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
-            )
+            reason = f"Discovered failed Kubernetes job {job_name} for step {step_key}."
+            debug_info = None
+            try:
+                debug_info = self._api_client.get_job_worker_debug_info(
+                    job_name,
+                    namespace=check.not_none(container_context.namespace),
+                    include_container_logs=False,
+                )
+            except Exception:
+                logging.exception(f"Failure fetching debug info for failed step job {job_name}")
+
+            if debug_info:
+                reason = reason + f"\n{debug_info}"
+            return CheckStepHealthResult.unhealthy(reason=reason)
 
         return CheckStepHealthResult.healthy()
 
