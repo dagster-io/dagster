@@ -548,10 +548,32 @@ class SqlRunStorage(RunStorage):
                 )
 
             if added_tags:
-                conn.execute(
-                    RunTagsTable.insert(),
-                    [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
-                )
+                run_tag_rows = [
+                    dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags
+                ]
+                try:
+                    conn.execute(RunTagsTable.insert(), run_tag_rows)
+                except db_exc.IntegrityError:
+                    # A concurrent writer stored one of these tags between the read above and this
+                    # insert, e.g. a run worker and the monitoring daemon both recording
+                    # dagster/will_retry for a failed run. idx_run_tags_run_id is unique on
+                    # (key, value, run_id) since migration 047, so the batch is rejected. Write
+                    # the rows one at a time, skipping tags another writer already stored with the
+                    # same value: that row holds exactly what this call meant to write, so the
+                    # write is already satisfied. Rows that are missing are inserted normally, so
+                    # a genuine constraint violation still raises.
+                    for run_tag_row in run_tag_rows:
+                        already_stored = conn.execute(
+                            db_select([RunTagsTable.c.key]).where(
+                                db.and_(
+                                    RunTagsTable.c.run_id == run_tag_row["run_id"],
+                                    RunTagsTable.c.key == run_tag_row["key"],
+                                    RunTagsTable.c.value == run_tag_row["value"],
+                                )
+                            )
+                        ).first()
+                        if not already_stored:
+                            conn.execute(RunTagsTable.insert().values(**run_tag_row))
 
     def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
