@@ -93,6 +93,9 @@ export interface SelectionAutoCompleteProvider {
     loading: boolean;
   };
 
+  /** Called each time the input gains focus, e.g. to start loading suggestions early. */
+  onFocus?: () => void;
+
   supportsTraversal?: boolean;
   supportsNot?: boolean;
 }
