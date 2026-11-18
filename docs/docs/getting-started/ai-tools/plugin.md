@@ -43,10 +43,12 @@ The `dagster` plugin bundles the [`dagster-expert` skill](/getting-started/ai-to
 
    :::info For EU users
 
-   Users with Dagster+ organizations in the EU region need to set an environment variable to configure the MCP server.
+   Dagster ships the Claude `dagster` plugin with the US MCP URL.
 
-   ```text
-   export DAGSTER_CLOUD_MCP_URL=https://mcp.agent.eu.dagster.cloud/mcp
+   Run the following command to configure the Dagster+ MCP server to use the EU region:
+
+   ```bash
+   claude mcp add --transport http dagster-plus https://mcp.agent.eu.dagster.cloud/mcp
    ```
 
    Then follow the authentication instructions in your Claude Code session.

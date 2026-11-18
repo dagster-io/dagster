@@ -61,7 +61,7 @@ RUN apt-get update -yqq \
     pkg-config
 
 # Install Java (required by pyspark) - Java 17 for compatibility with both Spark 3 and 4
-COPY --from=eclipse-temurin:17-jdk-jammy /opt/java/openjdk /opt/java/openjdk
+COPY --from=amazoncorretto:17 /usr/lib/jvm/java-17-amazon-corretto /opt/java/openjdk
 ENV JAVA_HOME /opt/java/openjdk
 RUN update-alternatives --install /usr/bin/java java /opt/java/openjdk/bin/java 1
 
