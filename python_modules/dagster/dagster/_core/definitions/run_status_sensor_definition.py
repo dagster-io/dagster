@@ -10,7 +10,7 @@ from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.seven import JSONDecodeError
 
 import dagster._check as check
-from dagster._annotations import beta_param, deprecated_param, public
+from dagster._annotations import beta_param, deprecated, deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -225,6 +225,16 @@ class RunStatusSensorContext:
 
     @public
     @property
+    def run(self) -> DagsterRun:
+        """The run of the job."""
+        return self._dagster_run
+
+    @deprecated(
+        breaking_version="a future release",
+        subject="RunStatusSensorContext.dagster_run",
+        additional_warn_text="You have called the deprecated method dagster_run on RunStatusSensorContext. Use context.run instead.",
+    )
+    @property
     def dagster_run(self) -> DagsterRun:
         """The run of the job."""
         return self._dagster_run
@@ -326,7 +336,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
                 }
         """
         records = self.instance.get_records_for_run(
-            run_id=self.dagster_run.run_id, of_type=DagsterEventType.STEP_FAILURE
+            run_id=self.run.run_id, of_type=DagsterEventType.STEP_FAILURE
         ).records
         return [cast("DagsterEvent", record.event_log_entry.dagster_event) for record in records]
 

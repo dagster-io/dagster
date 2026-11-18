@@ -31,7 +31,7 @@ def _orchestration_date_for_run(
 
 def _orchestration_date_for_context(context: dg.RunStatusSensorContext) -> str | None:
     """Convenience wrapper for extracting the orchestration date from the triggering run."""
-    return _orchestration_date_for_run(context.instance, context.dagster_run)
+    return _orchestration_date_for_run(context.instance, context.run)
 
 
 @dg.run_status_sensor(
@@ -48,7 +48,7 @@ def _orchestration_date_for_context(context: dg.RunStatusSensorContext) -> str |
 def beacon_after_upstream_success_sensor(
     context: dg.RunStatusSensorContext,
 ) -> dg.RunRequest | dg.SkipReason:
-    dagster_run = context.dagster_run
+    dagster_run = context.run
     if dagster_run.job_name not in UPSTREAM_JOB_NAMES:
         return dg.SkipReason("Ignoring non-upstream job success event.")
 

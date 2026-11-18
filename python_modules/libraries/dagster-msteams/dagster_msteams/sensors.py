@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 def _default_failure_message(context: RunFailureSensorContext) -> str:
     return "\n".join(
         [
-            f"Job {context.dagster_run.job_name} failed!",
-            f"Run ID: {context.dagster_run.run_id}",
+            f"Job {context.run.job_name} failed!",
+            f"Run ID: {context.run.run_id}",
             f"Error: {context.failure_event.message}",
         ]
     )
@@ -108,7 +108,7 @@ def make_teams_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return "Job {job_name} failed! Error: {error}".format(
-                    job_name=context.dagster_run.job_name,
+                    job_name=context.run.job_name,
                     error=context.failure_event.message,
                 )
 
@@ -148,7 +148,7 @@ def make_teams_on_run_failure_sensor(
                 text=text,
                 link=MSTeamsHyperlink(
                     text="View in Dagit",
-                    url=f"{webserver_base_url}/runs/{context.dagster_run.run_id}",
+                    url=f"{webserver_base_url}/runs/{context.run.run_id}",
                 )
                 if webserver_base_url
                 else None,
