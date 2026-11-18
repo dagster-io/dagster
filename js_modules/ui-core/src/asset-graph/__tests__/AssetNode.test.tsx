@@ -1,4 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
+import {assetHealthEnabled} from '@shared/app/assetHealthEnabled';
 import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -10,8 +11,10 @@ import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
+import {AssetHealthStatus} from '../../graphql/types';
 import {AssetNode} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
+import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../Utils';
 import {
   AssetNodeScenariosBase,
@@ -56,11 +59,13 @@ describe('AssetNode', function () {
 
   Scenarios.forEach((scenario: AssetNodeScenario) =>
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {
+      jest.mocked(assetHealthEnabled).mockReturnValue(true);
       jest.spyOn(Flags, 'featureEnabled').mockImplementation(() => true);
 
       const definitionCopy = {
         ...scenario.definition,
         assetKey: scenarioAssetKey(scenario),
+        freshnessStatusInfo: null,
       };
 
       function SetCacheEntry() {
@@ -124,6 +129,37 @@ describe('AssetNode', function () {
       });
     }),
   );
+
+  it('renders freshness status info from the asset node when asset health is disabled', async () => {
+    jest.mocked(assetHealthEnabled).mockReturnValue(false);
+    const definition = {
+      ...buildAssetNode({assetKey: buildAssetKey({path: ['freshnessStatusFacet']})}),
+      freshnessStatusInfo: {
+        __typename: 'FreshnessStatusInfo' as const,
+        freshnessStatus: AssetHealthStatus.DEGRADED,
+        freshnessStatusMetadata: {
+          __typename: 'AssetHealthFreshnessMeta' as const,
+          lastMaterializedTimestamp: null,
+        },
+      },
+    };
+
+    render(
+      <MemoryRouter>
+        <MockedProvider>
+          <AssetLiveDataProvider>
+            <AssetNode
+              facets={new Set([AssetNodeFacet.Freshness])}
+              definition={definition}
+              selected={false}
+            />
+          </AssetLiveDataProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Failed')).toBeVisible();
+  });
 });
 
 function scenarioAssetKey(scenario: AssetNodeScenario) {

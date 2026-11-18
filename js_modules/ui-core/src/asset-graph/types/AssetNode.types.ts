@@ -6,6 +6,8 @@ export type Incremental<T> =
 
 import * as Types from '../../graphql/types';
 
+export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
+
 export type ChangeReason =
   | 'CODE_VERSION'
   | 'DEPENDENCIES'
@@ -36,6 +38,14 @@ export type AssetNodeFragment = {
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  freshnessStatusInfo: {
+    __typename: 'FreshnessStatusInfo';
+    freshnessStatus: Types.AssetHealthStatus;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
+  } | null;
 };
 
 export type AssetNodeKeyFragment = {__typename: 'AssetKey'; path: Array<string>};

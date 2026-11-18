@@ -6,6 +6,8 @@ export type Incremental<T> =
 
 import * as Types from '../../graphql/types';
 
+export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
+
 export type ChangeReason =
   | 'CODE_VERSION'
   | 'DEPENDENCIES'
@@ -67,6 +69,14 @@ export type AssetBaseNodeFragment = {
     __typename: 'StorageAddress';
     storageKind: string | null;
     tableName: string;
+  } | null;
+  freshnessStatusInfo: {
+    __typename: 'FreshnessStatusInfo';
+    freshnessStatus: Types.AssetHealthStatus;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
   } | null;
 };
 
@@ -132,6 +142,14 @@ export type AssetWorkspaceNodeFragment = {
     storageKind: string | null;
     tableName: string;
   } | null;
+  freshnessStatusInfo: {
+    __typename: 'FreshnessStatusInfo';
+    freshnessStatus: Types.AssetHealthStatus;
+    freshnessStatusMetadata: {
+      __typename: 'AssetHealthFreshnessMeta';
+      lastMaterializedTimestamp: number | null;
+    } | null;
+  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -194,6 +212,14 @@ export type AssetTableFragment = {
       __typename: 'StorageAddress';
       storageKind: string | null;
       tableName: string;
+    } | null;
+    freshnessStatusInfo: {
+      __typename: 'FreshnessStatusInfo';
+      freshnessStatus: Types.AssetHealthStatus;
+      freshnessStatusMetadata: {
+        __typename: 'AssetHealthFreshnessMeta';
+        lastMaterializedTimestamp: number | null;
+      } | null;
     } | null;
     repository: {
       __typename: 'Repository';

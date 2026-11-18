@@ -8,6 +8,7 @@ import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {AssetNodeFragment} from './types/AssetNode.types';
 import {humanizedMinutesLateString, isAssetOverdue} from '../assets/OverdueTag';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 export const AssetNodeFreshnessRow = ({
   definition,
@@ -19,18 +20,24 @@ export const AssetNodeFreshnessRow = ({
   const {liveData: healthData} = useAssetHealthData(definition.assetKey);
   const health = healthData?.assetHealth;
 
-  if (!health?.freshnessStatus) {
+  const freshnessStatus =
+    definition.freshnessStatusInfo?.freshnessStatus ?? health?.freshnessStatus;
+  const lastMaterializedTimestamp =
+    definition.freshnessStatusInfo?.freshnessStatusMetadata?.lastMaterializedTimestamp ?? null;
+  if (!freshnessStatus) {
     return <AssetNodeFreshnessRowOld liveData={liveData} />;
   }
 
-  const {iconColor, subStatusIconName, text2} =
-    statusToIconAndColor[health?.freshnessStatus ?? 'undefined'];
+  const {iconColor, subStatusIconName, text2} = statusToIconAndColor[freshnessStatus];
 
   return (
     <AssetNodeRow label={labelForFacet(AssetNodeFacet.Freshness)}>
       <Box flex={{gap: 4, alignItems: 'center'}}>
         <Icon name={subStatusIconName} color={iconColor} />
         {text2}
+        {lastMaterializedTimestamp !== null ? (
+          <TimeFromNow unixTimestamp={lastMaterializedTimestamp} showTooltip={false} />
+        ) : null}
       </Box>
     </AssetNodeRow>
   );
