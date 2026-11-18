@@ -1,7 +1,6 @@
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any
 
-import dateutil
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -11,6 +10,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._vendored.dateutil.parser import isoparse
 
 from dagster_dbt.cloud.types import DbtCloudOutput
 from dagster_dbt.compat import SUCCESSFUL_NODE_STATUSES
@@ -42,9 +42,8 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
         else:
             continue
 
-        # dateutil does not properly expose its modules to static checkers
-        started_at = dateutil.parser.isoparse(timing["started_at"])
-        completed_at = dateutil.parser.isoparse(timing["completed_at"])
+        started_at = isoparse(timing["started_at"])
+        completed_at = isoparse(timing["completed_at"])
         duration = completed_at - started_at
         metadata.update(
             {

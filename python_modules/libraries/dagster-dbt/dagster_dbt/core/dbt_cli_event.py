@@ -5,7 +5,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import AbstractSet, Any, NamedTuple, TypedDict, cast  # noqa: UP035
 
-import dateutil.parser
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
@@ -23,6 +22,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._vendored.dateutil.parser import isoparse
 from sqlglot import MappingSchema, exp, parse_one, to_table
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
@@ -321,8 +321,8 @@ class DbtCliEventMessage(ABC):
         has_finished_at = raw_finished_at not in _EMPTY_VALUES
 
         if has_started_at and has_finished_at:
-            started_at = dateutil.parser.isoparse(cast("str", raw_started_at))
-            finished_at = dateutil.parser.isoparse(cast("str", raw_finished_at))
+            started_at = isoparse(cast("str", raw_started_at))
+            finished_at = isoparse(cast("str", raw_finished_at))
             duration = (finished_at - started_at).total_seconds()
             return {"Execution Duration": (finished_at - started_at).total_seconds()}
         else:
