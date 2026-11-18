@@ -18,6 +18,11 @@ describe('StatusBar', () => {
     expect(screen.getByText('100% completed')).toBeInTheDocument();
   });
 
+  it('counts skipped partitions as completed', () => {
+    render(<StatusBar targeted={100} inProgress={0} succeeded={90} failed={0} skipped={10} />);
+    expect(screen.getByText('100% completed')).toBeInTheDocument();
+  });
+
   it('floors fractional percentages instead of rounding up', () => {
     render(<StatusBar targeted={1000} inProgress={1} succeeded={998} failed={0} />);
     expect(screen.getByText('99% completed')).toBeInTheDocument();
