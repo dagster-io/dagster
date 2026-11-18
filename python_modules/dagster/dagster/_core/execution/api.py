@@ -805,6 +805,14 @@ def job_execution_iterator(
                     error_info=job_exception_info,
                     message="Run failed after it was requested to be terminated.",
                 )
+            elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
+                # This happens if the run was force-terminated but an exception was thrown
+                # during execution before the worker exited
+                event = DagsterEvent.engine_event(
+                    job_context,
+                    "Run failed with an exception after the run was forcibly marked as canceled.",
+                    EngineEventData(),
+                )
             else:
                 event = DagsterEvent.job_failure(
                     job_context,
@@ -822,6 +830,15 @@ def job_execution_iterator(
                     error_info=None,
                     message=f"Run was canceled. Failed steps: {failed_step_keys}.",
                 )
+            elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
+                # This happens if the run was force-terminated but the steps were still
+                # executing and failed before the worker exited
+                event = DagsterEvent.engine_event(
+                    job_context,
+                    "Steps failed after the run was forcibly marked as canceled. Failed steps:"
+                    f" {failed_step_keys}.",
+                    EngineEventData(),
+                )
             else:
                 event = DagsterEvent.job_failure(
                     job_context,
@@ -830,7 +847,18 @@ def job_execution_iterator(
                     first_step_failure_event=failed_steps[0],
                 )
         else:
-            event = DagsterEvent.job_success(job_context)
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
+                # This happens if the run was force-terminated but the steps finished executing
+                # successfully before the worker exited
+                event = DagsterEvent.engine_event(
+                    job_context,
+                    "Execution of steps finished successfully after the run was forcibly marked"
+                    " as canceled.",
+                    EngineEventData(),
+                )
+            else:
+                event = DagsterEvent.job_success(job_context)
         if not generator_closed:
             yield event
 
