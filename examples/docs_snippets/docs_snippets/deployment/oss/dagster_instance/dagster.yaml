@@ -149,8 +149,8 @@ run_launcher:
 
 # start_marker_run_coordinator_default
 
-# Since DefaultRunCoordinator is the default option, omitting the `run_coordinator` key will also suffice,
-# but if you would like to set it explicitly:
+# To use DefaultRunCoordinator instead of the default QueuedRunCoordinator,
+# set the `run_coordinator` key explicitly:
 run_coordinator:
   module: dagster.core.run_coordinator
   class: DefaultRunCoordinator
