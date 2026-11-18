@@ -761,7 +761,7 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
         elif maybe_timestamp == timestamp:
             # Some runtimes can emit multiple lines sharing the same timestamp.
             log += f"\n{tail}"
-        elif not (len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)):
+        elif not _is_kube_timestamp(maybe_timestamp):
             # Continuation of a long line that got split across chunks (no timestamp prefix).
             log += line
         else:
@@ -799,7 +799,7 @@ def _is_kube_timestamp(maybe_timestamp: str) -> bool:
         maybe_timestamp = maybe_timestamp[:-1]  # Strip the "Z"
         if "." in maybe_timestamp:
             # Split at the decimal point to isolate the fractional seconds
-            date_part, frac_part = maybe_timestamp.split(".")
+            date_part, frac_part = maybe_timestamp.split(".", 1)
             maybe_timestamp = f"{date_part}.{frac_part[:6]}Z"
         else:
             maybe_timestamp = f"{maybe_timestamp}Z"  # Add the "Z" back if no fractional part
