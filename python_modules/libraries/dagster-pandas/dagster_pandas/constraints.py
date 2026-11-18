@@ -401,9 +401,9 @@ class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
             if not res[0]:
                 offending_columns.add(column)
                 if res[1].get("actual") is not None:
-                    offending_values[column] = [x.item() for x in res[1].get("actual").to_numpy()]
+                    offending_values[column] = res[1].get("actual").to_numpy().tolist()
                 else:
-                    offending_values[column] = [x.item() for x in relevant_data[column].to_numpy()]
+                    offending_values[column] = relevant_data[column].to_numpy().tolist()
         if len(offending_columns) == 0 and not self.raise_or_typecheck:
             return TypeCheck(success=True)
         elif len(offending_columns) > 0:
