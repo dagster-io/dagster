@@ -5,12 +5,12 @@ from contextlib import contextmanager
 from typing import Any
 
 import dagster._check as check
+import google.auth
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_shared.yaml_utils import safe_load_yaml
 from googleapiclient.discovery import build
-from oauth2client.client import GoogleCredentials
 from pydantic import Field
 
 from dagster_gcp.dataproc.configs import define_dataproc_create_cluster_config
@@ -24,10 +24,10 @@ class DataprocClient:
     """Builds a client to the dataproc API."""
 
     def __init__(self, config):
-        # Use Application Default Credentials to check the
+        # Use Application Default Credentials, which check the
         # GOOGLE_APPLICATION_CREDENTIALS environment variable
         # for the location of the service account key file.
-        credentials = GoogleCredentials.get_application_default()
+        credentials, _ = google.auth.default()
 
         # See https://github.com/googleapis/google-api-python-client/issues/299 for the
         # cache_discovery=False configuration below
