@@ -28,6 +28,7 @@ TEST_DESTINATION_DATABASE = "test_destination_database"
 TEST_DESTINATION_SERVICE = "test_destination_service"
 TEST_DESTINATION_ID = "my_group_destination_id"
 TEST_GROUP_ID = "my_group_destination_id"
+TEST_SECOND_GROUP_ID = "second_group_id"
 
 EXTRA_TEST_CONNECTOR_NAME = "extra_test_connector_name"
 EXTRA_TEST_CONNECTOR_ID = "extra_test_connector_id"
@@ -52,7 +53,35 @@ SAMPLE_GROUPS = {
                 "created_at": "2024-01-01T00:00:00Z",
             }
         ],
-        "nextCursor": "cursor_value",
+    },
+}
+
+SAMPLE_GROUPS_PAGINATED_PAGE_ONE = {
+    "code": "Success",
+    "message": "Operation performed.",
+    "data": {
+        "items": [
+            {
+                "id": TEST_GROUP_ID,
+                "name": "Group_Name",
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        ],
+        "next_cursor": "abc",
+    },
+}
+
+SAMPLE_GROUPS_PAGINATED_PAGE_TWO = {
+    "code": "Success",
+    "message": "Operation performed.",
+    "data": {
+        "items": [
+            {
+                "id": TEST_SECOND_GROUP_ID,
+                "name": "Second_Group_Name",
+                "created_at": "2024-01-01T00:00:00Z",
+            }
+        ],
     },
 }
 
@@ -60,7 +89,10 @@ SAMPLE_GROUPS = {
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
 def list_connectors_for_group_sample(
-    setup_state: str, next_cursor: str | None = None, include_extra_connector: bool = False
+    setup_state: str,
+    next_cursor: str | None = None,
+    include_extra_connector: bool = False,
+    group_id: str = TEST_GROUP_ID,
 ) -> Mapping[str, Any]:
     return {
         "code": "Success",
@@ -98,7 +130,7 @@ def list_connectors_for_group_sample(
                     "daily_sync_time": "14:00",
                     "succeeded_at": "2024-12-01T15:45:29.013729Z",
                     "sync_frequency": 360,
-                    "group_id": TEST_GROUP_ID,
+                    "group_id": group_id,
                     "connected_by": "user_id",
                     "setup_tests": [
                         {
@@ -139,7 +171,7 @@ def list_connectors_for_group_sample(
                     ),
                 )
             ],
-            **({"nextCursor": next_cursor} if next_cursor else {}),
+            **({"next_cursor": next_cursor} if next_cursor else {}),
         },
     }
 
