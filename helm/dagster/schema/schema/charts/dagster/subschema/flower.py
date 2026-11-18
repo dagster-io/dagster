@@ -17,3 +17,4 @@ class Flower(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations | None = None
     schedulerName: str | None = None
+    priorityClassName: str | None = None

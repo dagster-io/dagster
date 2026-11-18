@@ -88,4 +88,7 @@ spec:
       {{- if .Values.flower.schedulerName }}
       schedulerName: {{ .Values.flower.schedulerName }}
       {{- end }}
+      {{- if .Values.flower.priorityClassName }}
+      priorityClassName: {{ .Values.flower.priorityClassName | quote }}
+      {{- end }}
 {{- end }}

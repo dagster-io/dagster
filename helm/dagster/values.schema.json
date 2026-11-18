@@ -367,6 +367,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
+                },
                 "jobNamespace": {
                     "anyOf": [
                         {
@@ -932,6 +944,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
+                },
                 "logFormat": {
                     "anyOf": [
                         {
@@ -1189,6 +1213,18 @@
                     ],
                     "default": null,
                     "title": "Schedulername"
+                },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
                 }
             },
             "required": [
@@ -3389,6 +3425,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
+                },
                 "initContainers": {
                     "anyOf": [
                         {
@@ -3719,6 +3767,18 @@
                     ],
                     "default": null,
                     "title": "Schedulername"
+                },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
                 },
                 "volumeMounts": {
                     "anyOf": [
