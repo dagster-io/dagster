@@ -4,10 +4,6 @@ description: Dagster+ freshness policies help you understand which of your asset
 sidebar_position: 400
 ---
 
-import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
-
-<FreshnessPoliciesPreview />
-
 Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health. Freshness policies also communicate expectations for data freshness, allowing downstream asset consumers to determine how often assets are expected to be updated.
 
 For example, freshness policies can help identify stale assets caused by:
@@ -22,14 +18,9 @@ You can set an [asset freshness alert](/guides/observe/alerts/creating-alerts) t
 
 :::
 
-### Enabling freshness policies
+### Evaluating freshness policies
 
-Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`:
-
-```
-freshness:
-  enabled: True
-```
+Freshness policies are evaluated automatically by the `FreshnessDaemon` when the `dagster-daemon` process is running. The `FreshnessDaemon` is enabled by default; no `freshness.enabled` configuration is required.
 
 ### Relationship to existing `FreshnessPolicy`
 
