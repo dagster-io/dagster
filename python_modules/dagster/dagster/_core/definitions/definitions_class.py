@@ -459,12 +459,10 @@ class Definitions(IHaveNew):
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
-        """Get a job definition by name. This will only return a `JobDefinition` if it was directly passed in to the `Definitions` object.
+        """Get a job definition by name.
 
-        If that is not found, the Definitions object is resolved (transforming UnresolvedAssetJobDefinitions to JobDefinitions and an example). It
-        also finds jobs passed to sensors and schedules and retrieves them from the repository.
-
-        After dagster 1.11, this resolution step will not happen, and will throw an error if the job is not found.
+        Prefer :py:meth:`resolve_job_def`, which can also resolve jobs created with
+        :py:func:`define_asset_job` or supplied to schedules and sensors.
         """
         found_direct = False
         for job in self.jobs or []:
@@ -486,10 +484,13 @@ class Definitions(IHaveNew):
 
         return self.resolve_job_def(name)
 
+    @public
     def resolve_job_def(self, name: str) -> JobDefinition:
-        """Resolve a job definition by name. If you passed in an :py:class:`UnresolvedAssetJobDefinition`
-        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function, with all resource dependencies fully resolved.
+        """Resolve a job definition by name.
+
+        Jobs created with :py:func:`define_asset_job` are returned as
+        :py:class:`JobDefinition` objects with all resource dependencies fully resolved.
+        Jobs supplied to schedules and sensors are also included.
         """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
