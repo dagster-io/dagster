@@ -108,6 +108,27 @@ def test_union_of_cron_strings_schedule():
     assert next_timestamps == expected_next_timestamps
 
 
+@pytest.mark.parametrize("execution_timezone", ["UTC", "Europe/Berlin"])
+@pytest.mark.parametrize("ascending", [True, False])
+def test_union_with_leap_day_schedule(execution_timezone: str, ascending: bool) -> None:
+    times = [
+        create_datetime(2028, 2, 28, 12, tz=execution_timezone),
+        create_datetime(2028, 2, 29, tz=execution_timezone),
+        create_datetime(2028, 2, 29, 12, tz=execution_timezone),
+        create_datetime(2028, 3, 1, 12, tz=execution_timezone),
+    ]
+    if not ascending:
+        times.reverse()
+    for i, start in enumerate(times):
+        iterator = schedule_execution_time_iterator(
+            start.timestamp(),
+            ["0 0 29 2 *", "0 12 * * *"],
+            execution_timezone,
+            ascending=ascending,
+        )
+        assert [next(iterator) for _ in times[i:]] == times[i:]
+
+
 def test_invalid_cron_string():
     start_time = create_datetime(
         year=2022, month=2, day=21, hour=1, minute=30, second=1, tz="US/Pacific"

@@ -1,4 +1,3 @@
-import calendar
 import datetime
 import functools
 import math
@@ -668,24 +667,6 @@ def cron_string_iterator(
     """Generator of datetimes >= start_timestamp for the given cron string."""
     from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
-    # leap day special casing
-    if cron_string.endswith(" 29 2 *"):
-        min_hour, _ = cron_string.split(" 29 2 *")
-        day_before = f"{min_hour} 28 2 *"
-        # run the iterator for Feb 28th
-        for dt in cron_string_iterator(
-            start_timestamp=start_timestamp,
-            cron_string=day_before,
-            execution_timezone=execution_timezone,
-            ascending=ascending,
-            start_offset=start_offset,
-        ):
-            # only return on leap years
-            if calendar.isleap(dt.year):
-                # shift 28th back to 29th
-                shifted_dt = dt + datetime.timedelta(days=1)
-                yield shifted_dt
-        return
     execution_timezone = execution_timezone or "UTC"
 
     # Croniter < 1.4 returns 2 items
