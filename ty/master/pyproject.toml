@@ -83,6 +83,7 @@ dependencies = [
   "dagster-papertrail",
   "dagster-polytomic",
   "dagster-postgres",
+  "dagster-postgres-pandas",
   "dagster-powerbi",
   "dagster-prefect",
   "dagster-prometheus",
@@ -283,6 +284,7 @@ dagster-pandera             = { path = "../../python_modules/libraries/dagster-p
 dagster-papertrail          = { path = "../../python_modules/libraries/dagster-papertrail",          editable = true }
 dagster-polytomic           = { path = "../../python_modules/libraries/dagster-polytomic",           editable = true }
 dagster-postgres            = { path = "../../python_modules/libraries/dagster-postgres",            editable = true }
+dagster-postgres-pandas     = { path = "../../python_modules/libraries/dagster-postgres-pandas",     editable = true }
 dagster-powerbi             = { path = "../../python_modules/libraries/dagster-powerbi",             editable = true }
 dagster-prefect             = { path = "../../python_modules/libraries/dagster-prefect",             editable = true }
 dagster-prometheus          = { path = "../../python_modules/libraries/dagster-prometheus",          editable = true }

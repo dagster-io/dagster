@@ -84,6 +84,7 @@ test = [
     "dagster-pandas",
     "dagster-papertrail",
     "dagster-postgres",
+    "dagster-postgres-pandas",
     "dagster-powerbi",
     "dagster-prometheus",
     "dagster-pyspark",
@@ -162,6 +163,7 @@ dagster-pagerduty = { path = "../libraries/dagster-pagerduty", editable = true }
 dagster-pandas = { path = "../libraries/dagster-pandas", editable = true }
 dagster-papertrail = { path = "../libraries/dagster-papertrail", editable = true }
 dagster-postgres = { path = "../libraries/dagster-postgres", editable = true }
+dagster-postgres-pandas = { path = "../libraries/dagster-postgres-pandas", editable = true }
 dagster-powerbi = { path = "../libraries/dagster-powerbi", editable = true }
 dagster-prometheus = { path = "../libraries/dagster-prometheus", editable = true }
 dagster-pyspark = { path = "../libraries/dagster-pyspark", editable = true }
