@@ -140,3 +140,25 @@ def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
 
     assert error_message["levelname"] == "ERROR"
     assert error_message["dagster_meta"]["orig_message"] == "This is an error"
+
+
+def test_cloudwatch_handler_logs_unrecognized_client(region, log_group, log_stream, caplog):
+    import logging
+    from unittest import mock
+
+    from dagster_aws.cloudwatch.loggers import CloudwatchLogsHandler
+
+    handler = CloudwatchLogsHandler(log_group, log_stream, aws_region=region)
+    error = handler.client.exceptions.UnrecognizedClientException(
+        {"Error": {"Code": "UnrecognizedClientException", "Message": "bad token"}},
+        "PutLogEvents",
+    )
+    record = logging.LogRecord("dagster", logging.INFO, __file__, 1, "hello", None, None)
+    record.dagster_meta = {"log_timestamp": "2026-10-24T12:00:00.000000"}
+
+    with mock.patch.object(handler.client, "put_log_events", side_effect=error) as put:
+        handler.emit(record)
+
+    # bad credentials are reported once, not retried
+    assert put.call_count == 1
+    assert "Unrecognized client" in caplog.text
