@@ -1,7 +1,12 @@
 import {GraphQLError} from 'graphql/error';
 
-import {buildAssetKey, buildAssetLatestInfo, buildAssetNode} from '../../graphql/builders';
-import {AssetKeyInput} from '../../graphql/types';
+import {
+  buildAssetKey,
+  buildAssetLatestInfo,
+  buildAssetNode,
+  buildFreshnessStatusInfo,
+} from '../../graphql/builders';
+import {AssetHealthStatus, AssetKeyInput} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {ASSETS_FRESHNESS_INFO_QUERY, ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
 import {
@@ -19,6 +24,7 @@ export function buildMockedAssetGraphLiveQuery(
       >[0]['data']
     | undefined = undefined,
   errors: readonly GraphQLError[] | undefined = undefined,
+  freshnessStatus?: AssetHealthStatus,
 ) {
   const opts = {
     variables: {
@@ -53,7 +59,13 @@ export function buildMockedAssetGraphLiveQuery(
         data === undefined && errors === undefined
           ? {
               assetNodes: assetKeys.map((assetKey) =>
-                buildAssetNode({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
+                buildAssetNode({
+                  assetKey: buildAssetKey(assetKey),
+                  id: JSON.stringify(assetKey),
+                  ...(freshnessStatus
+                    ? {freshnessStatusInfo: buildFreshnessStatusInfo({freshnessStatus})}
+                    : {}),
+                }),
               ),
             }
           : undefined,

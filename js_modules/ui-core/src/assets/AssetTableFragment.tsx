@@ -55,12 +55,6 @@ export const ASSET_BASE_NODE_FRAGMENT = gql`
     }
     jobNames
     kinds
-    freshnessStatusInfo {
-      freshnessStatus
-      freshnessStatusMetadata {
-        lastMaterializedTimestamp
-      }
-    }
   }
 
   ${FRESHNESS_POLICY_FRAGMENT}

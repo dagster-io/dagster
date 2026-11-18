@@ -14,8 +14,6 @@ export type AssetGroupSelector = {
   repositoryName: string;
 };
 
-export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
-
 export type ChangeReason =
   | 'CODE_VERSION'
   | 'DEPENDENCIES'
@@ -93,14 +91,6 @@ export type AssetCatalogTableQuery = {
               __typename: 'StorageAddress';
               storageKind: string | null;
               tableName: string;
-            } | null;
-            freshnessStatusInfo: {
-              __typename: 'FreshnessStatusInfo';
-              freshnessStatus: Types.AssetHealthStatus;
-              freshnessStatusMetadata: {
-                __typename: 'AssetHealthFreshnessMeta';
-                lastMaterializedTimestamp: number | null;
-              } | null;
             } | null;
             repository: {
               __typename: 'Repository';
@@ -180,14 +170,6 @@ export type AssetCatalogGroupTableQuery = {
       storageKind: string | null;
       tableName: string;
     } | null;
-    freshnessStatusInfo: {
-      __typename: 'FreshnessStatusInfo';
-      freshnessStatus: Types.AssetHealthStatus;
-      freshnessStatusMetadata: {
-        __typename: 'AssetHealthFreshnessMeta';
-        lastMaterializedTimestamp: number | null;
-      } | null;
-    } | null;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -248,14 +230,6 @@ export type AssetCatalogGroupTableNodeFragment = {
     storageKind: string | null;
     tableName: string;
   } | null;
-  freshnessStatusInfo: {
-    __typename: 'FreshnessStatusInfo';
-    freshnessStatus: Types.AssetHealthStatus;
-    freshnessStatusMetadata: {
-      __typename: 'AssetHealthFreshnessMeta';
-      lastMaterializedTimestamp: number | null;
-    } | null;
-  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -264,5 +238,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '096209953ffb8638bdf6dea30fd0c2cfea823b965919b8b8536cec0258451873';
-export const AssetCatalogGroupTableQueryVersion = 'd4b52c6023f1770ccdd17f82f0e02e9fe98b09727daef4537af2d773022eb298';
+export const AssetCatalogTableQueryVersion = '67bd29bba7f7d1ddc9c2d3e7bd5a1b3fe26d36875ba9dea6052c799ab4c98955';
+
+export const AssetCatalogGroupTableQueryVersion = '2a2ce4dd539e52f1a5c95072d6c41e61fd0939380ed25f5e0700188b1e6edd20';

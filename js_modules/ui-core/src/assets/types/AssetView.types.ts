@@ -8,8 +8,6 @@ export type Incremental<T> =
 
 import * as Types from '../../graphql/types';
 
-export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
-
 export type AssetKeyInput = {
   path: Array<string>;
 };
@@ -135,14 +133,6 @@ export type AssetViewDefinitionQuery = {
           };
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-          freshnessStatusInfo: {
-            __typename: 'FreshnessStatusInfo';
-            freshnessStatus: Types.AssetHealthStatus;
-            freshnessStatusMetadata: {
-              __typename: 'AssetHealthFreshnessMeta';
-              lastMaterializedTimestamp: number | null;
-            } | null;
-          } | null;
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -16626,14 +16616,6 @@ export type AssetViewDefinitionNodeFragment = {
   };
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-  freshnessStatusInfo: {
-    __typename: 'FreshnessStatusInfo';
-    freshnessStatus: Types.AssetHealthStatus;
-    freshnessStatusMetadata: {
-      __typename: 'AssetHealthFreshnessMeta';
-      lastMaterializedTimestamp: number | null;
-    } | null;
-  } | null;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -32821,4 +32803,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'e11e2e008870482dea7d3b43ba620bd7e84780324f19ade4867b1eb77294a612';
+export const AssetViewDefinitionQueryVersion = 'e0952601dac2b57a25d22e547d0c5b1d8680b366011467f959bcb4a6e0223bf6';

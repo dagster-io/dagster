@@ -292,7 +292,6 @@ const buildExternalAssetQueryItem = (asset: {
     hasAssetChecks: false,
     hasReportRunlessAssetEventPermission: false,
     internalFreshnessPolicy: null,
-    freshnessStatusInfo: null,
     partitionDefinition: null,
     automationCondition: null,
     isMaterializable: false,

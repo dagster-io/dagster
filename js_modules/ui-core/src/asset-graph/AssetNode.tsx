@@ -9,7 +9,7 @@ import {Link} from 'react-router-dom';
 import {gql} from '../apollo-client';
 import {labelForFacet} from './AssetNodeFacets';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
-import {AssetNodeFreshnessRow} from './AssetNodeFreshnessRow';
+import {AssetNodeFreshnessRow, AssetNodeFreshnessRowWithoutHealth} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
@@ -138,9 +138,12 @@ export const AssetNodeWithLiveData = ({
             <PartitionsFacetContent definition={definition} liveData={liveData} />
           </AssetNodeRow>
         )}
-        {facets.has(AssetNodeFacet.Freshness) && (
-          <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
-        )}
+        {facets.has(AssetNodeFacet.Freshness) &&
+          (assetHealthEnabled ? (
+            <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
+          ) : (
+            <AssetNodeFreshnessRowWithoutHealth liveData={liveData} />
+          ))}
         {facets.has(AssetNodeFacet.Automation) && (
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />
         )}
@@ -701,12 +704,6 @@ export const ASSET_NODE_FRAGMENT = gql`
       value
     }
     kinds
-    freshnessStatusInfo {
-      freshnessStatus
-      freshnessStatusMetadata {
-        lastMaterializedTimestamp
-      }
-    }
   }
 
   fragment AssetNodeKey on AssetKey {

@@ -8,6 +8,7 @@ import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {statusToIconAndColor} from '../assets/AssetHealthSummary';
 import {AssetNodeFragment} from './types/AssetNode.types';
 import {humanizedMinutesLateString, isAssetOverdue} from '../assets/OverdueTag';
+import {AssetHealthStatus} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 export const AssetNodeFreshnessRow = ({
@@ -19,12 +20,47 @@ export const AssetNodeFreshnessRow = ({
 }) => {
   const {liveData: healthData} = useAssetHealthData(definition.assetKey);
   const health = healthData?.assetHealth;
-
-  const freshnessStatus =
-    definition.freshnessStatusInfo?.freshnessStatus ?? health?.freshnessStatus;
+  const freshnessStatus = health?.freshnessStatus ?? liveData?.freshnessStatusInfo?.freshnessStatus;
   const lastMaterializedTimestamp =
-    definition.freshnessStatusInfo?.freshnessStatusMetadata?.lastMaterializedTimestamp ?? null;
-  if (!freshnessStatus) {
+    health?.freshnessStatusMetadata?.lastMaterializedTimestamp ??
+    liveData?.freshnessStatusInfo?.freshnessStatusMetadata?.lastMaterializedTimestamp;
+
+  return (
+    <AssetNodeFreshnessStatusRow
+      freshnessStatus={freshnessStatus}
+      lastMaterializedTimestamp={lastMaterializedTimestamp}
+      liveData={liveData}
+    />
+  );
+};
+
+export const AssetNodeFreshnessRowWithoutHealth = ({
+  liveData,
+}: {
+  liveData: LiveDataForNode | undefined;
+}) => (
+  <AssetNodeFreshnessStatusRow
+    freshnessStatus={liveData?.freshnessStatusInfo?.freshnessStatus}
+    lastMaterializedTimestamp={
+      liveData?.freshnessStatusInfo?.freshnessStatusMetadata?.lastMaterializedTimestamp
+    }
+    liveData={liveData}
+  />
+);
+
+const AssetNodeFreshnessStatusRow = ({
+  freshnessStatus,
+  lastMaterializedTimestamp,
+  liveData,
+}: {
+  freshnessStatus: AssetHealthStatus | undefined;
+  lastMaterializedTimestamp: number | null | undefined;
+  liveData: LiveDataForNode | undefined;
+}) => {
+  if (
+    !freshnessStatus ||
+    (freshnessStatus === AssetHealthStatus.NOT_APPLICABLE && liveData?.freshnessInfo)
+  ) {
     return <AssetNodeFreshnessRowOld liveData={liveData} />;
   }
 
@@ -35,7 +71,7 @@ export const AssetNodeFreshnessRow = ({
       <Box flex={{gap: 4, alignItems: 'center'}}>
         <Icon name={subStatusIconName} color={iconColor} />
         {text2}
-        {lastMaterializedTimestamp !== null ? (
+        {lastMaterializedTimestamp !== null && lastMaterializedTimestamp !== undefined ? (
           <TimeFromNow unixTimestamp={lastMaterializedTimestamp} showTooltip={false} />
         ) : null}
       </Box>

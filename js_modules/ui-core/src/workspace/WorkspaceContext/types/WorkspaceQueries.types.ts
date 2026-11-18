@@ -8,8 +8,6 @@ export type Incremental<T> =
 
 import * as Types from '../../../graphql/types';
 
-export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
-
 export type ChangeReason =
   | 'CODE_VERSION'
   | 'DEPENDENCIES'
@@ -436,14 +434,6 @@ export type RepositoryAssetFragment = {
     storageKind: string | null;
     tableName: string;
   } | null;
-  freshnessStatusInfo: {
-    __typename: 'FreshnessStatusInfo';
-    freshnessStatus: Types.AssetHealthStatus;
-    freshnessStatusMetadata: {
-      __typename: 'AssetHealthFreshnessMeta';
-      lastMaterializedTimestamp: number | null;
-    } | null;
-  } | null;
 };
 
 export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
@@ -504,14 +494,6 @@ export type WorkspaceRepositoryAssetsFragment = {
       __typename: 'StorageAddress';
       storageKind: string | null;
       tableName: string;
-    } | null;
-    freshnessStatusInfo: {
-      __typename: 'FreshnessStatusInfo';
-      freshnessStatus: Types.AssetHealthStatus;
-      freshnessStatusMetadata: {
-        __typename: 'AssetHealthFreshnessMeta';
-        lastMaterializedTimestamp: number | null;
-      } | null;
     } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
@@ -577,14 +559,6 @@ export type WorkspaceLocationAssetsFragment = {
         __typename: 'StorageAddress';
         storageKind: string | null;
         tableName: string;
-      } | null;
-      freshnessStatusInfo: {
-        __typename: 'FreshnessStatusInfo';
-        freshnessStatus: Types.AssetHealthStatus;
-        freshnessStatusMetadata: {
-          __typename: 'AssetHealthFreshnessMeta';
-          lastMaterializedTimestamp: number | null;
-        } | null;
       } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
@@ -726,14 +700,6 @@ export type WorkspaceLocationFragment = {
         storageKind: string | null;
         tableName: string;
       } | null;
-      freshnessStatusInfo: {
-        __typename: 'FreshnessStatusInfo';
-        freshnessStatus: Types.AssetHealthStatus;
-        freshnessStatusMetadata: {
-          __typename: 'AssetHealthFreshnessMeta';
-          lastMaterializedTimestamp: number | null;
-        } | null;
-      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -820,14 +786,6 @@ export type WorkspaceLocationAssetsEntryFragment = {
               __typename: 'StorageAddress';
               storageKind: string | null;
               tableName: string;
-            } | null;
-            freshnessStatusInfo: {
-              __typename: 'FreshnessStatusInfo';
-              freshnessStatus: Types.AssetHealthStatus;
-              freshnessStatusMetadata: {
-                __typename: 'AssetHealthFreshnessMeta';
-                lastMaterializedTimestamp: number | null;
-              } | null;
             } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
@@ -1088,14 +1046,6 @@ export type LocationWorkspaceAssetsQuery = {
                     storageKind: string | null;
                     tableName: string;
                   } | null;
-                  freshnessStatusInfo: {
-                    __typename: 'FreshnessStatusInfo';
-                    freshnessStatus: Types.AssetHealthStatus;
-                    freshnessStatusMetadata: {
-                      __typename: 'AssetHealthFreshnessMeta';
-                      lastMaterializedTimestamp: number | null;
-                    } | null;
-                  } | null;
                 }>;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
               }>;
@@ -1342,14 +1292,6 @@ export type WorkspaceLocationNodeFragment = {
               storageKind: string | null;
               tableName: string;
             } | null;
-            freshnessStatusInfo: {
-              __typename: 'FreshnessStatusInfo';
-              freshnessStatus: Types.AssetHealthStatus;
-              freshnessStatusMetadata: {
-                __typename: 'AssetHealthFreshnessMeta';
-                lastMaterializedTimestamp: number | null;
-              } | null;
-            } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1494,14 +1436,6 @@ export type WorkspaceRepositoryLocationFragment = {
         storageKind: string | null;
         tableName: string;
       } | null;
-      freshnessStatusInfo: {
-        __typename: 'FreshnessStatusInfo';
-        freshnessStatus: Types.AssetHealthStatus;
-        freshnessStatusMetadata: {
-          __typename: 'AssetHealthFreshnessMeta';
-          lastMaterializedTimestamp: number | null;
-        } | null;
-      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1638,14 +1572,6 @@ export type WorkspaceRepositoryFragment = {
       storageKind: string | null;
       tableName: string;
     } | null;
-    freshnessStatusInfo: {
-      __typename: 'FreshnessStatusInfo';
-      freshnessStatus: Types.AssetHealthStatus;
-      freshnessStatusMetadata: {
-        __typename: 'AssetHealthFreshnessMeta';
-        lastMaterializedTimestamp: number | null;
-      } | null;
-    } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1653,6 +1579,9 @@ export type WorkspaceRepositoryFragment = {
 };
 
 export const LocationWorkspaceQueryVersion = 'f6ebba13d98a3cd7382c1c3a4d811207336ced9001882adfd3b66b0a50173a90';
+
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
-export const LocationWorkspaceAssetsQueryVersion = 'ced3382e46a24712459fe0cf271e7bf0df90a42b014947c2dbda9779bce12995';
+
+export const LocationWorkspaceAssetsQueryVersion = '33552d752f313cc8beb047ec9ffedacc56452109f95c9279e324a46d0bfbd688';
+
 export const LocationWorkspaceAssetsManifestQueryVersion = '26f05a136fa06937c3c7c0536f69f2c5dde1956750e8de4eec7fcaf9dd684d94';
