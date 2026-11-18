@@ -39,9 +39,11 @@ import catboost from './kindtag-images/tool-catboost-color.svg';
 import celery from './kindtag-images/tool-celery-color.svg';
 import census from './kindtag-images/tool-census-color.svg';
 import chalk from './kindtag-images/tool-chalk-color.svg';
+import chroma from './kindtag-images/tool-chroma-color.svg';
 import claude from './kindtag-images/tool-claude-color.svg';
 import clickhouse from './kindtag-images/tool-clickhouse-color.svg';
 import cockroachdb from './kindtag-images/tool-cockroachdb-color.svg';
+import cohere from './kindtag-images/tool-cohere-color.svg';
 import collibra from './kindtag-images/tool-collibra-color.svg';
 import cplus from './kindtag-images/tool-cplus-color.svg';
 import csharp from './kindtag-images/tool-csharp-color.svg';
@@ -74,6 +76,7 @@ import exasol from './kindtag-images/tool-exasol-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import fabric from './kindtag-images/tool-fabric-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
+import fireworks from './kindtag-images/tool-fireworks-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
 import flink from './kindtag-images/tool-flink-color.svg';
 import gcs from './kindtag-images/tool-gcs-color.svg';
@@ -89,11 +92,13 @@ import googlesheets from './kindtag-images/tool-googlesheets-color.svg';
 import grafana from './kindtag-images/tool-grafana-color.svg';
 import graphql from './kindtag-images/tool-graphql-color.svg';
 import greatexpectations from './kindtag-images/tool-greatexpectations-color.svg';
+import groq from './kindtag-images/tool-groq-color.svg';
 import hackernews from './kindtag-images/tool-hackernews-color.svg';
 import hadoop from './kindtag-images/tool-hadoop-color.svg';
 import hashicorp from './kindtag-images/tool-hashicorp-color.svg';
 import hex from './kindtag-images/tool-hex-color.svg';
 import hightouch from './kindtag-images/tool-hightouch-color.svg';
+import honeycomb from './kindtag-images/tool-honeycomb-color.svg';
 import hudi from './kindtag-images/tool-hudi-color.svg';
 import huggingface from './kindtag-images/tool-huggingface-color.svg';
 import iceberg from './kindtag-images/tool-iceberg-color.svg';
@@ -127,6 +132,7 @@ import mlflow from './kindtag-images/tool-mlflow-color.svg';
 import modal from './kindtag-images/tool-modal-color.svg';
 import mongodb from './kindtag-images/tool-mongodb-color.svg';
 import montecarlo from './kindtag-images/tool-montecarlo-color.svg';
+import motherduck from './kindtag-images/tool-motherduck-color.svg';
 import mysql from './kindtag-images/tool-mysql-color.svg';
 import notdiamond from './kindtag-images/tool-notdiamond-color.svg';
 import noteable from './kindtag-images/tool-noteable-color.svg';
@@ -144,6 +150,7 @@ import pandera from './kindtag-images/tool-pandera-color.svg';
 import papermill from './kindtag-images/tool-papermill-color.svg';
 import papertrail from './kindtag-images/tool-papertrail-color.svg';
 import parquet from './kindtag-images/tool-parquet-color.svg';
+import pinecone from './kindtag-images/tool-pinecone-color.svg';
 import pinot from './kindtag-images/tool-pinot-color.svg';
 import plotly from './kindtag-images/tool-plotly-color.svg';
 import plural from './kindtag-images/tool-plural-color.svg';
@@ -210,12 +217,15 @@ import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
 import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
 import tiktok from './kindtag-images/tool-tiktok-color.svg';
+import together from './kindtag-images/tool-together-color.svg';
 import treasuredata from './kindtag-images/tool-treasuredata-color.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
+import turbopuffer from './kindtag-images/tool-turbopuffer-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
 import vercel from './kindtag-images/tool-vercel-color.svg';
 import volcengine from './kindtag-images/tool-volcengine-color.svg';
+import voyageai from './kindtag-images/tool-voyageai-color.svg';
 import wandb from './kindtag-images/tool-w&b-color.svg';
 import weaviate from './kindtag-images/tool-weaviate-color.svg';
 import wechat from './kindtag-images/tool-wechat-color.svg';
@@ -273,9 +283,11 @@ export type KnownTagType =
   | 'celery'
   | 'census'
   | 'chalk'
+  | 'chroma'
   | 'claude'
   | 'clickhouse'
   | 'cockroachdb'
+  | 'cohere'
   | 'collibra'
   | 'cplus'
   | 'cplusplus'
@@ -317,6 +329,7 @@ export type KnownTagType =
   | 'fabric'
   | 'facebook'
   | 'file'
+  | 'fireworks'
   | 'fivetran'
   | 'flink'
   | 'gcp'
@@ -334,12 +347,14 @@ export type KnownTagType =
   | 'grafana'
   | 'graphql'
   | 'greatexpectations'
+  | 'groq'
   | 'hackernews'
   | 'hackernewsapi'
   | 'hadoop'
   | 'hashicorp'
   | 'hex'
   | 'hightouch'
+  | 'honeycomb'
   | 'hudi'
   | 'huggingface'
   | 'huggingfaceapi'
@@ -377,6 +392,7 @@ export type KnownTagType =
   | 'modal'
   | 'mongodb'
   | 'montecarlo'
+  | 'motherduck'
   | 'mysql'
   | 'net'
   | 'notdiamond'
@@ -397,6 +413,7 @@ export type KnownTagType =
   | 'papertrail'
   | 'parquet'
   | 'pdf'
+  | 'pinecone'
   | 'pinot'
   | 'plotly'
   | 'plural'
@@ -475,15 +492,18 @@ export type KnownTagType =
   | 'teradata'
   | 'thoughtspot'
   | 'tiktok'
+  | 'together'
   | 'toml'
   | 'treasuredata'
   | 'trino'
+  | 'turbopuffer'
   | 'twilio'
   | 'twitter'
   | 'typescript'
   | 'vercel'
   | 'view'
   | 'volcengine'
+  | 'voyageai'
   | 'wandb'
   | 'weaviate'
   | 'wechat'
@@ -1507,6 +1527,50 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   runpod: {
     icon: runpod,
     content: 'RunPod',
+    blackAndWhite: true,
+  },
+  chroma: {
+    icon: chroma,
+    content: 'Chroma',
+  },
+  cohere: {
+    icon: cohere,
+    content: 'Cohere',
+    blackAndWhite: true,
+  },
+  fireworks: {
+    icon: fireworks,
+    content: 'Fireworks AI',
+  },
+  groq: {
+    icon: groq,
+    content: 'Groq',
+    blackAndWhite: true,
+  },
+  honeycomb: {
+    icon: honeycomb,
+    content: 'Honeycomb',
+  },
+  motherduck: {
+    icon: motherduck,
+    content: 'MotherDuck',
+  },
+  pinecone: {
+    icon: pinecone,
+    content: 'Pinecone',
+    blackAndWhite: true,
+  },
+  together: {
+    icon: together,
+    content: 'Together AI',
+  },
+  turbopuffer: {
+    icon: turbopuffer,
+    content: 'turbopuffer',
+  },
+  voyageai: {
+    icon: voyageai,
+    content: 'Voyage AI',
     blackAndWhite: true,
   },
   expand: {color: Colors.accentYellow(), content: 'Expand'},
