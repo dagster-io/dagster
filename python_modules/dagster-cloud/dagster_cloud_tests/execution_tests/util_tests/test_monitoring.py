@@ -160,3 +160,47 @@ def test_monitoring_k8s_pod_debug_info(
         assert statuses_dict["foo"][0].run_id == "bar"
         assert statuses_dict["foo"][0].status_type == WorkerStatus.FAILED
         assert statuses_dict["foo"][0].message == "my-msg\nmy-debug-info"
+
+
+def _isolated_run(run_id: str) -> DagsterRun:
+    return DagsterRun(
+        job_name="foo",
+        run_id=run_id,
+        run_config={},
+        step_keys_to_execute=None,
+        status=DagsterRunStatus.STARTED,
+        tags={},
+    )
+
+
+def test_monitoring_checks_isolated_runs_in_batch(agent_instance):
+    with mock.patch.object(DagsterCloudAgentInstance, "get_runs") as mock_get_runs:
+        mock_get_runs.return_value = [_isolated_run("batched"), _isolated_run("missing")]
+        statuses_dict = {}
+
+        with (
+            mock.patch.object(
+                CloudProcessRunLauncher,
+                "check_run_worker_health_batch",
+                return_value={"batched": CheckRunHealthResult(WorkerStatus.RUNNING)},
+            ) as mock_batch,
+            mock.patch.object(
+                CloudProcessRunLauncher,
+                "check_run_worker_health",
+                return_value=CheckRunHealthResult(WorkerStatus.FAILED, "gone"),
+            ) as mock_check,
+            mock.patch.object(CloudProcessRunLauncher, "get_run_worker_debug_info"),
+        ):
+            run_worker_monitoring_thread_iteration(
+                agent_instance,
+                {"foo"},
+                statuses_dict,
+                threading.Lock(),
+                logging.getLogger("dagster_cloud"),
+            )
+
+        assert [run.run_id for run in mock_batch.call_args.args[0]] == ["batched", "missing"]
+        # Only the run missing from the batch result is checked individually.
+        assert [call.args[0].run_id for call in mock_check.call_args_list] == ["missing"]
+        statuses = {status.run_id: status.status_type for status in statuses_dict["foo"]}
+        assert statuses == {"batched": WorkerStatus.RUNNING, "missing": WorkerStatus.FAILED}
