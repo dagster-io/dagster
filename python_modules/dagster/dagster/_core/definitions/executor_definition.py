@@ -9,6 +9,8 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import Int
 from dagster._config import Field, Noneable, Selector, UserConfigSchema
+from dagster._config.config_type import ConfigScalar, ConfigScalarKind
+from dagster._config.errors import PostProcessingError
 from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
@@ -341,11 +343,37 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
         tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
+        step_worker_timeout_seconds=check.opt_float_elem(config, "step_worker_timeout_seconds"),
+        step_worker_timeout_max_event_bytes=check.opt_int_elem(
+            config, "step_worker_timeout_max_event_bytes"
+        ),
         explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
         step_dependency_config=StepDependencyConfig.from_config(
             check.opt_nullable_dict_elem(config, "step_dependency_config")
         ),
     )
+
+
+class _StepWorkerTimeoutSeconds(ConfigScalar):
+    def __init__(self):
+        super().__init__(
+            key="StepWorkerTimeoutSeconds",
+            given_name="StepWorkerTimeoutSeconds",
+            scalar_kind=ConfigScalarKind.FLOAT,
+        )
+
+    def post_process(self, value):
+        import math
+
+        try:
+            valid = type(value) in (int, float) and math.isfinite(value) and value > 0
+        except OverflowError:
+            valid = False
+        if not valid:
+            raise PostProcessingError(
+                "step_worker_timeout_seconds must be a finite positive number, not a boolean"
+            )
+        return float(value)
 
 
 MULTI_PROC_CONFIG = Field(
@@ -357,6 +385,16 @@ MULTI_PROC_CONFIG = Field(
                 "The number of processes that may run concurrently. "
                 "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
             ),
+        ),
+        "step_worker_timeout_seconds": Field(
+            Noneable(_StepWorkerTimeoutSeconds()),
+            is_required=False,
+            description="Optional positive worker lifetime limit, including spawn, resource initialization, compute and teardown. Polling starts after process creation returns; this is not a hard real-time guarantee. Timed-out workers are killed and joined before retry. Enabling this limit uses a capped event transport.",
+        ),
+        "step_worker_timeout_max_event_bytes": Field(
+            Int,
+            is_required=False,
+            description="Maximum serialized event bytes for workers with a lifetime limit; defaults to 32 MiB when enabled. Requires step_worker_timeout_seconds. Exceeding this limit is a transport failure, not a retryable timeout. The default Queue transport is unchanged when worker timeouts are disabled.",
         ),
         "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         "start_method": Field(

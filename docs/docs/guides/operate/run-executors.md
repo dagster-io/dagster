@@ -50,6 +50,29 @@ Executing a job via <PyObject section="jobs" module="dagster" object="JobDefinit
 
 :::
 
+## Limiting multiprocess worker lifetime
+
+The multiprocess executor can limit the lifetime of each step worker:
+
+```yaml
+execution:
+  config:
+    multiprocess:
+      max_concurrent: 2
+      step_worker_timeout_seconds: 300
+      step_worker_timeout_max_event_bytes: 33554432
+```
+
+`step_worker_timeout_seconds` must be a finite positive number. The parent measures the budget from process launch, including startup, imports, resource initialization, computation, and teardown. Polling begins after the process-start call returns; this is not a hard real-time deadline or a compute-only limit. Choose a budget that includes startup overhead.
+
+When a worker exceeds its budget, the executor terminates it and waits for it to exit before releasing its concurrency slot or applying the step's existing retry policy. A terminal event already committed to event storage is preserved. Cancellation prevents a new attempt even if a retry event was committed before cancellation.
+
+Enabling worker timeouts also enables a file-based event transport with an explicit per-event size limit. `step_worker_timeout_max_event_bytes` is a positive integer and defaults to 32 MiB (33,554,432 bytes). It limits the serialized event, including metadata. Configuring this field without a worker timeout is an error. An oversized event or a transport failure fails the run rather than retrying the step as a timeout. Consumed frames release buffering capacity; the limit does not accumulate over the worker's lifetime. Without a worker timeout, the existing Queue transport and its behavior remain unchanged.
+
+A transport failure can also terminate the worker immediately. Forceful termination does not run user cleanup or resource finalizers reliably, and it does not guarantee termination of processes created by user code. A preserved success event therefore does not imply graceful teardown. Use external resource recovery where needed.
+
+This policy belongs to the multiprocess executor. `execute_in_process` replaces the configured executor, so this policy does not apply to it or to other executors.
+
 ## Example executors
 
 | Name                                                                                                                 | Description                                                                                                            |
