@@ -12,6 +12,7 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    escape_backslash_sql_string_literal,
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
@@ -416,7 +417,9 @@ def partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensio
         (
             _time_window_where_clause(partition_dimension)
             if isinstance(partition_dimension.partitions, TimeWindow)
-            else static_where_clause(partition_dimension)
+            else static_where_clause(
+                partition_dimension, escape_literal=escape_backslash_sql_string_literal
+            )
         )
         for partition_dimension in partition_dimensions
     )
