@@ -3,7 +3,9 @@ from collections.abc import Callable
 
 import dagster as dg
 import pytest
+from dagster.components.component.template_vars import get_context_free_static_template_vars
 from dagster.components.core.context import ComponentLoadContext
+from pydantic import ConfigDict
 
 from dagster_tests.components_tests.utils import load_context_and_component_for_test
 
@@ -158,3 +160,23 @@ def test_static_template_udf_with_context():
     )
 
     assert component.value == "context_udf_test_dagster"
+
+
+def test_static_template_vars_of_deferred_pydantic_model():
+    class Nested(dg.Model):
+        value: int = 1
+
+    class DeferredComponent(dg.Component, dg.Model):
+        # Completing the model on first access adds `__signature__` to the class dict.
+        model_config = ConfigDict(defer_build=True)
+        nested: Nested = Nested()
+
+        @staticmethod
+        @dg.template_var
+        def answer() -> int:
+            return 42
+
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]
+
+    template_vars = get_context_free_static_template_vars(DeferredComponent)
+    assert template_vars["answer"] == 42
