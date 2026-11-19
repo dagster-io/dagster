@@ -134,10 +134,15 @@ def fetch_last_updated_timestamps(
         FROM
             {dataset_id}.__TABLES__
         WHERE
-            table_id IN ({", ".join([f'"{table_id}"' for table_id in table_ids])})
+            table_id IN UNNEST(@table_ids)
     """
 
-    query_job = client.query(query)
+    query_job = client.query(
+        query,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ArrayQueryParameter("table_ids", "STRING", list(table_ids))]
+        ),
+    )
     results = query_job.result()
     modified_times = {row.table_id: row.last_modified_time for row in results}
 

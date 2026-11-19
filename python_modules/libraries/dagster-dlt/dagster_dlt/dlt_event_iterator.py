@@ -19,8 +19,11 @@ def _fetch_row_count(
 ) -> int | None:
     """Exists mostly for ease of testing."""
     with dlt_pipeline.sql_client() as client:  # ty: ignore[invalid-context-manager]
+        # The table name comes from load package metadata, so quote it as an identifier
+        # rather than splicing it into the statement as raw SQL.
+        qualified_table_name = client.make_qualified_table_name(table_name)
         with client.execute_query(
-            f"select count(*) as row_count from {table_name}",
+            f"select count(*) as row_count from {qualified_table_name}",
         ) as cursor:
             result = cursor.fetchone()
             if result is not None and isinstance(result[0], int):
