@@ -65,10 +65,66 @@ def test_build_execute_dbt_project_sql_joins_args():
     assert sql == "EXECUTE DBT PROJECT proj ARGS='build --select tag:nightly'"
 
 
-def test_build_execute_dbt_project_sql_escapes_single_quotes():
-    # Single quotes in the args must be doubled so the Snowflake string literal stays valid.
-    sql = build_execute_dbt_project_sql("proj", ["build", "--vars", "{'k': 'v'}"])
-    assert sql == "EXECUTE DBT PROJECT proj ARGS='build --vars {''k'': ''v''}'"
+@pytest.mark.parametrize(
+    ("sql", "expected"),
+    [
+        (
+            build_execute_dbt_project_sql("proj", ["build", "--vars", "{'k': 'v'}"]),
+            r"EXECUTE DBT PROJECT proj ARGS='build --vars {\'k\': \'v\'}'",
+        ),
+        (
+            build_execute_dbt_project_sql("proj", ["build", "--select", "tag:x\\' OR 1=1 --"]),
+            r"EXECUTE DBT PROJECT proj ARGS='build --select tag:x\\\' OR 1=1 --'",
+        ),
+        (
+            build_dbt_project_execution_history_sql("MY'DB", "SCH\\", "PROJ'ECT"),
+            "SELECT query_id, query_end_time FROM "
+            "TABLE(SNOWFLAKE.INFORMATION_SCHEMA.DBT_PROJECT_EXECUTION_HISTORY("
+            r"DATABASE => 'MY\'DB', SCHEMA => 'SCH\\', OBJECT_NAME => 'PROJ\'ECT')) "
+            "ORDER BY query_end_time",
+        ),
+        (
+            build_locate_artifacts_sql("q'1\\"),
+            r"SELECT SYSTEM$LOCATE_DBT_ARTIFACTS('q\'1\\')",
+        ),
+        (
+            build_get_dbt_log_sql("q'1\\"),
+            r"SELECT SYSTEM$GET_DBT_LOG('q\'1\\', 10000)",
+        ),
+        (
+            build_set_query_tag_sql('{"run":"a\\"b\'c"}'),
+            r"""ALTER SESSION SET QUERY_TAG = '{"run":"a\\"b\'c"}'""",
+        ),
+        (
+            build_cancel_query_sql("q'1\\"),
+            r"SELECT SYSTEM$CANCEL_QUERY('q\'1\\')",
+        ),
+        (
+            build_information_schema_tables_sql("DB", ["O'REILLY", "SCH\\"]),
+            "SELECT table_schema, table_name, row_count FROM DB.INFORMATION_SCHEMA.TABLES "
+            r"WHERE table_schema IN ('O\'REILLY', 'SCH\\')",
+        ),
+    ],
+    ids=[
+        "execute_args_quotes",
+        "execute_args_backslash_quote",
+        "execution_history",
+        "locate_artifacts",
+        "get_dbt_log",
+        "query_tag",
+        "cancel_query",
+        "information_schema_tables",
+    ],
+)
+def test_sql_builders_escape_snowflake_string_literals(sql: str, expected: str):
+    # Snowflake reads backslash escapes inside single-quoted strings, so doubling quotes alone
+    # lets a value ending in a backslash close the literal early.
+    assert sql == expected
+
+
+def test_build_dagster_query_ids_sql_escapes_marker():
+    sql = build_dagster_query_ids_sql("m'\\", end_time_range_start=None)
+    assert sql.endswith(r"WHERE query_tag LIKE '%m\'\\%'")
 
 
 def test_build_locate_artifacts_sql():
@@ -87,13 +143,6 @@ def test_build_dbt_project_execution_history_sql():
     assert "DATABASE => 'ANALYTICS'" in sql
     assert "SCHEMA => 'DBT'" in sql
     assert "OBJECT_NAME => 'JAFFLE'" in sql
-
-
-def test_build_dbt_project_execution_history_sql_escapes_single_quotes():
-    sql = build_dbt_project_execution_history_sql("MY'DB", "O'REILLY", "PROJ'ECT")
-    assert "DATABASE => 'MY''DB'" in sql
-    assert "SCHEMA => 'O''REILLY'" in sql
-    assert "OBJECT_NAME => 'PROJ''ECT'" in sql
 
 
 def test_build_set_query_tag_sql():
