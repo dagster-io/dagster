@@ -1119,6 +1119,49 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [
+            {
+                "block_op_concurrency_limited_runs": {"enabled": True},
+                "tag_concurrency_limits": [tag_limit],
+            }
+            for tag_limit in [
+                {"key": "team", "limit": 2},
+                {"key": "team", "value": "shared", "limit": 2},
+                {"key": "team", "value": {"applyLimitPerUniqueValue": True}, "limit": 2},
+            ]
+        ],
+    )
+    def test_op_blocked_runs_do_not_consume_tag_capacity(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = dg.AssetKey(["prefix", "foo_limited_asset"])
+        bar_key = dg.AssetKey(["prefix", "bar_limited_asset"])
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+        instance.event_log_storage.set_concurrency_slots("bar", 2)
+
+        runs = [
+            self.submit_run(
+                instance,
+                remote_job,
+                workspace,
+                asset_selection={asset_key},
+                tags={"team": "shared"},
+            )
+            for asset_key in [foo_key, foo_key, bar_key, bar_key]
+        ]
+
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+
+        assert self.get_run_ids(instance.run_launcher.queue()) == [runs[0].run_id, runs[2].run_id]
+        assert instance.get_runs_count(dg.RunsFilter(statuses=[DagsterRunStatus.QUEUED])) == 2
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
             {"block_op_concurrency_limited_runs": {"enabled": True}},
         ],
     )
