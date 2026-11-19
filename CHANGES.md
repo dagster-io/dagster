@@ -16,6 +16,11 @@
 - [ui] The asset catalog no longer re-sorts every time health data arrives, which stops it from stuttering in deployments with many assets.
 - [ui] The run Gantt chart now lays out much faster for runs with many steps.
 
+### Bugfixes
+
+- [dagster-gcp,dagster-snowflake] Fixed BigQuery and Snowflake I/O managers mishandling partition keys that contain apostrophes or backslashes.
+- [dagster-snowflake] Fixed the Snowflake dbt project component mishandling values that contain backslashes, such as a dynamic partition key passed through `cli_args`.
+
 ### Dagster Plus
 
 - The ECS agent now creates code servers for several code locations at once, so agents with many code locations start much faster.
