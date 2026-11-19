@@ -52,7 +52,6 @@ SAMPLE_GROUPS = {
                 "created_at": "2024-01-01T00:00:00Z",
             }
         ],
-        "nextCursor": "cursor_value",
     },
 }
 
@@ -139,7 +138,7 @@ def list_connectors_for_group_sample(
                     ),
                 )
             ],
-            **({"nextCursor": next_cursor} if next_cursor else {}),
+            **({"next_cursor": next_cursor} if next_cursor else {}),
         },
     }
 
