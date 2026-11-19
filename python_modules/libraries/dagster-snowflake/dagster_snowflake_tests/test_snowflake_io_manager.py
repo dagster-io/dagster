@@ -213,12 +213,12 @@ def test_get_select_statement_escapes():
                 partition_dimensions=[
                     TablePartitionDimension(
                         partition_expr="my_col",
-                        partitions=["it's a test"],
+                        partitions=["O'Brien", "café\\", "🌱", "\f"],
                     )
                 ],
             )
         )
-        == "SELECT * FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
+        == "SELECT * FROM database_abc.schema1.table1 WHERE\nmy_col in ('O\\'Brien', 'café\\\\', '🌱', '\\u000c')"
     )
 
 
@@ -232,12 +232,12 @@ def test_get_cleanup_statement_escapes():
                 partition_dimensions=[
                     TablePartitionDimension(
                         partition_expr="my_col",
-                        partitions=["it's a test"],
+                        partitions=["O'Brien", "café\\", "🌱", "\f"],
                     )
                 ],
             )
         )
-        == "DELETE FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
+        == "DELETE FROM database_abc.schema1.table1 WHERE\nmy_col in ('O\\'Brien', 'café\\\\', '🌱', '\\u000c')"
     )
 
 

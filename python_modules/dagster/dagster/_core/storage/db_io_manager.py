@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any, Generic, NamedTuple, TypeVar, cast
 
@@ -35,28 +35,34 @@ class TableSlice(NamedTuple):
 
 
 def escape_sql_string_literal(value: str) -> str:
-    """Escape a string for safe inclusion in a SQL single-quoted literal.
-
-    Replaces single quotes with doubled single quotes — the standard SQL
-    escaping mechanism across all major databases. Used to prevent SQL
-    injection when partition key values are interpolated into WHERE clauses.
-    """
+    """Escape a literal in dialects that double quotes and treat backslashes literally."""
     return value.replace("'", "''")
 
 
-def static_where_clause(table_partition: TablePartitionDimension) -> str:
-    """Build a SQL WHERE clause fragment for static (non-time-window) partitions.
+_BACKSLASH_LITERAL_ESCAPES = {
+    **{code: f"\\u{code:04x}" for code in range(32)},
+    ord("\\"): r"\\",
+    ord("'"): r"\'",
+}
 
-    Escapes partition key values to prevent SQL injection.
-    """
+
+def escape_backslash_sql_string_literal(value: str) -> str:
+    """Escape the contents of a single-quoted BigQuery or Snowflake literal."""
+    return value.translate(_BACKSLASH_LITERAL_ESCAPES)
+
+
+def static_where_clause(
+    table_partition: TablePartitionDimension,
+    *,
+    escape_literal: Callable[[str], str] = escape_sql_string_literal,
+) -> str:
+    """Build a partition filter using the warehouse's string literal escaping rules."""
     check.invariant(
         not isinstance(table_partition.partitions, TimeWindow),
         "static_where_clause should not be called with TimeWindow partitions",
     )
     partition_keys = cast("Sequence[str]", table_partition.partitions)
-    partitions = ", ".join(
-        f"'{escape_sql_string_literal(partition)}'" for partition in partition_keys
-    )
+    partitions = ", ".join(f"'{escape_literal(partition)}'" for partition in partition_keys)
     return f"""{table_partition.partition_expr} in ({partitions})"""
 
 
