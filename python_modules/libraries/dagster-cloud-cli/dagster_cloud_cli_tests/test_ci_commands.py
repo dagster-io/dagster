@@ -319,7 +319,8 @@ def get_locations(runner):
 def test_ci_selection(initialized_runner: CliRunner) -> None:
     assert len(get_locations(initialized_runner)) == 4
 
-    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "c"])
+    result = initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "c"])
+    assert result.output == "Deselected locations: a, c\n"
     selected = [
         location["location_name"]
         for location in get_locations(initialized_runner)
@@ -327,7 +328,8 @@ def test_ci_selection(initialized_runner: CliRunner) -> None:
     ]
     assert ["b", "d"] == sorted(selected)
 
-    initialized_runner.invoke(app, ["ci", "locations-select", "c"])
+    result = initialized_runner.invoke(app, ["ci", "locations-select", "c"])
+    assert result.output == "Selected locations: c\n"
     selected = [
         location["location_name"]
         for location in get_locations(initialized_runner)
