@@ -10,9 +10,17 @@ from dagster._core.definitions.partitions.context import (
     PartitionLoadingContext,
     partition_loading_context,
 )
+from dagster._core.definitions.partitions.subset.default import (
+    try_coalesce_to_single_partition_key_range,
+)
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.storage.tags import get_multidimensional_partition_tag
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    get_multidimensional_partition_tag,
+)
 from dagster._time import create_datetime
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -1022,3 +1030,73 @@ def test_has_partition_key(key: str, expected: bool) -> None:
 
     multi_partitions = dg.MultiPartitionsDefinition({"dim1": dim1, "dim2": dim2})
     assert multi_partitions.has_partition_key(key) == expected
+
+
+def _rectangle_partitions_def():
+    return dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": dg.StaticPartitionsDefinition(["A", "B", "C"]),
+        }
+    )
+
+
+def test_try_coalesce_rectangle_returns_multi_partition_key_range():
+    partitions_def = _rectangle_partitions_def()
+    partition_keys = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+    ]
+    with partition_loading_context(dynamic_partitions_store=None):
+        result = try_coalesce_to_single_partition_key_range(partition_keys, partitions_def)
+    assert result == dg.PartitionKeyRange("2023-12-01-00:00|A", "2023-12-01-02:00|B")
+    assert isinstance(result.start, MultiPartitionKey)
+    assert isinstance(result.end, MultiPartitionKey)
+    assert result.start.keys_by_dimension == {"partition": "2023-12-01-00:00", "source": "A"}
+    assert result.end.keys_by_dimension == {"partition": "2023-12-01-02:00", "source": "B"}
+
+
+def test_try_coalesce_missing_corner_returns_none():
+    partitions_def = _rectangle_partitions_def()
+    partition_keys = ["2023-12-01-00:00|A", "2023-12-01-00:00|B", "2023-12-01-01:00|A"]
+    with partition_loading_context(dynamic_partitions_store=None):
+        assert try_coalesce_to_single_partition_key_range(partition_keys, partitions_def) is None
+
+
+def test_try_coalesce_non_contiguous_dimension_returns_none():
+    partitions_def = _rectangle_partitions_def()
+    partition_keys = [
+        f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "C"]
+    ]
+    with partition_loading_context(dynamic_partitions_store=None):
+        assert try_coalesce_to_single_partition_key_range(partition_keys, partitions_def) is None
+
+
+def test_multi_partition_rectangle_input_range_in_step_context_returns_bounding_range():
+    partitions_def = _rectangle_partitions_def()
+    captured = {}
+
+    @dg.asset(partitions_def=partitions_def)
+    def rectangle_upstream():
+        return 1
+
+    @dg.asset(partitions_def=partitions_def)
+    def rectangle_downstream(context: AssetExecutionContext, rectangle_upstream):
+        captured["input_range"] = context.asset_partition_key_range_for_input("rectangle_upstream")
+
+    job = dg.define_asset_job("rectangle_job").resolve(
+        asset_graph=AssetGraph.from_assets([rectangle_upstream, rectangle_downstream])
+    )
+    result = job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "2023-12-01-00:00|A",
+            ASSET_PARTITION_RANGE_END_TAG: "2023-12-01-02:00|B",
+        }
+    )
+
+    assert result.success
+    input_range = captured["input_range"]
+    assert input_range == dg.PartitionKeyRange("2023-12-01-00:00|A", "2023-12-01-02:00|B")
+    assert isinstance(input_range.start, MultiPartitionKey)
+    assert isinstance(input_range.end, MultiPartitionKey)
+    assert input_range.start.keys_by_dimension == {"partition": "2023-12-01-00:00", "source": "A"}
+    assert input_range.end.keys_by_dimension == {"partition": "2023-12-01-02:00", "source": "B"}

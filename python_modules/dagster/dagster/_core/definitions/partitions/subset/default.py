@@ -219,3 +219,63 @@ class DefaultPartitionsSubset(
         self,
     ) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset()
+
+
+def try_coalesce_to_single_partition_key_range(
+    partition_keys: Iterable[str],
+    partitions_def: PartitionsDefinition,
+) -> PartitionKeyRange | None:
+    """Returns a single range covering exactly `partition_keys`, if one exists.
+
+    Multi-partition subsets compute one range per dimension slice, so a selection that
+    forms a rectangle across dimensions (e.g. 3 hours x sources {A, B} of {A, B, C})
+    yields several ranges even though a single bounding range expands to exactly the
+    selected keys. Returns None whenever the bounding range would over- or
+    under-select. Assumes the caller established a partition loading context.
+    The returned start/end are MultiPartitionKey objects so callers can use
+    ``keys_by_dimension``.
+    """
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+
+    partition_key_set = set(partition_keys)
+    if not isinstance(partitions_def, MultiPartitionsDefinition) or not partition_key_set:
+        return None
+    try:
+        parsed_keys = [
+            partitions_def.get_partition_key_from_str(partition_key)
+            for partition_key in partition_key_set
+        ]
+        start_keys_by_dimension: dict[str, str] = {}
+        end_keys_by_dimension: dict[str, str] = {}
+        num_keys_in_bounding_range = 1
+        for dimension in partitions_def.partitions_defs:
+            projected_keys = {
+                parsed_key.keys_by_dimension[dimension.name] for parsed_key in parsed_keys
+            }
+            dimension_ranges = dimension.partitions_def.subset_with_partition_keys(
+                projected_keys
+            ).get_partition_key_ranges(dimension.partitions_def)
+            if len(dimension_ranges) != 1:
+                return None
+            num_keys_in_bounding_range *= len(projected_keys)
+            start_keys_by_dimension[dimension.name] = dimension_ranges[0].start
+            end_keys_by_dimension[dimension.name] = dimension_ranges[0].end
+        # The bounding range expands to at least the cross-product of the per-dimension
+        # projections, so it can only be exact if that cross-product is the selection.
+        if num_keys_in_bounding_range != len(partition_key_set):
+            return None
+        bounding_range = PartitionKeyRange(
+            start=MultiPartitionKey(start_keys_by_dimension),
+            end=MultiPartitionKey(end_keys_by_dimension),
+        )
+        if {
+            str(key) for key in partitions_def.get_partition_keys_in_range(bounding_range)
+        } != partition_key_set:
+            return None
+        return bounding_range
+    except Exception:
+        # Coalescing is opportunistic and only runs on fail-path fallbacks: if the
+        # ranges cannot be resolved (e.g. a dynamic dimension whose store is
+        # unavailable), callers keep their existing per-range / error behavior.
+        return None

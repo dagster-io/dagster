@@ -33,8 +33,14 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.context import use_partition_loading_context
+from dagster._core.definitions.partitions.context import (
+    partition_loading_context,
+    use_partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.subset.default import (
+    try_coalesce_to_single_partition_key_range,
+)
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.instance import DynamicPartitionsStore
@@ -588,6 +594,16 @@ def _build_run_requests_with_backfill_policy(
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
     partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
+    if (
+        backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN
+        and len(partition_key_ranges) > 1
+    ):
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
+            coalesced_range = try_coalesce_to_single_partition_key_range(
+                partition_keys, partitions_def
+            )
+        if coalesced_range is not None:
+            partition_key_ranges = [coalesced_range]
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
