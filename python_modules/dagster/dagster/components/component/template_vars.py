@@ -278,7 +278,9 @@ def _get_all_static_template_vars(
     Yields:
         Tuple of (name, func, signature) for each static template variable found
     """
-    for name, method in cls.__dict__.items():
+    # Iterate over a snapshot: reading attributes can add entries to the class dict, e.g. a
+    # pydantic model built with `defer_build` sets `__signature__` when it completes.
+    for name, method in list(cls.__dict__.items()):
         if is_staticmethod(cls, method):
             # Get the actual function from the staticmethod wrapper
             func = method.__get__(None, cls)
