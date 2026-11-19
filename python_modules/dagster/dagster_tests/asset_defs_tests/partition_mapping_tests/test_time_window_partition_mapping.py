@@ -1010,3 +1010,325 @@ def test_get_downstream_partitions_for_all_partitions_subset() -> None:
         # don't include 05-05 through 05-09
         dg.PartitionKeyRange("2021-05-10", "2021-05-30")
     )
+
+
+@pytest.mark.parametrize(
+    "start_offset,end_offset,downstream_key,current_time,expected_valid_keys,expected_nonexistent_keys",
+    [
+        # first partition (upstream and downstream start 2023-01-01)
+        (-1, 0, "2023-01-01", datetime(2023, 1, 10, 12), ["2023-01-01"], ["2022-12-31"]),
+        (-1, -1, "2023-01-01", datetime(2023, 1, 10, 12), [], ["2022-12-31"]),
+        (0, 0, "2023-01-01", datetime(2023, 1, 10, 12), ["2023-01-01"], []),
+        (0, 1, "2023-01-01", datetime(2023, 1, 10, 12), ["2023-01-01", "2023-01-02"], []),
+        (1, 1, "2023-01-01", datetime(2023, 1, 10, 12), ["2023-01-02"], []),
+        # latest existent partition at 2023-01-11 noon is 2023-01-10
+        (0, 1, "2023-01-10", datetime(2023, 1, 11, 12), ["2023-01-10"], ["2023-01-11"]),
+        (1, 1, "2023-01-10", datetime(2023, 1, 11, 12), [], ["2023-01-11"]),
+        (
+            0,
+            2,
+            "2023-01-10",
+            datetime(2023, 1, 11, 12),
+            ["2023-01-10"],
+            ["2023-01-11", "2023-01-12"],
+        ),
+        (0, 0, "2023-01-10", datetime(2023, 1, 11, 12), ["2023-01-10"], []),
+        (-1, -1, "2023-01-10", datetime(2023, 1, 11, 12), ["2023-01-09"], []),
+        (-1, 0, "2023-01-10", datetime(2023, 1, 11, 12), ["2023-01-09", "2023-01-10"], []),
+        # historical partition: positive offsets stay in range
+        (0, 1, "2023-01-05", datetime(2023, 1, 10, 12), ["2023-01-05", "2023-01-06"], []),
+        (1, 1, "2023-01-05", datetime(2023, 1, 10, 12), ["2023-01-06"], []),
+    ],
+)
+def test_offset_overflow_reports_nonexistent_upstream_partitions(
+    start_offset: int,
+    end_offset: int,
+    downstream_key: str,
+    current_time: datetime,
+    expected_valid_keys: Sequence[str],
+    expected_nonexistent_keys: Sequence[str],
+):
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=start_offset, end_offset=end_offset
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(partitions_def, [downstream_key]),
+        partitions_def,
+        partitions_def,
+        current_time=current_time,
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == expected_valid_keys
+    assert list(result.required_but_nonexistent_partition_keys) == expected_nonexistent_keys
+    assert not set(result.partitions_subset.get_partition_keys()) & set(
+        result.required_but_nonexistent_partition_keys
+    )
+
+
+def test_offset_overflow_allow_nonexistent_upstream_partitions():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1, allow_nonexistent_upstream_partitions=True
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(partitions_def, ["2023-01-10"]),
+        partitions_def,
+        partitions_def,
+        current_time=datetime(2023, 1, 11, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == []
+
+
+def test_offset_overflow_hourly_latest_partition():
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2023-01-01-00:00")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(partitions_def, ["2023-01-01-05:00"]),
+        partitions_def,
+        partitions_def,
+        current_time=datetime(2023, 1, 1, 6, 30),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-01-05:00"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-01-06:00"]
+
+
+def test_offset_overflow_hourly_downstream_daily_upstream():
+    hourly = dg.HourlyPartitionsDefinition(start_date="2023-01-01-00:00")
+    daily = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(hourly, ["2023-01-10-23:00"]),
+        hourly,
+        daily,
+        current_time=datetime(2023, 1, 11, 0, 30),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-11"]
+
+    # negative offset before the upstream start
+    downstream = dg.HourlyPartitionsDefinition(start_date="2022-12-01-00:00")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=0
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-01-00:00"]),
+        downstream,
+        daily,
+        current_time=datetime(2023, 2, 1),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-01"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2022-12-31"]
+
+
+def test_offset_overflow_daily_downstream_hourly_upstream():
+    daily = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    hourly = dg.HourlyPartitionsDefinition(start_date="2023-01-02-00:00")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=0
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(daily, ["2023-01-02"]),
+        daily,
+        hourly,
+        current_time=datetime(2023, 2, 1),
+    )
+    assert list(
+        result.partitions_subset.get_partition_keys()
+    ) == hourly.get_partition_keys_in_range(
+        dg.PartitionKeyRange("2023-01-02-00:00", "2023-01-02-23:00")
+    )
+    assert list(result.required_but_nonexistent_partition_keys) == [
+        f"2023-01-01-{hour:02d}:00" for hour in range(24)
+    ]
+
+
+def test_offset_overflow_cron_schedule():
+    four_hourly = dg.TimeWindowPartitionsDefinition(
+        start="2023-01-01_00", cron_schedule="0 */4 * * *", fmt="%Y-%m-%d_%H"
+    )
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(four_hourly, ["2023-01-01_04"]),
+        four_hourly,
+        four_hourly,
+        current_time=datetime(2023, 1, 1, 9),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-01_04"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-01_08"]
+
+    # differing cron schedules exercise the timestamp alignment path
+    daily = dg.TimeWindowPartitionsDefinition(
+        start="2023-01-01", cron_schedule="0 0 * * *", fmt="%Y-%m-%d"
+    )
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(four_hourly, ["2023-01-01_20"]),
+        four_hourly,
+        daily,
+        current_time=datetime(2023, 1, 2, 1),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-01"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-02"]
+
+
+def test_offset_overflow_current_time_boundary():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    # at exactly 2023-01-12 00:00 the 2023-01-11 partition exists, so the same
+    # mapping that overflows a day earlier no longer reports it as nonexistent
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(partitions_def, ["2023-01-10"]),
+        partitions_def,
+        partitions_def,
+        current_time=datetime(2023, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10", "2023-01-11"]
+    assert list(result.required_but_nonexistent_partition_keys) == []
+
+
+def test_offset_overflow_fixed_upstream_end_date():
+    downstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    upstream = dg.DailyPartitionsDefinition(start_date="2023-01-01", end_date="2023-01-11")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-10"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 2, 1),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-11"]
+
+
+def test_offset_overflow_dst():
+    # negative offset before the start on the America/Los_Angeles fall-back day
+    fall = dg.DailyPartitionsDefinition("2023-11-05", timezone="America/Los_Angeles")
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=0
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(fall, ["2023-11-05"]),
+        fall,
+        fall,
+        current_time=datetime(2024, 3, 20),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-11-05"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-11-04"]
+
+    # positive offset past a fixed end on the spring-forward day
+    spring = dg.DailyPartitionsDefinition(
+        "2024-03-01", end_date="2024-03-11", timezone="America/Los_Angeles"
+    )
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(spring, ["2024-03-10"]),
+        spring,
+        spring,
+        current_time=datetime(2024, 4, 1),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2024-03-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2024-03-11"]
+
+
+def test_offset_overflow_empty_upstream_partitions_def():
+    downstream = dg.DailyPartitionsDefinition(start_date="2022-01-01")
+    upstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    # no upstream partition exists yet at 2023-01-01 noon
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-01"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 1, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == []
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-01", "2023-01-02"]
+
+
+def test_mapped_window_containing_entire_upstream_range_has_no_overlap():
+    daily = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    single_partition_upstream = dg.DailyPartitionsDefinition(
+        start_date="2023-01-01", end_date="2023-01-02"
+    )
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(daily, ["2023-01-01"]),
+        daily,
+        single_partition_upstream,
+        current_time=datetime(2023, 2, 1),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-01"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2022-12-31", "2023-01-02"]
+
+    # same shape without offsets: a monthly window containing a narrow daily range
+    monthly = dg.MonthlyPartitionsDefinition(start_date="2022-12-01")
+    narrow_daily = dg.DailyPartitionsDefinition(start_date="2023-01-15", end_date="2023-01-20")
+    result = dg.TimeWindowPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(monthly, ["2023-01-01"]),
+        monthly,
+        narrow_daily,
+        current_time=datetime(2023, 2, 1),
+    )
+    valid_keys = list(result.partitions_subset.get_partition_keys())
+    nonexistent_keys = list(result.required_but_nonexistent_partition_keys)
+    assert valid_keys == ["2023-01-15", "2023-01-16", "2023-01-17", "2023-01-18", "2023-01-19"]
+    assert not set(valid_keys) & set(nonexistent_keys)
+    assert sorted(set(valid_keys) | set(nonexistent_keys)) == [
+        f"2023-01-{day:02d}" for day in range(1, 32)
+    ]
+
+
+def test_downstream_direction_unchanged_by_offset_overflow_fix():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    mapping = dg.TimeWindowPartitionMapping(start_offset=0, end_offset=1)
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(partitions_def, ["2023-01-11"]),
+        partitions_def,
+        partitions_def,
+        current_time=datetime(2023, 2, 1),
+    ).get_partition_keys() == ["2023-01-10", "2023-01-11"]
+
+
+def test_offset_overflow_into_excluded_partition_reports_no_nonexistent():
+    downstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    upstream = dg.DailyPartitionsDefinition(
+        start_date="2023-01-01", exclusions=[create_datetime(2023, 1, 11)]
+    )
+    # the +1 end offset overflows only into the excluded 2023-01-11 partition,
+    # so nothing is required-but-nonexistent
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=1
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-10"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == []
+    assert result.required_but_nonexistent_subset.is_empty
+
+
+def test_offset_overflow_past_excluded_partition_reports_only_real_nonexistent():
+    downstream = dg.DailyPartitionsDefinition(start_date="2023-01-01")
+    upstream = dg.DailyPartitionsDefinition(
+        start_date="2023-01-01", exclusions=[create_datetime(2023, 1, 11)]
+    )
+    # the +2 end offset overflows into the excluded 2023-01-11 partition and
+    # the not-yet-existent 2023-01-12 partition; only the latter is reported
+    result = dg.TimeWindowPartitionMapping(
+        start_offset=0, end_offset=2
+    ).get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream, ["2023-01-10"]),
+        downstream,
+        upstream,
+        current_time=datetime(2023, 1, 12),
+    )
+    assert list(result.partitions_subset.get_partition_keys()) == ["2023-01-10"]
+    assert list(result.required_but_nonexistent_partition_keys) == ["2023-01-12"]
+    assert not result.required_but_nonexistent_subset.is_empty
