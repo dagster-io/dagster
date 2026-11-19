@@ -45,6 +45,7 @@ from dagster._annotations import preview, public
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.storage.db_io_manager import escape_backslash_sql_string_literal
 from dagster._time import get_current_timestamp
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.context import ResolutionContext
@@ -180,10 +181,7 @@ def build_execute_dbt_project_sql(project_name: str, args: list[str]) -> str:
             in Snowflake, e.g. ``my_db.my_schema.my_project``.
         args: The dbt CLI arguments to pass through, e.g. ``["build", "--select", "tag:x"]``.
     """
-    args_str = " ".join(args)
-    # Embed the args in a single-quoted Snowflake string literal; escape single quotes
-    # by doubling them per the Snowflake string-literal grammar.
-    escaped = args_str.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(" ".join(args))
     return f"EXECUTE DBT PROJECT {project_name} ARGS='{escaped}'"
 
 
@@ -193,9 +191,9 @@ def build_dbt_project_execution_history_sql(database: str, schema: str, object_n
     Returns recent runs (query id + completion time) for the project, most-recent last, used by
     the observation sensor to discover dbt runs executed in Snowflake outside of Dagster.
     """
-    db = database.replace("'", "''")
-    sch = schema.replace("'", "''")
-    obj = object_name.replace("'", "''")
+    db = escape_backslash_sql_string_literal(database)
+    sch = escape_backslash_sql_string_literal(schema)
+    obj = escape_backslash_sql_string_literal(object_name)
     return (
         "SELECT query_id, query_end_time FROM "
         "TABLE(SNOWFLAKE.INFORMATION_SCHEMA.DBT_PROJECT_EXECUTION_HISTORY("
@@ -210,7 +208,7 @@ def build_locate_artifacts_sql(query_id: str) -> str:
     Returns SQL that yields the ``snow://`` stage path containing the run's artifacts
     (including ``results/target/manifest.json`` and ``results/dbt_artifacts.zip``).
     """
-    escaped = query_id.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(query_id)
     return f"SELECT SYSTEM$LOCATE_DBT_ARTIFACTS('{escaped}')"
 
 
@@ -220,19 +218,19 @@ def build_get_dbt_log_sql(query_id: str, max_num_lines: int = 10000) -> str:
     The dbt log is not part of the ``EXECUTE DBT PROJECT`` result set; it must be fetched
     separately by query id.
     """
-    escaped = query_id.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(query_id)
     return f"SELECT SYSTEM$GET_DBT_LOG('{escaped}', {max_num_lines})"
 
 
 def build_set_query_tag_sql(tag: str) -> str:
     """Build the ``ALTER SESSION SET QUERY_TAG`` statement used to mark Dagster-triggered runs."""
-    escaped = tag.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(tag)
     return f"ALTER SESSION SET QUERY_TAG = '{escaped}'"
 
 
 def build_cancel_query_sql(query_id: str) -> str:
     """Build the ``SYSTEM$CANCEL_QUERY`` call used to spin down an orphaned dbt run."""
-    escaped = query_id.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(query_id)
     return f"SELECT SYSTEM$CANCEL_QUERY('{escaped}')"
 
 
@@ -253,7 +251,7 @@ def build_dagster_query_ids_sql(
     ``end_time_range_start`` (an epoch timestamp) is provided, the lookup is bounded to queries
     that ended at or after it -- exactly the window of history rows under consideration.
     """
-    escaped = marker.replace("'", "''")
+    escaped = escape_backslash_sql_string_literal(marker)
     params = []
     if end_time_range_start is not None:
         params.append(f"END_TIME_RANGE_START => TO_TIMESTAMP_LTZ({int(end_time_range_start)})")
@@ -271,7 +269,7 @@ def build_show_dbt_artifacts_function_sql() -> str:
 
 def _quote_list(values: list[str]) -> str:
     """Render ``values`` as a SQL string-literal list, e.g. ``'A', 'B'``."""
-    return ", ".join("'" + v.replace("'", "''") + "'" for v in values)
+    return ", ".join(f"'{escape_backslash_sql_string_literal(v)}'" for v in values)
 
 
 def build_information_schema_tables_sql(database: str, schemas: list[str]) -> str:
