@@ -8,6 +8,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
@@ -255,6 +256,18 @@ class DbIOManager(IOManager):
                                 end_key_for_partition
                             ).end
                             partitions = TimeWindow(start_time, end_time)
+                        elif isinstance(part.partitions_def, DynamicPartitionsDefinition):
+                            # Listing dynamic partitions requires an instance, which isn't
+                            # available here, so read this dimension's keys off the partition
+                            # keys that the context has already resolved.
+                            partitions = sorted(
+                                {
+                                    context.asset_partitions_def.get_partition_key_from_str(
+                                        key
+                                    ).keys_by_dimension[part.name]
+                                    for key in context.asset_partition_keys
+                                }
+                            )
                         else:
                             partitions = part.partitions_def.get_partition_keys_in_range(
                                 PartitionKeyRange(
