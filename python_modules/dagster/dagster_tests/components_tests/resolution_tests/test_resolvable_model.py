@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated
 
 import dagster as dg
+import pytest
 from dagster import ResolutionContext
 from pydantic import BaseModel
 
@@ -61,7 +62,7 @@ def test_valid_resolution_nested() -> None:
     )
 
 
-def test_resolve_dumps_model_once(monkeypatch) -> None:
+def test_resolve_dumps_model_once(monkeypatch: pytest.MonkeyPatch) -> None:
     """Resolving checks which fields are set with one dump, not one per field."""
     model = TargetObject.model()(int_val=1, str_val="a", inners=None)
     dumps = 0
