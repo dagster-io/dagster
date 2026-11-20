@@ -8,7 +8,7 @@ from dagster import Definitions, EnvVar, GraphDefinition, OpExecutionContext, op
 def openai_op(context: OpExecutionContext, openai: OpenAIResource):
     with openai.get_client(context) as client:
         client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-6-luna",
             messages=[{"role": "user", "content": "Say this is a test"}],
         )
 

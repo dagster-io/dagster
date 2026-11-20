@@ -7,7 +7,7 @@ import dagster as dg
 def anthropic_asset(context: dg.AssetExecutionContext, anthropic: AnthropicResource):
     with anthropic.get_client(context) as client:
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-5-5",
             max_tokens=1024,
             messages=[{"role": "user", "content": "Say this is a test"}],
         )
