@@ -76,7 +76,9 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
         else DbtProjectArgs.resolve_from_model(context, model)
     )
     # resolve the project_dir relative to where this component is defined
-    args = replace(args, project_dir=context.resolve_source_relative_path(args.project_dir))
+    args = replace(
+        args, project_dir=context.resolve_source_relative_path(args.project_dir)
+    )
     return DbtProjectArgsManager(args)
 
 
@@ -112,7 +114,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         DbtProject | DbtProjectManager,
         Resolver(
             resolve_dbt_project,
-            model_field_type=str | DbtProjectArgs.model() | RemoteGitDbtProjectManager.model(),
+            model_field_type=str
+            | DbtProjectArgs.model()
+            | RemoteGitDbtProjectManager.model(),
             description="The path to the dbt project or a mapping defining a DbtProject",
             examples=[
                 "{{ project_root }}/path/to/dbt_project",
@@ -197,7 +201,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     ] = DBT_DEFAULT_SELECTOR
     translation: Annotated[
         TranslationFn[Mapping[str, Any]] | None,
-        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
+        TranslationFnResolver(
+            template_vars_for_translation_fn=lambda data: {"node": data}
+        ),
     ] = None
     translation_settings: Annotated[
         DagsterDbtComponentTranslatorSettings | None,
@@ -255,7 +261,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
     def _base_translator(self) -> "DagsterDbtTranslator":
         return DagsterDbtTranslator(self.translation_settings)
 
-    def get_resource_props(self, manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
+    def get_resource_props(
+        self, manifest: Mapping[str, Any], unique_id: str
+    ) -> Mapping[str, Any]:
         """Given a parsed manifest and a dbt unique_id, returns the dictionary of properties
         for the corresponding dbt resource (e.g. model, seed, snapshot, source) as defined
         in your dbt project. This can be used as a convenience method when overriding the
@@ -315,7 +323,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return DagsterDbtTranslator.get_asset_spec(self.translator, manifest, unique_id, project)
+        return DagsterDbtTranslator.get_asset_spec(
+            self.translator, manifest, unique_id, project
+        )
 
     def get_asset_check_spec(
         self,
@@ -324,7 +334,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         unique_id: str,
         project: Optional["DbtProject"],
     ) -> dg.AssetCheckSpec | None:
-        return self._base_translator.get_asset_check_spec(asset_spec, manifest, unique_id, project)
+        return self._base_translator.get_asset_check_spec(
+            asset_spec, manifest, unique_id, project
+        )
 
     @cached_property
     def _project_manager(self) -> DbtProjectManager:
@@ -401,7 +413,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         return iterator
 
     @public
-    def execute(self, context: dg.AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+    def execute(
+        self, context: dg.AssetExecutionContext, dbt: DbtCliResource
+    ) -> Iterator:
         """Executes the dbt command for the selected assets.
 
         This method can be overridden in a subclass to customize the execution behavior,
@@ -446,11 +460,14 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         matching_model_ids = [
             unique_id
             for unique_id, value in manifest["nodes"].items()
-            if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
+            if value["name"] == model_name
+            and value["resource_type"] in ASSET_RESOURCE_TYPES
         ]
 
         if len(matching_model_ids) == 0:
-            raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
+            raise KeyError(
+                f"Could not find a dbt model, seed, or snapshot with name: {model_name}"
+            )
 
         return dagster_dbt_translator.get_asset_spec(
             manifest,
@@ -460,7 +477,9 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
 
 class DbtProjectComponentTranslator(
-    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),  # ty: ignore[unsupported-base]
+    create_component_translator_cls(
+        DbtProjectComponent, DagsterDbtTranslator
+    ),  # ty: ignore[unsupported-base]
     ComponentTranslator[DbtProjectComponent],
 ):
     def __init__(
@@ -479,8 +498,23 @@ class DbtProjectComponentTranslator(
             spec = base_spec
         else:
             dbt_props = get_node(manifest, unique_id)
-            spec = self.component.translation(base_spec, dbt_props)
-        return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+            # check if this node has a custom meta.dagster.asset_key
+            # if so, preserve the asset key from base_spec and only apply other translation attributes
+            # this avoids breaking dependency configuration when the asset key is customized
+            dbt_meta = dbt_props.get("config", {}).get("meta", {}) or dbt_props.get(
+                "meta", {}
+            )
+            dagster_metadata = dbt_meta.get("dagster", {})
+            has_custom_asset_key = bool(dagster_metadata.get("asset_key", []))
+
+            if has_custom_asset_key:
+                translated_spec = self.component.translation(base_spec, dbt_props)
+                spec = translated_spec.replace_attributes(key=base_spec.key)
+            else:
+                spec = self.component.translation(base_spec, dbt_props)
+        return spec.merge_attributes(
+            metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self}
+        )
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
