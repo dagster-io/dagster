@@ -338,14 +338,14 @@ def ensure_dir(file_path: str) -> str:
 
 
 def ensure_file(path: str) -> str:
-    ensure_dir(os.path.dirname(path))
+    ensure_dir(os.path.dirname(path) or ".")
     if not os.path.exists(path):
         touch_file(path)
     return path
 
 
 def touch_file(path: str) -> None:
-    ensure_dir(os.path.dirname(path))
+    ensure_dir(os.path.dirname(path) or ".")
     with open(path, "a", encoding="utf8"):
         os.utime(path, None)
 
