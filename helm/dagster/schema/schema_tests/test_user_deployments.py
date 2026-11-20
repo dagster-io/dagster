@@ -541,15 +541,10 @@ def test_readiness_probe_enabled_by_default(template: HelmTemplate):
     container = dagster_user_deployment.spec.template.spec.containers[0]
 
     assert container.startup_probe is None
-    assert container.startup_probe is None
     assert container.readiness_probe is not None
-    assert container.readiness_probe._exec.command == [  # noqa: SLF001
-        "dagster",
-        "api",
-        "grpc-health-check",
-        "-p",
-        "3030",
-    ]
+    assert container.readiness_probe._exec is None  # noqa: SLF001
+    assert container.readiness_probe.grpc.port == 3030
+    assert container.readiness_probe.grpc.service == "DagsterApi"
     assert container.readiness_probe.timeout_seconds == 10
 
 
@@ -587,15 +582,10 @@ def test_readiness_probe_can_be_customized(template: HelmTemplate):
     container = dagster_user_deployment.spec.template.spec.containers[0]
 
     assert container.startup_probe is None
-    assert container.startup_probe is None
     assert container.readiness_probe is not None
-    assert container.readiness_probe._exec.command == [  # noqa: SLF001
-        "dagster",
-        "api",
-        "grpc-health-check",
-        "-p",
-        "3030",
-    ]
+    assert container.readiness_probe._exec is None  # noqa: SLF001
+    assert container.readiness_probe.grpc.port == 3030
+    assert container.readiness_probe.grpc.service == "DagsterApi"
     assert container.readiness_probe.timeout_seconds == 42
 
 
@@ -642,7 +632,7 @@ def test_startup_probe_exec(template: HelmTemplate):
     ]
 
 
-def test_startup_probe_default_exec(template: HelmTemplate):
+def test_startup_probe_default_grpc(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     deployment.startupProbe = kubernetes.StartupProbe.construct(enabled=True)
     helm_values = DagsterHelmValues.construct(
@@ -656,13 +646,44 @@ def test_startup_probe_default_exec(template: HelmTemplate):
     assert len(dagster_user_deployment.spec.template.spec.containers) == 1
     container = dagster_user_deployment.spec.template.spec.containers[0]
 
-    assert container.startup_probe._exec.command == [  # noqa: SLF001
-        "dagster",
-        "api",
-        "grpc-health-check",
-        "-p",
-        str(deployment.port),
-    ]
+    assert container.startup_probe._exec is None  # noqa: SLF001
+    assert container.startup_probe.grpc.port == deployment.port
+    assert container.startup_probe.grpc.service == "DagsterApi"
+
+
+def test_liveness_probe_default_grpc(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.livenessProbe = kubernetes.LivenessProbe.construct(periodSeconds=15)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    container = dagster_user_deployment[0].spec.template.spec.containers[0]
+
+    assert container.liveness_probe._exec is None  # noqa: SLF001
+    assert container.liveness_probe.grpc.port == deployment.port
+    assert container.liveness_probe.grpc.service == "DagsterApi"
+    assert container.liveness_probe.period_seconds == 15
+
+
+def test_readiness_probe_custom_grpc(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(
+        enabled=True, grpc=dict(port=4000, service="CustomService")
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    container = dagster_user_deployment[0].spec.template.spec.containers[0]
+
+    assert container.readiness_probe._exec is None  # noqa: SLF001
+    assert container.readiness_probe.grpc.port == 4000
+    assert container.readiness_probe.grpc.service == "CustomService"
 
 
 def test_readiness_probe_exec(template: HelmTemplate):

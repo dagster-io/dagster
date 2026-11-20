@@ -465,9 +465,10 @@ dagster-user-deployments:
       readinessProbe:
         # Readiness probes are enabled by default.
         enabled: true
-        # If `readinessProbe` has no `exec` field, then the following default will be used:
-        # exec:
-        #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
+        # If `readinessProbe` has no `exec`, `grpc`, `httpGet`, or `tcpSocket` field, then the following default will be used:
+        # grpc:
+        #   port: {{ $deployment.port }}
+        #   service: "DagsterApi"
         periodSeconds: 20
         timeoutSeconds: 10
         successThreshold: 1
