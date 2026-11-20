@@ -8,7 +8,7 @@ from dagster import AssetExecutionContext, Definitions, EnvVar, asset, define_as
 def openai_asset(context: AssetExecutionContext, openai: OpenAIResource):
     with openai.get_client(context) as client:
         client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-6-luna",
             messages=[{"role": "user", "content": "Say this is a test."}],
         )
 
