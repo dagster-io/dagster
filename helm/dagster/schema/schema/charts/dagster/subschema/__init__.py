@@ -6,6 +6,7 @@ from schema.charts.dagster.subschema.concurrency import Concurrency as Concurren
 from schema.charts.dagster.subschema.daemon import Daemon as Daemon
 from schema.charts.dagster.subschema.flower import Flower as Flower
 from schema.charts.dagster.subschema.global_ import Global as Global
+from schema.charts.dagster.subschema.http_route import HTTPRoute as HTTPRoute
 from schema.charts.dagster.subschema.ingress import Ingress as Ingress
 from schema.charts.dagster.subschema.migrate import Migrate as Migrate
 from schema.charts.dagster.subschema.postgresql import PostgreSQL as PostgreSQL

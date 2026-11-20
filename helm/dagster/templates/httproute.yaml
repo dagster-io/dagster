@@ -1,0 +1,21 @@
+{{- $_ := include "dagster.backcompat" . | mustFromJson -}}
+{{- if .Values.httpRoute.enabled }}
+{{- $data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template -}}
+{{- $webserverPort := $_.Values.dagsterWebserver.service.port | default 80 -}}
+
+{{- $webserver := dict "name" (include "dagster.webserver.fullname" .) "route" .Values.httpRoute.dagsterWebserver "routeKey" "dagsterWebserver" "serviceName" (include "dagster.webserver.fullname" .) "servicePort" $webserverPort -}}
+{{- include "httproute" (merge $webserver $data) -}}
+
+{{- if $_.Values.dagsterWebserver.enableReadOnly }}
+---
+{{- $readOnlyName := include "dagster.webserver.fullname" (merge (dict "webserverReadOnly" true) $data) -}}
+{{- $readOnlyWebserver := dict "name" $readOnlyName "route" .Values.httpRoute.readOnlyDagsterWebserver "routeKey" "readOnlyDagsterWebserver" "serviceName" $readOnlyName "servicePort" $webserverPort -}}
+{{- include "httproute" (merge $readOnlyWebserver $data) -}}
+{{- end }}
+
+{{- if .Values.flower.enabled }}
+---
+{{- $flower := dict "name" (include "dagster.flower.fullname" .) "route" .Values.httpRoute.flower "routeKey" "flower" "serviceName" (printf "%s-flower-service" (include "dagster.fullname" .)) "servicePort" (.Values.flower.service.port | default 5555) -}}
+{{- include "httproute" (merge $flower $data) -}}
+{{- end }}
+{{- end }}

@@ -1105,6 +1105,120 @@ ingress:
     succeedingPaths: []
 
 ####################################################################################################
+# HTTPRoute: (Optional) Create Gateway API HTTPRoutes for the Dagster webserver and Flower
+#
+# An alternative to the ingress above. Requires the Gateway API CRDs and a Gateway to attach the
+# routes to. One HTTPRoute is created for the webserver, one for the read only webserver (if
+# `dagsterWebserver.enableReadOnly` is set) and one for Flower (if `flower.enabled` is set).
+#
+# See https://gateway-api.sigs.k8s.io/api-types/httproute/
+####################################################################################################
+httpRoute:
+  enabled: false
+
+  annotations: {}
+  labels: {}
+
+  # Gateways (or other parents) the HTTPRoutes are attached to. Used for every HTTPRoute that does
+  # not specify its own `parentRefs`.
+  # Example:
+  #
+  # parentRefs:
+  #   - name: my-gateway
+  #     namespace: gateway-system
+  #     sectionName: https
+  parentRefs: []
+
+  dagsterWebserver:
+    # Hostnames for the webserver e.g. dagster.mycompany.com. If empty, the hostnames of the
+    # Gateway listeners are used.
+    hostnames: []
+
+    # Overrides `httpRoute.parentRefs` for this HTTPRoute.
+    parentRefs: []
+
+    # Path the webserver is served at. Should match `dagsterWebserver.pathPrefix`, if set.
+    path: "/"
+    # One of `Exact`, `PathPrefix` or `RegularExpression`.
+    pathType: PathPrefix
+
+    # Filters applied to the requests routed to the webserver.
+    # Example:
+    #
+    # filters:
+    #   - type: RequestHeaderModifier
+    #     requestHeaderModifier:
+    #       set:
+    #         - name: X-Forwarded-Proto
+    #           value: https
+    filters: []
+
+    # Timeouts for the requests routed to the webserver.
+    # Example:
+    #
+    # timeouts:
+    #   request: 60s
+    #   backendRequest: 60s
+    timeouts: {}
+
+    # Different rules to add to the HTTPRoute after the default webserver rule
+    # Example:
+    #
+    # additionalRules:
+    #   - matches:
+    #       - path:
+    #           type: PathPrefix
+    #           value: /other
+    #     backendRefs:
+    #       - name: other-service
+    #         port: 80
+    additionalRules: []
+
+  readOnlyDagsterWebserver:
+    # Hostnames for the read only webserver e.g. viewer.dagster.mycompany.com. If empty, the
+    # hostnames of the Gateway listeners are used.
+    hostnames: []
+
+    # Overrides `httpRoute.parentRefs` for this HTTPRoute.
+    parentRefs: []
+
+    # Path the read only webserver is served at. Should match `dagsterWebserver.pathPrefix`, if set.
+    path: "/"
+    # One of `Exact`, `PathPrefix` or `RegularExpression`.
+    pathType: PathPrefix
+
+    # Filters applied to the requests routed to the read only webserver.
+    filters: []
+
+    # Timeouts for the requests routed to the read only webserver.
+    timeouts: {}
+
+    # Different rules to add to the HTTPRoute after the default read only webserver rule
+    additionalRules: []
+
+  flower:
+    # Hostnames for Flower e.g. flower.mycompany.com. If empty, the hostnames of the Gateway
+    # listeners are used.
+    hostnames: []
+
+    # Overrides `httpRoute.parentRefs` for this HTTPRoute.
+    parentRefs: []
+
+    # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
+    path: "/"
+    # One of `Exact`, `PathPrefix` or `RegularExpression`.
+    pathType: PathPrefix
+
+    # Filters applied to the requests routed to Flower.
+    filters: []
+
+    # Timeouts for the requests routed to Flower.
+    timeouts: {}
+
+    # Different rules to add to the HTTPRoute after the default flower rule
+    additionalRules: []
+
+####################################################################################################
 # Dagster Daemon (Optional) Deploy a daemon for launching queued runs and running schedules and
 # sensors.
 #

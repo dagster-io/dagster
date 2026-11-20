@@ -1370,6 +1370,156 @@
             "title": "Global",
             "type": "object"
         },
+        "HTTPRoute": {
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "labels": {
+                    "$ref": "#/$defs/Labels"
+                },
+                "annotations": {
+                    "$ref": "#/$defs/Annotations"
+                },
+                "parentRefs": {
+                    "items": {
+                        "$ref": "#/$defs/HTTPRouteParentReference"
+                    },
+                    "title": "Parentrefs",
+                    "type": "array"
+                },
+                "flower": {
+                    "$ref": "#/$defs/HTTPRouteConfiguration"
+                },
+                "dagsterWebserver": {
+                    "$ref": "#/$defs/HTTPRouteConfiguration"
+                },
+                "readOnlyDagsterWebserver": {
+                    "$ref": "#/$defs/HTTPRouteConfiguration"
+                }
+            },
+            "required": [
+                "enabled",
+                "labels",
+                "annotations",
+                "parentRefs",
+                "flower",
+                "dagsterWebserver",
+                "readOnlyDagsterWebserver"
+            ],
+            "title": "HTTPRoute",
+            "type": "object"
+        },
+        "HTTPRouteConfiguration": {
+            "properties": {
+                "hostnames": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Hostnames",
+                    "type": "array"
+                },
+                "parentRefs": {
+                    "items": {
+                        "$ref": "#/$defs/HTTPRouteParentReference"
+                    },
+                    "title": "Parentrefs",
+                    "type": "array"
+                },
+                "path": {
+                    "title": "Path",
+                    "type": "string"
+                },
+                "pathType": {
+                    "$ref": "#/$defs/HTTPRoutePathType"
+                },
+                "filters": {
+                    "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "title": "Filters",
+                    "type": "array"
+                },
+                "timeouts": {
+                    "$ref": "#/$defs/HTTPRouteTimeouts"
+                },
+                "additionalRules": {
+                    "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "title": "Additionalrules",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "hostnames",
+                "parentRefs",
+                "path",
+                "pathType",
+                "filters",
+                "timeouts",
+                "additionalRules"
+            ],
+            "title": "HTTPRouteConfiguration",
+            "type": "object"
+        },
+        "HTTPRouteParentReference": {
+            "additionalProperties": true,
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "title": "HTTPRouteParentReference",
+            "type": "object"
+        },
+        "HTTPRoutePathType": {
+            "enum": [
+                "Exact",
+                "PathPrefix",
+                "RegularExpression"
+            ],
+            "title": "HTTPRoutePathType",
+            "type": "string"
+        },
+        "HTTPRouteTimeouts": {
+            "additionalProperties": false,
+            "properties": {
+                "request": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Request"
+                },
+                "backendRequest": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Backendrequest"
+                }
+            },
+            "title": "HTTPRouteTimeouts",
+            "type": "object"
+        },
         "Image": {
             "properties": {
                 "repository": {
@@ -4051,6 +4201,9 @@
         "ingress": {
             "$ref": "#/$defs/Ingress"
         },
+        "httpRoute": {
+            "$ref": "#/$defs/HTTPRoute"
+        },
         "imagePullSecrets": {
             "items": {
                 "$ref": "#/$defs/SecretRef"
@@ -4130,6 +4283,7 @@
         "redis",
         "flower",
         "ingress",
+        "httpRoute",
         "imagePullSecrets",
         "computeLogManager",
         "scheduler",
