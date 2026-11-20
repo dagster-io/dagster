@@ -18,6 +18,19 @@ def _default_success_message(context: HookContext) -> str:
     return _default_status_message(context, status="succeeded")
 
 
+def _get_slack_client(slack_resource):
+    """Return a slack_sdk.WebClient from either a SlackResource or a legacy slack_resource.
+
+    SlackResource (the class-based resource) exposes ``get_client()`` which returns a
+    ``WebClient``.  The function-style ``slack_resource`` returns a ``WebClient`` directly,
+    so calling ``.get_client()`` on it raises ``AttributeError``.  This helper works with
+    both forms.
+    """
+    if hasattr(slack_resource, "get_client"):
+        return slack_resource.get_client()
+    return slack_resource
+
+
 @deprecated_param(
     param="dagit_base_url",
     breaking_version="2.0",
@@ -72,7 +85,7 @@ def slack_on_failure(
         if webserver_base_url:
             text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
-        context.resources.slack.get_client().chat_postMessage(channel=channel, text=text)
+        _get_slack_client(context.resources.slack).chat_postMessage(channel=channel, text=text)
 
     return _hook
 
@@ -131,6 +144,6 @@ def slack_on_success(
         if webserver_base_url:
             text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
-        context.resources.slack.get_client().chat_postMessage(channel=channel, text=text)
+        _get_slack_client(context.resources.slack).chat_postMessage(channel=channel, text=text)
 
     return _hook
