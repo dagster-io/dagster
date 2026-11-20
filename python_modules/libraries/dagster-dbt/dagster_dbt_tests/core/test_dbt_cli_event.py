@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
-from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
+from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage, DbtFusionCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 MANIFEST = {
@@ -156,3 +156,63 @@ def test_warn_on_a_test_is_still_a_warn_severity_check() -> None:
     assert len(evaluations) == 1
     assert evaluations[0].passed is False
     assert evaluations[0].severity == AssetCheckSeverity.WARN
+
+
+def _fusion_node_finished(
+    unique_id: str, resource_type: str, node_status: str
+) -> DbtFusionCliEventMessage:
+    return DbtFusionCliEventMessage(
+        raw_event={
+            "data": {
+                "node_info": {
+                    "materialized": "incremental" if resource_type == "model" else resource_type,
+                    "node_finished_at": "2025-03-10T12:53:48.818126",
+                    "node_name": unique_id.rsplit(".", 1)[-1],
+                    "node_path": "mart/public__orders.sql",
+                    "node_started_at": "2025-03-10T12:53:36.820592",
+                    "node_status": node_status,
+                    "resource_type": resource_type,
+                    "unique_id": unique_id,
+                },
+                "status": node_status.upper(),
+            },
+            "info": {
+                "invocation_id": "c630c6bf-633e-4612-8e46-2f170224066c",
+                "level": "info",
+                "msg": "",
+                "name": "NodeFinished",
+            },
+        },
+        event_history_metadata={},
+    )
+
+
+def test_fusion_unit_test_node_finished_is_skipped() -> None:
+    """Unit tests in dbt v2 (Fusion) emit NodeFinished, but their unique ids live under
+    manifest["unit_tests"], not manifest["nodes"]. Treating them as result events raises
+    KeyError in `_get_resource_props` and breaks `dbt build` for any project with unit tests.
+    """
+    event = _fusion_node_finished(
+        unique_id="unit_test.pytest_dwh.public__orders.orders_not_unique",
+        resource_type="unit_test",
+        node_status="success",
+    )
+
+    assert event.is_result_event is False
+    assert list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator())) == []
+
+
+def test_fusion_model_node_finished_still_materializes() -> None:
+    """Excluding unit tests must not over-exclude: a regular model NodeFinished is still
+    a result event and must produce its materialization.
+    """
+    event = _fusion_node_finished(
+        unique_id="model.pytest_dwh.public__orders",
+        resource_type="model",
+        node_status="success",
+    )
+
+    assert event.is_result_event is True
+    events = list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator()))
+    materializations = [e for e in events if isinstance(e, AssetMaterialization)]
+    assert len(materializations) == 1
