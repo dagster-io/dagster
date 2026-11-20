@@ -872,7 +872,42 @@ class TypeHintInferredDagsterType(DagsterType):
         return self.python_type.__name__
 
 
+_RESOLVE_DAGSTER_TYPE_CACHE: dict[object, DagsterType] = {}
+"""Memoized results of ``resolve_dagster_type``, keyed by annotation.
+
+Resolution is a deterministic function of the annotation: plain classes resolve through the
+builtin maps or the append-only Python type registry (which ``make_python_type_usable_as_dagster_type``
+refuses to change once a class has been resolved). Annotations that embed ``DagsterType``
+instances are never cached, because ``DagsterType.__eq__`` compares by key and two distinct types
+with the same name would otherwise be substituted for one another. Failed resolutions are not
+cached so that they keep raising.
+"""
+
+
+def _contains_dagster_type(annotation: object) -> bool:
+    return any(
+        isinstance(arg, DagsterType) or _contains_dagster_type(arg)
+        for arg in get_args(annotation)
+    )
+
+
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
+    if isinstance(dagster_type, DagsterType):
+        return dagster_type
+    try:
+        cached = _RESOLVE_DAGSTER_TYPE_CACHE.get(dagster_type)
+    except TypeError:
+        # Unhashable input: the uncached path raises the user-facing error.
+        return _resolve_dagster_type_uncached(dagster_type)
+    if cached is not None:
+        return cached
+    resolved = _resolve_dagster_type_uncached(dagster_type)
+    if not _contains_dagster_type(dagster_type):
+        _RESOLVE_DAGSTER_TYPE_CACHE[dagster_type] = resolved
+    return resolved
+
+
+def _resolve_dagster_type_uncached(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._core.definitions.result import MaterializeResult, ObserveResult
     from dagster._core.types.primitive_mapping import (
