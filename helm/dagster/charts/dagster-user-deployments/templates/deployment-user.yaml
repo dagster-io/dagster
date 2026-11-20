@@ -129,7 +129,7 @@ spec:
             successThreshold: 1
             failureThreshold: 15
         {{- else if ne $deployment.readinessProbe.enabled false }}
-          {{- if not $deployment.readinessProbe.exec }}
+          {{- if not (or $deployment.readinessProbe.exec $deployment.readinessProbe.httpGet $deployment.readinessProbe.tcpSocket $deployment.readinessProbe.grpc) }}
           readinessProbe:
             exec:
               command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
@@ -162,7 +162,7 @@ spec:
           {{- end }}
         {{- end }}
         {{- if $deployment.livenessProbe }}
-          {{- if not $deployment.livenessProbe.exec }}
+          {{- if not (or $deployment.livenessProbe.exec $deployment.livenessProbe.httpGet $deployment.livenessProbe.tcpSocket $deployment.livenessProbe.grpc) }}
           livenessProbe:
             exec:
               command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
@@ -201,7 +201,7 @@ spec:
             {{- if $startupProbe }}
               {{- $startupProbe | toYaml | nindent 12 }}
             {{- end }}
-          {{- if not $deployment.startupProbe.exec }}
+          {{- if not (or $deployment.startupProbe.exec $deployment.startupProbe.httpGet $deployment.startupProbe.tcpSocket $deployment.startupProbe.grpc) }}
             exec:
               command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
           {{- end }}

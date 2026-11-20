@@ -42,6 +42,7 @@ dependencies {
         implementation 'com.google.guava:guava:33.7.2-jre'
         implementation 'io.airlift:aircompressor:2.0.3'
         implementation 'org.apache.commons:commons-lang3:3.18.0'
+        implementation 'org.javassist:javassist:3.33.0-GA'
         implementation 'org.xerial.snappy:snappy-java:1.1.10.9'
         // Gradle's Scala compiler (zinc) depends on Log4j 2.17.1. It does not
         // ship in the jar, but the lockfile records it. This is a constraint

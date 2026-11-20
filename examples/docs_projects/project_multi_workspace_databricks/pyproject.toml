@@ -1,6 +1,7 @@
 [project]
 name = "project_multi_workspace_databricks"
 requires-python = ">=3.11,<3.15"
+license = "Apache-2.0"
 version = "0.1.0"
 dependencies = [
     "dagster",

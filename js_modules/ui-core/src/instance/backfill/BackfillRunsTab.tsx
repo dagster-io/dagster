@@ -46,7 +46,6 @@ export const BackfillRunsTab = ({
   const view = propView === 'both' ? _view : propView;
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
-  const queryStringFilters = runsFilterForSearchTokens(filterTokens);
 
   const {button, activeFiltersJsx} = useRunsFilterInput({
     tokens: filterTokens,
@@ -62,13 +61,13 @@ export const BackfillRunsTab = ({
       lookaheadHours: 0.1, // no ticks, so miminal "future" needed
     });
 
-  const filter: RunsFilter = useMemo(
-    () => ({
+  const filter: RunsFilter = useMemo(() => {
+    const queryStringFilters = runsFilterForSearchTokens(filterTokens);
+    return {
       ...queryStringFilters,
       tags: [...(queryStringFilters.tags || []), {key: DagsterTag.Backfill, value: backfill.id}],
-    }),
-    [backfill, queryStringFilters],
-  );
+    };
+  }, [backfill.id, filterTokens]);
 
   const annotations = useMemo(
     () =>
