@@ -591,16 +591,24 @@ setup(
     )
 
 
-def test_get_deps_requirements_uv_sources_path(tmp_path):
+@pytest.mark.parametrize(
+    "source_path",
+    ["../local-utils", "./local-utils", "local-utils", "packages/local-utils", "absolute"],
+)
+def test_get_deps_requirements_uv_sources_path(tmp_path, source_path):
     """Test get_deps_requirements handles [tool.uv.sources] with path (no workspace)."""
     python_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}")
 
     # Create main package
     app_dir = tmp_path / "my-app"
     app_dir.mkdir()
+    if source_path == "absolute":
+        source_path = (tmp_path / "local-utils").as_posix()
+    local_utils_dir = (app_dir / source_path).resolve()
     (app_dir / "my_app").mkdir()
     (app_dir / "my_app" / "__init__.py").write_text("")
-    (app_dir / "pyproject.toml").write_text("""
+    (app_dir / "pyproject.toml").write_text(
+        """
 [project]
 name = "my-app"
 version = "0.1.0"
@@ -616,11 +624,11 @@ local-utils = { path = "../local-utils" }
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-""")
+""".replace("../local-utils", source_path)
+    )
 
-    # Create local-utils as a sibling package (not a workspace member)
-    local_utils_dir = tmp_path / "local-utils"
-    local_utils_dir.mkdir()
+    # Create local-utils (not a workspace member)
+    local_utils_dir.mkdir(parents=True)
     (local_utils_dir / "local_utils").mkdir()
     (local_utils_dir / "local_utils" / "__init__.py").write_text("")
     (local_utils_dir / "pyproject.toml").write_text("""
@@ -645,6 +653,7 @@ build-backend = "hatchling.build"
 
     # External deps should be in requirements
     assert any("dagster>=" in dep for dep in deps_lines), f"dagster not found in {deps_lines}"
+    assert "pydantic>=2.0.0" in deps_lines
 
     # local-utils should be detected as a local package via path source
     assert str(local_utils_dir) in local_packages.local_package_paths, (
@@ -653,6 +662,25 @@ build-backend = "hatchling.build"
     assert not any("local-utils" in dep for dep in deps_lines), (
         f"local-utils should NOT be in deps (it's a local package): {deps_lines}"
     )
+
+
+@pytest.mark.parametrize("filename", ["local_utils-1.0-py3-none-any.whl", "local_utils-1.0.tar.gz"])
+def test_collect_requirements_uv_sources_file(tmp_path, filename):
+    source_path = f"dist/{filename}"
+    (tmp_path / "dist").mkdir()
+    (tmp_path / source_path).touch()
+    (tmp_path / "pyproject.toml").write_text(f"""
+[project]
+dependencies = ["local-utils"]
+
+[tool.uv.sources]
+local-utils = {{ path = "{source_path}" }}
+""")
+
+    local_package_paths, deps_lines = deps.collect_requirements(str(tmp_path), "python")
+
+    assert local_package_paths == []
+    assert deps_lines == [source_path]
 
 
 def test_get_deps_requirements_uv_sources_path_with_version_specifier(tmp_path):
@@ -713,7 +741,8 @@ build-backend = "hatchling.build"
     )
 
 
-def test_get_deps_requirements_uv_workspace(tmp_path):
+@pytest.mark.parametrize("app_subdirectory", ["my-app", "."])
+def test_get_deps_requirements_uv_workspace(tmp_path, app_subdirectory):
     """Test get_deps_requirements correctly handles uv workspace local dependencies.
 
     When a uv workspace member has dependencies on other workspace members
@@ -724,21 +753,18 @@ def test_get_deps_requirements_uv_workspace(tmp_path):
 
     # Create workspace root
     workspace_root = tmp_path
-    (workspace_root / "pyproject.toml").write_text("""
-[project]
-name = "my-workspace"
-version = "0.1.0"
-
+    (workspace_root / "pyproject.toml").write_text(f"""
 [tool.uv.workspace]
-members = ["my-app", "shared-lib"]
+members = ["{app_subdirectory}", "shared-lib"]
 """)
 
     # Create main app package
-    app_dir = workspace_root / "my-app"
-    app_dir.mkdir()
+    app_dir = workspace_root / app_subdirectory
+    app_dir.mkdir(exist_ok=True)
     (app_dir / "my_app").mkdir()
     (app_dir / "my_app" / "__init__.py").write_text("")
-    (app_dir / "pyproject.toml").write_text("""
+    with (app_dir / "pyproject.toml").open("a") as pyproject:
+        pyproject.write("""
 [project]
 name = "my-app"
 version = "0.1.0"
@@ -785,6 +811,7 @@ build-backend = "hatchling.build"
     # External deps should be in requirements
     assert any("dagster>=" in dep for dep in deps_lines), f"dagster not found in {deps_lines}"
     assert any("requests" in dep for dep in deps_lines), f"requests not found in {deps_lines}"
+    assert "pydantic>=2.0.0" in deps_lines
 
     # shared-lib is a workspace dependency - it should be detected as a local package
     # and NOT appear in the requirements (it would fail pip install)
