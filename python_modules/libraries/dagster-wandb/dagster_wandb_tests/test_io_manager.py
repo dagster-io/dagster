@@ -160,6 +160,13 @@ def run_mock():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def launch_api_mock():
+    """Keep resource initialization from building a real W&B API client."""
+    with patch("dagster_wandb.resources._launch_api") as mock:
+        yield mock
+
+
 @pytest.fixture
 def login_mock():
     with patch(
