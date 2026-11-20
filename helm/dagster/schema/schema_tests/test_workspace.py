@@ -21,6 +21,70 @@ def helm_template() -> HelmTemplate:
     )
 
 
+@pytest.mark.parametrize("component", ["dagsterDaemon", "dagsterWebserver", "dagit"])
+@pytest.mark.parametrize(
+    "image",
+    [
+        {},
+        {"repository": "example.com/dagster", "tag": "custom", "pullPolicy": "Always"},
+        {
+            "repository": "example.com/dagster",
+            "tag": "ignored",
+            "digest": "sha256:abc123",
+            "pullPolicy": "Never",
+        },
+    ],
+)
+def test_user_deployment_wait_uses_main_image(component: str, image: dict[str, str]):
+    template = HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output=(
+            "templates/deployment-daemon.yaml"
+            if component == "dagsterDaemon"
+            else "templates/deployment-webserver.yaml"
+        ),
+        model=models.V1Deployment,
+    )
+    deployment_names = ["deployment-one", "deployment-two"]
+    deployments = template.render(
+        values_dict={
+            component: {
+                "image": image,
+                **({"enableReadOnly": True} if component != "dagsterDaemon" else {}),
+            },
+            "dagster-user-deployments": {
+                "deployments": [
+                    create_simple_user_deployment(name).model_dump(
+                        mode="json", by_alias=True, exclude_none=True
+                    )
+                    for name in deployment_names
+                ],
+            },
+        }
+    )
+
+    assert len(deployments) == (1 if component == "dagsterDaemon" else 2)
+    for deployment in deployments:
+        pod_spec = deployment.spec.template.spec
+        main_container = pod_spec.containers[0]
+        wait_containers = [
+            container
+            for container in pod_spec.init_containers
+            if container.name.startswith("init-user-deployment-")
+        ]
+        assert len(wait_containers) == len(deployment_names)
+        for container, name in zip(wait_containers, deployment_names):
+            assert container.name == f"init-user-deployment-{name}"
+            assert container.image == main_container.image
+            assert container.image_pull_policy == main_container.image_pull_policy
+            assert container.command == [
+                "sh",
+                "-c",
+                f"until getent hosts {name}; do echo waiting for user service; sleep 2; done",
+            ]
+
+
 def test_workspace_renders_fail(template: HelmTemplate, capfd):
     helm_values = DagsterHelmValues.construct(
         dagsterUserDeployments=UserDeployments.construct(

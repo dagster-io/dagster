@@ -93,6 +93,12 @@ helm install my-release dagster/dagster \
 
 To see the full list of configurable settings, check out the `values.yaml` file. Documentation can be found in the comments.
 
+The daemon and webserver init containers that wait for user deployment service names to resolve
+reuse their respective main container images and pull policies. Custom daemon and webserver images
+must provide `sh`, `getent`, and `sleep`. These init containers use `getent hosts` to check name
+resolution, not service readiness. The `busybox.image` setting only applies to the RabbitMQ readiness
+check for Celery workers.
+
 ## Tutorial
 
 For a introductory guide on deploying Dagster with Helm, [check out our documentation](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm).
