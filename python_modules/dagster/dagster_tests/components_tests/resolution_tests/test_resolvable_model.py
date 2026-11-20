@@ -59,3 +59,20 @@ def test_valid_resolution_nested() -> None:
         str_val="a_x",
         inners=[InnerObject(val1_renamed=21, val2="a_y")],
     )
+
+
+def test_resolve_dumps_model_once(monkeypatch) -> None:
+    """Resolving checks which fields are set with one dump, not one per field."""
+    model = TargetObject.model()(int_val=1, str_val="a", inners=None)
+    dumps = 0
+    original = type(model).model_dump
+
+    def counting_dump(self, *args, **kwargs):
+        nonlocal dumps
+        dumps += 1
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(type(model), "model_dump", counting_dump)
+    resolved = TargetObject.resolve_from_model(dg.ResolutionContext(scope={}), model)
+    assert resolved == TargetObject(int_val=1, str_val="a", inners=None)
+    assert dumps == 1

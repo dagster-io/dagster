@@ -449,11 +449,13 @@ def resolve_fields(
         for field_name, annotation_info in _get_annotations(resolved_cls).items()
     }
 
+    # Dump once: dumping in the comprehension below serialized the whole model once per field.
+    set_fields = model.model_dump(exclude_unset=True).keys()
     out = {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in field_resolvers.items()
         # filter out unset fields to trigger defaults
-        if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
+        if (resolver.model_field_name or field_name) in set_fields
         and getattr(model, resolver.model_field_name or field_name) != _Unset
     }
     return {alias_name_by_field_name[k]: v for k, v in out.items()}
