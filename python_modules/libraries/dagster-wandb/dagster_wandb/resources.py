@@ -66,7 +66,9 @@ def _launch_api(api_key: str, host: str) -> Any:
     """Build the API client that W&B Launch expects for this wandb version."""
     try:
         from wandb.sdk.launch.api import LaunchApi
-    except ImportError:
+    except ModuleNotFoundError as error:
+        if error.name != "wandb.sdk.launch.api":
+            raise
         # wandb<0.30 has no LaunchApi; Launch takes the internal API client instead.
         from wandb.sdk.internal.internal_api import Api  # ty: ignore[unresolved-import]
 
