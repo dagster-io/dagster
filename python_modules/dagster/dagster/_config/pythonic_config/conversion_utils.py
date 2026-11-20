@@ -1,4 +1,5 @@
 import inspect
+import weakref
 from collections.abc import Mapping
 from enum import Enum
 from types import UnionType
@@ -331,6 +332,11 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
     )
 
 
+# The schema of each Config class, which depends only on the class. Weak keys let classes defined
+# at runtime be collected.
+_config_class_schemas: "weakref.WeakKeyDictionary[type, Field]" = weakref.WeakKeyDictionary()
+
+
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
     from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
@@ -340,7 +346,12 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
             config_arg_default is inspect.Parameter.empty,
             "Cannot provide a default value when using a Config class",
         )
-        return infer_schema_from_config_class(model_cls)
+        # Many ops can share one Config class: infer its schema once.
+        schema = _config_class_schemas.get(model_cls)
+        if schema is None:
+            schema = infer_schema_from_config_class(model_cls)
+            _config_class_schemas[model_cls] = schema
+        return schema
 
     # If were are here config is annotated with a primitive type
     # We do a conversion to a type as if it were a type on a pydantic field

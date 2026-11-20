@@ -1061,3 +1061,32 @@ def test_to_config_dict() -> None:
 
     config_dict = dg.RunConfig({"my_asset_job": MyConfig()}).to_config_dict()
     assert config_dict["ops"]["my_asset_job"]["config"] == {"num": 1, "enum": "RED", "arr": []}
+
+
+def test_ops_share_a_config_class_schema(monkeypatch) -> None:
+    """Ops whose config uses the same Config class infer its schema once."""
+    from dagster._config.pythonic_config import config as config_module
+
+    class SharedConfig(dg.Config):
+        value: int = 1
+
+    inferred = 0
+    original = config_module.infer_schema_from_config_class
+
+    def counting_infer(*args, **kwargs):
+        nonlocal inferred
+        inferred += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(config_module, "infer_schema_from_config_class", counting_infer)
+
+    @dg.op
+    def first(config: SharedConfig) -> int:
+        return config.value
+
+    @dg.op
+    def second(config: SharedConfig) -> int:
+        return config.value
+
+    assert inferred == 1
+    assert first.config_schema.as_field() is second.config_schema.as_field()
