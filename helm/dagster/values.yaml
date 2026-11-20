@@ -1204,7 +1204,9 @@ httpRoute:
     # Overrides `httpRoute.parentRefs` for this HTTPRoute.
     parentRefs: []
 
-    # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
+    # Path Flower is served at. The HTTPRoute only matches this path and does not rewrite it, so
+    # for a path other than "/" Flower has to be configured to serve under the same prefix (or a
+    # `URLRewrite` filter has to strip it).
     path: "/"
     # One of `Exact`, `PathPrefix` or `RegularExpression`.
     pathType: PathPrefix
