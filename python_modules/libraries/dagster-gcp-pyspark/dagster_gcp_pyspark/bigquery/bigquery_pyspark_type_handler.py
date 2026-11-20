@@ -31,6 +31,9 @@ def _get_bigquery_read_options(table_slice: TableSlice) -> Mapping[str, str]:
 class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load PySpark DataFrames as BigQuery tables.
 
+    Set ``preserve_column_case=True`` on the I/O manager to preserve column names.
+    By default, writes uppercase column names and reads lowercase them.
+
     Examples:
         .. code-block:: python
 
@@ -68,9 +71,17 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
         else:
             options = _get_bigquery_write_options(context.resource_config, table_slice)
 
-            with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+            preserve_column_case = (
+                context.resource_config.get("preserve_column_case", False)
+                if context.resource_config
+                else False
+            )
+            if not preserve_column_case:
+                dataframe = obj.toDF(*[c.upper() for c in obj.columns])
+            else:
+                dataframe = obj
 
-            with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
+            dataframe.write.format("bigquery").options(**options).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(
@@ -95,8 +106,14 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             .options(**options)
             .load(BigQueryClient.get_select_statement(table_slice))
         )
-
-        return df.toDF(*[c.lower() for c in df.columns])
+        preserve_column_case = (
+            context.resource_config.get("preserve_column_case", False)
+            if context.resource_config
+            else False
+        )
+        if not preserve_column_case:
+            return df.toDF(*[c.lower() for c in df.columns])
+        return df
 
     @property
     def supported_types(self):
@@ -205,6 +222,10 @@ Examples:
 
 class BigQueryPySparkIOManager(BigQueryIOManager):
     """An I/O manager definition that reads inputs from and writes PySpark DataFrames to BigQuery.
+
+    Set ``preserve_column_case=True`` to preserve column name casing on reads and writes.
+    The default is ``False``, which uppercases writes and lowercases reads. Existing tables
+    with uppercase column names will load with uppercase names when this option is enabled.
 
     Returns:
         IOManagerDefinition
