@@ -77,7 +77,7 @@ def match_type(obj: object, type_: type[T] | tuple[type[T]]) -> TypeGuard[T]:
     if origin is Literal:
         # get_args(typ) will be the allowed literal values
         allowed_values = get_args(type_)  # e.g. (3, 5, "hello")
-        return obj in allowed_values
+        return any(type(obj) is type(value) and obj == value for value in allowed_values)
 
     # Handle list[...] (e.g. list[str])
     if origin is Sequence:
