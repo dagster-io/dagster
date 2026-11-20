@@ -58,6 +58,7 @@ if TYPE_CHECKING:
         ChecksAutomationCondition,
     )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+        BaseDepsAutomationCondition,
         DepsAutomationCondition,
     )
     from dagster._core.definitions.declarative_automation.operators.job_operators import (
@@ -877,6 +878,39 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return AutomationCondition.any_deps_match(
             AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
         ).with_label("any_deps_missing")
+
+    @public
+    @staticmethod
+    def any_deps_required_but_nonexistent() -> "BaseDepsAutomationCondition[AssetOrCheckKey]":
+        """Returns an AutomationCondition that is true for any partition of the target which
+        requires at least one upstream partition key that does not exist in the upstream
+        PartitionsDefinition.
+
+        This commonly occurs when an upstream asset uses a time-based PartitionsDefinition with
+        an end_offset, meaning the latest downstream partitions map onto upstream partitions
+        which have not yet come into existence. Such partitions are invisible to conditions
+        such as `AutomationCondition.any_deps_missing()`, as they cannot be represented in a
+        subset of the upstream PartitionsDefinition.
+
+        Dependencies with a PartitionMapping that sets
+        `allow_nonexistent_upstream_partitions=True` are never considered to have required but
+        nonexistent parent partitions.
+
+        Selections passed to `.allow()` / `.ignore()` are applied to the target's direct
+        parents; virtual dependency resolution has no effect on this condition.
+
+        This condition can only detect nonexistent partitions which the dependency's
+        PartitionMapping reports. TimeWindowPartitionMappings with positive offsets currently
+        clamp future windows to the upstream's existing range before that report is computed,
+        so those dependencies are not detected (see issue #26935).
+        """
+        from dagster._core.definitions.declarative_automation.operators import (
+            AnyDepsRequiredButNonexistentCondition,
+        )
+
+        return AnyDepsRequiredButNonexistentCondition().with_label(
+            "any_deps_required_but_nonexistent"
+        )
 
     @public
     @staticmethod
