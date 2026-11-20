@@ -1692,13 +1692,19 @@ class PipesContext:
         context_params = params_loader.load_context_params()
         messages_params = params_loader.load_messages_params()
         self._io_stack = ExitStack()
-        self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
-        self._message_channel = self._io_stack.enter_context(message_writer.open(messages_params))
-        opened_payload = message_writer.get_opened_payload()
-        self._message_channel.write_message(_make_message("opened", opened_payload))
-        self._logger = _PipesLogger(self)
-        self._materialized_assets: set[str] = set()
-        self._closed: bool = False
+        try:
+            self._data = self._io_stack.enter_context(context_loader.load_context(context_params))
+            self._message_channel = self._io_stack.enter_context(
+                message_writer.open(messages_params)
+            )
+            opened_payload = message_writer.get_opened_payload()
+            self._message_channel.write_message(_make_message("opened", opened_payload))
+            self._logger = _PipesLogger(self)
+            self._materialized_assets: set[str] = set()
+            self._closed: bool = False
+        except BaseException:
+            self._io_stack.close()
+            raise
 
     def __enter__(self) -> "PipesContext":
         return self
@@ -1722,9 +1728,11 @@ class PipesContext:
         """
         if not self._closed:
             payload = {"exception": exc} if exc else {}
-            self._message_channel.write_message(_make_message("closed", payload))
-            self._io_stack.close()
-            self._closed = True
+            try:
+                self._message_channel.write_message(_make_message("closed", payload))
+            finally:
+                self._closed = True
+                self._io_stack.close()
 
     @property
     def is_closed(self) -> bool:
