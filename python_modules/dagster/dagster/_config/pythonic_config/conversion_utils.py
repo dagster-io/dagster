@@ -332,9 +332,12 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
     )
 
 
-# The schema of each Config class, which depends only on the class. Weak keys let classes defined
-# at runtime be collected.
-_config_class_schemas: "weakref.WeakKeyDictionary[type, Field]" = weakref.WeakKeyDictionary()
+# The schema of each Config class, which depends only on the class, so ops, config mappings and
+# configured functions that share a class share one Field, as they would with a shared
+# config_schema. Fields and config types are not mutated after construction. A failed inference,
+# e.g. of a class with forward references not yet resolved by model_rebuild(), is not cached. Weak
+# keys let classes defined at runtime be collected.
+_config_class_schemas: weakref.WeakKeyDictionary[type, Field] = weakref.WeakKeyDictionary()
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:

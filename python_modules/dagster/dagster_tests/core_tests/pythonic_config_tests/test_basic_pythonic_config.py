@@ -1090,3 +1090,29 @@ def test_ops_share_a_config_class_schema(monkeypatch) -> None:
 
     assert inferred == 1
     assert first.config_schema.as_field() is second.config_schema.as_field()
+
+
+def test_config_class_schema_inferred_after_model_rebuild() -> None:
+    """A Config class whose schema cannot be inferred yet gets its schema once it is rebuilt."""
+
+    class Outer(dg.Config):
+        inner: "Inner"
+
+    with pytest.raises(DagsterInvalidPythonicConfigDefinitionError):
+
+        @dg.op
+        def too_early(config: Outer) -> None: ...
+
+    class Inner(dg.Config):
+        value: int = 1
+
+    Outer.model_rebuild()
+
+    @dg.op
+    def rebuilt(config: Outer) -> int:
+        return config.inner.value
+
+    result = dg.GraphDefinition(name="g", node_defs=[rebuilt]).execute_in_process(
+        run_config={"ops": {"rebuilt": {"config": {"inner": {"value": 2}}}}}
+    )
+    assert result.output_for_node("rebuilt") == 2
