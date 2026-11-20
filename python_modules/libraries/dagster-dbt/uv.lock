@@ -865,7 +865,7 @@ requires-dist = [
     { name = "python-dateutil" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sqlglot", extras = ["rs"] },
+    { name = "sqlglot", extras = ["rs"], specifier = ">=24" },
     { name = "typer", specifier = ">=0.9.0" },
 ]
 provides-extras = ["dbt-core", "dbt"]
