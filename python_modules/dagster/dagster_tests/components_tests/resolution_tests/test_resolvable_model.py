@@ -59,3 +59,23 @@ def test_valid_resolution_nested() -> None:
         str_val="a_x",
         inners=[InnerObject(val1_renamed=21, val2="a_y")],
     )
+
+
+def test_resolution_compiles_each_template_once(monkeypatch) -> None:
+    """Repeated strings reuse one compiled template, and renders keep their own scope."""
+    from dagster.components.resolved import context as context_module
+    from jinja2.nativetypes import NativeTemplate
+
+    context_module._native_template.cache_clear()  # noqa: SLF001
+    compiled = 0
+    original = NativeTemplate.__new__
+
+    def counting_new(cls, *args, **kwargs):
+        nonlocal compiled
+        compiled += 1
+        return original(cls, *args, **kwargs)
+
+    monkeypatch.setattr(NativeTemplate, "__new__", counting_new)
+    assert dg.ResolutionContext(scope={"x": 1}).resolve_value("{{ x }}") == 1
+    assert dg.ResolutionContext(scope={"x": 2}).resolve_value("{{ x }}") == 2
+    assert compiled == 1
