@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "assets_smoke_test"
 version = "1!0+dev"
 requires-python = ">=3.11,<3.14"
+license = "Apache-2.0"
 dependencies = [
     "dagster",
     "dagster-pandas",
