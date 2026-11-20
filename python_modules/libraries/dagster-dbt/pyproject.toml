@@ -23,7 +23,7 @@ dependencies = [
     # before calling lineage() (see dbt_cli_event.py) -- no longer needs
     # an upper bound. sqlglot 30.0.0+ also adds lineage CTE memoization,
     # a meaningful speedup for wide models with many columns.
-    "sqlglot[rs]",
+    "sqlglot[c]",
     "typer>=0.9.0",
     "packaging",
 ]
