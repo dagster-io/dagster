@@ -14,7 +14,7 @@ dependencies = [
     "dagster-snowflake==1!0+dev",
     "polars>=1.0.0",
     "requests",
-    "adbc-driver-snowflake>=1.6.0",
+    "adbc-driver-manager>=1.8.0",
 ]
 
 [project.urls]
