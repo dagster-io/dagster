@@ -2,7 +2,9 @@ from collections.abc import Sequence
 from typing import Annotated
 
 import dagster as dg
+import pytest
 from dagster import ResolutionContext
+from dagster.components.resolved.errors import ResolutionException
 from pydantic import BaseModel
 
 
@@ -59,3 +61,18 @@ def test_valid_resolution_nested() -> None:
         str_val="a_x",
         inners=[InnerObject(val1_renamed=21, val2="a_y")],
     )
+
+
+def test_resolution_compiles_each_template_once() -> None:
+    """Repeated strings reuse one compiled template, and renders keep their own scope."""
+    from dagster.components.resolved.context import _native_template
+
+    _native_template.cache_clear()
+    assert dg.ResolutionContext(scope={"x": 1}).resolve_value("{{ x }}") == 1
+    assert dg.ResolutionContext(scope={"x": 2}).resolve_value("{{ x }}") == 2
+    assert _native_template.cache_info().misses == 1
+
+    # Syntax errors are not cached: every resolution reports them.
+    for _ in range(2):
+        with pytest.raises(ResolutionException, match="TemplateSyntaxError"):
+            dg.ResolutionContext(scope={}).resolve_value("{{ x ")

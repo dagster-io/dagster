@@ -1,8 +1,9 @@
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel
@@ -15,7 +16,24 @@ from dagster._record import copy, record
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.scopes import DatetimeScope, DeprecatedScope, DgScope, EnvScope
 
+if TYPE_CHECKING:
+    from jinja2.nativetypes import NativeTemplate
+
 T = TypeVar("T")
+
+
+# A compiled template takes roughly 2.5 KB, so this bounds the cache to about 40 MB.
+@lru_cache(maxsize=16384)
+def _native_template(source: str) -> "NativeTemplate":
+    """Compile ``source`` once: large projects resolve the same strings across many components.
+
+    A template carries no render state, so renders with different scopes can share it.
+    Compile errors are not cached and are raised again on each call.
+    """
+    # defer for import performance
+    from jinja2.nativetypes import NativeTemplate
+
+    return NativeTemplate(source)
 
 
 @public
@@ -148,14 +166,13 @@ class ResolutionContext:
         # defer for import performance
         from jinja2 import Undefined
         from jinja2.exceptions import UndefinedError
-        from jinja2.nativetypes import NativeTemplate
 
         if (
             isinstance(val, str)
             and val  # evaluating empty string returns None so skip to preserve empty string values
         ):
             try:
-                val = NativeTemplate(val).render(**self.scope)
+                val = _native_template(val).render(**self.scope)
                 if isinstance(val, Undefined):
                     raise self._invalid_scope_exc(val._undefined_message) from None  # noqa: SLF001
                 return val
