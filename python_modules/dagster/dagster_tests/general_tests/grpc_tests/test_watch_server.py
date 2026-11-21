@@ -8,6 +8,7 @@ import dagster as dg
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.workspace import CodeLocationEntry
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
@@ -494,6 +495,58 @@ def test_grpc_watch_thread_recovery_when_errored(
     time.sleep(error_recovery_interval * 5)
     assert called_callback["refresh_code_location_count"] == refresh_snapshot
     assert called_event == no_events
+
+    shutdown_event.set()
+    watch_thread.join()
+
+
+@pytest.mark.parametrize(
+    ("loaded_server_id", "expected_refreshes"), [("old_id", 1), ("fixed_id", 0)]
+)
+def test_grpc_watch_thread_refreshes_location_loaded_from_other_server(
+    loaded_server_id: str,
+    expected_refreshes: int,
+    code_location_entry: MagicMock,
+    called_event: dict[str, int],
+    called_callback: dict[str, int],
+    create_server_process_and_watch_thread: Callable[
+        ..., tuple[threading.Event, threading.Thread, subprocess.Popen]
+    ],
+) -> None:
+    """Simulates a refresh that the old pod answered during a Kubernetes rolling deployment: the
+    location was loaded from a server other than the one GetServerId now reaches. The recovery
+    check refreshes it until the server IDs match, without firing any on_* event.
+    """
+    location = create_autospec(GrpcServerCodeLocation, instance=True)
+    location.server_id = loaded_server_id
+    code_location_entry.code_location = location
+    code_location_entry.load_error = None
+
+    def refresh_code_location(location_name: str) -> None:
+        assert location_name == LOCATION_NAME
+        called_callback["refresh_code_location_count"] += 1
+        location.server_id = "fixed_id"
+
+    shutdown_event, watch_thread, _ = create_server_process_and_watch_thread(
+        refresh_code_location=refresh_code_location,
+        watch_interval=0.1,
+        error_recovery_interval=0.1,
+        fixed_server_id="fixed_id",
+    )
+
+    checks = called_callback["get_location_entry_count"]
+    wait_for_condition(
+        lambda: called_callback["get_location_entry_count"] >= checks + 5,
+        interval=0.1,
+        timeout=5,
+    )
+    assert called_callback["refresh_code_location_count"] == expected_refreshes
+    assert called_event == {
+        "on_disconnect_count": 0,
+        "on_reconnected_count": 0,
+        "on_updated_count": 0,
+        "on_error_count": 0,
+    }
 
     shutdown_event.set()
     watch_thread.join()
