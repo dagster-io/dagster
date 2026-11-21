@@ -9,7 +9,7 @@ import {Link} from 'react-router-dom';
 import {gql} from '../apollo-client';
 import {labelForFacet} from './AssetNodeFacets';
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
-import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
+import {AssetNodeFreshnessRow, AssetNodeFreshnessRowWithoutHealth} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
@@ -142,7 +142,7 @@ export const AssetNodeWithLiveData = ({
           (assetHealthEnabled ? (
             <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
           ) : (
-            <AssetNodeFreshnessRowOld liveData={liveData} />
+            <AssetNodeFreshnessRowWithoutHealth liveData={liveData} />
           ))}
         {facets.has(AssetNodeFacet.Automation) && (
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />

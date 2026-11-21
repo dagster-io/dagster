@@ -6,11 +6,11 @@ import {GraphQLError} from 'graphql/error';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {buildAssetKey} from '../../graphql/builders';
-import {AssetKeyInput} from '../../graphql/types';
+import {AssetHealthStatus, AssetKeyInput} from '../../graphql/types';
 import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
 import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../../live-data-provider/util';
 import {getMockResultFn} from '../../testing/mocking';
-import {useAssetsBaseData} from '../AssetBaseDataProvider';
+import {AssetBaseData, useAssetsBaseData} from '../AssetBaseDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../AssetLiveDataProvider';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
@@ -82,10 +82,16 @@ describe('AssetLiveDataProvider', () => {
   it('provides asset data and uses cache if recently fetched', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
     const [mockedQuery, mockedFreshnessQuery] = buildMockedAssetGraphLiveQuery(assetKeys);
-    const [mockedQuery2, mockedFreshnessQuery2] = buildMockedAssetGraphLiveQuery(assetKeys);
+    const [mockedQuery2, mockedFreshnessQuery2] = buildMockedAssetGraphLiveQuery(
+      assetKeys,
+      undefined,
+      undefined,
+      AssetHealthStatus.HEALTHY,
+    );
 
     const resultFn = getMockResultFn(mockedQuery);
     const resultFn2 = getMockResultFn(mockedQuery2);
+    const freshnessResultFn2 = getMockResultFn(mockedFreshnessQuery2);
 
     const hookResult = jest.fn();
     const hookResult2 = jest.fn();
@@ -100,7 +106,7 @@ describe('AssetLiveDataProvider', () => {
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+    expect(hookResult.mock.calls[0]![0]).toEqual({});
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -109,8 +115,11 @@ describe('AssetLiveDataProvider', () => {
     expect(resultFn).toHaveBeenCalled();
     await waitFor(() => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+      expect(hookResult.mock.calls[1]![0]).not.toEqual({});
     });
+    expect(hookResult.mock.calls[1]?.[0]?.['key1']?.freshnessStatusInfo?.freshnessStatus).toBe(
+      AssetHealthStatus.DEGRADED,
+    );
 
     expect(resultFn2).not.toHaveBeenCalled();
 
@@ -118,13 +127,14 @@ describe('AssetLiveDataProvider', () => {
 
     rerender(
       <Test
-        mocks={[mockedQuery, mockedQuery2]}
+        mocks={[mockedQuery, mockedQuery2, mockedFreshnessQuery2]}
         hooks={[{keys: assetKeys, hookResult: hookResult2}]}
       />,
     );
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
+    expect(freshnessResultFn2).not.toHaveBeenCalled();
     expect(hookResult2.mock.calls[0][0]).toEqual({});
     act(() => {
       jest.runOnlyPendingTimers();
@@ -143,6 +153,21 @@ describe('AssetLiveDataProvider', () => {
       jest.advanceTimersByTime(SUBSCRIPTION_IDLE_POLL_RATE + 1);
     });
     expect(resultFn2).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(freshnessResultFn2).toHaveBeenCalled();
+      expect(
+        AssetBaseData.manager.getCacheEntry('key1')?.freshnessStatusInfo?.freshnessStatus,
+      ).toBe(AssetHealthStatus.HEALTHY);
+    });
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    await waitFor(() => {
+      expect(
+        hookResult2.mock.calls[hookResult2.mock.calls.length - 1]?.[0]?.['key1']
+          ?.freshnessStatusInfo?.freshnessStatus,
+      ).toBe(AssetHealthStatus.HEALTHY);
+    });
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
   });
 

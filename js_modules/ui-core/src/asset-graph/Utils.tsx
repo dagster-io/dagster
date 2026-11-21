@@ -17,7 +17,7 @@ import {
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 import {ILayoutOp} from '../graph/layout';
-import {RunStatus} from '../graphql/types';
+import {AssetHealthStatus, RunStatus} from '../graphql/types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -38,6 +38,10 @@ type AssetNode = WorkspaceAssetNode;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment & {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
+  freshnessStatusInfo?: {
+    freshnessStatus: AssetHealthStatus;
+    freshnessStatusMetadata: {lastMaterializedTimestamp: number | null} | null;
+  } | null;
 };
 type AssetLatestInfo = AssetLatestInfoFragment;
 
@@ -179,6 +183,7 @@ export interface LiveDataForNode {
   lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
+  freshnessStatusInfo?: AssetLiveNode['freshnessStatusInfo'];
   lastObservation: AssetNodeLiveObservationFragment | null;
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
@@ -200,6 +205,7 @@ export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   freshnessInfo: null,
+  freshnessStatusInfo: null,
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -234,6 +240,7 @@ export const buildLiveDataForNode = (
         : [],
     stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
+    freshnessStatusInfo: assetNode.freshnessStatusInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
