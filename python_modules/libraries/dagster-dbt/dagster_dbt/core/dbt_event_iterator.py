@@ -235,13 +235,10 @@ class DbtEventIterator(Iterator[T]):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
-        if self._dbt_cli_invocation.is_fusion:
-            logger.warning(
-                "Row counts are fetched through the dbt Core adapter, which the dbt Fusion engine"
-                " does not provide. Row count metadata will not be included in the emitted events."
-            )
-            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
-
+        check.invariant(
+            self._dbt_cli_invocation.cli_version.major < 2,
+            "Row count metadata not supported for dbt Fusion.",
+        )
         return self._attach_metadata(_fetch_row_count_metadata)
 
     @public
@@ -261,15 +258,10 @@ class DbtEventIterator(Iterator[T]):
                 A set of corresponding Dagster events for dbt models, with column metadata attached,
                 yielded in the order they are emitted by dbt.
         """
-        if self._dbt_cli_invocation.is_fusion:
-            logger.warning(
-                "Column metadata is fetched through the dbt Core adapter, which the dbt Fusion"
-                " engine does not provide. To emit column schema and column lineage under Fusion,"
-                " add the `dagster` dbt package's `log_column_level_metadata` macro as a post-hook"
-                " in your dbt project; `stream()` attaches the metadata it logs without this call."
-            )
-            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
-
+        check.invariant(
+            self._dbt_cli_invocation.cli_version.major < 2,
+            "Column metadata not supported for dbt Fusion.",
+        )
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
         )
