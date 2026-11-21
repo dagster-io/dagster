@@ -49,7 +49,7 @@ def get_conn_string(
     db_name: str = "",
     port: str = "5432",
     params: Mapping[str, object] | None = None,
-    scheme: str = "postgresql",
+    scheme: str = "postgresql+psycopg2",
 ) -> str:
     if password:
         userinfo = f"{quote(username)}:{quote(password)}"

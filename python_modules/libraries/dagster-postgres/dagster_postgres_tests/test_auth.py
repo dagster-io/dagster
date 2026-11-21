@@ -111,7 +111,7 @@ class TestDoConnectHook:
         """
         provider = FakeTokenProvider(token="injected-password", ttl=3600)
         engine = sqlalchemy.create_engine(
-            "postgresql://user:dummy@localhost:5432/db",
+            "postgresql+psycopg2://user:dummy@localhost:5432/db",
             poolclass=sqlalchemy.pool.NullPool,
         )
         register_do_connect_hook(engine, provider)
