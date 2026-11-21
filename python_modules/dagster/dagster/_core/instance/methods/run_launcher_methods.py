@@ -204,6 +204,15 @@ class RunLauncherMethods:
 
     def run_will_resume(self, run_id: str) -> bool:
         """Check if run will resume."""
+        from dagster._core.storage.dagster_run import DagsterRunStatus
+
         if not self.run_monitoring_enabled:
+            return False
+        # A run that the user is canceling (or has already canceled) will not be resumed by the
+        # daemon, which only resumes runs that are still in the STARTED status. Treating such a run
+        # as resumable would suppress forwarding the termination signal to in-flight steps, leaving
+        # them running indefinitely.
+        run = self.get_run_by_id(run_id)
+        if run and run.status in (DagsterRunStatus.CANCELING, DagsterRunStatus.CANCELED):
             return False
         return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
