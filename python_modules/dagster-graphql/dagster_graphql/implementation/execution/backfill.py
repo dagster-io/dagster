@@ -97,6 +97,14 @@ def create_and_launch_partition_backfill(
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.runs import parse_run_config_input
 
+    if (
+        backfill_params.get("forceSynchronousSubmission")
+        and graphene_info.context.instance.backfill_stop_protocol_enabled
+    ):
+        raise DagsterInvariantViolationError(
+            "Backfill stop protocol does not support forceSynchronousSubmission. Submit the "
+            "backfill asynchronously so its persisted owner exists before run registration."
+        )
     backfill_id = make_new_backfill_id()
     backfill_timestamp = get_current_timestamp()
     backfill_datetime = datetime_from_timestamp(backfill_timestamp)
@@ -325,7 +333,7 @@ def cancel_partition_backfill(
 
     assert_permission_for_backfill(graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, backfill)
 
-    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
+    graphene_info.context.instance.request_backfill_stop(backfill_id)
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
 
@@ -341,7 +349,7 @@ def resume_partition_backfill(
 
     assert_permission_for_backfill(graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, backfill)
 
-    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.REQUESTED))
+    graphene_info.context.instance.resume_backfill(backfill_id)
     return GrapheneResumeBackfillSuccess(backfill_id=backfill_id)
 
 

@@ -33,6 +33,10 @@ def inprocess_execution_iterator(
 
 
 class InProcessExecutor(Executor):
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return True
+
     def __init__(
         self,
         retries: RetryMode,

@@ -405,6 +405,17 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
             return False
 
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+        from dagster._core.storage.runs.base import WorkerLaunchKind
+
+        backfill_owned = run_uses_stop_protocol(instance, run)
+        if backfill_owned and not instance.claim_backfill_worker_launch(
+            run.run_id,
+            "run",
+            WorkerLaunchKind.RUN,
+            instance.run_launcher.get_backfill_worker_target(run),
+        ):
+            return False
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
             job_name=run.job_name,
@@ -416,6 +427,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         try:
             instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
+            if backfill_owned:
+                instance.acknowledge_backfill_worker_launch(run.run_id, "run")
         except Exception as e:
             error = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
@@ -431,8 +444,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     f" {run.status} - moving on. Error: {error.to_string()}"
                 )
                 return False
-            elif concurrency_config.run_queue_config.max_user_code_failure_retries and isinstance(
-                e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
+            elif (
+                concurrency_config.run_queue_config.max_user_code_failure_retries
+                and isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError))
+                and not backfill_owned
             ):
                 if location_name:
                     with self._location_timeouts_lock:

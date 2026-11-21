@@ -18,6 +18,11 @@ if TYPE_CHECKING:
 
 @public
 class Executor(ABC):
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        """Whether all worker dispatches use the durable backfill admission gate."""
+        return False
+
     @public
     @abstractmethod
     def execute(

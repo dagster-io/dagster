@@ -1,6 +1,6 @@
 import sys
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -106,7 +106,9 @@ class RunLauncherMethods:
             run_id (str): The id of the run the launch.
         """
         from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+        from dagster._core.execution.backfill import run_uses_stop_protocol
         from dagster._core.launcher import LaunchRunContext
+        from dagster._core.storage.runs.base import WorkerLaunchKind
 
         run = self.get_run_by_id(run_id)
         if run is None:
@@ -114,6 +116,11 @@ class RunLauncherMethods:
                 f"Could not load run {run_id} that was passed to launch_run"
             )
 
+        backfill_owned = run_uses_stop_protocol(cast("DagsterInstance", self), run)
+        if backfill_owned and not self.claim_backfill_worker_launch(  # ty: ignore[unresolved-attribute]
+            run_id, "run", WorkerLaunchKind.RUN, self.run_launcher.get_backfill_worker_target(run)
+        ):
+            return run
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
             job_name=run.job_name,
@@ -128,6 +135,8 @@ class RunLauncherMethods:
         assert run is not None
         try:
             self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
+            if backfill_owned:
+                self.acknowledge_backfill_worker_launch(run_id, "run")  # ty: ignore[unresolved-attribute]
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(  # ty: ignore[unresolved-attribute]
@@ -155,6 +164,7 @@ class RunLauncherMethods:
             run_id (str): The id of the run the launch.
         """
         from dagster._core.events import EngineEventData
+        from dagster._core.execution.backfill import run_uses_stop_protocol
         from dagster._core.launcher import ResumeRunContext
         from dagster._daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
@@ -166,6 +176,11 @@ class RunLauncherMethods:
         if run.status not in IN_PROGRESS_RUN_STATUSES:
             raise DagsterInvariantViolationError(
                 f"Run {run_id} is not in a state that can be resumed"
+            )
+        if run_uses_stop_protocol(cast("DagsterInstance", self), run):
+            raise DagsterInvariantViolationError(
+                "Backfill-owned run workers cannot resume: the launch ledger admits only one "
+                "dispatch per run. Create an owned retry run instead."
             )
 
         self.report_engine_event(  # ty: ignore[unresolved-attribute]
@@ -195,8 +210,6 @@ class RunLauncherMethods:
 
     def count_resume_run_attempts(self, run_id: str) -> int:
         """Count resume run attempts."""
-        from typing import cast
-
         from dagster._daemon.monitoring import count_resume_run_attempts
 
         # Cast is safe since this mixin is only used by DagsterInstance
@@ -204,6 +217,11 @@ class RunLauncherMethods:
 
     def run_will_resume(self, run_id: str) -> bool:
         """Check if run will resume."""
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
         if not self.run_monitoring_enabled:
+            return False
+        run = self.get_run_by_id(run_id)
+        if run is not None and run_uses_stop_protocol(cast("DagsterInstance", self), run):
             return False
         return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts

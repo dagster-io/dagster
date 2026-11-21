@@ -29,7 +29,13 @@ from dagster._core.storage.event_log.base import (
     PlannedMaterializationInfo,
     PoolLimit,
 )
-from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.runs.base import (
+    BackfillWorkerLaunch,
+    ChildWorkerTarget,
+    RunStorage,
+    WorkerLaunchKind,
+    WorkerLaunchTarget,
+)
 from dagster._core.storage.schedules.base import ScheduleStorage
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.types.pagination import PaginatedResults
@@ -353,6 +359,37 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.update_backfill(partition_backfill)
+
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return self._storage.run_storage.supports_backfill_stop_protocol
+
+    def request_backfill_stop(self, backfill_id: str) -> "PartitionBackfill":
+        return self._storage.run_storage.request_backfill_stop(backfill_id)
+
+    def resume_backfill(self, backfill_id: str) -> "PartitionBackfill":
+        return self._storage.run_storage.resume_backfill(backfill_id)
+
+    def claim_backfill_worker_launch(
+        self, run_id: str, worker_id: str, kind: WorkerLaunchKind, target: WorkerLaunchTarget
+    ) -> bool:
+        return self._storage.run_storage.claim_backfill_worker_launch(
+            run_id, worker_id, kind, target
+        )
+
+    def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        self._storage.run_storage.acknowledge_backfill_worker_launch(run_id, worker_id)
+
+    def admit_backfill_worker_child(
+        self, run_id: str, worker_id: str, target: ChildWorkerTarget
+    ) -> bool:
+        return self._storage.run_storage.admit_backfill_worker_child(run_id, worker_id, target)
+
+    def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:
+        return self._storage.run_storage.get_backfill_worker_launches(backfill_id)
+
+    def resolve_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        self._storage.run_storage.resolve_backfill_worker_launch(run_id, worker_id)
 
     def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
         return self._storage.run_storage.get_run_partition_data(runs_filter)

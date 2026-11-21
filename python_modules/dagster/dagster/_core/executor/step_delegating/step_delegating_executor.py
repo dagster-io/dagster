@@ -3,11 +3,12 @@ import math
 import os
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.errors import DagsterBackfillAdmissionClosed
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
@@ -161,6 +162,43 @@ class StepDelegatingExecutor(Executor):
             dagster_run=plan_context.dagster_run,
         )
 
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return self._step_handler.supports_backfill_stop_protocol
+
+    def _launch_step(self, context: StepHandlerContext) -> Iterator[DagsterEvent]:
+        from dagster._core.execution.backfill import (
+            get_backfill_step_worker_id,
+            run_uses_stop_protocol,
+        )
+        from dagster._core.storage.runs.base import WorkerLaunchKind
+
+        if not run_uses_stop_protocol(context.instance, context.dagster_run):
+            yield from self._step_handler.launch_step(context)
+            return
+
+        step_keys = check.not_none(context.execute_step_args.step_keys_to_execute)
+        check.invariant(len(step_keys) == 1, "Worker admission requires one step per dispatch.")
+        step_key = step_keys[0]
+        check.invariant(
+            self.supports_backfill_stop_protocol,
+            f"Step handler {self._step_handler.name} does not support the backfill stop protocol.",
+        )
+        known_state = context.execute_step_args.known_state
+        attempt = known_state.get_retry_state().get_attempt_count(step_key) if known_state else 0
+        worker_id = get_backfill_step_worker_id(step_key, attempt)
+        if not context.instance.claim_backfill_worker_launch(
+            context.dagster_run.run_id,
+            worker_id,
+            WorkerLaunchKind.STEP,
+            self._step_handler.get_backfill_worker_target(context),
+        ):
+            raise DagsterBackfillAdmissionClosed(
+                f"Step worker {worker_id} cannot dispatch: admission is closed or already claimed."
+            )
+        yield from self._step_handler.launch_step(context)
+        context.instance.acknowledge_backfill_worker_launch(context.dagster_run.run_id, worker_id)
+
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -243,7 +281,7 @@ class StepDelegatingExecutor(Executor):
                         if should_retry_step:
                             # health check failed, launch the step
                             list(
-                                self._step_handler.launch_step(
+                                self._launch_step(
                                     self._get_step_handler_context(
                                         plan_context, [step], active_execution
                                     )
@@ -390,7 +428,7 @@ class StepDelegatingExecutor(Executor):
                         for step in active_execution.get_steps_to_execute(max_steps_to_run):
                             running_steps[step.key] = step
                             list(
-                                self._step_handler.launch_step(
+                                self._launch_step(
                                     self._get_step_handler_context(
                                         plan_context, [step], active_execution
                                     )

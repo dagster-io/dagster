@@ -1280,7 +1280,9 @@ async def execute_asset_backfill_iteration(
         asset_backfill_data_after_iteration = backfill.get_asset_backfill_data(asset_graph)
         all_partitions_marked_completed = asset_backfill_data_after_iteration.all_requested_partitions_marked_as_materialized_or_failed()
 
-        if all_partitions_marked_completed:
+        if all_partitions_marked_completed and (
+            all_runs_canceled or not backfill.uses_stop_protocol
+        ):
             updated_backfill = updated_backfill.with_status(
                 status_once_runs_are_complete
             ).with_end_timestamp(get_current_timestamp())
