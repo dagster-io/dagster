@@ -47,6 +47,7 @@ In this example:
 
 - Using `MultiPartitionsDefinition`, the `two_dimensional_partitions` is defined with two dimensions: `date` and `region`
 - The partition key would be: `2024-08-01|us`
+- Inside the asset, `context.multi_partition_key` returns that key as a `MultiPartitionKey`, and its `keys_by_dimension` property maps each dimension name to its value, for example `{"date": "2024-08-01", "region": "us"}`. Use it instead of `context.partition_key`, which is typed as a plain `str`
 - The `daily_regional_sales_data` and `daily_regional_sales_summary` assets are defined with the same two-dimensional partitioning scheme
 - The `daily_regional_sales_schedule` runs daily at 1:00 AM, processing the previous day's data for all regions. It uses `MultiPartitionKey` to specify partition keys for both date and region dimensions, resulting in three runs per day, one for each region.
 

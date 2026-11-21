@@ -16,11 +16,12 @@ two_dimensional_partitions = dg.MultiPartitionsDefinition(
 # Define the partitioned asset
 @dg.asset(partitions_def=two_dimensional_partitions)
 def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
-    # partition_key looks like "2024-01-01|us"
-    keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
+    # context.partition_key looks like "2024-01-01|us"; multi_partition_key is the
+    # same key typed as a MultiPartitionKey, which exposes each dimension by name
+    keys_by_dimension = context.multi_partition_key.keys_by_dimension
 
-    date = keys_by_dimension["date"]  # ty: ignore[invalid-argument-type]
-    region = keys_by_dimension["region"]  # ty: ignore[invalid-argument-type]
+    date = keys_by_dimension["date"]
+    region = keys_by_dimension["region"]
 
     # Simulate fetching daily sales data
     df = pd.DataFrame(
@@ -43,11 +44,12 @@ def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
     deps=[daily_regional_sales_data],
 )
 def daily_regional_sales_summary(context):
-    # partition_key looks like "2024-01-01|us"
-    keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
+    # context.partition_key looks like "2024-01-01|us"; multi_partition_key is the
+    # same key typed as a MultiPartitionKey, which exposes each dimension by name
+    keys_by_dimension = context.multi_partition_key.keys_by_dimension
 
-    date = keys_by_dimension["date"]  # ty: ignore[invalid-argument-type]
-    region = keys_by_dimension["region"]  # ty: ignore[invalid-argument-type]
+    date = keys_by_dimension["date"]
+    region = keys_by_dimension["region"]
 
     filename = f"data/daily_regional_sales/sales_{context.partition_key}.csv"
     df = pd.read_csv(filename)
