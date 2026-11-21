@@ -5,6 +5,7 @@ import random
 import string
 import sys
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import cast
@@ -52,12 +53,16 @@ from dagster._core.storage.tags import (
     BACKFILL_TAGS,
     MAX_RETRIES_TAG,
     PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    PRIORITY_TAG,
+    get_multidimensional_partition_tag,
 )
 from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
     ensure_dagster_tests_import,
     environ,
+    freeze_time,
     step_did_not_run,
     step_failed,
     step_succeeded,
@@ -71,7 +76,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
 )
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._time import get_current_timestamp
+from dagster._time import create_datetime, get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 from dagster_shared import seven
@@ -528,6 +533,55 @@ def bp_none(context: AssetExecutionContext):
     return 1
 
 
+job_backfill_daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+job_backfill_multi_partitions = dg.MultiPartitionsDefinition(
+    {
+        "color": dg.StaticPartitionsDefinition(["red", "blue"]),
+        "day": job_backfill_daily_partitions,
+    }
+)
+
+
+def _build_job_backfill_asset(
+    name: str, partitions_def: dg.PartitionsDefinition, backfill_policy: BackfillPolicy
+) -> dg.AssetsDefinition:
+    @dg.asset(name=name, partitions_def=partitions_def, backfill_policy=backfill_policy)
+    def backfill_asset(context: AssetExecutionContext) -> None:
+        # Persist harmless partition work independently of run tags and materialization bookkeeping.
+        rows = [{"partition": key, "value": key.upper()} for key in context.partition_keys]
+        Path(context.instance.storage_directory(), f"{context.run_id}.json").write_text(
+            json.dumps(rows), encoding="utf-8"
+        )
+        context.add_output_metadata(
+            {
+                "observed_range": list(context.partition_key_range),
+                "observed_keys": list(context.partition_keys),
+                "time_window": [dt.isoformat() for dt in context.partition_time_window],
+                "output_time_window": [
+                    dt.isoformat() for dt in context.asset_partitions_time_window_for_output()
+                ],
+            }
+        )
+
+    return backfill_asset
+
+
+job_backfill_execution_assets = [
+    _build_job_backfill_asset(
+        "multi_run_partitions", job_backfill_multi_partitions, BackfillPolicy.multi_run(5)
+    ),
+    _build_job_backfill_asset(
+        "one_partition_per_run", job_backfill_multi_partitions, BackfillPolicy.multi_run(1)
+    ),
+    _build_job_backfill_asset(
+        "single_run_partitions", job_backfill_multi_partitions, BackfillPolicy.single_run()
+    ),
+    _build_job_backfill_asset(
+        "daily_run_partitions", job_backfill_daily_partitions, BackfillPolicy.multi_run(5)
+    ),
+]
+
+
 old_dynamic_partitions_def = dg.DynamicPartitionsDefinition(
     partition_fn=lambda _: ["a", "b", "c", "d"]
 )
@@ -541,6 +595,15 @@ def old_dynamic_partitions_job():
 @dg.repository
 def the_repo():
     return [
+        *job_backfill_execution_assets,
+        *[
+            dg.define_asset_job(
+                f"{asset_def.key.to_user_string()}_job",
+                selection=[asset_def],
+                tags={"job_tag": "preserved", PRIORITY_TAG: "4"},
+            )
+            for asset_def in job_backfill_execution_assets
+        ],
         the_job,
         conditional_failure_job,
         partial_job,
@@ -2746,6 +2809,124 @@ def test_asset_job_backfill_multi_run(
     assert run_2.tags[BACKFILL_ID_TAG] == "simple"
     assert run_2.tags[ASSET_PARTITION_RANGE_START_TAG] == "a"
     assert run_2.tags[ASSET_PARTITION_RANGE_END_TAG] == "b"
+
+
+@pytest.mark.parametrize(
+    "asset_name,colors,num_days,batch_size",
+    [
+        pytest.param("multi_run_partitions", ["red"], 14, 5, id="multi-14-days"),
+        pytest.param("multi_run_partitions", ["red", "blue"], 14, 5, id="two-colors"),
+        pytest.param("one_partition_per_run", ["red"], 14, 1, id="batch-size-one"),
+        pytest.param("daily_run_partitions", [None], 14, 5, id="daily"),
+        pytest.param("multi_run_partitions", ["red"], 3, 5, id="less-than-batch"),
+        pytest.param("multi_run_partitions", ["red"], 5, 5, id="exact-batch"),
+        pytest.param("multi_run_partitions", ["red"], 6, 5, id="single-partition-remainder"),
+        pytest.param("single_run_partitions", ["red"], 14, 14, id="single-run"),
+    ],
+)
+def test_job_backfill_executes_selected_partitions(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+    asset_name: str,
+    colors: list[str | None],
+    num_days: int,
+    batch_size: int,
+) -> None:
+    # Derive the expected work from the selection, not the submitted runs' tags.
+    selected_by_color = [
+        [
+            dg.MultiPartitionKey({"color": color, "day": f"2024-01-{day:02}"})
+            if color is not None
+            else f"2024-01-{day:02}"
+            for day in range(1, num_days + 1)
+        ]
+        for color in colors
+    ]
+    selected_keys = [key for keys in selected_by_color for key in keys]
+    expected_batches = {
+        keys[start]: keys[start : start + batch_size]
+        for keys in selected_by_color
+        for start in range(0, len(keys), batch_size)
+    }
+    partition_set = remote_repo.get_partition_set(f"{asset_name}_job_partition_set")
+    with freeze_time(create_datetime(2024, 1, 16)):
+        backfill = PartitionBackfill(
+            backfill_id="executed_partitions",
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=selected_keys,
+            from_failure=False,
+            reexecution_steps=None,
+            tags={"backfill_tag": "preserved"},
+            backfill_timestamp=get_current_timestamp(),
+        )
+        instance.add_backfill(backfill)
+        for _ in range(2):
+            assert not any(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+
+    runs = instance.get_runs()
+    assert len(runs) == len(expected_batches)
+    assert all(run.status == DagsterRunStatus.SUCCESS for run in runs)
+    assert (
+        check.not_none(instance.get_backfill(backfill.backfill_id)).status
+        == BulkActionStatus.COMPLETED_SUCCESS
+    )
+
+    processed_keys = []
+    assigned_starts = []
+    for run in runs:
+        start = run.tags.get(ASSET_PARTITION_RANGE_START_TAG, run.tags.get(PARTITION_NAME_TAG))
+        expected_keys = expected_batches[check.not_none(start)]
+        assigned_starts.append(start)
+        rows = json.loads(
+            Path(instance.storage_directory(), f"{run.run_id}.json").read_text(encoding="utf-8")
+        )
+        assert rows == [{"partition": key, "value": key.upper()} for key in expected_keys], (
+            run.run_id
+        )
+        processed_keys.extend(row["partition"] for row in rows)
+
+        materializations = [
+            event.asset_materialization
+            for event in instance.all_logs(run.run_id)
+            if event.asset_materialization is not None
+        ]
+        assert Counter(event.partition for event in materializations) == Counter(expected_keys)
+        expected_window = [
+            create_datetime(2024, 1, int(str(expected_keys[0])[-2:])).isoformat(),
+            create_datetime(2024, 1, int(str(expected_keys[-1])[-2:]) + 1).isoformat(),
+        ]
+        for materialization in materializations:
+            assert materialization.asset_key == dg.AssetKey(asset_name)
+            assert materialization.metadata["observed_range"].value == [
+                expected_keys[0],
+                expected_keys[-1],
+            ]
+            assert materialization.metadata["observed_keys"].value == expected_keys
+            assert materialization.metadata["time_window"].value == expected_window
+            assert materialization.metadata["output_time_window"].value == expected_window
+
+        assert run.tags[BACKFILL_ID_TAG] == backfill.backfill_id
+        assert run.tags[PARTITION_SET_TAG] == partition_set.name
+        assert run.tags["job_tag"] == "preserved"
+        assert run.tags["backfill_tag"] == "preserved"
+        assert run.tags[PRIORITY_TAG] == "4"
+        if batch_size == 1:
+            assert run.tags[PARTITION_NAME_TAG] == expected_keys[0]
+            assert run.tags[get_multidimensional_partition_tag("color")] == "red"
+            assert (
+                run.tags[get_multidimensional_partition_tag("day")] == str(expected_keys[0])[-10:]
+            )
+        else:
+            assert run.tags[ASSET_PARTITION_RANGE_END_TAG] == expected_keys[-1]
+
+    assert Counter(assigned_starts) == Counter(expected_batches.keys())
+    assert Counter(processed_keys) == Counter(selected_keys)
 
 
 def test_asset_job_backfill_default(
