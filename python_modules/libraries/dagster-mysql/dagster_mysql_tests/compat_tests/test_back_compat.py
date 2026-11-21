@@ -795,6 +795,34 @@ def test_add_run_tags_run_id_idx(conn_string):
             assert "idx_run_tags_run_id" in get_indexes(instance, "run_tags")
 
 
+def test_add_asset_daemon_asset_evaluations_create_timestamp_idx(conn_string):
+    hostname, port = _reconstruct_from_file(
+        conn_string,
+        # use an old snapshot, it has the asset_daemon_asset_evaluations table but not the index
+        file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname, port=port)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            # Before migration
+            assert "asset_daemon_asset_evaluations" in get_tables(instance)
+            assert "idx_asset_daemon_asset_evaluations_create_timestamp" not in get_indexes(
+                instance, "asset_daemon_asset_evaluations"
+            )
+
+            # After upgrade
+            instance.upgrade()
+
+            assert "idx_asset_daemon_asset_evaluations_create_timestamp" in get_indexes(
+                instance, "asset_daemon_asset_evaluations"
+            )
+
+
 def test_add_backfill_end_timestamp(conn_string):
     hostname, port = _reconstruct_from_file(
         conn_string,
