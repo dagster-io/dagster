@@ -836,7 +836,9 @@ postgresql:
 
   # set postgresql parameter keywords for the connection string.
   # see: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-  postgresqlParams: {}
+  postgresqlParams:
+    fallback_application_name: dagster
+    connect_timeout: 15
 
   # When set, overrides the default `postgresql` scheme for the connection string.
   # (e.g., set to `postgresql+pg8000` to use the `pg8000` library).
