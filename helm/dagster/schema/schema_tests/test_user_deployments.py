@@ -709,6 +709,55 @@ def test_liveness_probe_exec(template: HelmTemplate):
     ]
 
 
+@pytest.mark.parametrize(
+    "probe_key, probe_model, probe_fields, container_attr",
+    [
+        ("readinessProbe", ReadinessProbeWithEnabled, {"enabled": True}, "readiness_probe"),
+        ("livenessProbe", kubernetes.LivenessProbe, {}, "liveness_probe"),
+        ("startupProbe", kubernetes.StartupProbe, {"enabled": True}, "startup_probe"),
+    ],
+)
+@pytest.mark.parametrize(
+    "handler_key, handler_attr",
+    [
+        ("grpc", "grpc"),
+        ("httpGet", "http_get"),
+        ("tcpSocket", "tcp_socket"),
+    ],
+)
+def test_probe_non_exec_handler(
+    template: HelmTemplate,
+    probe_key: str,
+    probe_model: Any,
+    probe_fields: dict[str, Any],
+    container_attr: str,
+    handler_key: str,
+    handler_attr: str,
+):
+    deployment = create_simple_user_deployment("foo")
+    setattr(
+        deployment,
+        probe_key,
+        probe_model.construct(**probe_fields, **{handler_key: dict(port=deployment.port)}),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    # The default exec handler must not be appended alongside the supplied one:
+    # a probe may only specify a single handler.
+    probe = getattr(container, container_attr)
+    assert getattr(probe, handler_attr).port == deployment.port
+    assert probe._exec is None  # noqa: SLF001
+
+
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
 def test_user_deployment_default_image_tag_is_chart_version(
     template: HelmTemplate, chart_version: str

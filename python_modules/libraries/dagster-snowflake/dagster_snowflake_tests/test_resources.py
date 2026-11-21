@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+from datetime import datetime
 from unittest import mock
 
 import pytest
@@ -301,6 +302,53 @@ def test_fetch_last_updated_timestamps_empty():
         fetch_last_updated_timestamps(
             snowflake_connection={}, schema="TESTSCHEMA", database="TESTDB", tables=[]
         )
+
+
+class _RecordingSnowflakeConnection:
+    """Stands in for a Snowflake connection and records the query it is asked to run."""
+
+    def __init__(self, tables: list[str]):
+        self.rows = [(table.upper(), datetime(2024, 1, 1)) for table in tables]
+        self.query = ""
+
+    def cursor(self):
+        return self
+
+    def execute(self, query: str):
+        self.query = query
+        return self.rows
+
+
+@pytest.mark.parametrize(
+    ("schema", "table", "expected_where"),
+    [
+        (
+            "TESTSCHEMA",
+            "my_table",
+            "WHERE table_schema = 'TESTSCHEMA' AND table_name IN ('MY_TABLE')",
+        ),
+        (
+            "TESTSCHEMA",
+            "x') OR TRUE --",
+            "WHERE table_schema = 'TESTSCHEMA' AND table_name IN ('X\\') OR TRUE --')",
+        ),
+        (
+            "TEST\\' OR TRUE --",
+            "my_table",
+            "WHERE table_schema = 'TEST\\\\\\' OR TRUE --' AND table_name IN ('MY_TABLE')",
+        ),
+    ],
+)
+def test_fetch_last_updated_timestamps_quotes_names(schema: str, table: str, expected_where: str):
+    connection = _RecordingSnowflakeConnection([table])
+
+    fetch_last_updated_timestamps(
+        snowflake_connection=connection,  # ty: ignore[invalid-argument-type]
+        schema=schema,
+        tables=[table],
+    )
+
+    assert expected_where in connection.query
 
 
 @pytest.mark.skip_if_no_snowflake_credentials

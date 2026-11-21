@@ -504,6 +504,7 @@ def test_multi_partitioned_asset(io_manager):
 def test_dynamic_partitioned_asset(io_manager):
     with temporary_bigquery_table(schema_name=SCHEMA) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+        fruit = "O'Brien café\\"
 
         @asset(
             partitions_def=dynamic_fruits,
@@ -528,9 +529,10 @@ def test_dynamic_partitioned_asset(io_manager):
             ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
-        def downstream_partitioned(df: pd.DataFrame) -> None:
+        def downstream_partitioned(context: AssetExecutionContext, df: pd.DataFrame) -> None:
             # assert that we only get the columns created in dynamic_partitioned
             assert len(df.index) == 3
+            assert set(df["fruit"]) == {context.partition_key}
 
         asset_full_name = f"{SCHEMA}__{table_name}"
         bq_table_path = f"{SCHEMA}.{table_name}"
@@ -538,11 +540,11 @@ def test_dynamic_partitioned_asset(io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
+            instance.add_dynamic_partitions(dynamic_fruits.name, [fruit])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
-                partition_key="apple",
+                partition_key=fruit,
                 resources=resource_defs,
                 instance=instance,
                 run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -570,7 +572,7 @@ def test_dynamic_partitioned_asset(io_manager):
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
-                partition_key="apple",
+                partition_key=fruit,
                 resources=resource_defs,
                 instance=instance,
                 run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},

@@ -1,10 +1,12 @@
 import asyncio
 from unittest import mock
 
+import pytest
 from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.partitions.definition import MonthlyPartitionsDefinition
 from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_dlt.dlt_event_iterator import _fetch_row_count
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
@@ -39,6 +41,23 @@ def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
         if materialization.asset_key == AssetKey("dlt_pipeline_repo_issues")
     )
     assert repo_issues_materialization.metadata["dagster/row_count"].value == 7
+
+
+@pytest.mark.parametrize(
+    "table_name",
+    [
+        "repos where 1 = 0",
+        "repos; select 42",
+        'repos" --',
+    ],
+)
+def test_fetch_row_count_treats_table_name_as_identifier(
+    dlt_pipeline: Pipeline, table_name: str
+) -> None:
+    dlt_pipeline.run(pipeline())
+
+    with pytest.raises(Exception, match="does not exist"):
+        _fetch_row_count(dlt_pipeline, table_name)
 
 
 def test_fetch_row_count_partitioned(dlt_pipeline: Pipeline) -> None:

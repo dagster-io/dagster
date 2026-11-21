@@ -1,5 +1,7 @@
 import base64
 import os
+from datetime import datetime
+from types import SimpleNamespace
 
 import pytest
 from dagster import (
@@ -16,6 +18,7 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.observe import observe
 from dagster._time import get_current_timestamp
 from dagster_gcp import BigQueryResource, bigquery_resource, fetch_last_updated_timestamps
+from google.cloud import bigquery
 
 from dagster_gcp_tests.bigquery_tests.conftest import (
     IS_BUILDKITE,
@@ -140,6 +143,47 @@ def test_fetch_last_updated_timestamps_no_table():
             dataset_id="foo",
             table_ids=[],
         )
+
+
+class _RecordingBigQueryClient:
+    """Stands in for bigquery.Client and records the query it is asked to run."""
+
+    def __init__(self, table_ids: list[str]):
+        self.rows = [
+            SimpleNamespace(table_id=table_id, last_modified_time=datetime(2024, 1, 1))
+            for table_id in table_ids
+        ]
+        self.query_text = ""
+        self.job_config: bigquery.QueryJobConfig | None = None
+
+    def query(self, query: str, job_config: bigquery.QueryJobConfig | None = None):
+        self.query_text = query
+        self.job_config = job_config
+        return SimpleNamespace(result=lambda: self.rows)
+
+
+@pytest.mark.parametrize(
+    "table_id",
+    [
+        "my_table",
+        'my_table") OR TRUE --',
+        "my_table\\",
+    ],
+)
+def test_fetch_last_updated_timestamps_binds_table_ids(table_id: str):
+    client = _RecordingBigQueryClient([table_id])
+
+    fetch_last_updated_timestamps(
+        client=client,  # ty: ignore[invalid-argument-type]
+        dataset_id="my_dataset",
+        table_ids=[table_id],
+    )
+
+    assert table_id not in client.query_text
+    assert client.job_config is not None
+    assert client.job_config.query_parameters == [
+        bigquery.ArrayQueryParameter("table_ids", "STRING", [table_id])
+    ]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")

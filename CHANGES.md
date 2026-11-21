@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.13.31 (core) / 0.29.31 (libraries)
+
+### Breaking Changes
+
+- The `dagster` Claude Code plugin no longer reads the `DAGSTER_CLOUD_MCP_URL` environment variable, so setting it no longer points the Dagster+ MCP server at the EU region. Organizations in the EU region must add the EU server directly, or the plugin connects to the US server and authentication fails: `claude mcp add --transport http dagster-plus https://mcp.agent.eu.dagster.cloud/mcp`.
+
+### New
+
+- [dg] The GitHub Actions workflows that `dg plus deploy configure` and `dg scaffold github-actions` create now run on `ubuntu-24.04` instead of `ubuntu-22.04`.
+- [ui] Asset and op graphs now lay out faster. Some graphs with collapsed asset groups may arrange their columns slightly differently.
+- [ui] Asset graphs now leave much less blank space between nodes, so large graphs take up far less room.
+- [ui] Asset, op, and run selections that use traversals, such as `group:my_group+`, are much faster on large asset graphs.
+- [ui] Improved asset catalog and asset page performance in deployments with many assets.
+- [ui] The asset catalog no longer re-sorts every time health data arrives, which stops it from stuttering in deployments with many assets.
+- [ui] The run Gantt chart now lays out much faster for runs with many steps.
+
+### Dagster Plus
+
+- The ECS agent now creates code servers for several code locations at once, so agents with many code locations start much faster.
+- The ECS agent no longer lists every service in the cluster for each code location on every reconcile, so agents with many code locations make far fewer ECS API calls.
+- [ui] Global search no longer loads the organization's full user list on every page load. It now loads the list when search is opened.
+
 ## 1.13.30 (core) / 0.29.30 (libraries)
 
 ### New

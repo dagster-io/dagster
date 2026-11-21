@@ -22,7 +22,7 @@ export interface AssetSelectionInputProps {
   linter?: (content: string) => SyntaxError[];
   useAssetSelectionAutoComplete?: (
     assets: AssetGraphQueryItem[],
-  ) => Pick<SelectionAutoCompleteProvider, 'useAutoComplete'>;
+  ) => Pick<SelectionAutoCompleteProvider, 'useAutoComplete' | 'onFocus'>;
   saveOnBlur?: boolean;
   placeholder?: string;
   className?: string;
@@ -49,13 +49,14 @@ export const AssetSelectionInput = ({
   className,
   showRecentSearches = false,
 }: AssetSelectionInputProps) => {
-  const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
+  const {useAutoComplete, onFocus} = useAssetSelectionAutoComplete(assets);
 
   return (
     <SelectionAutoCompleteInput
       wildcardAttributeName="key"
       id="asset-selection-input"
       useAutoComplete={useAutoComplete}
+      onFocus={onFocus}
       placeholder={placeholder}
       linter={linter}
       value={value}
