@@ -371,6 +371,15 @@ telemetry:
 
 # end_marker_telemetry
 
+# start_marker_ui
+
+# Names this deployment in the UI navigation.
+ui:
+  label: Production
+  intent: danger
+
+# end_marker_ui
+
 # start_marker_code_servers
 
 # Configures how long Dagster waits for code locations
