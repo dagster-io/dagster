@@ -860,6 +860,11 @@ postgresql:
 # global.postgresqlSecretName is managed outside of this helm chart.
 generatePostgresqlPasswordSecret: true
 
+# Additional annotations to set on the generated PostgreSQL password secret. Only applies when
+# generatePostgresqlPasswordSecret is true. Useful when an admission webhook or secret-injection
+# controller is driven by annotations on the secret itself.
+postgresqlSecretAnnotations: {}
+
 # If true, the helm chart will create a secret for you with the Celery broker and backend
 # connection urls, including an optional Redis or RabbitMQ password. Set this to false if you want
 # to manage a secret with the Celery broker/backend connection strings yourself. If you manage
