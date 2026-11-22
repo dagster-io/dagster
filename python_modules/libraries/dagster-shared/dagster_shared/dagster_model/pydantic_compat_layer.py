@@ -69,8 +69,9 @@ def model_fields(model: type[BaseModel]) -> dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model, wrapped
     in a compat class to provide a consistent interface between Pydantic 1 and 2.
     """
-    fields = getattr(model, "model_fields", None)
-    if not fields:
+    try:
+        fields = getattr(model, "model_fields")
+    except AttributeError:
         fields = getattr(model, "__fields__")
 
     return {k: ModelFieldCompat(v) for k, v in fields.items()}
