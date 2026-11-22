@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
@@ -40,6 +41,32 @@ def test_utils_configure_editor(editor: str) -> None:
             expected_vscode_plugin_folder_filepath / "dagster-components-schema.vsix"
         )
         assert expected_compiled_plugin_filepath.exists()
+
+        package_json = json.loads(
+            (expected_vscode_plugin_folder_filepath / "package.json").read_text()
+        )
+        file_matches = {
+            entry["fileMatch"] for entry in package_json["contributes"]["yamlValidation"]
+        }
+        assert f"{Path.cwd()}/**/defs.y*ml" in file_matches
+        assert f"{Path.cwd()}/**/component.y*ml" in file_matches
+
+        # Running configure-editor again for a different project must keep the first
+        # project's entries alongside the new ones, not overwrite them.
+        with isolated_example_project_foo_bar(
+            runner, in_workspace=False, project_name="other-project"
+        ):
+            out = runner.invoke("utils", "configure-editor", editor)
+            assert out.exit_code == 0
+
+            package_json = json.loads(
+                (expected_vscode_plugin_folder_filepath / "package.json").read_text()
+            )
+            file_matches = {
+                entry["fileMatch"] for entry in package_json["contributes"]["yamlValidation"]
+            }
+            assert f"{Path.cwd()}/**/defs.y*ml" in file_matches
+            assert f"{Path.cwd()}/**/component.y*ml" in file_matches
 
 
 @pytest.mark.parametrize("output_path", [None, "schema.json"])
