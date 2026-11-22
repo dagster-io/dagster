@@ -56,9 +56,24 @@ class EntityMatchesCondition(
         else:
             to_direction, from_direction = "up", "down"
 
-        to_candidate_subset = context.candidate_subset.compute_mapped_subset(
-            self.key, direction=to_direction
-        )
+        if (
+            to_direction == "up"
+            and self.key in context.asset_graph.get(context.key).parent_entity_keys  # ty: ignore[no-matching-overload]
+        ):
+            (
+                to_candidate_subset,
+                required_but_nonexistent_subset,
+            ) = context.asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
+                self.key, context.candidate_subset
+            )
+            # Dependency conditions evaluate every required partition, including keys that fall
+            # outside the dependency's partition definition. This lets missing() classify those
+            # keys while other operands filter them according to their own semantics.
+            to_candidate_subset = to_candidate_subset.compute_union(required_but_nonexistent_subset)
+        else:
+            to_candidate_subset = context.candidate_subset.compute_mapped_subset(
+                self.key, direction=to_direction
+            )
         to_context = context.for_child_condition(
             child_condition=self.operand,
             child_indices=[0],
