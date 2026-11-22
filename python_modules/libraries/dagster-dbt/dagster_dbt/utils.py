@@ -262,15 +262,16 @@ def _select_unique_ids_from_manifest(
         }
     )
 
+    parsed_selectors: dict[str, Any] | None = None
     if selector:
         # must parse all selectors to handle dependencies, then grab the specific selector
         # that was specified
-        result = graph_cli.parse_from_selectors_definition(
+        parsed_selectors = graph_cli.parse_from_selectors_definition(
             source=SelectorFile.from_dict({"selectors": manifest.selectors.values()})
         )
-        if selector not in result:
+        if selector not in parsed_selectors:
             raise ValueError(f"Selector `{selector}` not found in manifest.")
-        parsed_spec: SelectionSpec = cast("SelectionSpec", result[selector]["definition"])
+        parsed_spec: SelectionSpec = cast("SelectionSpec", parsed_selectors[selector]["definition"])
     else:
         parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
@@ -279,7 +280,11 @@ def _select_unique_ids_from_manifest(
         parsed_spec = graph_cli.SelectionDifference(components=[parsed_spec, parsed_exclude_spec])
 
     # execute this selection against the graph
-    node_selector = graph_selector.NodeSelector(graph, manifest)
+    if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.12.0"):
+        # dbt-core 1.12 resolves selector references during node selection.
+        node_selector = graph_selector.NodeSelector(graph, manifest, selectors=parsed_selectors)
+    else:
+        node_selector = graph_selector.NodeSelector(graph, manifest)
     with _dbt_selector_project_root(project):
         selected, _ = node_selector.select_nodes(parsed_spec)
     return selected
