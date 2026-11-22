@@ -2,6 +2,7 @@ import math
 import tempfile
 import time
 from collections import defaultdict
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -443,3 +444,36 @@ def test_active_concurrency_changing_default(use_tags):
                             event_specific_data=StepSuccessData(duration_ms=1.0),
                         )
                     )
+
+
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency_sleep_with_real_pool(
+    concurrency_instance_op_granularity: dg.DagsterInstance, use_tags: bool
+) -> None:
+    instance = concurrency_instance_op_granularity
+    job = define_concurrency_retry_job(use_tags)
+    run = instance.create_run_for_job(job)
+    instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with (
+        InstanceConcurrencyContext(instance, run) as context,
+        mock.patch("dagster._core.execution.plan.instance_concurrency_context.time") as clock,
+    ):
+        clock.time.return_value = 100.0
+        assert context.claim("foo", "occupied")
+        with create_execution_plan(job).start(
+            RetryMode.ENABLED, instance_concurrency_context=context
+        ) as active_execution:
+            steps = active_execution.get_steps_to_execute()
+            assert [step.key for step in steps] == ["bar_op"]
+            active_execution.mark_success("bar_op")
+
+            with mock.patch("dagster._core.execution.plan.active.time.sleep") as sleep:
+                active_execution.sleep_til_ready()
+                sleep.assert_called_once_with(1.0)
+
+            context.free_step("occupied")
+            clock.time.return_value = 102.0
+            steps = active_execution.get_steps_to_execute()
+            assert [step.key for step in steps] == ["foo_op"]
+            active_execution.mark_success("foo_op")
