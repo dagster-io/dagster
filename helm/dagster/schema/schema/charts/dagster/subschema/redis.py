@@ -1,5 +1,11 @@
 from pydantic import BaseModel
 
+from schema.charts.utils import kubernetes
+
+
+class RedisNode(BaseModel, extra="allow"):
+    resources: kubernetes.Resources | None = None
+
 
 class Redis(BaseModel, extra="allow"):
     enabled: bool
@@ -12,3 +18,5 @@ class Redis(BaseModel, extra="allow"):
     backendDbNumber: int
     brokerUrl: str
     backendUrl: str
+    master: RedisNode | None = None
+    slave: RedisNode | None = None
