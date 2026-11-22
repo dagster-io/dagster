@@ -882,9 +882,6 @@ def test_check_run_health_batch(kubeconfig_file):
             continue_token=None,
         )
         mock_k8s_client_batch_api.list_namespaced_job.side_effect = [first_page, second_page]
-        mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
-            kubernetes.client.rest.ApiException(status=404, reason="Not Found")
-        )
 
         results = k8s_run_launcher.check_run_worker_health_batch(
             [running_run, failed_run, missing_run]
@@ -892,10 +889,8 @@ def test_check_run_health_batch(kubeconfig_file):
 
         assert results[running_run.run_id].status == WorkerStatus.RUNNING
         assert results[failed_run.run_id].status == WorkerStatus.FAILED
-        assert results[missing_run.run_id].status == WorkerStatus.UNKNOWN
-        assert results[missing_run.run_id].msg == (
-            f"Job {get_job_name_from_run_id(missing_run.run_id)} could not be found"
-        )
+        # A Job missing from the list is left for the caller to read individually.
+        assert missing_run.run_id not in results
 
         list_calls = mock_k8s_client_batch_api.list_namespaced_job.call_args_list
         assert len(list_calls) == 2, list_calls
@@ -906,10 +901,7 @@ def test_check_run_health_batch(kubeconfig_file):
         assert list_calls[0].kwargs["resource_version"] == "0"
         assert list_calls[1].kwargs["_continue"] == "next-page"
         assert "resource_version" not in list_calls[1].kwargs
-        # Only the Job missing from the list is read individually.
-        mock_k8s_client_batch_api.read_namespaced_job_status.assert_called_once_with(
-            get_job_name_from_run_id(missing_run.run_id), namespace=mock.ANY
-        )
+        mock_k8s_client_batch_api.read_namespaced_job_status.assert_not_called()
 
 
 def test_check_run_health_batch_list_error(kubeconfig_file):

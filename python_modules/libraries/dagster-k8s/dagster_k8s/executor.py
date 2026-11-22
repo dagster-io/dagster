@@ -438,9 +438,7 @@ class K8sStepHandler(StepHandler):
                     ),
                 )
             except Exception:
-                # LIST can fail even when the existing GET checks work (for example, with
-                # GET-only RBAC). Leave these steps out so the executor checks them with GET,
-                # rather than logging a batch error engine event on every health check.
+                # LIST can fail where GET works, e.g. with GET-only RBAC.
                 continue
             for step_key, job_name in job_names_by_step_key.items():
                 status = statuses.get(job_name)

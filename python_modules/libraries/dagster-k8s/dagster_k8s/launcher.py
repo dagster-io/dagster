@@ -456,14 +456,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Check run workers with one Job LIST per namespace and up to RUN_IDS_PER_JOB_LIST runs,
         instead of one Job GET per run.
 
-        Subclasses that override check_run_worker_health keep their per-run behavior: no
-        results are returned, so the caller checks each run with the override.
+        Runs whose Job is not in the list (just created, or labels overridden by user config), or
+        whose namespace cannot be listed, are left out so the caller checks them individually.
+        Subclasses that override check_run_worker_health keep their per-run behavior: no results
+        are returned.
         """
         if type(self).check_run_worker_health is not K8sRunLauncher.check_run_worker_health:
             return {}
 
         job_names_by_namespace: dict[str, list[tuple[DagsterRun, str]]] = defaultdict(list)
-        results: dict[str, CheckRunHealthResult] = {}
         for run in runs:
             try:
                 namespace = check.not_none(self.get_container_context_for_run(run).namespace)
@@ -471,10 +472,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
                 )
             except Exception:
-                # Left out so the caller checks it individually.
                 continue
             job_names_by_namespace[namespace].append((run, job_name))
 
+        results: dict[str, CheckRunHealthResult] = {}
         for namespace, namespace_runs_and_job_names in job_names_by_namespace.items():
             # Select the requested runs by ID, so a launcher shared by several deployments does
             # not list every run worker in the namespace for each of them.
@@ -493,30 +494,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                         ),
                     )
                 except Exception:
-                    # LIST can fail even when the existing GET checks work (for example,
-                    # with GET-only RBAC). Leave these runs out so the caller uses GET,
-                    # rather than manufacturing unhealthy UNKNOWN results.
+                    # LIST can fail where GET works, e.g. with GET-only RBAC.
                     continue
+                for run, job_name in runs_and_job_names:
+                    status = statuses.get(job_name)
+                    if status is not None:
+                        results[run.run_id] = self._run_worker_health_from_job_status(
+                            run, job_name, status
+                        )
 
-                results.update(self._run_worker_health_from_statuses(runs_and_job_names, statuses))
-
-        return results
-
-    def _run_worker_health_from_statuses(
-        self,
-        runs_and_job_names: Sequence[tuple[DagsterRun, str]],
-        statuses: Mapping[str, V1JobStatus],
-    ) -> Mapping[str, CheckRunHealthResult]:
-        results: dict[str, CheckRunHealthResult] = {}
-        for run, job_name in runs_and_job_names:
-            status = statuses.get(job_name)
-            if status is None:
-                # The list is served from the API server cache and may miss a Job created
-                # moments ago, or one whose labels were overridden by user config. Read it
-                # directly before reporting it as missing.
-                results[run.run_id] = self.check_run_worker_health(run)
-            else:
-                results[run.run_id] = self._run_worker_health_from_job_status(run, job_name, status)
         return results
 
     def _run_worker_health_from_job_status(
