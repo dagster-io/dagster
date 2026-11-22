@@ -1,5 +1,9 @@
 import pytest
+from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster_k8s import K8sRunLauncher
 from dagster_k8s.container_context import K8sConfigMergeBehavior, K8sContainerContext
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
@@ -871,3 +875,100 @@ def test_env_var_precedence():
         {"name": "FOO", "value": "outercontainerconfig", "value_from": None},
         {"name": "FOO", "value": "innerenvvars", "value_from": None},
     ]
+
+
+def _run_with_container_context(container_context: dict) -> DagsterRun:
+    repo_origin = RepositoryPythonOrigin(
+        executable_path="/usr/bin/python",
+        code_pointer=ModuleCodePointer("fake_module", "fake_repo"),
+        container_context=container_context,
+    )
+    job_origin = JobPythonOrigin(job_name="fake_job", repository_origin=repo_origin)
+    return DagsterRun(job_name="fake_job", job_code_origin=job_origin)
+
+
+def test_launcher_run_k8s_config_takes_precedence_over_container_context(
+    kubeconfig_file,
+):
+    launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        run_k8s_config={"pod_spec_config": {"node_selector": {"pool": "autoscaling-pool"}}},
+    )
+
+    run = _run_with_container_context(
+        {
+            "k8s": {
+                "run_k8s_config": {"pod_spec_config": {"node_selector": {"pool": "default-pool"}}}
+            }
+        }
+    )
+
+    result = K8sContainerContext.create_for_run(run, launcher, include_run_tags=False)
+
+    node_selector = result.run_k8s_config.pod_spec_config.get("node_selector")
+    assert node_selector == {"pool": "autoscaling-pool"}
+
+
+def test_launcher_run_k8s_config_precedence_preserves_non_conflicting_fields(
+    kubeconfig_file,
+):
+    launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        run_k8s_config={"pod_spec_config": {"node_selector": {"pool": "autoscaling-pool"}}},
+    )
+
+    run = _run_with_container_context(
+        {
+            "k8s": {
+                "run_k8s_config": {
+                    "pod_spec_config": {
+                        "node_selector": {"pool": "default-pool"},
+                        "dns_policy": "ClusterFirst",
+                    }
+                }
+            }
+        }
+    )
+
+    result = K8sContainerContext.create_for_run(run, launcher, include_run_tags=False)
+
+    pod_spec = result.run_k8s_config.pod_spec_config
+    assert pod_spec.get("node_selector") == {"pool": "autoscaling-pool"}
+    assert pod_spec.get("dns_policy") == "ClusterFirst"
+
+
+def test_launcher_run_k8s_config_takes_precedence_with_run_tags(
+    kubeconfig_file,
+):
+    launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        run_k8s_config={"pod_spec_config": {"node_selector": {"pool": "autoscaling-pool"}}},
+    )
+
+    run = _run_with_container_context(
+        {
+            "k8s": {
+                "run_k8s_config": {"pod_spec_config": {"node_selector": {"pool": "default-pool"}}}
+            }
+        }
+    )
+
+    result = K8sContainerContext.create_for_run(run, launcher, include_run_tags=True)
+
+    node_selector = result.run_k8s_config.pod_spec_config.get("node_selector")
+    assert node_selector == {"pool": "autoscaling-pool"}
