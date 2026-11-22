@@ -22,14 +22,11 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-# A compiled template takes roughly 2.5 KB, so this bounds the cache to about 40 MB.
+# Large projects resolve the same strings across many components. A compiled template holds no
+# render state, so renders with different scopes can share it. At roughly 2.5 KB per template,
+# the cache stays under about 40 MB.
 @lru_cache(maxsize=16384)
 def _native_template(source: str) -> "NativeTemplate":
-    """Compile ``source`` once: large projects resolve the same strings across many components.
-
-    A template carries no render state, so renders with different scopes can share it.
-    Compile errors are not cached and are raised again on each call.
-    """
     # defer for import performance
     from jinja2.nativetypes import NativeTemplate
 
