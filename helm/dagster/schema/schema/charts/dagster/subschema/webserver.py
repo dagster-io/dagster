@@ -1,5 +1,11 @@
+from typing import Annotated
+
+from pydantic import Field
+
 from schema.charts.utils import kubernetes
 from schema.charts.utils.utils import BaseModel
+
+DbStatementTimeout = int | Annotated[str, Field(pattern=r"^-?\d+$")]
 
 
 class Server(BaseModel):
@@ -39,7 +45,7 @@ class Webserver(BaseModel, extra="forbid"):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
-    dbStatementTimeout: int | None = None
+    dbStatementTimeout: DbStatementTimeout | None = None
     dbPoolRecycle: int | None = None
     dbPoolMaxOverflow: int | None = None
     logLevel: str | None = None
