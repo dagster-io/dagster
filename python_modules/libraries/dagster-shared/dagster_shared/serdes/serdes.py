@@ -47,6 +47,7 @@ from dagster_shared.record import (
     has_generated_new,
     is_record,
 )
+from dagster_shared.serdes.compact import dumps_compact, is_compact_serialized, loads_compact
 from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster_shared.utils.warnings import disable_dagster_warnings
 
@@ -471,6 +472,7 @@ class UnpackContext:
 
     def __init__(self):
         self.observed_unknown_serdes_values: set[UnknownSerdesValue] = set()
+        self.observed_any_unknown_serdes_value = False
 
     def assert_no_unknown_values(self, obj: UnpackedValue) -> PackableValue:
         if isinstance(obj, UnknownSerdesValue):
@@ -489,6 +491,7 @@ class UnpackContext:
 
     def observe_unknown_value(self, val: "UnknownSerdesValue") -> "UnknownSerdesValue":
         self.observed_unknown_serdes_values.add(val)
+        self.observed_any_unknown_serdes_value = True
         return val
 
     def clear_ignored_unknown_values(self, obj: T) -> T:
@@ -827,12 +830,19 @@ class SetToSequenceFieldSerializer(FieldSerializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    compact: bool = False,
     **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
 
     Objects are first converted to a JSON-serializable form with `pack_value`.
+
+    With `compact=True`, the value is written in the compact format of
+    `dagster_shared.serdes.compact`, which stores class and field names once and deduplicates
+    repeated subtrees. Only readers that include compact format support can deserialize it.
     """
+    if compact:
+        return dumps_compact(pack_value(val, whitelist_map), **json_kwargs)
     serializable_value = _transform_for_serialization(
         val,
         whitelist_map=whitelist_map,
@@ -1197,10 +1207,19 @@ def deserialize_values(
         unpacked_values = []
         for val in vals:
             context = UnpackContext()
-            unpacked_value = seven.json.loads(
-                val,
-                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
-            )
+            object_hook = partial(_unpack_object, whitelist_map=whitelist_map, context=context)
+            if is_compact_serialized(val):
+                unpacked_value = loads_compact(val, object_hook)
+                if context.observed_any_unknown_serdes_value:
+                    # Unknown values are tracked by identity, which is ambiguous when a subtree is
+                    # shared between several references. Decode again without sharing.
+                    context = UnpackContext()
+                    object_hook = partial(
+                        _unpack_object, whitelist_map=whitelist_map, context=context
+                    )
+                    unpacked_value = loads_compact(val, object_hook, expand=True)
+            else:
+                unpacked_value = seven.json.loads(val, object_hook=object_hook)
             unpacked_value = context.finalize_unpack(unpacked_value)
             is_match = (
                 match_type(unpacked_value, as_type)  # type: ignore
