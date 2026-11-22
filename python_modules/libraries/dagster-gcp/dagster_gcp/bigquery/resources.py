@@ -132,7 +132,7 @@ def fetch_last_updated_timestamps(
             table_id,
             TIMESTAMP_MILLIS(last_modified_time) as last_modified_time
         FROM
-            {dataset_id}.__TABLES__
+            `{dataset_id}`.__TABLES__
         WHERE
             table_id IN UNNEST(@table_ids)
     """
