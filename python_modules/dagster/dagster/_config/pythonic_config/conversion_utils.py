@@ -332,11 +332,8 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
     )
 
 
-# The schema of each Config class, which depends only on the class, so ops, config mappings and
-# configured functions that share a class share one Field, as they would with a shared
-# config_schema. Fields and config types are not mutated after construction. A failed inference,
-# e.g. of a class with forward references not yet resolved by model_rebuild(), is not cached. Weak
-# keys let classes defined at runtime be collected.
+# Ops that share a Config class share its inferred schema. Failed inferences are not cached, so a
+# class can be inferred again after model_rebuild() resolves its forward references.
 _config_class_schemas: weakref.WeakKeyDictionary[type, Field] = weakref.WeakKeyDictionary()
 
 
@@ -349,7 +346,6 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
             config_arg_default is inspect.Parameter.empty,
             "Cannot provide a default value when using a Config class",
         )
-        # Many ops can share one Config class: infer its schema once.
         schema = _config_class_schemas.get(model_cls)
         if schema is None:
             schema = infer_schema_from_config_class(model_cls)
