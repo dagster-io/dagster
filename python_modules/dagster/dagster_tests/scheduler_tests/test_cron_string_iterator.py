@@ -8,6 +8,7 @@ from dagster._utils.schedules import (
     _croniter_string_iterator,
     cron_string_iterator,
     get_smallest_cron_interval,
+    has_nonzero_minute_offset,
     is_valid_cron_string,
     reverse_cron_string_iterator,
 )
@@ -642,12 +643,21 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
             start_timestamp = start_timestamp - timestamp_interval
 
 
+def test_has_nonzero_minute_offset_reflects_zone_not_current_date():
+    has_nonzero_minute_offset.cache_clear()
+    # Lord_Howe is +11:00 in summer and +10:30 in winter; must be True year-round.
+    assert has_nonzero_minute_offset("Australia/Lord_Howe") is True
+    assert has_nonzero_minute_offset("America/New_York") is False
+    assert has_nonzero_minute_offset("Asia/Kolkata") is True
+
+
 @pytest.mark.parametrize(
     "execution_timezone",
     [
         "Asia/Kolkata",
         "Asia/Kathmandu",
         "Australia/Adelaide",
+        "Australia/Lord_Howe",
         "America/St_Johns",
         "Pacific/Chatham",
     ],
@@ -680,6 +690,7 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
         "Asia/Kolkata",
         "Asia/Kathmandu",
         "Australia/Adelaide",
+        "Australia/Lord_Howe",
         "America/St_Johns",
         "Pacific/Chatham",
     ],
@@ -688,6 +699,7 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
 def test_hourly_cron_non_hour_offset_timezone_minute_fidelity(
     execution_timezone: str, cron_minute: int
 ):
+    has_nonzero_minute_offset.cache_clear()
     cron_string = f"{cron_minute} * * * *"
     start_timestamp = create_datetime(2026, 2, 16, 0, 0, 0, tz=execution_timezone).timestamp()
 
@@ -710,6 +722,24 @@ def test_hourly_cron_non_hour_offset_timezone_minute_fidelity(
         for tick_time in fast_times:
             partition_key = hourly_partitions.get_partition_key_for_timestamp(tick_time.timestamp())
             assert partition_key == tick_time.strftime("%Y-%m-%d-%H:%M")
+
+
+@pytest.mark.parametrize("cron_minute", [0, 30])
+def test_hourly_cron_lord_howe_winter_minute_fidelity(cron_minute: int):
+    has_nonzero_minute_offset.cache_clear()
+    execution_timezone = "Australia/Lord_Howe"
+    cron_string = f"{cron_minute} * * * *"
+    start_timestamp = create_datetime(2026, 7, 16, 0, 0, 0, tz=execution_timezone).timestamp()
+
+    fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+    raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
+
+    fast_times = [next(fast_iter) for _ in range(6)]
+    raw_times = [next(raw_iter) for _ in range(6)]
+
+    for fast_time, raw_time in zip(fast_times, raw_times):
+        assert fast_time == raw_time
+        assert fast_time.minute == cron_minute
 
 
 def test_last_day_of_month_cron_schedule():
