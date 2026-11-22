@@ -978,6 +978,18 @@ def backfill_runs_are_complete(
     return True
 
 
+def _backfill_data_unchanged(previous: AssetBackfillData, updated: AssetBackfillData) -> bool:
+    """Whether an iteration changed nothing about the backfill data except its materialization
+    scan cursor. The target subset and start time are fixed for the backfill's lifetime.
+    """
+    return (
+        updated.requested_runs_for_target_roots == previous.requested_runs_for_target_roots
+        and updated.materialized_subset == previous.materialized_subset
+        and updated.failed_and_downstream_subset == previous.failed_and_downstream_subset
+        and updated.requested_subset == previous.requested_subset
+    )
+
+
 def _backfill_is_stalled(
     *,
     backfill_id: str,
@@ -1108,6 +1120,7 @@ async def execute_asset_backfill_iteration(
                 logger.info("Backfill was canceled mid-iteration, returning")
                 return
 
+            stored_backfill = updated_backfill
             updated_backfill = (
                 updated_backfill.with_asset_backfill_data(
                     result.backfill_data,
@@ -1118,7 +1131,19 @@ async def execute_asset_backfill_iteration(
                 .with_failure_count(0)
             )
 
-            instance.update_backfill(updated_backfill)
+            # Most ticks of a backfill with runs in flight change nothing. Skip the write then,
+            # since it serializes the whole backfill and many backfills are evaluated every tick.
+            # Only the materialization scan cursor would advance. Leaving it behind is safe: the
+            # scan only reads this backfill's runs' materializations, and those since the stored
+            # cursor added nothing new, so rescanning them next tick is idempotent.
+            if (
+                result.run_requests
+                or stored_backfill.failure_count != 0
+                or not _backfill_data_unchanged(
+                    stored_backfill.get_asset_backfill_data(asset_graph), result.backfill_data
+                )
+            ):
+                instance.update_backfill(updated_backfill)
 
         if result.run_requests:
             await _submit_runs_and_update_backfill_in_chunks(
@@ -1130,9 +1155,11 @@ async def execute_asset_backfill_iteration(
                 run_tags=updated_backfill.tags,
             )
 
-        updated_backfill = cast(
-            "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
-        )
+            # submitting writes progress and checks for cancellation, so reload the backfill
+            updated_backfill = cast(
+                "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
+            )
+
         if updated_backfill.status == BulkActionStatus.REQUESTED:
             check.invariant(
                 not updated_backfill.submitting_run_requests,
@@ -1227,8 +1254,11 @@ async def execute_asset_backfill_iteration(
             f"**Failed assets and their downstream assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
             f"**Assets requested or in progress:**\n{_asset_graph_subset_to_str(updated_backfill_in_progress, asset_graph) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
+        # pass the data as an argument so that it is only rendered when debug logging is enabled
         logger.debug(
-            f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
+            "Updated asset backfill data for %s: %s",
+            updated_backfill.backfill_id,
+            updated_backfill_data,
         )
 
     elif (
@@ -1303,7 +1333,8 @@ async def execute_asset_backfill_iteration(
         )
 
         logger.debug(
-            f"Updated asset backfill data after cancellation iteration: {asset_backfill_data_after_iteration}"
+            "Updated asset backfill data after cancellation iteration: %s",
+            asset_backfill_data_after_iteration,
         )
     elif backfill.status == BulkActionStatus.CANCELED:
         # The backfill was forcibly canceled, skip iteration
