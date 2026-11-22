@@ -481,47 +481,62 @@ class ActiveExecution:
     def plan_events_iterator(
         self, job_context: PlanExecutionContext | PlanOrchestrationContext
     ) -> Iterator[DagsterEvent]:
-        """Process all steps that can be skipped and abandoned."""
-        steps_to_skip = self.get_steps_to_skip()
-        while steps_to_skip:
-            for step in steps_to_skip:
-                step_context = job_context.for_step(step)
-                step_context.log.info(
-                    f"Skipping step {step.key} due to skipped dependencies:"
-                    f" {self._skipped_deps[step.key]}."
-                )
-                yield DagsterEvent.step_skipped_event(step_context)
-
-                self.mark_skipped(step.key)
+        """Process all steps that can be skipped and abandoned, to a fixed point."""
+        # The skip and abandon phases each run to a fixed point on their own, but
+        # resolving one phase can unblock steps in the other (e.g. abandoning a step
+        # can make a downstream step skippable), so both phases repeat until an
+        # iteration processes nothing. Every processed step leaves the pending sets
+        # permanently, so this loop always terminates.
+        while True:
+            processed_step = False
 
             steps_to_skip = self.get_steps_to_skip()
-
-        steps_to_abandon = self.get_steps_to_abandon()
-        while steps_to_abandon:
-            for step in steps_to_abandon:
-                step_context = job_context.for_step(step)
-                failed_inputs: list[str] = []
-                for step_input in step.step_inputs:
-                    failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
-
-                abandoned_inputs: list[str] = []
-                for step_input in step.step_inputs:
-                    abandoned_inputs.extend(
-                        self._abandoned.intersection(step_input.dependency_keys)
+            while steps_to_skip:
+                processed_step = True
+                for step in steps_to_skip:
+                    step_context = job_context.for_step(step)
+                    step_context.log.info(
+                        f"Skipping step {step.key} due to skipped dependencies:"
+                        f" {self._skipped_deps[step.key]}."
                     )
+                    yield DagsterEvent.step_skipped_event(step_context)
 
-                step_context.log.error(
-                    "Dependencies for step {step}{fail_str}{abandon_str}. Not executing.".format(
-                        step=step.key,
-                        fail_str=f" failed: {failed_inputs}" if failed_inputs else "",
-                        abandon_str=(
-                            f" were not executed: {abandoned_inputs}" if abandoned_inputs else ""
-                        ),
-                    )
-                )
-                self.mark_abandoned(step.key)
+                    self.mark_skipped(step.key)
+
+                steps_to_skip = self.get_steps_to_skip()
 
             steps_to_abandon = self.get_steps_to_abandon()
+            while steps_to_abandon:
+                processed_step = True
+                for step in steps_to_abandon:
+                    step_context = job_context.for_step(step)
+                    failed_inputs: list[str] = []
+                    for step_input in step.step_inputs:
+                        failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
+
+                    abandoned_inputs: list[str] = []
+                    for step_input in step.step_inputs:
+                        abandoned_inputs.extend(
+                            self._abandoned.intersection(step_input.dependency_keys)
+                        )
+
+                    step_context.log.error(
+                        "Dependencies for step {step}{fail_str}{abandon_str}. Not executing.".format(
+                            step=step.key,
+                            fail_str=f" failed: {failed_inputs}" if failed_inputs else "",
+                            abandon_str=(
+                                f" were not executed: {abandoned_inputs}"
+                                if abandoned_inputs
+                                else ""
+                            ),
+                        )
+                    )
+                    self.mark_abandoned(step.key)
+
+                steps_to_abandon = self.get_steps_to_abandon()
+
+            if not processed_step:
+                break
 
     def mark_failed(self, step_key: str) -> None:
         self._failed.add(step_key)
