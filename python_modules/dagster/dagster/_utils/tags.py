@@ -58,6 +58,21 @@ class TagConcurrencyLimitsCounter:
         for item in in_progress_tagged_items:
             self.update_counters_with_launched_item(item)
 
+    def copy(self) -> "TagConcurrencyLimitsCounter":
+        """Returns a counter with the same limits and an independent copy of the current counts.
+
+        Cheaper than building a new counter from the same in-progress items when the in-progress
+        counts are evaluated against several batches.
+        """
+        counter = TagConcurrencyLimitsCounter([], [])
+        counter._key_limits = self._key_limits
+        counter._key_value_limits = self._key_value_limits
+        counter._unique_value_limits = self._unique_value_limits
+        counter._key_counts = defaultdict(int, self._key_counts)
+        counter._key_value_counts = defaultdict(int, self._key_value_counts)
+        counter._unique_value_counts = defaultdict(int, self._unique_value_counts)
+        return counter
+
     def is_blocked(self, item: Union["DagsterRun", "ExecutionStep"]) -> bool:
         """True if there are in progress item which are blocking this item based on tag limits."""
         for key, value in item.tags.items():
