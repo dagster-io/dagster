@@ -4,11 +4,16 @@ import time
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
+from unittest import mock
 from uuid import uuid4
 
 import dagster as dg
 import pytest
-from dagster._core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterRunAlreadyExists,
+    DagsterSnapshotDoesNotExist,
+)
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import InstanceType
@@ -1430,6 +1435,59 @@ class TestRunStorage:
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
+
+    def test_update_backfill_existence_check(self, storage: RunStorage):
+        backfill = PartitionBackfill(
+            "missing",
+            partition_set_origin=self.fake_partition_set_origin("fake_partition_set"),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        with pytest.raises(DagsterInvariantViolationError, match="not present in storage"):
+            storage.update_backfill(backfill)
+
+        # an update that leaves the row unchanged must not be mistaken for a missing backfill
+        storage.add_backfill(backfill)
+        storage.update_backfill(backfill)
+        assert storage.get_backfill("missing") == backfill
+
+    def test_snapshot_existence_cache(self, storage: RunStorage):
+        """Snapshot existence is remembered once known, and forgotten when the storage is wiped."""
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("only SQL run storages cache snapshot existence")
+
+        job_snapshot = dg.GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_snapshot = job_snapshot.get_job_snapshot()
+        storage.add_job_snapshot(job_snapshot)
+
+        with mock.patch.object(storage, "fetchone", wraps=storage.fetchone) as fetchone:
+            assert storage.has_job_snapshot(job_snapshot.snapshot_id)
+            assert storage.has_job_snapshot(job_snapshot.snapshot_id)
+            assert fetchone.call_count == 1
+
+            assert not storage.has_job_snapshot("nope")
+            assert not storage.has_job_snapshot("nope")
+            # missing snapshots are not cached, since they may be added by another process
+            assert fetchone.call_count == 3
+
+        storage.wipe()
+        assert not storage.has_job_snapshot(job_snapshot.snapshot_id)
+
+    def test_schema_column_cache(self, storage: RunStorage):
+        """Present columns are remembered, so schema introspection runs once per storage."""
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("only SQL run storages introspect their schema")
+
+        storage._clear_schema_cache()  # noqa: SLF001
+        with mock.patch.object(storage, "connect", wraps=storage.connect) as connect:
+            assert storage.has_run_stats_index_cols()
+            assert storage.has_backfill_id_column()
+            assert storage.has_run_stats_index_cols()
+            assert storage.has_backfill_id_column()
+            assert connect.call_count == 2
 
     def test_backfill_status_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")

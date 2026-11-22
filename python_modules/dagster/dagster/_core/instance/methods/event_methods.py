@@ -296,12 +296,15 @@ class EventMethods:
                 self._run_storage_impl.handle_run_event(
                     run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
                 )
-                run = self._instance.get_run_by_id(run_id)
-                if (
-                    run
-                    and event.get_dagster_event().is_run_failure
+                # Only run failures need the updated run, so skip the read for every other job
+                # event (e.g. starting, start, success).
+                run = (
+                    self._instance.get_run_by_id(run_id)
+                    if event.get_dagster_event().is_run_failure
                     and self._instance.run_retries_enabled
-                ):
+                    else None
+                )
+                if run:
                     # Note that this tag is only applied to runs that fail. Successful runs will not
                     # have a WILL_RETRY_TAG tag.
                     run_failure_reason = (
