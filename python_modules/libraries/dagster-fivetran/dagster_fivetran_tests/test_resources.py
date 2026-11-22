@@ -1,6 +1,6 @@
 import re
-from typing import cast
 from unittest.mock import MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import responses
@@ -14,16 +14,25 @@ from dagster_fivetran.resources import FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES
 from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.conftest import (
+    EXTRA_TEST_CONNECTOR_ID,
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,
+    SAMPLE_CONNECTORS_FOR_GROUP,
+    SAMPLE_DESTINATION_DETAILS,
+    SAMPLE_GROUPS_PAGINATED_PAGE_ONE,
+    SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
     SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+    SAMPLE_SCHEMA_CONFIG_FOR_EXTRA_CONNECTOR,
     SAMPLE_SUCCESS_MESSAGE,
     TEST_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
+    TEST_CONNECTOR_ID,
+    TEST_GROUP_ID,
     TEST_MAX_TIME_STR,
     TEST_PREVIOUS_MAX_TIME_STR,
     TEST_SCHEMA_NAME,
+    TEST_SECOND_GROUP_ID,
     TEST_TABLE_NAME,
     get_fivetran_connector_api_url,
     get_sample_connection_details,
@@ -162,9 +171,131 @@ def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
                 json=list_connectors_for_group_sample(setup_state=setup_state, next_cursor=None),
                 status=200,
             )
-            return client.list_connectors_for_group(group_id=group_id)
+            connectors = client.list_connectors_for_group(group_id=group_id)
+            request_urls = [call.request.url for call in response.calls]
+            return connectors, request_urls
 
-    assert len(cast("list", _mock_interaction())) == 2
+    connectors, request_urls = _mock_interaction()
+    # both pages are returned
+    assert len(connectors) == 2
+    # the page-2 request carries the cursor from page 1
+    assert len(request_urls) == 2
+    assert "cursor" not in parse_qs(urlparse(request_urls[0]).query)
+    assert parse_qs(urlparse(request_urls[1]).query).get("cursor") == ["some_cursor"]
+
+
+def test_get_groups_pagination():
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    # Include a non-items field on the final page: get_groups must preserve it,
+    # as the previous single-request implementation returned the full response data.
+    paginated_page_two = {
+        **SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
+        "data": {**SAMPLE_GROUPS_PAGINATED_PAGE_TWO["data"], "extra_field": "kept"},
+    }
+    with responses.RequestsMock() as response:
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=SAMPLE_GROUPS_PAGINATED_PAGE_ONE,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=paginated_page_two,
+            status=200,
+        )
+        groups = client.get_groups()
+        request_urls = [call.request.url for call in response.calls]
+
+    assert groups["extra_field"] == "kept"
+    assert "next_cursor" not in groups
+    assert [group["id"] for group in groups["items"]] == [TEST_GROUP_ID, TEST_SECOND_GROUP_ID]
+    assert len(request_urls) == 2
+    assert "cursor" not in parse_qs(urlparse(request_urls[0]).query)
+    assert parse_qs(urlparse(request_urls[1]).query).get("cursor") == ["abc"]
+
+
+def test_fetch_fivetran_workspace_data_with_paginated_groups():
+    workspace = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    second_group_destination = {
+        **SAMPLE_DESTINATION_DETAILS,
+        "data": {
+            **SAMPLE_DESTINATION_DETAILS["data"],
+            "id": TEST_SECOND_GROUP_ID,
+            "group_id": TEST_SECOND_GROUP_ID,
+        },
+    }
+
+    with responses.RequestsMock() as response:
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=SAMPLE_GROUPS_PAGINATED_PAGE_ONE,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/destinations/{TEST_GROUP_ID}",
+            json=SAMPLE_DESTINATION_DETAILS,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/destinations/{TEST_SECOND_GROUP_ID}",
+            json=second_group_destination,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{TEST_GROUP_ID}/connectors",
+            json=SAMPLE_CONNECTORS_FOR_GROUP,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{TEST_SECOND_GROUP_ID}/connectors",
+            json=list_connectors_for_group_sample(
+                setup_state=FivetranConnectorSetupStateType.CONNECTED.value,
+                include_extra_connector=True,
+                group_id=TEST_SECOND_GROUP_ID,
+            ),
+            status=200,
+        )
+        # the test connector appears in both groups, so its schema is fetched twice
+        for _ in range(2):
+            response.add(
+                method=responses.GET,
+                url=f"{get_fivetran_connector_api_url(TEST_CONNECTOR_ID)}/schemas",
+                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+                status=200,
+            )
+        response.add(
+            method=responses.GET,
+            url=f"{get_fivetran_connector_api_url(EXTRA_TEST_CONNECTOR_ID)}/schemas",
+            json=SAMPLE_SCHEMA_CONFIG_FOR_EXTRA_CONNECTOR,
+            status=200,
+        )
+        workspace_data = workspace.fetch_fivetran_workspace_data()
+        request_urls = [call.request.url for call in response.calls]
+
+    # the group on page 2 was visited
+    assert TEST_SECOND_GROUP_ID in workspace_data.destinations_by_id
+    assert EXTRA_TEST_CONNECTOR_ID in workspace_data.connectors_by_id
+    assert workspace_data.connectors_by_id[EXTRA_TEST_CONNECTOR_ID].group_id == TEST_SECOND_GROUP_ID
+    assert any(f"groups/{TEST_SECOND_GROUP_ID}/connectors" in url for url in request_urls)
 
 
 @pytest.mark.parametrize(
