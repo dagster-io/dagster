@@ -230,7 +230,11 @@ class AssetCheckKey(NamedTuple):
 
     @staticmethod
     def from_user_string(user_string: str) -> "AssetCheckKey":
-        asset_key_str, name = user_string.split(":")
+        # to_user_string() appends ":<name>" to the asset key's user string, and asset keys
+        # can themselves contain colons (e.g. dagster-looker emits keys like
+        # ["my_model::my_explore"]). Split off only the final segment so the asset key portion
+        # is preserved.
+        asset_key_str, name = user_string.rsplit(":", 1)
         return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
     @staticmethod
