@@ -1,7 +1,7 @@
 # ruff: noqa: T201
 """Measure the serialized repository snapshot of the posttrain-like mock definitions.
 
-Usage: python -m dagster_test.benchmarks.snapshot_size.measure [--out snapshot.json]
+Usage: python -m dagster_test.benchmarks.snapshot_size.measure [--compact] [--out snapshot.json]
 """
 
 import argparse
@@ -24,6 +24,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out")
     parser.add_argument("--breakdown", action="store_true")
+    parser.add_argument("--compact", action="store_true", help="use the compact serdes format")
     args = parser.parse_args()
 
     start = time.perf_counter()
@@ -32,7 +33,7 @@ def main() -> None:
     built = time.perf_counter()
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
     snapped = time.perf_counter()
-    serialized = serialize_value(snap)
+    serialized = serialize_value(snap, compact=args.compact)
     serialized_at = time.perf_counter()
     roundtrip = deserialize_value(serialized, RepositorySnap)
     deserialized_at = time.perf_counter()
@@ -49,7 +50,7 @@ def main() -> None:
     if args.out:
         with open(args.out, "wb") as f:
             f.write(raw)
-    if args.breakdown:
+    if args.breakdown and not args.compact:
         top = json.loads(serialized)
         for key, value in sorted(top.items(), key=lambda kv: -_size(kv[1])):
             fields: Counter = Counter()
