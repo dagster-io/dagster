@@ -168,8 +168,8 @@ def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) 
     )
 
 
-# libyaml's loader parses several times faster than the pure-Python one and reports the same
-# node positions. PyYAML only ships it when built against libyaml.
+# libyaml's loader is several times faster and reports the same node positions, when PyYAML is
+# built with it.
 _FAST_SAFE_LOADER: type[yaml.SafeLoader] = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
 
@@ -199,16 +199,15 @@ def parse_yamls_with_source_position(
         ValueAndSourcePositionTree: An object containing the parsed YAML value and the corresponding
             source position information.
     """
-    # Without a final line break, libyaml ends the last block collections on the line after the
-    # source, while the pure-Python loader ends them on its last character. Files end with one.
+    # Without a final line break, libyaml ends the last block collection one line later than the
+    # pure-Python loader. Files end with one.
     if _FAST_SAFE_LOADER is not yaml.SafeLoader and src.endswith("\n"):
         try:
             return _parse_yamls_with_source_position(
                 src, filename, implicits_to_remove, _FAST_SAFE_LOADER
             )
         except yaml.YAMLError:
-            # libyaml's error marks are read-only and carry no source snippet: parse again in
-            # Python to raise the same error as without libyaml.
+            # Parse again in Python, whose errors carry the source snippet and can be renamed.
             pass
     try:
         return _parse_yamls_with_source_position(
