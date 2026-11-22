@@ -20,6 +20,18 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._record import record
 
 
+def get_job_root_asset_keys(
+    key: AssetJobKey, asset_graph: BaseAssetGraph[BaseAssetNode]
+) -> AbstractSet[AssetKey]:
+    """The job's root assets: those with no parents that are also in the job."""
+    job_asset_keys = asset_graph.asset_keys_for_job(key.job_name)
+    return {
+        asset_key
+        for asset_key in job_asset_keys
+        if not (asset_graph.get(asset_key).parent_entity_keys & job_asset_keys)
+    }
+
+
 @record
 class JobRootAssetsAutomationCondition(BuiltinAutomationCondition[AssetJobKey]):
     """Base for job-scoped conditions that aggregate a per-asset condition across the
@@ -63,12 +75,7 @@ class JobRootAssetsAutomationCondition(BuiltinAutomationCondition[AssetJobKey]):
         condition's will_be_requested() lookahead within the same tick, so re-evaluating
         them at the job level would be redundant.
         """
-        job_asset_keys = self._get_asset_keys(key, asset_graph)
-        return {
-            asset_key
-            for asset_key in job_asset_keys
-            if not (asset_graph.get(asset_key).parent_entity_keys & job_asset_keys)
-        }
+        return get_job_root_asset_keys(key, asset_graph)
 
     def _child_for_asset_key(
         self, context: AutomationContext[AssetJobKey], index: int, asset_key: AssetKey
