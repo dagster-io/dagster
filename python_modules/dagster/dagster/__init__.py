@@ -38,7 +38,7 @@ import sys
 # ##### DYNAMIC IMPORTS
 # ########################
 from dagster_shared.error import DagsterError as DagsterError
-from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry as DagsterLibraryRegistry
 from dagster_shared.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
