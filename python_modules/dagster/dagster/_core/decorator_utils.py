@@ -2,7 +2,7 @@ import functools
 import inspect
 import re
 import textwrap
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import Parameter, Signature, signature
@@ -65,14 +65,13 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
     )
 
 
-# ``inspect.signature`` and ``typing.get_type_hints`` are each expensive, and building a single
-# @op/@asset/@asset_check definition calls them on the same callable dozens of times. Results are
-# memoized only while a ``reflection_cache_scope`` is active, which the definition decorators open
-# for the duration of one build. Outside a scope, every call reflects afresh, so a callable whose
-# signature or annotations change between builds is always re-read.
+# Building one @op/@asset/@asset_check definition calls ``inspect.signature`` and
+# ``typing.get_type_hints`` on the same callable dozens of times. The definition decorators open a
+# ``reflection_cache_scope`` for the duration of one build, and these results are memoized within
+# it. Outside a scope, nothing is cached.
 #
-# Entries are keyed by ``id`` and hold a strong reference to the callable so that the id cannot be
-# reused while the scope is open. The cache is dropped when the outermost scope exits.
+# Entries are keyed by ``id`` and keep the callable alive, so the id cannot be reused while the
+# scope is open.
 _ReflectionCache: TypeAlias = dict[tuple[str, int], tuple[Callable[..., Any], Any]]
 _reflection_cache: ContextVar[_ReflectionCache | None] = ContextVar(
     "_dagster_reflection_cache", default=None
@@ -80,11 +79,8 @@ _reflection_cache: ContextVar[_ReflectionCache | None] = ContextVar(
 
 
 @contextmanager
-def reflection_cache_scope() -> Iterator[None]:
-    """Memoize function reflection for the duration of a single definition build.
-
-    Nested scopes share the outermost scope's cache.
-    """
+def reflection_cache_scope() -> Generator[None]:
+    """Memoize function reflection until the outermost scope exits."""
     if _reflection_cache.get() is not None:
         yield
         return
@@ -102,12 +98,9 @@ def _cached_in_scope(
     if cache is None:
         return compute(fn)
     key = (kind, id(fn))
-    entry = cache.get(key)
-    if entry is not None and entry[0] is fn:
-        return entry[1]
-    value = compute(fn)
-    cache[key] = (fn, value)
-    return value
+    if key not in cache:
+        cache[key] = (fn, compute(fn))
+    return cache[key][1]
 
 
 def _compute_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
