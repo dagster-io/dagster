@@ -686,11 +686,10 @@ class DagsterGrpcClient:
         return res.serialized_cancel_execution_result
 
     def cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
-        """Cancel unique run IDs in bounded requests, retaining per-run results.
+        """Cancel runs with one request per MAX_CANCEL_EXECUTIONS_BATCH_SIZE run IDs.
 
-        Requests may partially succeed across chunks. Uncertain transport failures are
-        propagated without replay. Older servers attempt every single-run request, even
-        when one fails, so already-prepared cancellation markers are not stranded.
+        Servers that predate CancelExecutions get one CancelExecution request per run. Other
+        request failures are raised and not retried, since the server may have acted on them.
         """
         check.sequence_param(run_ids, "run_ids", of_type=str)
         unique_run_ids = list(dict.fromkeys(run_ids))
@@ -714,28 +713,14 @@ class DagsterGrpcClient:
                 ),
             )
         except Exception as error:
-            if (
+            if not (
                 isinstance(error, grpc.RpcError)
                 and cast("grpc.Call", error).code() == grpc.StatusCode.UNIMPLEMENTED
             ):
-                results: dict[str, CancelExecutionResult] = {}
-                for run_id in run_ids:
-                    try:
-                        results[run_id] = deserialize_value(
-                            self.cancel_execution(CancelExecutionRequest(run_id=run_id)),
-                            CancelExecutionResult,
-                        )
-                    except Exception:
-                        results[run_id] = CancelExecutionResult(
-                            success=False,
-                            message=None,
-                            serializable_error_info=serializable_error_info_from_exc_info(
-                                sys.exc_info()
-                            ),
-                        )
-                return CancelExecutionsResult(results=results)
-            # Never replay a timeout or transport failure: the server may have accepted it.
-            self._raise_grpc_exception(error, timeout=DEFAULT_GRPC_TIMEOUT)
+                self._raise_grpc_exception(error, timeout=DEFAULT_GRPC_TIMEOUT)
+            return CancelExecutionsResult(
+                results={run_id: self._cancel_execution_result(run_id) for run_id in run_ids}
+            )
         result = deserialize_value(
             response.serialized_cancel_executions_result, CancelExecutionsResult
         )
@@ -743,6 +728,19 @@ class DagsterGrpcClient:
             set(result.results) == set(run_ids), "Incomplete batch cancellation response"
         )
         return result
+
+    def _cancel_execution_result(self, run_id: str) -> CancelExecutionResult:
+        # Every run is attempted: an error cancelling one run is returned as its result.
+        try:
+            return deserialize_value(
+                self.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
+            )
+        except Exception:
+            return CancelExecutionResult(
+                success=False,
+                message=None,
+                serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+            )
 
     def can_cancel_execution(
         self,

@@ -33,7 +33,7 @@ from dagster._grpc.types import (
     StartRunResult,
 )
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
@@ -422,23 +422,22 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             context.abort(
                 grpc.StatusCode.INVALID_ARGUMENT, "Too many run IDs in cancellation request"
             )
-        # A proxy can retain runs from several code-server generations after a reload.
-        # Route each run to its original server rather than the current server.
+        # After a reload, runs may still be on a previous server: send each to the server that
+        # launched it.
         by_client: dict[DagsterGrpcClient, list[str]] = {}
         results: dict[str, CancelExecutionResult] = {}
         for run_id in dict.fromkeys(batch.run_ids):
             client = self._run_clients.get(run_id)
             if client is None:
-                try:
-                    raise Exception(f"Could not find a server for run {run_id}")
-                except Exception:
-                    results[run_id] = CancelExecutionResult(
-                        success=False,
-                        message=None,
-                        serializable_error_info=serializable_error_info_from_exc_info(
-                            sys.exc_info()
-                        ),
-                    )
+                results[run_id] = CancelExecutionResult(
+                    success=False,
+                    message=None,
+                    serializable_error_info=SerializableErrorInfo(
+                        message=f"Could not find a server for run {run_id}",
+                        stack=[],
+                        cls_name=None,
+                    ),
+                )
             else:
                 by_client.setdefault(client, []).append(run_id)
         for client, run_ids in by_client.items():

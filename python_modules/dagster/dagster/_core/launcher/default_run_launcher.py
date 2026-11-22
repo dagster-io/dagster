@@ -182,8 +182,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         check.sequence_param(run_ids, "run_ids", of_type=str)
         run_ids = list(dict.fromkeys(run_ids))
-        # Preserve bound-instance overrides as well as subclass customizations. In
-        # particular, custom clients may carry different authorization metadata.
+        # A launcher or instance that customizes single-run termination keeps it: a custom client
+        # may, for example, carry different authorization metadata.
         if any(
             getattr(getattr(self, name), "__func__", None) is not getattr(DefaultRunLauncher, name)
             for name in (
@@ -219,7 +219,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 continue
             client = self._get_grpc_client_for_run(run)
             if client is None:
-                # Preserve existing status and diagnostic reporting for missing clients.
+                # terminate() reports that no client could be found.
                 results[run_id] = self.terminate(run_id)
                 continue
             key = (client.host, client.port, client.socket, client.use_ssl)
@@ -228,13 +228,11 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             groups[key][1].append(run)
 
         for client, runs in groups.values():
-            # Bound request size even for callers other than the backfill daemon.
             for offset in range(0, len(runs), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
                 page: list[DagsterRun] = []
                 try:
                     for run in runs[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]:
-                        # Metadata is loaded in bulk, but preserve the single-run path's fresh
-                        # terminal check immediately before reporting cancellation.
+                        # Like terminate(), re-read the run right before reporting cancellation.
                         current = self._instance.get_run_by_id(run.run_id)
                         if not current or current.is_finished:
                             continue
@@ -244,17 +242,14 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                         try:
                             self._instance.report_run_canceling(current)
                         except BaseException:
-                            # Reporting can fail after persisting CANCELING (for example,
-                            # in a listener). Include that run in the first-send drain too.
+                            # A listener can fail after CANCELING is stored: still send it.
                             latest = self._instance.get_run_by_id(current.run_id)
                             if latest and latest.status == DagsterRunStatus.CANCELING:
                                 page.append(latest)
                             raise
-                        else:
-                            page.append(current)
+                        page.append(current)
                 finally:
-                    # A later preparation failure must not leave earlier runs CANCELING
-                    # without ever sending their requests. This is a first send, not a retry.
+                    # Runs already marked CANCELING get their request even if a later run fails.
                     if page:
                         response = client.cancel_executions([run.run_id for run in page])
                         for run in page:
