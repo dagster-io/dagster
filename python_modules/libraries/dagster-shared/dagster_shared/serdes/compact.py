@@ -41,9 +41,9 @@ _LIST_TAG = 1
 _DICT_TAG = 2
 _FIRST_CLASS_TAG = 3
 
-# Subtrees whose estimated encoded size is below this many characters are repeated inline rather
-# than referenced, since a reference would not be meaningfully shorter.
-_MIN_SHARED_SIZE = 8
+# Strings shorter than this are repeated inline rather than referenced, since a reference would not
+# be meaningfully shorter.
+_MIN_SHARED_STR_LEN = 6
 
 _LIST_KIND = 0
 _DICT_KIND = 1
@@ -62,108 +62,101 @@ class _Encoder:
         self.node_ids: dict[Any, int] = {}
         self.kinds: list[int] = []
         self.payloads: list[Any] = []
-        self.sizes: list[int] = []
         self.ref_counts: list[int] = []
         self.class_ids: dict[tuple[str, tuple[str, ...]], int] = {}
         self.classes: list[list[Any]] = []
 
-    def _node(self, key: Any, kind: int, payload: Any, size: int) -> int:
-        node_id = self.node_ids.get(key)
+    def _node(self, key: Any, kind: int, payload: Any, children: tuple[int, ...]) -> int:
+        node_ids = self.node_ids
+        node_id = node_ids.get(key)
         if node_id is None:
             node_id = len(self.kinds)
-            self.node_ids[key] = node_id
+            node_ids[key] = node_id
             self.kinds.append(kind)
             self.payloads.append(payload)
-            self.sizes.append(size)
             self.ref_counts.append(0)
             # children are only counted once per distinct parent, since each distinct parent is
             # written once
-            if kind != _SCALAR_KIND:
-                ref_counts = self.ref_counts
-                for child in payload[1] if kind == _OBJECT_KIND else payload:
-                    ref_counts[child] += 1
+            ref_counts = self.ref_counts
+            for child in children:
+                ref_counts[child] += 1
         return node_id
 
     def add(self, value: Any) -> int:
         tval = type(value)
         if tval is str:
-            return self._node(value, _SCALAR_KIND, value, len(value) + 2)
-        if value is None or tval is bool:
-            return self._node((tval, value), _SCALAR_KIND, value, 5)
-        if tval is int or tval is float:
-            return self._node((tval, value), _SCALAR_KIND, value, len(repr(value)) + 4)
+            node_id = self.node_ids.get(value)
+            if node_id is None:
+                node_id = self._node(value, _SCALAR_KIND, value, ())
+            return node_id
         if tval is list:
-            children = tuple(self.add(item) for item in value)
-            sizes = self.sizes
-            return self._node(
-                (_LIST_KIND, children),
-                _LIST_KIND,
-                children,
-                4 + sum(min(sizes[c], 8) for c in children) + len(children),
-            )
+            add = self.add
+            children = tuple([add(item) for item in value])
+            return self._node((_LIST_KIND, children), _LIST_KIND, children, children)
         if tval is dict:
+            add = self.add
             class_name = value.get("__class__")
             if type(class_name) is str:
-                field_names = tuple(k for k in value if k != "__class__")
+                field_names = tuple(value)
                 class_key = (class_name, field_names)
                 class_id = self.class_ids.get(class_key)
                 if class_id is None:
                     class_id = len(self.classes)
                     self.class_ids[class_key] = class_id
-                    self.classes.append([class_name, list(field_names)])
-                children = tuple(self.add(value[k]) for k in field_names)
-                sizes = self.sizes
+                    self.classes.append([class_name, [k for k in field_names if k != "__class__"]])
+                children = tuple([add(v) for k, v in value.items() if k != "__class__"])
                 return self._node(
                     (_OBJECT_KIND, class_id, children),
                     _OBJECT_KIND,
                     (class_id, children),
-                    4 + sum(min(sizes[c], 8) for c in children) + len(children),
+                    children,
                 )
-            children = tuple(
-                node_id for k, v in value.items() for node_id in (self.add(k), self.add(v))
-            )
-            sizes = self.sizes
-            return self._node(
-                (_DICT_KIND, children),
-                _DICT_KIND,
-                children,
-                4 + sum(min(sizes[c], 8) for c in children) + len(children),
-            )
+            children = tuple([node_id for k, v in value.items() for node_id in (add(k), add(v))])
+            return self._node((_DICT_KIND, children), _DICT_KIND, children, children)
+        if value is None or tval is bool or tval is int or tval is float:
+            return self._node((tval, value), _SCALAR_KIND, value, ())
         raise TypeError(f"Unexpected packed value type {tval}")
 
+    def _shared(self, node_id: int) -> bool:
+        # Shared nodes are written once in the value table and referenced by index elsewhere.
+        # Small values are cheaper to repeat inline than to reference.
+        if self.ref_counts[node_id] < 2:
+            return False
+        kind = self.kinds[node_id]
+        payload = self.payloads[node_id]
+        if kind == _SCALAR_KIND:
+            return type(payload) is str and len(payload) >= _MIN_SHARED_STR_LEN
+        if kind == _OBJECT_KIND:
+            return True
+        return len(payload) > 0
+
     def encode(self, root_id: int) -> dict[str, Any]:
-        kinds, payloads, sizes, ref_counts = self.kinds, self.payloads, self.sizes, self.ref_counts
+        kinds, payloads = self.kinds, self.payloads
+        shared = [self._shared(node_id) for node_id in range(len(kinds))]
         table: list[Any] = []
         table_index: dict[int, int] = {}
-
-        def shared(node_id: int) -> bool:
-            return ref_counts[node_id] > 1 and sizes[node_id] >= _MIN_SHARED_SIZE
 
         def emit(node_id: int) -> Any:
             index = table_index.get(node_id)
             if index is not None:
                 return index
-            body = emit_body(node_id)
-            if shared(node_id):
+            kind = kinds[node_id]
+            payload = payloads[node_id]
+            if kind == _SCALAR_KIND:
+                tval = type(payload)
+                body = [_NUMBER_TAG, payload] if tval is int or tval is float else payload
+            elif kind == _OBJECT_KIND:
+                class_id, children = payload
+                body = [_FIRST_CLASS_TAG + class_id, *[emit(c) for c in children]]
+            else:
+                tag = _LIST_TAG if kind == _LIST_KIND else _DICT_TAG
+                body = [tag, *[emit(c) for c in payload]]
+            if shared[node_id]:
                 index = len(table)
                 table.append(body)
                 table_index[node_id] = index
                 return index
             return body
-
-        def emit_body(node_id: int) -> Any:
-            kind = kinds[node_id]
-            payload = payloads[node_id]
-            if kind == _SCALAR_KIND:
-                tval = type(payload)
-                if tval is int or tval is float:
-                    return [_NUMBER_TAG, payload]
-                return payload
-            if kind == _OBJECT_KIND:
-                class_id, children = payload
-                return [_FIRST_CLASS_TAG + class_id, *[emit(c) for c in children]]
-            tag = _LIST_TAG if kind == _LIST_KIND else _DICT_TAG
-            return [tag, *[emit(c) for c in payload]]
 
         root = emit(root_id)
         return {
