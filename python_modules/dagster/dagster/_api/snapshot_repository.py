@@ -40,6 +40,7 @@ def sync_get_external_repositories_data_grpc(
                     repository_name,
                 ),
                 defer_snapshots=defer_snapshots,
+                compact_serdes=True,
             ),
             (RepositorySnap, RepositoryErrorSnap),
         )

@@ -1095,7 +1095,8 @@ class DagsterApiServer(DagsterApiServicer):
                 RepositorySnap.from_def(
                     self._get_repo_for_origin(repository_origin),
                     defer_snapshots=request.defer_snapshots,
-                )
+                ),
+                compact=request.compact_serdes,
             )
         except Exception:
             _maybe_log_exception(self._logger, "Repository")

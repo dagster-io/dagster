@@ -229,3 +229,34 @@ def test_job_data_snap_layout():
 
     # must remain last position
     assert get_storage_fields(JobDataSnap)[-1] == "pipeline_snapshot"
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_external_repository_compact_serdes(instance, streaming):
+    import asyncio
+
+    from dagster_shared.serdes.compact import is_compact_serialized
+
+    with get_bar_repo_code_location(instance) as code_location:
+        repo_origin = RemoteRepositoryOrigin(code_location.origin, "bar_repo")
+
+        async def _fetch(compact_serdes: bool) -> str:
+            if streaming:
+                chunks = [
+                    chunk["serialized_external_repository_chunk"]
+                    async for chunk in code_location.client.gen_streaming_external_repository(
+                        repo_origin, defer_snapshots=True, compact_serdes=compact_serdes
+                    )
+                ]
+                return "".join(chunks)
+            return await code_location.client.gen_external_repository(
+                repo_origin, defer_snapshots=True, compact_serdes=compact_serdes
+            )
+
+        legacy = asyncio.run(_fetch(compact_serdes=False))
+        compact = asyncio.run(_fetch(compact_serdes=True))
+        assert not is_compact_serialized(legacy)
+        assert is_compact_serialized(compact)
+        assert dg.deserialize_value(compact, RepositorySnap) == dg.deserialize_value(
+            legacy, RepositorySnap
+        )
