@@ -994,6 +994,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return AnyDownstreamConditionsCondition()
 
+    @public
+    @beta
+    @staticmethod
+    def is_root_executable() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the asset is a root executable asset."""
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            IsRootExecutableCondition,
+        )
+
+        return IsRootExecutableCondition()
+
 
 # The type parameter of an AutomationCondition records which entity keys it can evaluate.
 # These aliases name the sets of labels accepted where an asset-scoped (or check-scoped)
