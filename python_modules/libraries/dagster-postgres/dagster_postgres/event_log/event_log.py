@@ -67,6 +67,34 @@ if TYPE_CHECKING:
 CHANNEL_NAME = "run_events"
 
 
+# The events that instance.report_run_canceling and report_run_canceled emit for a queued run.
+_QUEUED_RUN_CANCELLATION_EVENTS = (
+    (DagsterEventType.RUN_CANCELING, "Canceling run from the queue.", logging.INFO),
+    (
+        DagsterEventType.RUN_CANCELED,
+        "This run has been marked as canceled from outside the execution context.",
+        logging.ERROR,
+    ),
+)
+
+
+def _queued_run_cancellation_events(run: DagsterRun, timestamp: float) -> list[EventLogEntry]:
+    return [
+        EventLogEntry(
+            user_message="",
+            error_info=None,
+            level=level,
+            run_id=run.run_id,
+            job_name=run.job_name,
+            timestamp=timestamp,
+            dagster_event=DagsterEvent(
+                event_type_value=event_type.value, job_name=run.job_name, message=message
+            ),
+        )
+        for event_type, message, level in _QUEUED_RUN_CANCELLATION_EVENTS
+    ]
+
+
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
 
@@ -239,8 +267,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_queued_run_cancellation(self) -> bool:
-        # Cross-store atomicity is only possible for the stock stores sharing one database.
-        # Extensions must explicitly implement/opt into the new cancellation contract.
+        # Only the stock run and event log storages sharing one database can commit together.
         from dagster_postgres.run_storage import PostgresRunStorage
 
         if not self.has_instance:
@@ -249,7 +276,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return (
             type(self) is PostgresEventLogStorage
             and type(run_storage) is PostgresRunStorage
-            and isinstance(run_storage, PostgresRunStorage)
             and self.postgres_url == run_storage.postgres_url
             and getattr(self.store_event, "__func__", None) is PostgresEventLogStorage.store_event
             and getattr(run_storage.handle_run_event, "__func__", None)
@@ -267,7 +293,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         run_storage = check.inst(self._instance.run_storage, PostgresRunStorage)
         has_end_time = run_storage.has_run_stats_index_cols()
         canceled_ids: list[str] = []
-        # All chunks share a real transaction, despite the ordinary AUTOCOMMIT engine.
+        # One transaction for every chunk, although the engine otherwise autocommits.
         with self._connect() as connection:
             conn = connection.execution_options(isolation_level="READ COMMITTED")
             with conn.begin():
@@ -295,33 +321,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                         run_bodies[run.run_id] = serialize_value(
                             run.with_status(DagsterRunStatus.CANCELED)
                         )
-                        for event_type, message, level in (
-                            (
-                                DagsterEventType.RUN_CANCELING,
-                                "Canceling run from the queue.",
-                                logging.INFO,
-                            ),
-                            (
-                                DagsterEventType.RUN_CANCELED,
-                                "This run has been marked as canceled from outside the execution context.",
-                                logging.ERROR,
-                            ),
-                        ):
-                            events.append(
-                                EventLogEntry(
-                                    user_message="",
-                                    error_info=None,
-                                    level=level,
-                                    run_id=run.run_id,
-                                    job_name=run.job_name,
-                                    timestamp=timestamp,
-                                    dagster_event=DagsterEvent(
-                                        event_type_value=event_type.value,
-                                        job_name=run.job_name,
-                                        message=message,
-                                    ),
-                                )
-                            )
+                        events.extend(_queued_run_cancellation_events(run, timestamp))
                     values: dict[str, Any] = {
                         "status": DagsterRunStatus.CANCELED.value,
                         "run_body": db.case(run_bodies, value=RunsTable.c.run_id),

@@ -450,11 +450,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return False
 
     def cancel_queued_runs(self, runs: Sequence["DagsterRun"]) -> Sequence[str]:
-        """Atomically cancel still-queued runs and return the IDs actually canceled.
+        """Cancel the runs that are still queued and return their IDs.
 
-        Implementations must revalidate queued status, preserve both cancellation events and
-        end timestamps, and commit state, events and notifications together. No automatic
-        replay is safe if the caller cannot determine whether the transaction committed.
+        Run status, end time, the RUN_CANCELING and RUN_CANCELED events, and their notifications
+        are committed in one transaction.
         """
         raise NotImplementedError("This storage does not support atomic queued-run cancellation")
 

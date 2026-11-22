@@ -456,11 +456,10 @@ class EventMethods:
         return dagster_event
 
     def report_run_cancellation_batch(self, runs: Sequence["DagsterRun"]) -> None:
-        """Cancel queued runs through a storage-owned transaction where supported.
+        """Cancel queued runs, in one storage transaction when the event log storage supports it.
 
-        Listeners and customized reporting hooks retain the serial path. The batch backend
-        must revalidate queued status and commit run state and lifecycle events together.
-        Runs that left the queue are left for the caller's normal termination path.
+        Runs with event listeners, and instances that customize event reporting, are canceled one
+        at a time as before. Runs that are no longer queued are left unchanged.
         """
         from dagster._core.storage.dagster_run import DagsterRun
 

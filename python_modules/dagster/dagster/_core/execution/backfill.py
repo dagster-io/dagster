@@ -590,9 +590,7 @@ def cancel_backfill_runs_and_cancellation_complete(
 
         canceled_any_runs = True
         if runs_to_cancel_in_iteration[0].status == DagsterRunStatus.QUEUED:
-            # Re-read the page immediately before reporting cancellation. Runs that left the
-            # queue since selection need launcher termination rather than queued cancellation.
-            # This does not eliminate the coordinator's existing dequeue/cancel race.
+            # Re-read the page: runs dequeued since it was selected are terminated below instead.
             current_runs = {
                 run.run_id: run
                 for run in instance.get_runs(
