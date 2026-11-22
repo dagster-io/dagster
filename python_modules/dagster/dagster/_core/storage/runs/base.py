@@ -330,7 +330,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """Explicit lifecycle management."""
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 

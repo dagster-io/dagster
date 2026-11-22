@@ -123,7 +123,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs: dict[str, Any] = {
@@ -131,6 +135,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             "pool_size": 1,
             "pool_recycle": pool_recycle,
             "max_overflow": max_overflow,
+            "pool_pre_ping": pool_pre_ping,
         }
         existing_options = self._engine.url.query.get("options")
         if existing_options:
