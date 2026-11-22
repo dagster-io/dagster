@@ -1,9 +1,12 @@
+import asyncio
+import contextvars
 import json
 import logging
 import os
 import sys
 import time
 from collections.abc import Iterable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
@@ -73,6 +76,26 @@ if TYPE_CHECKING:
 
 def get_asset_backfill_run_chunk_size():
     return int(os.getenv("DAGSTER_ASSET_BACKFILL_RUN_CHUNK_SIZE", "25"))
+
+
+# Upper bound on the number of progress writes while submitting the runs of one iteration.
+MAX_ASSET_BACKFILL_RUN_CHUNKS = 20
+
+
+def _get_run_submission_chunk_size(num_run_requests: int) -> int:
+    """Number of runs to submit between progress writes.
+
+    Each progress write stores the backfill along with every run request still to be submitted,
+    so its cost grows with the number of run requests. Writing every fixed-size chunk would make an
+    iteration quadratic in the number of runs (minutes for a backfill that requests 10k runs at
+    once), so the chunk size grows to keep the number of writes bounded. Resubmitting after an
+    interruption is idempotent because run ids are reserved up front, so writing less often only
+    affects how many already-submitted run requests are re-checked when resuming.
+    """
+    return max(
+        get_asset_backfill_run_chunk_size(),
+        -(-num_run_requests // MAX_ASSET_BACKFILL_RUN_CHUNKS),
+    )
 
 
 MATERIALIZATION_CHUNK_SIZE = int(
@@ -743,7 +766,19 @@ async def _submit_runs_and_update_backfill_in_chunks(
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
+    reserved_run_ids_are_new: bool,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
 ) -> None:
+    """Submits the iteration's run requests, writing the progress after each chunk.
+
+    Progress (the requested subset, and the run requests and reserved run ids still to submit) only
+    ever covers a prefix of the run requests that were all submitted. Runs after that prefix may
+    have been created or submitted already if submission was interrupted or failed partway, so
+    resuming resubmits them by reserved run id, which is a no-op for runs that were submitted.
+
+    `reserved_run_ids_are_new` is set when the run ids were reserved by this iteration, so no run
+    can exist with them yet and the per-run existence check can be skipped.
+    """
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
 
@@ -751,86 +786,123 @@ async def _submit_runs_and_update_backfill_in_chunks(
     instance = asset_graph_view.instance
 
     run_requests = asset_backfill_iteration_result.run_requests
-
-    # Iterate through runs to request, submitting runs in chunks.
-    # In between each chunk, check that the backfill is still marked as 'requested',
-    # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
-
-    updated_backfill_data = asset_backfill_iteration_result.backfill_data
-
-    num_submitted = 0
-
     reserved_run_ids = asset_backfill_iteration_result.reserved_run_ids
 
+    # Submit runs in chunks. In between each chunk, write the progress and check that the backfill
+    # is still marked as 'requested', so that no more runs are requested if the backfill is marked
+    # as canceled/canceling.
+    updated_backfill_data: AssetBackfillData = asset_backfill_iteration_result.backfill_data
+    num_submitted = 0
+    # Shared by the submit threads: concurrent misses for the same job may fetch it more than
+    # once, which is harmless.
     run_request_execution_data_cache = {}
+    chunk_size = _get_run_submission_chunk_size(len(run_requests))
 
-    chunk_size = get_asset_backfill_run_chunk_size()
-
-    for run_request_idx, run_request in enumerate(run_requests):
-        run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
-        try:
-            # create a new request context for each run in case the code location server
-            # is swapped out in the middle of the submission process
-            workspace = workspace_process_context.create_request_context()
-            await submit_asset_run(
-                run_id,
-                run_request._replace(
-                    tags={
-                        **run_request.tags,
-                        **run_tags,
-                        BACKFILL_ID_TAG: backfill_id,
-                    }
-                ),
-                run_request_idx,
-                instance,
-                workspace_process_context,
-                workspace,
-                run_request_execution_data_cache,
-                {},
-                logger,
-            )
-        except Exception:
-            DaemonErrorCapture.process_exception(
-                sys.exc_info(),
-                logger=logger,
-                log_message="Error while submitting run - updating the backfill data before re-raising",
-            )
-            # Write the runs that we submitted before hitting an error
-            _write_updated_backfill_data(
-                instance,
-                backfill_id,
-                updated_backfill_data,
-                asset_graph,
-                run_requests[num_submitted:],
-                asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
-            )
-            raise
-
-        num_submitted += 1
-
-        updated_backfill_data: AssetBackfillData = (
-            updated_backfill_data.with_run_requests_submitted(
-                [run_request],
-                asset_graph_view,
-            )
+    async def _submit(run_request_idx: int) -> None:
+        run_request = run_requests[run_request_idx]
+        # create a new request context for each run in case the code location server
+        # is swapped out in the middle of the submission process
+        workspace = workspace_process_context.create_request_context()
+        await submit_asset_run(
+            reserved_run_ids[run_request_idx] if reserved_run_ids else None,
+            run_request._replace(
+                tags={
+                    **run_request.tags,
+                    **run_tags,
+                    BACKFILL_ID_TAG: backfill_id,
+                }
+            ),
+            run_request_idx,
+            instance,
+            workspace_process_context,
+            workspace,
+            run_request_execution_data_cache,
+            {},
+            logger,
+            run_id_is_new=bool(reserved_run_ids) and reserved_run_ids_are_new,
         )
 
-        # After each chunk or on the final request, write the updated backfill data
-        # and check to make sure we weren't interrupted
-        if (num_submitted % chunk_size == 0) or num_submitted == len(run_requests):
-            backfill = _write_updated_backfill_data(
-                instance,
-                backfill_id,
-                updated_backfill_data,
-                asset_graph,
-                run_requests[num_submitted:],
-                asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
+    def _submit_in_thread(run_request_idx: int) -> None:
+        # Each run is submitted on its own event loop, since the workspace request context and its
+        # data loaders are bound to the loop that uses them.
+        asyncio.run(_submit(run_request_idx))
+
+    for chunk_start in range(0, len(run_requests), chunk_size):
+        chunk_indices = range(chunk_start, min(chunk_start + chunk_size, len(run_requests)))
+
+        # Number of runs at the start of the chunk that were submitted. Progress only records this
+        # prefix, so that resuming after an error resubmits every run from the first failure on.
+        num_submitted_in_chunk = 0
+        error: Exception | None = None
+        if submit_threadpool_executor and len(chunk_indices) > 1:
+            # Submitting a run is dominated by storage and code server round trips, so submitting
+            # the runs of a chunk concurrently scales submission with the number of submit workers.
+            # Each run gets a copy of this context, e.g. for the partition loading context, even if
+            # the executor does not propagate contextvars.
+            futures = [
+                submit_threadpool_executor.submit(
+                    contextvars.copy_context().run, _submit_in_thread, i
+                )
+                for i in chunk_indices
+            ]
+            # Wait for every run of the chunk, so that none is still being submitted once the
+            # progress is written.
+            for future in futures:
+                try:
+                    await asyncio.wrap_future(future)
+                    if error is None:
+                        num_submitted_in_chunk += 1
+                except Exception as e:
+                    error = error or e
+        else:
+            for run_request_idx in chunk_indices:
+                try:
+                    await _submit(run_request_idx)
+                    num_submitted_in_chunk += 1
+                except Exception as e:
+                    error = e
+                    break
+
+        if num_submitted_in_chunk:
+            updated_backfill_data = updated_backfill_data.with_run_requests_submitted(
+                run_requests[chunk_start : chunk_start + num_submitted_in_chunk],
+                asset_graph_view,
             )
+            num_submitted += num_submitted_in_chunk
 
-            if backfill.status != BulkActionStatus.REQUESTED:
-                break
+        if error is not None:
+            # Re-raise so that the error is logged with its traceback, after writing the runs
+            # that were submitted before it
+            try:
+                raise error
+            except Exception:
+                DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=logger,
+                    log_message="Error while submitting run - updating the backfill data before re-raising",
+                )
+                _write_updated_backfill_data(
+                    instance,
+                    backfill_id,
+                    updated_backfill_data,
+                    asset_graph,
+                    run_requests[num_submitted:],
+                    reserved_run_ids[num_submitted:],
+                )
+                raise
 
-    return
+        # After each chunk, write the updated backfill data and check to make sure we weren't
+        # interrupted
+        backfill = _write_updated_backfill_data(
+            instance,
+            backfill_id,
+            updated_backfill_data,
+            asset_graph,
+            run_requests[num_submitted:],
+            reserved_run_ids[num_submitted:],
+        )
+        if backfill.status != BulkActionStatus.REQUESTED:
+            break
 
 
 def _check_target_partitions_subset_is_valid(
@@ -1025,6 +1097,7 @@ async def execute_asset_backfill_iteration(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
+    submit_threadpool_executor: ThreadPoolExecutor | None = None,
 ) -> None:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -1073,7 +1146,8 @@ async def execute_asset_backfill_iteration(
         logger.info(
             f"Assets targeted by backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
         )
-        if backfill.submitting_run_requests:
+        resuming = bool(backfill.submitting_run_requests)
+        if resuming:
             # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
             logger.warn(
                 f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
@@ -1126,6 +1200,8 @@ async def execute_asset_backfill_iteration(
                 result,
                 logger,
                 run_tags=updated_backfill.tags,
+                reserved_run_ids_are_new=not resuming,
+                submit_threadpool_executor=submit_threadpool_executor,
             )
 
         updated_backfill = cast(

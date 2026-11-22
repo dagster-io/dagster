@@ -1,7 +1,11 @@
 import dagster as dg
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.snap import snapshot_from_execution_plan
-from dagster._serdes import serialize_pp
+from dagster._core.snap import (
+    ExecutionPlanSnapshot,
+    create_execution_plan_snapshot_id,
+    snapshot_from_execution_plan,
+)
+from dagster._serdes import create_snapshot_id, deserialize_value, serialize_pp, serialize_value
 
 
 def test_create_noop_execution_plan(snapshot):
@@ -132,3 +136,27 @@ def test_execution_plan_snapshot_asset_check_keys():
         dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_check"),
         dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_other_check"),
     }
+
+
+def test_execution_plan_snapshot_id_is_cached_and_not_serialized():
+    @dg.op
+    def noop_op(_):
+        pass
+
+    @dg.job
+    def noop_job():
+        noop_op()
+
+    plan_snapshot = snapshot_from_execution_plan(
+        create_execution_plan(noop_job), noop_job.get_job_snapshot().snapshot_id
+    )
+    serialized = serialize_value(plan_snapshot)
+
+    snapshot_id = plan_snapshot.snapshot_id
+    assert snapshot_id == create_snapshot_id(plan_snapshot)
+    assert create_execution_plan_snapshot_id(plan_snapshot) == snapshot_id
+    # the cached id is neither serialized nor carried over to a modified copy
+    assert serialize_value(plan_snapshot) == serialized
+    assert deserialize_value(serialized, ExecutionPlanSnapshot).snapshot_id == snapshot_id
+    modified = plan_snapshot._replace(step_keys_to_execute=[])
+    assert modified.snapshot_id == create_snapshot_id(modified) != snapshot_id
