@@ -873,14 +873,11 @@ class TypeHintInferredDagsterType(DagsterType):
 
 
 _RESOLVE_DAGSTER_TYPE_CACHE: dict[object, DagsterType] = {}
-"""Memoized results of ``resolve_dagster_type``, keyed by annotation.
+"""Successful ``resolve_dagster_type`` results, keyed by annotation.
 
-Resolution is a deterministic function of the annotation: plain classes resolve through the
-builtin maps or the append-only Python type registry (which ``make_python_type_usable_as_dagster_type``
-refuses to change once a class has been resolved). Annotations that embed ``DagsterType``
-instances are never cached, because ``DagsterType.__eq__`` compares by key and two distinct types
-with the same name would otherwise be substituted for one another. Failed resolutions are not
-cached so that they keep raising.
+Resolving an annotation always gives the same result: a class that has been resolved cannot be
+remapped by ``make_python_type_usable_as_dagster_type``. Annotations that embed ``DagsterType``
+instances are not cached, because two distinct types with the same name compare equal.
 """
 
 
