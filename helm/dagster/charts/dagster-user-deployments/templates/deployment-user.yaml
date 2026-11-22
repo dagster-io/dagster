@@ -1,5 +1,5 @@
 {{- $celeryConfigSecretName := .Values.global.celeryConfigSecretName | default .Values.celeryConfigSecretName }}
-{{ range $deployment := .Values.deployments }}
+{{ range $deployment := (include "dagsterUserDeployments.deploymentsList" .Values.deployments | fromYamlArray) }}
 {{- $userDeploymentChecksum := $deployment | toJson | sha256sum }}
 {{- if and $deployment.codeServerArgs (gt (int ($deployment.replicaCount | default 1)) 1) }}
 {{- fail (printf "deployment %q: codeServerArgs cannot be used with replicaCount > 1. A reloadable code server cannot be reloaded consistently across multiple replicas behind a round-robin service." $deployment.name) }}
