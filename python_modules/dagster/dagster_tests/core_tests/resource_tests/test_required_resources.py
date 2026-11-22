@@ -568,7 +568,7 @@ def test_io_manager_missing_fails():
         dg.DagsterInvalidDefinitionError,
         match=(
             "io manager with key 'missing_io_manager' required by output 'result' of op"
-            " 'requires_missing_io_manager'' was not provided"
+            " 'requires_missing_io_manager' was not provided"
         ),
     ):
 
