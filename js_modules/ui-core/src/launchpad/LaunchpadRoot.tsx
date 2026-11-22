@@ -115,8 +115,14 @@ export const BackfillLaunchpad = ({
     );
   }
 
-  // Use the saved config's runConfigYaml as rootDefaultYaml if available
-  const rootDefaultYaml = savedConfig?.runConfigYaml;
+  // Use the saved config's runConfigYaml as rootDefaultYaml if available,
+  // otherwise fall back to the schema's defaults so that "Scaffold all default
+  // config" / "Expand defaults" work in the backfill config editor.
+  const rootDefaultYaml =
+    savedConfig?.runConfigYaml ??
+    (result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+      ? result.data.runConfigSchemaOrError.rootDefaultYaml
+      : undefined);
 
   return (
     <Dialog
