@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ContextManager  # noqa: UP035
 
 import dagster._check as check
@@ -34,6 +34,7 @@ from dagster_postgres.utils import (
     create_pg_engine,
     get_token_provider_from_config,
     pg_alembic_config,
+    pg_pool_engine_kwargs,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
@@ -78,6 +79,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
         token_provider: "PgTokenProvider | None" = None,
+        pool_config: Mapping[str, Any] | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
@@ -86,12 +88,11 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
         self._token_provider = token_provider
 
-        # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_pg_engine(
             self.postgres_url,
             self._token_provider,
             isolation_level="AUTOCOMMIT",
-            poolclass=db_pool.NullPool,
+            **pg_pool_engine_kwargs(pool_config),
         )
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
@@ -127,6 +128,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         existing_options = self._engine.url.query.get("options")
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
+        self._engine.dispose()
         self._engine = create_pg_engine(self.postgres_url, self._token_provider, **kwargs)
         event.listen(
             self._engine,
@@ -151,6 +153,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
             token_provider=get_token_provider_from_config(config_value),
+            pool_config=config_value.get("pool"),
         )
 
     @staticmethod
@@ -165,6 +168,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         finally:
             engine.dispose()
         return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
+
+    def dispose(self) -> None:
+        self._engine.dispose()
 
     def connect(self, run_id: str | None = None) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)

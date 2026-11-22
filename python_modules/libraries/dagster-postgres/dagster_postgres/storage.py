@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -43,6 +44,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
         token_provider: "PgTokenProvider | None" = None,
+        pool_config: Mapping[str, Any] | None = None,
     ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
@@ -50,13 +52,22 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._run_storage = PostgresRunStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_config=pool_config,
         )
         self._event_log_storage = PostgresEventLogStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_config=pool_config,
         )
         self._schedule_storage = PostgresScheduleStorage(
-            postgres_url, should_autocreate_tables, token_provider=token_provider
+            postgres_url,
+            should_autocreate_tables,
+            token_provider=token_provider,
+            pool_config=pool_config,
         )
         super().__init__()
 
@@ -77,6 +88,7 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
             token_provider=get_token_provider_from_config(config_value),
+            pool_config=config_value.get("pool"),
         )
 
     @property

@@ -1,5 +1,7 @@
 import logging
+import os
 import time
+import weakref
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -166,6 +168,42 @@ def set_pg_statement_timeout(conn: Any, millis: int):
             curs.execute(f"SET statement_timeout = {millis};")
 
 
+def pg_pool_engine_kwargs(pool_config: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Engine kwargs for the configured connection pool.
+
+    Without a pool config, no connections are held open, so that storages do not accumulate
+    connections per DagsterInstance.
+    """
+    import sqlalchemy.pool as db_pool
+
+    if pool_config is None:
+        return {"poolclass": db_pool.NullPool}
+    return {
+        "pool_size": pool_config.get("pool_size", 5),
+        "max_overflow": pool_config.get("max_overflow", 10),
+        "pool_recycle": pool_config.get("pool_recycle", 3600),
+        "pool_pre_ping": True,
+    }
+
+
+# Engines that hold connections open. After a fork, the child must neither use nor close the
+# parent's pooled connections: they share sockets, and closing one terminates the parent's session.
+_pooled_engines: "weakref.WeakSet[sqlalchemy.engine.Engine]" = weakref.WeakSet()
+# Pools inherited from the parent, kept referenced in the child so they are never garbage-collected
+# (and their connections never closed).
+_inherited_pools: list[Any] = []
+
+
+def _replace_inherited_pools() -> None:
+    for engine in list(_pooled_engines):
+        _inherited_pools.append(engine.pool)
+        engine.pool = engine.pool.recreate()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_replace_inherited_pools)
+
+
 def create_pg_engine(
     postgres_url: str,
     token_provider: "PgTokenProvider | None" = None,
@@ -179,6 +217,8 @@ def create_pg_engine(
     if postgres_url.startswith("postgresql://"):
         postgres_url = "postgresql+psycopg2://" + postgres_url.removeprefix("postgresql://")
     engine = create_engine(postgres_url, **engine_kwargs)
+    if not isinstance(engine.pool, sqlalchemy.pool.NullPool):
+        _pooled_engines.add(engine)
     if token_provider is not None:
         from dagster_postgres.auth import register_do_connect_hook
 
