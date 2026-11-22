@@ -182,8 +182,13 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         context.log.info(f"[pipes] EMR cluster {cluster_id} completed with state: {state}")
 
         if state in EMR_CLUSTER_TERMINATED_STATES:
-            context.log.error(f"[pipes] EMR job {cluster_id} failed")
-            raise Exception(f"[pipes] EMR job {cluster_id} failed:\n{cluster}")
+            # Get step-level failure information
+            failure_details = self._get_step_failure_details(context, cluster_id)
+            context.log.error(
+                f"[pipes] EMR job {cluster_id} failed",
+                extra={"failure_details": failure_details},
+            )
+            raise Exception(f"[pipes] EMR job {cluster_id} failed:\n{cluster}\n\n{failure_details}")
 
         return cluster
 
@@ -334,3 +339,44 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         cluster_id = start_response["JobFlowId"]
         context.log.info(f"[pipes] Terminating EMR job {cluster_id}")
         self._client.terminate_job_flows(JobFlowIds=[cluster_id])
+
+    def _get_step_failure_details(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        cluster_id: str,
+    ) -> str:
+        """Retrieve failure details for all failed steps in the cluster.
+
+        Args:
+            context: The execution context for logging
+            cluster_id: The EMR cluster ID
+
+        Returns:
+            A formatted string with step failure details
+        """
+        try:
+            steps_response = self._client.list_steps(ClusterId=cluster_id)
+            steps = steps_response.get("Steps", [])
+
+            failed_steps = []
+            for step in steps:
+                step_state = step.get("Status", {}).get("State", "")
+                if step_state in ("FAILED", "CANCELLED", "INTERRUPTED"):
+                    step_id = step.get("Id", "unknown")
+                    step_name = step.get("Name", "unknown")
+                    reason = (
+                        step.get("Status", {})
+                        .get("StateChangeReason", {})
+                        .get("Message", "No reason provided")
+                    )
+                    failed_steps.append(
+                        f"  - Step '{step_name}' ({step_id}): {step_state}\n    Reason: {reason}"
+                    )
+
+            if failed_steps:
+                return "Failed steps:\n" + "\n".join(failed_steps)
+            return "No step-level failure information available"
+
+        except Exception as e:
+            context.log.warning(f"[pipes] Could not retrieve step failure details: {e}")
+            return f"Could not retrieve step details: {e}"

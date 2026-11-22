@@ -195,11 +195,156 @@ def test_is_emr_step_complete(emr_cluster_config):
         get_step_dict(emr_step_id, "COMPLETED"),
         get_step_dict(emr_step_id, "FAILED"),
     ]
-    with mock.patch.object(EmrJobRunner, "describe_step", side_effect=describe_step_returns):
+    with (
+        mock.patch.object(EmrJobRunner, "describe_step", side_effect=describe_step_returns),
+        mock.patch.object(
+            EmrJobRunner, "retrieve_logs_for_step_id", return_value=("stdout", "stderr")
+        ) as retrieve_logs,
+    ):
         assert not emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
         assert not emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
         assert emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
 
         with pytest.raises(EmrError) as exc_info:
             emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
-            assert "step failed" in str(exc_info.value)
+        assert "failed" in str(exc_info.value)
+        # Check diagnostics are included in error
+        assert exc_info.value.diagnostics is not None
+        assert exc_info.value.diagnostics.step_id == emr_step_id
+        assert exc_info.value.diagnostics.cluster_id == cluster_id
+        assert exc_info.value.diagnostics.stderr_excerpt is not None
+        assert exc_info.value.diagnostics.stdout_excerpt is not None
+        retrieve_logs.assert_called_once()
+
+
+@mock_emr
+def test_emr_step_failure_diagnostics_with_config(emr_cluster_config):
+    """Test that failure diagnostics use FailureLogConfig settings."""
+    from dagster_aws.emr import FailureLogConfig
+
+    context = create_test_pipeline_execution_context()
+    config = FailureLogConfig(
+        retrieve_logs=True,
+        stderr_lines=10,
+        stdout_lines=5,
+        wait_timeout=60,
+    )
+    emr = EmrJobRunner(region=REGION, check_cluster_every=1, failure_log_config=config)
+
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
+    step_ids = emr.add_job_flow_steps(
+        context.log,
+        cluster_id,
+        [emr.construct_step_dict_for_command("test", ["ls"])],
+    )
+    emr_step_id = step_ids[0]
+
+    # Create multi-line logs to test excerpt truncation
+    long_stderr = "\n".join([f"stderr line {i}" for i in range(20)])
+    long_stdout = "\n".join([f"stdout line {i}" for i in range(20)])
+
+    failed_step = {
+        "Step": {
+            "Id": emr_step_id,
+            "Name": "test",
+            "Config": {"Jar": "command-runner.jar", "Properties": {}, "Args": ["ls"]},
+            "ActionOnFailure": "CONTINUE",
+            "Status": {
+                "State": "FAILED",
+                "StateChangeReason": {"Message": "Step failed due to error"},
+                "Timeline": {"StartDateTime": _boto3_now()},
+            },
+        },
+    }
+
+    with (
+        mock.patch.object(EmrJobRunner, "describe_step", return_value=failed_step),
+        mock.patch.object(
+            EmrJobRunner, "retrieve_logs_for_step_id", return_value=(long_stdout, long_stderr)
+        ),
+    ):
+        with pytest.raises(EmrError) as exc_info:
+            emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
+
+        diagnostics = exc_info.value.diagnostics
+        assert diagnostics is not None
+        # Check stderr was truncated to 10 lines
+        assert diagnostics.stderr_excerpt.count("\n") == 9  # 10 lines = 9 newlines
+        assert "stderr line 19" in diagnostics.stderr_excerpt
+        assert "stderr line 10" in diagnostics.stderr_excerpt
+        # Check stdout was truncated to 5 lines
+        assert diagnostics.stdout_excerpt.count("\n") == 4  # 5 lines = 4 newlines
+        assert "stdout line 19" in diagnostics.stdout_excerpt
+        assert "stdout line 15" in diagnostics.stdout_excerpt
+
+
+@mock_emr
+def test_emr_step_failure_logs_disabled(emr_cluster_config):
+    """Test that log retrieval can be disabled via config."""
+    from dagster_aws.emr import FailureLogConfig
+
+    context = create_test_pipeline_execution_context()
+    config = FailureLogConfig(retrieve_logs=False)
+    emr = EmrJobRunner(region=REGION, check_cluster_every=1, failure_log_config=config)
+
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
+    step_ids = emr.add_job_flow_steps(
+        context.log,
+        cluster_id,
+        [emr.construct_step_dict_for_command("test", ["ls"])],
+    )
+    emr_step_id = step_ids[0]
+
+    failed_step = {
+        "Step": {
+            "Id": emr_step_id,
+            "Name": "test",
+            "Config": {"Jar": "command-runner.jar", "Properties": {}, "Args": ["ls"]},
+            "ActionOnFailure": "CONTINUE",
+            "Status": {
+                "State": "FAILED",
+                "StateChangeReason": {"Message": "Test failure"},
+                "Timeline": {"StartDateTime": _boto3_now()},
+            },
+        },
+    }
+
+    with (
+        mock.patch.object(EmrJobRunner, "describe_step", return_value=failed_step),
+        mock.patch.object(EmrJobRunner, "retrieve_logs_for_step_id") as retrieve_logs_mock,
+    ):
+        with pytest.raises(EmrError) as exc_info:
+            emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
+
+        # Logs should not be retrieved when disabled
+        retrieve_logs_mock.assert_not_called()
+        diagnostics = exc_info.value.diagnostics
+        assert diagnostics.stderr_excerpt is None
+        assert diagnostics.stdout_excerpt is None
+        assert "Log retrieval disabled" in diagnostics.error_retrieving_logs
+
+
+def test_emr_error_message_formatting():
+    """Test that EmrError formats diagnostics correctly."""
+    from dagster_aws.emr import StepFailureDiagnostics
+
+    diagnostics = StepFailureDiagnostics(
+        step_id="s-123",
+        cluster_id="j-456",
+        state_change_reason="Out of memory",
+        stderr_excerpt="Error: OOM killed",
+        stdout_excerpt="Processing...",
+        logs_s3_uri="s3://bucket/logs/j-456/steps/s-123/",
+    )
+
+    error = EmrError("EMR step s-123 failed", diagnostics=diagnostics)
+
+    error_str = str(error)
+    assert "Cluster ID: j-456" in error_str
+    assert "Step ID: s-123" in error_str
+    assert "Reason: Out of memory" in error_str
+    assert "Full logs: s3://bucket/logs/j-456/steps/s-123/" in error_str
+    assert "--- stderr (last lines) ---" in error_str
+    assert "Error: OOM killed" in error_str
+    assert "--- stdout (last lines) ---" in error_str
+    assert "Processing..." in error_str
