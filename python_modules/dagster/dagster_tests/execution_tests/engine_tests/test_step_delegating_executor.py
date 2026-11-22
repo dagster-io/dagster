@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from unittest.mock import MagicMock
 
 import dagster as dg
 import pytest
@@ -12,6 +13,7 @@ from dagster._core.definitions.assets.definition.cacheable_assets_definition imp
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.event_api import EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
@@ -20,6 +22,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.event_log.base import EventLogConnection
 from dagster._core.test_utils import environ, poll_for_pool_pending_step
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import scoped_definitions_load_context
@@ -661,3 +664,103 @@ def test_check_step_health_unhealthy_fails_step():
         event for event in result.all_events if event.event_type == DagsterEventType.STEP_FAILURE
     ]
     assert len(failure_events) > 0, "Expected step failure events"
+
+
+def test_check_step_health_unhealthy_with_unconsumed_step_success_skips_failure(monkeypatch):
+    """If STEP_SUCCESS exists but is not yet tailed, unhealthy checks should not emit STEP_FAILURE."""
+    TestStepHandler.reset()
+    TestStepHandler.should_return_unhealthy = True
+
+    with dg.instance_for_test() as instance:
+        original_get_records_for_run = instance.get_records_for_run
+
+        def _get_records_for_run(run_id, cursor=None, of_type=None, limit=None, ascending=True):
+            conn = original_get_records_for_run(
+                run_id,
+                cursor=cursor,
+                of_type=of_type,
+                limit=limit,
+                ascending=ascending,
+            )
+            if of_type == {DagsterEventType.STEP_SUCCESS, DagsterEventType.STEP_UP_FOR_RETRY}:
+                # Mimic an event written to storage that the event tailer has not consumed yet.
+                unconsumed_success_record = EventLogRecord(
+                    storage_id=10**12,
+                    event_log_entry=MagicMock(
+                        dagster_event=MagicMock(step_key="slow_op_0"),
+                    ),
+                )
+                return EventLogConnection(
+                    records=[*conn.records, unconsumed_success_record],
+                    cursor=conn.cursor,
+                    has_more=conn.has_more,
+                )
+            return conn
+
+        monkeypatch.setattr(instance, "get_records_for_run", _get_records_for_run)
+
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
+            instance=instance,
+            run_config={
+                "execution": {
+                    "config": {
+                        "check_step_health_interval_seconds": 0,
+                        "sleep_seconds": 0.01,
+                    }
+                }
+            },
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+    failure_events = [
+        event for event in result.all_events if event.event_type == DagsterEventType.STEP_FAILURE
+    ]
+    assert len(failure_events) == 0, "Did not expect STEP_FAILURE events"
+
+
+@dg.op(retry_policy=dg.RetryPolicy(max_retries=1))
+def retry_then_sleep_op(context):
+    if context.retry_number == 0:
+        raise Exception("Fail first attempt so STEP_UP_FOR_RETRY is consumed")
+
+    time.sleep(2)
+
+
+@dg.job(executor_def=test_step_delegating_executor)
+def retry_then_sleep_job():
+    retry_then_sleep_op()
+
+
+def test_check_step_health_unhealthy_with_consumed_step_up_for_retry_emits_failure():
+    """A consumed STEP_UP_FOR_RETRY from a prior attempt must not suppress current-attempt failure."""
+    TestStepHandler.reset()
+    TestStepHandler.should_return_unhealthy = True
+
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(retry_then_sleep_job),
+            instance=instance,
+            run_config={
+                "execution": {
+                    "config": {
+                        "check_step_health_interval_seconds": 0,
+                        "sleep_seconds": 0.01,
+                    }
+                }
+            },
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert not result.success
+    retry_events = [
+        event
+        for event in result.all_events
+        if event.event_type == DagsterEventType.STEP_UP_FOR_RETRY
+    ]
+    assert len(retry_events) == 1
+    failure_events = [
+        event for event in result.all_events if event.event_type == DagsterEventType.STEP_FAILURE
+    ]
+    assert len(failure_events) > 0, "Expected STEP_FAILURE for unhealthy second attempt"
