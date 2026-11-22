@@ -459,6 +459,142 @@ def test_hourly_upstream_daily_downstream_start_and_end_offset():
     ).get_partition_keys() == ["2022-07-04", "2022-07-05"]
 
 
+def test_monthly_downstream_maps_to_305_daily_partitions():
+    upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-06-01")
+    downstream_partitions_def = dg.MonthlyPartitionsDefinition(
+        start_date="2024-05-01", end_date="2024-06-01"
+    )
+    mapping = dg.TimeWindowPartitionMapping(
+        start_offset=-305,
+        end_offset=0,
+        time_unit=dg.ScheduleType.DAILY,
+    )
+
+    upstream_keys = list(
+        mapping.get_upstream_mapped_partitions_result_for_partitions(
+            subset_with_keys(downstream_partitions_def, ["2024-05-01"]),
+            downstream_partitions_def,
+            upstream_partitions_def,
+        ).partitions_subset.get_partition_keys()
+    )
+    assert upstream_keys == upstream_partitions_def.get_partition_keys_in_range(
+        dg.PartitionKeyRange("2023-07-01", "2024-04-30")
+    )
+    assert len(upstream_keys) == 305
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2023-07-01"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2024-05-01"]
+
+    # The mapped time window is [2023-07-01, 2024-05-01), so partitions that only touch either
+    # boundary do not overlap it.
+    assert (
+        mapping.get_downstream_partitions_for_partitions(
+            subset_with_keys(upstream_partitions_def, ["2023-06-30"]),
+            upstream_partitions_def,
+            downstream_partitions_def,
+        ).get_partition_keys()
+        == []
+    )
+    assert (
+        mapping.get_downstream_partitions_for_partitions(
+            subset_with_keys(upstream_partitions_def, ["2024-05-01"]),
+            upstream_partitions_def,
+            downstream_partitions_def,
+        ).get_partition_keys()
+        == []
+    )
+
+
+def test_daily_time_unit_maps_monthly_partition_range():
+    upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-06-01")
+    downstream_partitions_def = dg.MonthlyPartitionsDefinition(
+        start_date="2024-05-01", end_date="2024-07-01"
+    )
+    mapping = dg.TimeWindowPartitionMapping(
+        start_offset=-305,
+        end_offset=0,
+        time_unit=dg.ScheduleType.DAILY,
+    )
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2024-05-01", "2024-06-01"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        dg.PartitionKeyRange("2023-07-01", "2024-05-31")
+    )
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_key_range(upstream_partitions_def, "2023-07-01", "2024-05-31"),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2024-05-01", "2024-06-01"]
+
+
+def test_explicit_daily_time_unit_matches_default_for_daily_partitions():
+    upstream_partitions_def = dg.HourlyPartitionsDefinition(start_date="2024-04-01-00:00")
+    downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-04-01")
+    downstream_subset = subset_with_keys(downstream_partitions_def, ["2024-05-01"])
+    upstream_subset = subset_with_keys(upstream_partitions_def, ["2024-05-01-01:00"])
+    default_mapping = dg.TimeWindowPartitionMapping(start_offset=1, end_offset=1)
+    explicit_mapping = dg.TimeWindowPartitionMapping(
+        start_offset=1,
+        end_offset=1,
+        time_unit=dg.ScheduleType.DAILY,
+    )
+
+    assert explicit_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_subset,
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ) == default_mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_subset,
+        downstream_partitions_def,
+        upstream_partitions_def,
+    )
+    assert explicit_mapping.get_downstream_partitions_for_partitions(
+        upstream_subset,
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ) == default_mapping.get_downstream_partitions_for_partitions(
+        upstream_subset,
+        upstream_partitions_def,
+        downstream_partitions_def,
+    )
+
+
+def test_invalid_time_unit():
+    upstream_partitions_def = dg.HourlyPartitionsDefinition(start_date="2024-04-01-00:00")
+    downstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-04-01")
+    mapping = dg.TimeWindowPartitionMapping(time_unit=dg.ScheduleType.WEEKLY)
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="does not match the schedule type of either the upstream",
+    ):
+        mapping.validate_partition_mapping(upstream_partitions_def, downstream_partitions_def)
+
+
+def test_time_unit_serdes():
+    default_mapping = dg.TimeWindowPartitionMapping()
+    serialized_default_mapping = dg.serialize_value(default_mapping)
+    assert '"time_unit"' not in serialized_default_mapping
+    assert dg.deserialize_value(serialized_default_mapping, TimeWindowPartitionMapping) == (
+        default_mapping
+    )
+
+    upstream_mapping = dg.TimeWindowPartitionMapping(time_unit=dg.ScheduleType.HOURLY)
+    assert (
+        dg.deserialize_value(
+            dg.serialize_value(upstream_mapping),
+            TimeWindowPartitionMapping,
+        )
+        == upstream_mapping
+    )
+
+
 def test_daily_upstream_hourly_downstream_start_and_end_offset():
     upstream_partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-06")
     downstream_partitions_def = dg.HourlyPartitionsDefinition(start_date="2021-05-05-00:00")

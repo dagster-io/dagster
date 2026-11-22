@@ -13,6 +13,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
 )
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_empty_fields={"time_unit"})
 @beta_param(param="allow_nonexistent_upstream_partitions")
 class TimeWindowPartitionMapping(
     PartitionMapping,
@@ -35,6 +36,7 @@ class TimeWindowPartitionMapping(
             ("start_offset", PublicAttr[int]),
             ("end_offset", PublicAttr[int]),
             ("allow_nonexistent_upstream_partitions", PublicAttr[bool]),
+            ("time_unit", PublicAttr[ScheduleType | None]),
         ],
     ),
 ):
@@ -62,20 +64,30 @@ class TimeWindowPartitionMapping(
             offset relative to the starts of the downstream windows. For example, if start_offset=-1
             and end_offset=0, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-03" and "2022-07-04". If the upstream and downstream
-            PartitionsDefinitions are different, then the offset is in the units of the downstream.
-            Defaults to 0.
+            PartitionsDefinitions are different, then the offset is in the units of the downstream
+            by default. Defaults to 0.
         end_offset (int): If not 0, then the ends of the upstream windows are shifted by this
             offset relative to the ends of the downstream windows. For example, if start_offset=0
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". If the upstream and downstream
-            PartitionsDefinitions are different, then the offset is in the units of the downstream.
-            Defaults to 0.
+            PartitionsDefinitions are different, then the offset is in the units of the downstream
+            by default. Defaults to 0.
         allow_nonexistent_upstream_partitions (bool): Defaults to false. If true, does not
             raise an error when mapped upstream partitions fall outside the start-end time window of the
             partitions def. For example, if the upstream partitions def starts on "2023-01-01" but
             the downstream starts on "2022-01-01", setting this bool to true would return no
             partition keys when get_upstream_partitions_for_partitions is called with "2022-06-01".
             When set to false, would raise an error.
+        time_unit (Optional[ScheduleType]): The time unit used for start_offset and end_offset.
+            Must match the schedule type of either the upstream or downstream partition definition.
+            Defaults to the downstream partition definition's schedule type, preserving the
+            standard behavior where start_offset is relative to the start of the downstream window
+            and end_offset is relative to its end. When set to the upstream partition definition's
+            schedule type and that differs from the downstream schedule type, both offsets are
+            relative to the start of each downstream partition and describe a half-open interval.
+            For example, ``start_offset=-305``, ``end_offset=0``, and
+            ``time_unit=ScheduleType.DAILY`` map a monthly partition to the 305 daily partitions
+            preceding its start.
 
     Examples:
         .. code-block:: python
@@ -105,6 +117,7 @@ class TimeWindowPartitionMapping(
         start_offset: int = 0,
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
+        time_unit: ScheduleType | None = None,
     ):
         return super().__new__(
             cls,
@@ -113,6 +126,11 @@ class TimeWindowPartitionMapping(
             allow_nonexistent_upstream_partitions=check.bool_param(
                 allow_nonexistent_upstream_partitions,
                 "allow_nonexistent_upstream_partitions",
+            ),
+            time_unit=check.opt_inst_param(
+                time_unit,
+                "time_unit",
+                ScheduleType,
             ),
         )
 
@@ -127,6 +145,9 @@ class TimeWindowPartitionMapping(
                 f" The start and end of the upstream time window is offsetted by "
                 f"{self.start_offset} and {self.end_offset} partitions respectively."
             )
+
+        if self.time_unit is not None:
+            description_str += f" Offsets use the {self.time_unit.value.lower()} cadence."
 
         return description_str
 
@@ -194,6 +215,8 @@ class TimeWindowPartitionMapping(
             raise DagsterInvalidDefinitionError(
                 f"Timezones {upstream_partitions_def.timezone} and {downstream_partitions_def.timezone} don't match"
             )
+
+        self._validate_time_unit(upstream_partitions_def, downstream_partitions_def)
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -279,6 +302,24 @@ class TimeWindowPartitionMapping(
                 f"Timezones {to_partitions_def.timezone} and {from_partitions_def.timezone} don't match"
             )
 
+        downstream_partitions_def = (
+            from_partitions_def if mapping_downstream_to_upstream else to_partitions_def
+        )
+        upstream_partitions_def = (
+            to_partitions_def if mapping_downstream_to_upstream else from_partitions_def
+        )
+        self._validate_time_unit(upstream_partitions_def, downstream_partitions_def)
+
+        if self.time_unit is not None and self.time_unit != downstream_partitions_def.schedule_type:
+            return self._map_partitions_with_anchor_offsets(
+                from_partitions_def=from_partitions_def,
+                to_partitions_def=to_partitions_def,
+                from_partitions_subset=from_partitions_subset,
+                start_offset=start_offset,
+                end_offset=end_offset,
+                mapping_downstream_to_upstream=mapping_downstream_to_upstream,
+            )
+
         result = self._do_cheap_partition_mapping_if_possible(
             from_partitions_def=from_partitions_def,
             to_partitions_def=to_partitions_def,
@@ -353,6 +394,80 @@ class TimeWindowPartitionMapping(
             if offsetted_to_start_dt.timestamp() < offsetted_to_end_dt.timestamp():
                 time_windows.append(TimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
 
+        return self._build_mapped_partitions_result(to_partitions_def, time_windows)
+
+    def _map_partitions_with_anchor_offsets(
+        self,
+        from_partitions_def: TimeWindowPartitionsDefinition,
+        to_partitions_def: TimeWindowPartitionsDefinition,
+        from_partitions_subset: TimeWindowPartitionsSubset,
+        start_offset: int,
+        end_offset: int,
+        mapping_downstream_to_upstream: bool,
+    ) -> UpstreamPartitionsResult:
+        if from_partitions_subset.is_empty:
+            return UpstreamPartitionsResult(
+                partitions_subset=to_partitions_def.empty_subset(),
+                required_but_nonexistent_subset=to_partitions_def.empty_subset(),
+            )
+
+        time_windows = []
+        if mapping_downstream_to_upstream:
+            for partition_key in from_partitions_subset.get_partition_keys():
+                anchor = from_partitions_def.start_time_for_partition_key(partition_key)
+                # An alternate cadence defines [anchor + start_offset, anchor + end_offset).
+                aligned_time_window = _get_overlapping_partition_time_window(
+                    to_partitions_def,
+                    _offsetted_datetime(to_partitions_def, anchor, start_offset),
+                    _offsetted_datetime(to_partitions_def, anchor, end_offset),
+                )
+                if aligned_time_window is not None:
+                    time_windows.append(aligned_time_window)
+        else:
+            for from_partition_time_window in from_partitions_subset.included_time_windows:
+                # A mapped window overlaps [source_start, source_end) only when its anchor is
+                # strictly between source_start - end_offset and source_end - start_offset.
+                earliest_anchor = _offsetted_datetime(
+                    from_partitions_def, from_partition_time_window.start, start_offset
+                )
+                latest_anchor = _offsetted_datetime(
+                    from_partitions_def, from_partition_time_window.end, end_offset
+                )
+                if earliest_anchor.timestamp() >= latest_anchor.timestamp():
+                    continue
+
+                possible_anchor_window = TimeWindow(earliest_anchor, latest_anchor)
+                for partition_key in to_partitions_def.get_partition_keys_in_time_window(
+                    possible_anchor_window
+                ):
+                    candidate_window = to_partitions_def.time_window_for_partition_key(
+                        partition_key
+                    )
+                    if candidate_window.start.timestamp() <= earliest_anchor.timestamp():
+                        continue
+
+                    mapped_start = _offsetted_datetime(
+                        from_partitions_def, candidate_window.start, self.start_offset
+                    )
+                    mapped_end = _offsetted_datetime(
+                        from_partitions_def, candidate_window.start, self.end_offset
+                    )
+                    if (
+                        mapped_start.timestamp() < from_partition_time_window.end.timestamp()
+                        and mapped_end.timestamp() > from_partition_time_window.start.timestamp()
+                    ):
+                        time_windows.append(candidate_window)
+
+        return self._build_mapped_partitions_result(to_partitions_def, time_windows)
+
+    def _build_mapped_partitions_result(
+        self,
+        to_partitions_def: TimeWindowPartitionsDefinition,
+        time_windows: Sequence[TimeWindow],
+    ) -> UpstreamPartitionsResult:
+        first_window = to_partitions_def.get_first_partition_window()
+        last_window = to_partitions_def.get_last_partition_window()
+
         filtered_time_windows = []
         required_but_nonexistent_subset = to_partitions_def.empty_subset()
 
@@ -407,6 +522,22 @@ class TimeWindowPartitionMapping(
             ),
             required_but_nonexistent_subset=required_but_nonexistent_subset,
         )
+
+    def _validate_time_unit(
+        self,
+        upstream_partitions_def: TimeWindowPartitionsDefinition,
+        downstream_partitions_def: TimeWindowPartitionsDefinition,
+    ) -> None:
+        if self.time_unit is not None and self.time_unit not in {
+            upstream_partitions_def.schedule_type,
+            downstream_partitions_def.schedule_type,
+        }:
+            raise DagsterInvalidDefinitionError(
+                f"Time unit {self.time_unit.value} does not match the schedule type of either "
+                f"the upstream partitions definition ({upstream_partitions_def.schedule_type}) "
+                "or the downstream partitions definition "
+                f"({downstream_partitions_def.schedule_type})."
+            )
 
     def _do_cheap_partition_mapping_if_possible(
         self,
@@ -562,3 +693,23 @@ def _offsetted_datetime(
             result = next_window.end
 
     return result
+
+
+def _get_overlapping_partition_time_window(
+    partitions_def: TimeWindowPartitionsDefinition,
+    start: datetime,
+    end: datetime,
+) -> TimeWindow | None:
+    if start.timestamp() >= end.timestamp():
+        return None
+
+    start_partition_key = partitions_def.get_partition_key_for_timestamp(
+        start.timestamp(), end_closed=False
+    )
+    end_partition_key = partitions_def.get_partition_key_for_timestamp(
+        end.timestamp(), end_closed=True
+    )
+    return TimeWindow(
+        partitions_def.start_time_for_partition_key(start_partition_key),
+        partitions_def.end_time_for_partition_key(end_partition_key),
+    )
