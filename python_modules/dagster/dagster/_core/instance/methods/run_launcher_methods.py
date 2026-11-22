@@ -41,6 +41,10 @@ class RunLauncherMethods:
     @abstractmethod
     def run_monitoring_max_resume_run_attempts(self) -> int: ...
 
+    @property
+    @abstractmethod
+    def run_monitoring_unknown_status_threshold(self) -> int: ...
+
     # These methods are provided by EventMethods mixin
     # (no abstract declarations needed since EventMethods implements them)
 
