@@ -834,7 +834,8 @@ class SensorDefinition(IHasInternalInit):
         resources = validate_and_get_resource_dict(
             context.resources, self.name, self._required_resource_keys
         )
-        return self._raw_fn(**context_param, **resources)
+        resource_args = {arg.name: resources[arg.name] for arg in get_resource_args(self._raw_fn)}
+        return self._raw_fn(**context_param, **resource_args)
 
     @public
     @property
