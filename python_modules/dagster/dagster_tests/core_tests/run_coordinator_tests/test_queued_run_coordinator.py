@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -159,6 +160,32 @@ class TestQueuedRunCoordinator:
         assert run_enqueued_data
         assert run_enqueued_data.code_location_name is not None
         assert run_enqueued_data.repository_name is not None
+
+    def test_submit_run_does_not_reload_run(self, instance, coordinator, workspace, remote_job):
+        """Enqueuing only changes the run's status, so the run is not read back afterwards."""
+        run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
+        events = []
+        original_report = instance.report_dagster_event
+        original_get_run_by_id = instance.get_run_by_id
+
+        def _report_dagster_event(*args, **kwargs):
+            result = original_report(*args, **kwargs)
+            events.append("reported")
+            return result
+
+        def _get_run_by_id(*args, **kwargs):
+            events.append("read")
+            return original_get_run_by_id(*args, **kwargs)
+
+        with (
+            mock.patch.object(instance, "report_dagster_event", side_effect=_report_dagster_event),
+            mock.patch.object(instance, "get_run_by_id", side_effect=_get_run_by_id),
+        ):
+            returned_run = coordinator.submit_run(dg.SubmitRunContext(run, workspace))
+
+        # Reads made while storing the event come before "reported"; none may come after it.
+        assert events[-1] == "reported"
+        assert returned_run == instance.get_run_by_id(run.run_id)
 
     def test_submit_run_checks_status(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.QUEUED)

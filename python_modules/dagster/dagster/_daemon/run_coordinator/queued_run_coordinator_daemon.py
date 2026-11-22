@@ -412,7 +412,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         instance.report_dagster_event(launch_started_event, run_id=run.run_id)
 
-        run = check.not_none(instance.get_run_by_id(run.run_id))
+        # The STARTING event only changes the run's status, and the run was just read, so update
+        # it in memory instead of reading it back from storage for every dequeued run.
+        run = run.with_status(DagsterRunStatus.STARTING)
 
         try:
             instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
