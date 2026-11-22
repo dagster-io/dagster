@@ -639,20 +639,31 @@ class FivetranClient:
         Returns:
             List[Dict[str, Any]]: A List of parsed json data from the response to this request.
         """
+        return self._list_all_items(endpoint=f"groups/{group_id}/connectors")
+
+    def _list_all_items(self, endpoint: str) -> Sequence[Mapping[str, Any]]:
+        """Fetches the items of every page of a paginated Fivetran API list endpoint.
+
+        Args:
+            endpoint (str): The Fivetran API list endpoint to send the requests to.
+
+        Returns:
+            List[Dict[str, Any]]: The items of all pages of the response.
+        """
         results = []
         cursor = None
         while True:
             data = self._make_and_handle_request(
                 method="GET",
-                endpoint=f"groups/{group_id}/connectors",
+                endpoint=endpoint,
                 params={
                     "limit": DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT,
                     **({"cursor": cursor} if cursor else {}),
                 },
             )
-            connectors = data["items"]
-            cursor = data.get("nextCursor")
-            results.extend(connectors)
+            results.extend(data["items"])
+            # https://fivetran.com/docs/rest-api/getting-started/pagination
+            cursor = data.get("next_cursor")
             if not cursor:
                 break
         return results
@@ -711,7 +722,7 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_and_handle_request("GET", "groups")
+        return {"items": self._list_all_items(endpoint="groups")}
 
     def update_schedule_type_for_connector(
         self, connector_id: str, schedule_type: str
