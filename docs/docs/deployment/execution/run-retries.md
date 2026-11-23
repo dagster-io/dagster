@@ -21,6 +21,20 @@ run_retries:
   max_retries: 3
 ```
 
+:::warning
+
+**Dagster Open Source: existing instances must be migrated.** Setting `run_retries.enabled` is not sufficient on an instance whose database was created before Dagster added the key-value store table (`kvs`). The run retry daemon reads and writes its event log cursor from that table on every tick, so on an un-migrated database it fails with an error like:
+
+```
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "kvs" does not exist
+```
+
+on PostgreSQL, or `sqlite3.OperationalError: no such table: kvs` on SQLite. No run is ever retried, and the failure only shows up in the daemon logs.
+
+Run `dagster instance migrate` against the instance (see [Migrating while upgrading](/deployment/oss/deployment-options/kubernetes/migrating-while-upgrading) for the Kubernetes equivalent) after upgrading, then restart the daemon.
+
+:::
+
 In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
 <CodeExample path="docs_snippets/docs_snippets/deployment/execution/job_retries.py" title="src/my_project/assets.py" />
