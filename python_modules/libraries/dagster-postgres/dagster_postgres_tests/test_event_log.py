@@ -6,7 +6,9 @@ from unittest.mock import patch
 import objgraph
 import pytest
 from dagster import AssetKey, AssetMaterialization, EventLogEntry
+from dagster._core.event_api import EventLogRecord
 from dagster._core.events import (
+    AssetMaterializationPlannedData,
     AssetWipedData,
     DagsterEvent,
     DagsterEventType,
@@ -15,9 +17,11 @@ from dagster._core.events import (
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
+from dagster._core.storage.event_log.schema import AssetKeyTable, SecondaryIndexMigrationTable
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
+from dagster._serdes import deserialize_value
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_shared.yaml_utils import safe_load_yaml
 from sqlalchemy.engine import Connection
@@ -234,3 +238,54 @@ def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
 
         assert asset_key not in storage.all_asset_keys()
         assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+
+
+def test_store_event_batch_upserts_each_asset_row_once(conn_string):
+    # A multi-row upsert cannot touch the same row twice, so the batch folds the events for each
+    # asset key into one row, which must match storing the events one at a time: a later planned
+    # event does not clear the materialization stored by an earlier one.
+    asset_key = AssetKey(["asset_one"])
+    run_id = make_new_run_id()
+
+    def _entry(event_type, data):
+        return EventLogEntry(
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id=run_id,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(event_type.value, "nonce", event_specific_data=data),
+        )
+
+    with _clean_storage(conn_string) as storage:
+        storage.store_event_batch(
+            [
+                _entry(
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    StepMaterializationData(AssetMaterialization(asset_key=asset_key)),
+                ),
+                _entry(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    AssetMaterializationPlannedData(asset_key, partition="1"),
+                ),
+                _entry(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    AssetMaterializationPlannedData(asset_key, partition="2"),
+                ),
+            ]
+        )
+
+        with storage.index_connection() as conn:
+            rows = conn.execute(
+                db_select([AssetKeyTable.c.last_materialization, AssetKeyTable.c.last_run_id])
+            ).fetchall()
+        assert len(rows) == 1
+        last_materialization, last_run_id = rows[0]
+        assert last_run_id == run_id
+        assert last_materialization is not None
+        assert (
+            deserialize_value(
+                last_materialization, EventLogRecord
+            ).event_log_entry.dagster_event_type
+            == DagsterEventType.ASSET_MATERIALIZATION
+        )

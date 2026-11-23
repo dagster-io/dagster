@@ -247,10 +247,6 @@ class EventMethods:
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
-        from dagster._core.events import RunFailureReason
-        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
-        from dagster._time import datetime_from_timestamp
-
         if not self.should_store_event(event):
             return
 
@@ -267,6 +263,48 @@ class EventMethods:
                 del self._event_buffer_impl[batch_id]
             else:
                 return
+
+        self._store_events_and_notify(events)
+
+    def report_dagster_event_batch(
+        self,
+        dagster_events: Sequence["DagsterEvent"],
+        run_id: str,
+        log_level: str | int = logging.INFO,
+    ) -> None:
+        """Stores DagsterEvents for a run in a single storage batch write.
+
+        The events must all be batch-writable (see BATCH_WRITABLE_EVENTS). Unlike sending events
+        with `batch_metadata`, this does not depend on DAGSTER_EVENT_BATCH_SIZE, so callers that
+        already hold a complete batch save a storage round trip per event.
+        """
+        from dagster._core.events.log import EventLogEntry
+
+        timestamp = get_current_timestamp()
+        events = [
+            event
+            for event in (
+                EventLogEntry(
+                    user_message="",
+                    level=log_level,
+                    job_name=dagster_event.job_name,
+                    run_id=run_id,
+                    error_info=None,
+                    timestamp=timestamp,
+                    step_key=dagster_event.step_key,
+                    dagster_event=dagster_event,
+                )
+                for dagster_event in dagster_events
+            )
+            if self.should_store_event(event)
+        ]
+        if events:
+            self._store_events_and_notify(events)
+
+    def _store_events_and_notify(self, events: Sequence["EventLogEntry"]) -> None:
+        from dagster._core.events import RunFailureReason
+        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
+        from dagster._time import datetime_from_timestamp
 
         if len(events) == 1:
             self._event_storage_impl.store_event(events[0])

@@ -921,6 +921,16 @@ class RunDomain:
                 ),
             )
 
+        if (
+            batch_planned_events
+            and len(events) > 1
+            and self._instance.event_log_storage.supports_batched_planned_events
+        ):
+            # One storage round trip for all of the run's planned events, which matters when
+            # backfills create thousands of runs.
+            self._instance.report_dagster_event_batch(events, dagster_run.run_id, logging.DEBUG)
+            return
+
         for i, event in enumerate(events):
             batch_metadata = (
                 DagsterEventBatchMetadata(batch_id, i == last_index)
