@@ -1,6 +1,7 @@
 import os
 from collections.abc import Mapping
 from enum import Enum, unique
+from types import MappingProxyType
 from typing import NamedTuple
 
 # Local-development escape hatch for the Dagster+-only app-managed (UI-backed)
@@ -124,22 +125,33 @@ def _get_disabled_reason(enabled: bool):
     return None if enabled else "Disabled by your administrator"
 
 
-def get_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
-    if read_only:
-        perm_map = VIEWER_PERMISSIONS
-    else:
-        perm_map = EDITOR_PERMISSIONS
+def _build_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
+    perm_map = VIEWER_PERMISSIONS if read_only else EDITOR_PERMISSIONS
+    return MappingProxyType(
+        {
+            perm: PermissionResult(enabled=enabled, disabled_reason=_get_disabled_reason(enabled))
+            for perm, enabled in perm_map.items()
+        }
+    )
 
-    return {
-        perm: PermissionResult(enabled=enabled, disabled_reason=_get_disabled_reason(enabled))
-        for perm, enabled in perm_map.items()
-    }
+
+# Permissions are checked once per field of many GraphQL objects, so they are built once.
+_USER_PERMISSIONS = {read_only: _build_user_permissions(read_only) for read_only in (True, False)}
+_LOCATION_SCOPED_USER_PERMISSIONS = {
+    read_only: MappingProxyType(
+        {
+            perm: result
+            for perm, result in permissions.items()
+            if perm in LOCATION_SCOPED_PERMISSIONS
+        }
+    )
+    for read_only, permissions in _USER_PERMISSIONS.items()
+}
+
+
+def get_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
+    return _USER_PERMISSIONS[bool(read_only)]
 
 
 def get_location_scoped_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
-    all_permissions = get_user_permissions(read_only)
-    return {
-        perm: result
-        for perm, result in all_permissions.items()
-        if perm in LOCATION_SCOPED_PERMISSIONS
-    }
+    return _LOCATION_SCOPED_USER_PERMISSIONS[bool(read_only)]
