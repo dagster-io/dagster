@@ -169,6 +169,7 @@ ty = [
 # Dagster-dev test deps NOT exposed via dagster[test] — kept here so
 # downstream consumers of `dagster[test]` don't pull them in.
 test = [
+    "freezegun",
     "dagster-test",
     "dagster-pipes",
     "dagster-shared",
