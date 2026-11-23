@@ -586,12 +586,14 @@ class ObjectSerializer(Serializer, Generic[T]):
         try:
             unpacked_dict = self.before_unpack(context, unpacked_dict)
             unpacked: dict[str, PackableValue] = {}
+            param_names = self._constructor_param_name_set
+            loaded_field_names = self.loaded_field_names
             for key, value in unpacked_dict.items():
-                loaded_name = self.loaded_field_names.get(key, key)
+                loaded_name = loaded_field_names.get(key, key)
                 # Naively implements backwards compatibility by filtering arguments that aren't present in
                 # the constructor. If a property is present in the serialized object, but doesn't exist in
                 # the version of the class loaded into memory, that property will be completely ignored.
-                if loaded_name in self.constructor_param_names:
+                if loaded_name in param_names:
                     # custom unpack regardless of hook vs recursive descent
                     custom = self.field_serializers.get(loaded_name)
                     if custom:
@@ -679,6 +681,10 @@ class ObjectSerializer(Serializer, Generic[T]):
     @property
     @abstractmethod
     def constructor_param_names(self) -> Sequence[str]: ...
+
+    @cached_property
+    def _constructor_param_name_set(self) -> AbstractSet[str]:
+        return frozenset(self.constructor_param_names)
 
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__

@@ -96,8 +96,10 @@ def scalar_key(value: Any) -> tuple[type, Any]:
     return (tval, repr(value)) if tval is float else (tval, value)
 
 
-# Marks decoded table entries that are mutable, so not shared between references.
+# Mark decoded table entries that are not deeply immutable, so not shared between references:
+# _FLAT entries are copied at each reference, _MUTABLE ones are decoded again.
 _MUTABLE = object()
+_FLAT = object()
 
 
 _SCALAR_TYPES = (str, int, float, Enum)
@@ -356,24 +358,60 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any]) -> Any:
         for name, fields in envelope["classes"]
     ]
     table: list[Any] = envelope["table"]
+    # Decoded table entries, by index. Values that are not deeply immutable must not be shared
+    # between references, so their entries are replaced by a marker and decoded again (or copied)
+    # at each reference.
     decoded: list[Any] = []
+    # Plain lists and dicts whose items are all shared, by index. A shallow copy of their first
+    # decoding is the same as decoding them again.
+    flat: dict[int, Any] = {}
+
+    def ref(index: int) -> Any:
+        value = decoded[index]
+        if value is _FLAT:
+            return flat[index].copy()
+        if value is _MUTABLE:
+            return decode(table[index])
+        return value
 
     def decode(encoded: Any) -> Any:
         tval = type(encoded)
         if tval is int:
-            value = decoded[encoded]
-            return decode(table[encoded]) if value is _MUTABLE else value
+            return ref(encoded)
         if tval is not list:
             return encoded
         tag = encoded[0]
+        # Most items are strings, None, bools or references to shared entries: they are handled
+        # inline rather than by a recursive call.
         if tag >= _FIRST_CLASS_TAG:
             class_name, fields = classes[tag - _FIRST_CLASS_TAG]
             obj: dict[str, Any] = {"__class__": class_name}
             for field, index in fields:
-                obj[field] = decode(encoded[index])
+                item = encoded[index]
+                titem = type(item)
+                if titem is int:
+                    value = decoded[item]
+                    obj[field] = (
+                        value if value is not _MUTABLE and value is not _FLAT else ref(item)
+                    )
+                elif titem is list:
+                    obj[field] = decode(item)
+                else:
+                    obj[field] = item
             return object_hook(obj)
         if tag == LIST_TAG:
-            return [decode(item) for item in encoded[1:]]
+            out = []
+            append = out.append
+            for item in encoded[1:]:
+                titem = type(item)
+                if titem is int:
+                    value = decoded[item]
+                    append(value if value is not _MUTABLE and value is not _FLAT else ref(item))
+                elif titem is list:
+                    append(decode(item))
+                else:
+                    append(item)
+            return out
         if tag == DICT_TAG:
             items = encoded[1:]
             return object_hook(
@@ -383,16 +421,37 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any]) -> Any:
             return encoded[1]
         raise ValueError(f"Unexpected compact serdes tag {tag}")
 
-    # Entries only reference earlier entries, so each one can be decoded once in order. Mutable
-    # values must not be shared between references: their table entries are decoded again at each
-    # reference.
+    def is_flat(entry: list[Any], value: Any) -> bool:
+        """Whether a decoded list or dict entry is the same as its shallow copy would be if it was
+        decoded again: all of its items are scalars, numbers or shared entries.
+        """
+        tag = entry[0]
+        if tag == DICT_TAG:
+            # The object hook can turn a dict into another value, e.g. a set.
+            if type(value) is not dict or len(value) * 2 != len(entry) - 1:
+                return False
+        elif tag != LIST_TAG or type(value) is not list:
+            return False
+        for item in entry[1:]:
+            titem = type(item)
+            if titem is int:
+                if decoded[item] is _MUTABLE or decoded[item] is _FLAT:
+                    return False
+            elif titem is list and item[0] != _NUMBER_TAG:
+                return False
+        return True
+
+    # Entries only reference earlier entries, so each one can be decoded once in order.
     shared_ids: set[int] = set()
-    for entry in table:
+    for index, entry in enumerate(table):
         value = decode(entry)
         if _is_shareable(value, shared_ids):
             shared_ids.add(id(value))
-            decoded.append(value)
+        elif is_flat(entry, value):
+            flat[index] = value
+            value = _FLAT
         else:
-            decoded.append(_MUTABLE)
+            value = _MUTABLE
+        decoded.append(value)
     root = decode(envelope["root"])
     return root

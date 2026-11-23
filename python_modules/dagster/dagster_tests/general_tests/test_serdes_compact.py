@@ -549,3 +549,24 @@ def test_direct_packer_fast_paths_only_for_default_packing() -> None:
         assert klass.before_pack is ObjectSerializer.before_pack, serializer.klass
         if plan.tuple_field_names is not None and not is_record(serializer.klass):
             assert serializer.klass._asdict.__code__ is default_asdict, serializer.klass  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_decoded_flat_and_nested_containers_are_not_shared() -> None:
+    flat_dict = {"key": "a long enough string", "other": 1.5}
+    flat_list = ["a long enough string", 3, None]
+    nested = [flat_list, {"inner": flat_dict}]
+    value = {
+        "a": [flat_dict, flat_list, nested],
+        "b": [flat_dict, flat_list, nested],
+    }
+    decoded = dg.deserialize_value(serialize_value_compact(value))
+    assert decoded == value
+    first, second = decoded["a"], decoded["b"]
+    for x, y in zip(first, second):
+        assert x is not y
+    assert first[2][0] is not second[2][0]
+    assert first[2][1]["inner"] is not second[2][1]["inner"]
+    first[0]["key"] = "changed"
+    first[1].append("x")
+    first[2][0].append("x")
+    assert decoded["b"] == value["b"]
