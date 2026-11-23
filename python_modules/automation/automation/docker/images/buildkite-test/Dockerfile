@@ -70,8 +70,12 @@ RUN update-alternatives --install /usr/bin/java java /opt/java/openjdk/bin/java 
 # - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
-# deb.nodesource script adds node source to apt
-RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - \
+# deb.nodesource script adds node source to apt. Download it to a file first, so a failed
+# download fails the build instead of leaving apt to install Debian's older nodejs.
+RUN NODE_MAJOR=24 \
+    && curl --retry 3 --retry-delay 5 -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" -o /tmp/nodesource_setup.sh \
+    && bash /tmp/nodesource_setup.sh \
+    && rm /tmp/nodesource_setup.sh \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
     gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
@@ -98,7 +102,8 @@ RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - \
     unzip \
     wget \
     xz-utils \
-    yarn
+    yarn \
+    && { node --version | grep -q "^v${NODE_MAJOR}\." || { echo "expected Node ${NODE_MAJOR}, got $(node --version)" >&2; exit 1; }; }
 
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli

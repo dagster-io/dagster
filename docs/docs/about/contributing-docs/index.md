@@ -57,10 +57,10 @@ When you make changes to the API, you may need to do one or both of the followin
 
 In order to build and run the docs site locally, you need to build the API docs, which requires you to configure Python on your system. To do this, run `just dev_install` in the repository root as outlined in the [Dagster code contributing guide](/about/contributing).
 
-Next, install Node. The documentation site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node:
+Next, install Node 24. The documentation site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install Node:
 
 ```bash
-nvm install --lts
+nvm install 24
 ```
 
 Finally, install Docusaurus and dependencies:
