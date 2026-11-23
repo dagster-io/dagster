@@ -280,3 +280,53 @@ def test_workspace_legacy_freshness_policy_merges_across_locations() -> None:
             }
         )
     assert node.legacy_freshness_policy == legacy_policy
+
+
+def test_remote_asset_check_nodes_share_partitions_defs() -> None:
+    static = dg.StaticPartitionsDefinition(["a", "b"])
+    daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.multi_asset(
+        specs=[dg.AssetSpec("static_asset", partitions_def=static)],
+        check_specs=[
+            dg.AssetCheckSpec(f"static_check_{i}", asset="static_asset", partitions_def=static)
+            for i in range(3)
+        ],
+    )
+    def static_asset(): ...
+
+    @dg.multi_asset(
+        specs=[dg.AssetSpec("daily_asset", partitions_def=daily)],
+        check_specs=[dg.AssetCheckSpec("daily_check", asset="daily_asset", partitions_def=daily)],
+    )
+    def daily_asset(): ...
+
+    @dg.asset_check(asset="asset_a")
+    def unpartitioned_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
+
+    repo_def = dg.Definitions(
+        assets=[asset_a, static_asset, daily_asset], asset_checks=[unpartitioned_check]
+    ).get_repository_def()
+    repo = RemoteRepository(
+        RepositorySnap.from_def(repo_def),
+        repository_handle=RepositoryHandle.for_test(
+            location_name="foo_location", repository_name="bar_repo"
+        ),
+        auto_materialize_use_sensors=True,
+    )
+    graph = repo.asset_graph
+
+    static_defs = [
+        graph.get(dg.AssetCheckKey(dg.AssetKey("static_asset"), f"static_check_{i}")).partitions_def
+        for i in range(3)
+    ]
+    assert all(d == static for d in static_defs)
+    daily_def = graph.get(
+        dg.AssetCheckKey(dg.AssetKey("daily_asset"), "daily_check")
+    ).partitions_def
+    assert daily_def == daily
+    assert (
+        graph.get(dg.AssetCheckKey(dg.AssetKey("asset_a"), "unpartitioned_check")).partitions_def
+        is None
+    )
