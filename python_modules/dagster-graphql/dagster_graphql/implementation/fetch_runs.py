@@ -524,6 +524,8 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
         job_name=filters.job_name,
         tags=tags,
         backfill_ids=backfill_ids,
+        exclude_job_names=filters.exclude_job_names,
+        exclude_tags=filters.exclude_tags,
     )
 
 

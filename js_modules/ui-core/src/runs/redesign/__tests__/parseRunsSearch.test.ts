@@ -45,6 +45,14 @@ describe('parseRunsSearch', () => {
     {text: `id:"${RUN_A}", id:"${RUN_B}"`, tokens: [`id:${RUN_A}`, `id:${RUN_B}`]},
     {text: '(status:failure or status:canceled)', tokens: ['status:FAILURE', 'status:CANCELED']},
     {
+      text: '(status:failure or status:canceled) and not job:noisy and not job:maintenance',
+      tokens: ['status:FAILURE', 'status:CANCELED', '-job:noisy', '-job:maintenance'],
+    },
+    {
+      text: 'tag:team=data and not tag:team=ops and not tag:team="a=b"',
+      tokens: ['tag:team=data', '-tag:team=ops', '-tag:team=a=b'],
+    },
+    {
       text: `(id:"${RUN_A}" or id:"${RUN_B}") or id:"${RUN_C}"`,
       tokens: [`id:${RUN_A}`, `id:${RUN_B}`, `id:${RUN_C}`],
     },
@@ -65,8 +73,9 @@ describe('parseRunsSearch', () => {
     },
     {text: 'my_job', message: 'Add an attribute, for example job:my_job'},
     {text: 'foo:bar', message: 'Unsupported attribute: "foo"'},
-    {text: 'not job:a', message: "not isn't supported in runs search"},
-    {text: 'not', message: "not isn't supported in runs search"},
+    {text: 'not status:FAILURE', message: 'Use not with a single job or tag filter'},
+    {text: 'not', message: 'Use not with a single job or tag filter'},
+    {text: 'not job:a or not job:b', message: 'or only combines IDs or statuses'},
     {text: 'id:', message: 'Add a value after id:'},
     {text: 'job:""', message: 'Add a value after job:'},
     {text: 'tag:', message: 'tag needs key=value, for example tag:team=data'},

@@ -196,7 +196,10 @@ describe('<RunFilterInput  />', () => {
     ]);
   });
 
-  it('should call onChange with updated tokens when JOB filter is updated', async () => {
+  it.each([
+    {label: 'Job', token: 'job'},
+    {label: 'Job is not', token: '-job'},
+  ] as const)('updates the $label filter', async ({label, token}) => {
     const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [];
@@ -204,7 +207,7 @@ describe('<RunFilterInput  />', () => {
       <TestRunsFilterInput
         tokens={tokens}
         onChange={onChange}
-        enabledFilters={['job']}
+        enabledFilters={[token]}
         mocks={workspaceMocks}
       />,
     );
@@ -212,13 +215,13 @@ describe('<RunFilterInput  />', () => {
     onChange.mockClear();
 
     await user.click(getByText('Filter'));
-    await user.click(getByText('Job'));
+    await user.click(getByText(label));
 
     await waitFor(async () => {
       await user.click(getByText('some_job'));
     });
 
-    expect(onChange).toHaveBeenCalledWith([{token: 'job', value: 'some_job'}]);
+    expect(onChange).toHaveBeenCalledWith([{token, value: 'some_job'}]);
   });
 
   it('should call onChange with updated tokens when BACKFILL filter is updated', async () => {
@@ -246,7 +249,10 @@ describe('<RunFilterInput  />', () => {
     expect(onChange).toHaveBeenCalledWith([{token: 'tag', value: 'dagster/backfill=value1'}]);
   });
 
-  it('should call onChange with updated tokens when TAG filter is updated', async () => {
+  it.each([
+    {label: 'Tag', token: 'tag'},
+    {label: 'Tag is not', token: '-tag'},
+  ] as const)('updates the $label filter', async ({label, token}) => {
     const user = userEvent.setup();
     const onChange = jest.fn();
     const tokens: RunFilterToken[] = [];
@@ -254,6 +260,7 @@ describe('<RunFilterInput  />', () => {
       <TestRunsFilterInput
         tokens={tokens}
         onChange={onChange}
+        enabledFilters={[token]}
         mocks={[
           runTagKeysMock,
           buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
@@ -264,7 +271,7 @@ describe('<RunFilterInput  />', () => {
     onChange.mockClear();
 
     await user.click(getByText('Filter'));
-    await user.click(getByText('Tag'));
+    await user.click(getByText(label));
 
     await waitFor(async () => {
       await user.click(getByText(DagsterTag.PartitionSet));
@@ -275,7 +282,7 @@ describe('<RunFilterInput  />', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
+      {token, value: `${DagsterTag.PartitionSet}=set1`},
     ]);
   });
 

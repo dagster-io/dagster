@@ -13,7 +13,11 @@ import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
-import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {
+  SetFilterValue,
+  capitalizeFirstLetter,
+  useStaticSetFilter,
+} from '../ui/BaseFilters/useStaticSetFilter';
 import {
   SuggestionFilterSuggestion,
   useSuggestionFilter,
@@ -63,10 +67,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     [client],
   );
 
-  const tagSuggestions: SuggestionFilterSuggestion<{
-    value: string;
-    key?: string;
-  }>[] = useMemo(
+  const tagSuggestions: SuggestionFilterSuggestion<TagSuggestionValue>[] = useMemo(
     () =>
       tagKeys
         .filter((key) => !tagsToExclude.includes(key as DagsterTag))
@@ -89,7 +90,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const isStatusFilterEnabled = !enabledFilters || enabledFilters?.includes('status');
   const isBackfillsFilterEnabled = !enabledFilters || enabledFilters?.includes('backfill');
   const isPartitionsFilterEnabled = !enabledFilters || enabledFilters?.includes('partition');
-  const isJobFilterEnabled = !enabledFilters || enabledFilters?.includes('job');
+  const isJobFilterEnabled = !enabledFilters || enabledFilters.includes('job');
+  const isExcludedJobFilterEnabled = enabledFilters?.includes('-job');
+  const isExcludedTagFilterEnabled = enabledFilters?.includes('-tag');
 
   const onFocus = useCallback(() => {
     fetchTagKeys();
@@ -127,7 +130,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     const pipelineNames = [];
     const jobNames = [];
 
-    if (!isJobFilterEnabled) {
+    if (!isJobFilterEnabled && !isExcludedJobFilterEnabled) {
       return {pipelines: [], jobs: []};
     }
 
@@ -155,34 +158,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         match: [name],
       })),
     };
-  }, [isJobFilterEnabled, options]);
+  }, [isJobFilterEnabled, isExcludedJobFilterEnabled, options]);
 
-  const jobFilter = useStaticSetFilter({
-    name: 'Job',
-    icon: 'job',
-    allowMultipleSelections: false,
-    allValues: jobs,
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value} />
-      </Box>
-    ),
-    getStringValue: (x) => x,
-    state: useMemo(
-      () => new Set(tokens.filter((x) => x.token === 'job').map((x) => x.value)),
-      [tokens],
-    ),
-    onStateChanged: (values) => {
-      onChange([
-        ...tokens.filter((x) => x.token !== 'job'),
-        ...Array.from(values).map((value) => ({
-          token: 'job' as const,
-          value,
-        })),
-      ]);
-    },
-  });
+  const jobFilter = useRunsJobFilter({jobs, tokens, onChange, tokenType: 'job'});
+  const excludedJobFilter = useRunsJobFilter({jobs, tokens, onChange, tokenType: '-job'});
 
   const statusFilter = useStaticSetFilter({
     name: 'Status',
@@ -458,77 +437,19 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
-  const tagFilter = useSuggestionFilter({
-    name: 'Tag',
-    icon: 'tag',
-    initialSuggestions: tagSuggestions,
-
-    freeformSearchResult: useCallback(
-      (
-        query: string,
-        path: {
-          value: string;
-          key?: string | undefined;
-        }[],
-      ) => {
-        return {
-          ...tagSuggestionValueObject(path[0] ? path[0].value : '', query),
-          final: !!path.length,
-        };
-      },
-      [],
-    ),
-
-    state: useMemo(() => {
-      return tokens
-        .filter(({token, value}) => {
-          if (token !== 'tag') {
-            return false;
-          }
-          return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
-        })
-        .map((token) => {
-          const {key, value} = splitTagFilterValue(token.value);
-          return tagSuggestionValueObject(key, value).value;
-        });
-    }, [tokens]),
-
-    setState: (nextState) => {
-      onChange([
-        ...tokens.filter(({token, value}) => {
-          if (token !== 'tag') {
-            return true;
-          }
-          return tagsToExclude.includes(value.split('=')[0] as DagsterTag);
-        }),
-        ...nextState.map(({key, value}) => {
-          return {
-            token: 'tag' as const,
-            value: `${key}=${value}`,
-          };
-        }),
-      ]);
-    },
-    onSuggestionClicked: async ({value}) => {
-      return await fetchTagValues(value);
-    },
-    getStringValue: ({key, value}) => `${key}=${value}`,
-    getKey: ({key, value}) => `${key}: ${value}`,
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="tag" />
-        <TruncatedTextWithFullTextOnHover text={value.value} />
-      </Box>
-    ),
-    renderActiveStateLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="tag" />
-        <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
-        {value.key}={value.value}
-      </Box>
-    ),
-    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
-    matchType: 'all-of',
+  const tagFilter = useRunsTagFilter({
+    tokenType: 'tag',
+    tokens,
+    onChange,
+    tagSuggestions,
+    fetchTagValues,
+  });
+  const excludedTagFilter = useRunsTagFilter({
+    tokenType: '-tag',
+    tokens,
+    onChange,
+    tagSuggestions,
+    fetchTagValues,
   });
 
   const ID_EMPTY = 'Type or paste 36-character ID';
@@ -581,16 +502,134 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       launchedByFilter,
       createdDateFilter,
       isJobFilterEnabled ? jobFilter : null,
+      isExcludedJobFilterEnabled ? excludedJobFilter : null,
       isJobFilterEnabled && pipelines.length > 0 ? pipelinesFilter : null,
       isIDFilterEnabled ? idFilter : null,
       isBackfillsFilterEnabled ? backfillsFilter : null,
       isPartitionsFilterEnabled ? partitionsFilter : null,
       tagFilter,
+      isExcludedTagFilterEnabled ? excludedTagFilter : null,
     ].filter((x) => x) as FilterObject[],
   });
 
   return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
+
+function useRunsJobFilter({
+  jobs,
+  tokens,
+  onChange,
+  tokenType,
+}: Pick<RunsFilterInputProps, 'tokens' | 'onChange'> & {
+  jobs: SetFilterValue<string>[];
+  tokenType: 'job' | '-job';
+}) {
+  const excluded = tokenType === '-job';
+  return useStaticSetFilter({
+    name: excluded ? 'Job is not' : 'Job',
+    icon: 'job',
+    allowMultipleSelections: excluded,
+    canSelectAll: false,
+    filterBarTagLabel: excluded ? <>Job is not</> : undefined,
+    allValues: jobs,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="job" />
+        <TruncatedTextWithFullTextOnHover text={value} />
+      </Box>
+    ),
+    getStringValue: (x) => x,
+    state: useMemo(
+      () => new Set(tokens.filter((x) => x.token === tokenType).map((x) => x.value)),
+      [tokens, tokenType],
+    ),
+    onStateChanged: (values) => {
+      onChange([
+        ...tokens.filter((x) => x.token !== tokenType),
+        ...Array.from(values).map((value) => ({
+          token: tokenType,
+          value,
+        })),
+      ]);
+    },
+  });
+}
+
+type TagSuggestionValue = {value: string; key?: string};
+
+function useRunsTagFilter({
+  tokenType,
+  tokens,
+  onChange,
+  tagSuggestions,
+  fetchTagValues,
+}: Pick<RunsFilterInputProps, 'tokens' | 'onChange'> & {
+  tokenType: 'tag' | '-tag';
+  tagSuggestions: SuggestionFilterSuggestion<TagSuggestionValue>[];
+  fetchTagValues: (key: string) => Promise<SuggestionFilterSuggestion<TagSuggestionValue>[]>;
+}) {
+  const excluded = tokenType === '-tag';
+  const matchesToken = useCallback(
+    ({token, value}: RunFilterToken) =>
+      token === tokenType &&
+      (excluded || !tagsToExclude.includes(splitTagFilterValue(value).key as DagsterTag)),
+    [excluded, tokenType],
+  );
+
+  return useSuggestionFilter({
+    name: excluded ? 'Tag is not' : 'Tag',
+    filterBarTagLabel: excluded ? <>Tag is not</> : undefined,
+    icon: 'tag',
+    initialSuggestions: tagSuggestions,
+
+    freeformSearchResult: useCallback(
+      (query: string, path: TagSuggestionValue[]) => ({
+        ...tagSuggestionValueObject(path[0]?.value ?? '', query),
+        final: !!path.length,
+      }),
+      [],
+    ),
+
+    state: useMemo(
+      () =>
+        tokens.filter(matchesToken).map((token) => {
+          const {key, value} = splitTagFilterValue(token.value);
+          return tagSuggestionValueObject(key, value).value;
+        }),
+      [matchesToken, tokens],
+    ),
+
+    setState: (nextState) => {
+      onChange([
+        ...tokens.filter((token) => !matchesToken(token)),
+        ...nextState.map(({key, value}) => ({
+          token: tokenType,
+          value: `${key}=${value}`,
+        })),
+      ]);
+    },
+    onSuggestionClicked: async ({value}) => {
+      return await fetchTagValues(value);
+    },
+    getStringValue: ({key, value}) => `${key}=${value}`,
+    getKey: ({key, value}) => `${key}: ${value}`,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="tag" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+      </Box>
+    ),
+    renderActiveStateLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="tag" />
+        <TruncatedTextWithFullTextOnHover text={`${value.key}=${value.value}`} />
+        {value.key}={value.value}
+      </Box>
+    ),
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'all-of',
+  });
+}
 
 export function useTagDataFilterValues(tagKey: DagsterTag) {
   const {fetch, values: tagValues} = useLazyRunTagValues(tagKey);

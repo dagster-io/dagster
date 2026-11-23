@@ -77,6 +77,12 @@ def _get_filters_input(filters: RunsFilter | None) -> dict[str, Any] | None:
     return {
         "runIds": filters.run_ids,
         "pipelineName": filters.job_name,
+        **({"excludeJobNames": filters.exclude_job_names} if filters.exclude_job_names else {}),
+        **(
+            {"excludeTags": [{"key": key, "value": value} for key, value in filters.exclude_tags]}
+            if filters.exclude_tags
+            else {}
+        ),
         "statuses": [status.value for status in filters.statuses],
         "tags": (
             [
@@ -108,6 +114,10 @@ def _get_bulk_actions_filters_input(
         unsupported_filters.append("backfill_ids")
     if filters and filters.tags:
         unsupported_filters.append("tags")
+    if filters and filters.exclude_job_names:
+        unsupported_filters.append("exclude_job_names")
+    if filters and filters.exclude_tags:
+        unsupported_filters.append("exclude_tags")
 
     check.invariant(
         len(unsupported_filters) == 0,

@@ -1112,6 +1112,73 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert result.data
         _assert_results_match_count_match_expected(result, 6)
 
+    @pytest.mark.parametrize("view", ["ROOTS", "RUNS"])
+    def test_get_runs_feed_exclusion_filters(self, graphql_context, view):
+        if not self.supports_filtering():
+            pytest.skip("storage does not support exclusion filters")
+
+        kept = _create_run(graphql_context, job_name="etl", status=DagsterRunStatus.CANCELED)
+        kept_other_value = _create_run(
+            graphql_context,
+            job_name="etl",
+            status=DagsterRunStatus.FAILURE,
+            tags={"team": "data", "source": "cron"},
+        )
+        _create_run(graphql_context, job_name="noisy", status=DagsterRunStatus.FAILURE)
+        _create_run(graphql_context, job_name="cleanup", status=DagsterRunStatus.FAILURE)
+        _create_run(
+            graphql_context,
+            job_name="etl",
+            status=DagsterRunStatus.FAILURE,
+            tags={"team": "ops"},
+        )
+        _create_run(
+            graphql_context,
+            job_name="etl",
+            status=DagsterRunStatus.CANCELED,
+            tags={"team": "night=shift"},
+        )
+        _create_run(graphql_context, job_name="etl", status=DagsterRunStatus.SUCCESS)
+
+        repository = graphql_context.get_code_location(main_repo_location_name()).get_repository(
+            "test_repo"
+        )
+        _create_backfill(
+            graphql_context,
+            status=BulkActionStatus.CANCELED,
+            partition_set_origin=RemotePartitionSetOrigin(
+                repository_origin=repository.get_remote_origin(),
+                partition_set_name=partition_set_snap_name_for_job_name("noisy"),
+            ),
+        )
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELED, tags={"team": "ops"})
+        kept_backfill = _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            MINIMAL_GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "filter": {
+                    "statuses": ["FAILURE", "CANCELED"],
+                    "excludeJobNames": ["noisy", "cleanup"],
+                    "excludeTags": [
+                        {"key": "team", "value": "ops"},
+                        {"key": "team", "value": "night=shift"},
+                    ],
+                },
+                "view": view,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        expected = {kept.run_id, kept_other_value.run_id}
+        if view == "ROOTS":
+            expected.add(kept_backfill)
+        _assert_results_match_count_match_expected(result, len(expected))
+        assert {entry["id"] for entry in result.data["runsFeedOrError"]["results"]} == expected
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
     def test_get_runs_feed_filter_tags(self, graphql_context):
         if not self.supports_filtering():
             return pytest.skip("storage does not support filtering backfills by tag")

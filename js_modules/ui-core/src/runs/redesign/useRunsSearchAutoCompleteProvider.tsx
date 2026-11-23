@@ -203,7 +203,7 @@ const createRunsSearchHint = ({
       return results;
     },
     supportsTraversal: false,
-    supportsNot: false,
+    supportsNot: true,
   });
 };
 

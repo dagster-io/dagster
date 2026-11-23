@@ -33,9 +33,11 @@ import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/B
 
 const filters: RunFilterTokenType[] = [
   'tag',
+  '-tag',
   'snapshotId',
   'id',
   'job',
+  '-job',
   'pipeline',
   'partition',
   'backfill',
