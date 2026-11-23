@@ -118,6 +118,8 @@ def _get_bulk_actions_filters_input(
         unsupported_filters.append("exclude_job_names")
     if filters and filters.exclude_tags:
         unsupported_filters.append("exclude_tags")
+    if filters and filters.exclude_backfill_ids:
+        unsupported_filters.append("exclude_backfill_ids")
 
     check.invariant(
         len(unsupported_filters) == 0,

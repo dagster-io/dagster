@@ -91,6 +91,7 @@ class BulkActionsFilter:
             If blank, backfills for all partition sets will be included.
         exclude_job_names (Optional[Sequence[str]]): Exclude backfills for any of these jobs.
         exclude_tags (Optional[Sequence[Tuple[str, str]]]): Exclude backfills with any of these exact tag key/value pairs.
+        exclude_backfill_ids (Optional[Sequence[str]]): Exclude backfills with any of these IDs.
     """
 
     statuses: Sequence[BulkActionStatus] | None = None
@@ -102,6 +103,7 @@ class BulkActionsFilter:
     selector_id: str | None = None
     exclude_job_names: Sequence[str] | None = None
     exclude_tags: Sequence[tuple[str, str]] | None = None
+    exclude_backfill_ids: Sequence[str] | None = None
 
 
 @whitelist_for_serdes

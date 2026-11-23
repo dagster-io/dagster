@@ -525,7 +525,12 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
         tags=tags,
         backfill_ids=backfill_ids,
         exclude_job_names=filters.exclude_job_names,
-        exclude_tags=filters.exclude_tags,
+        exclude_tags=[
+            (key, value) for key, value in filters.exclude_tags if key != BACKFILL_ID_TAG
+        ],
+        exclude_backfill_ids=[
+            value for key, value in filters.exclude_tags if key == BACKFILL_ID_TAG
+        ],
     )
 
 

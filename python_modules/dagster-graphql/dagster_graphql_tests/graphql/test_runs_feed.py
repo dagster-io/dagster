@@ -1112,7 +1112,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert result.data
         _assert_results_match_count_match_expected(result, 6)
 
-    @pytest.mark.parametrize("view", ["ROOTS", "RUNS"])
+    @pytest.mark.parametrize("view", ["ROOTS", "RUNS", "BACKFILLS"])
     def test_get_runs_feed_exclusion_filters(self, graphql_context, view):
         if not self.supports_filtering():
             pytest.skip("storage does not support exclusion filters")
@@ -1152,6 +1152,10 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             ),
         )
         _create_backfill(graphql_context, status=BulkActionStatus.CANCELED, tags={"team": "ops"})
+        excluded_backfill = _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+        _create_run_for_backfill(
+            graphql_context, excluded_backfill, job_name="etl", status=DagsterRunStatus.CANCELED
+        )
         kept_backfill = _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
 
         result = execute_dagster_graphql(
@@ -1165,6 +1169,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                     "excludeTags": [
                         {"key": "team", "value": "ops"},
                         {"key": "team", "value": "night=shift"},
+                        {"key": BACKFILL_ID_TAG, "value": excluded_backfill},
                     ],
                 },
                 "view": view,
@@ -1172,8 +1177,8 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        expected = {kept.run_id, kept_other_value.run_id}
-        if view == "ROOTS":
+        expected = {kept.run_id, kept_other_value.run_id} if view != "BACKFILLS" else set()
+        if view != "RUNS":
             expected.add(kept_backfill)
         _assert_results_match_count_match_expected(result, len(expected))
         assert {entry["id"] for entry in result.data["runsFeedOrError"]["results"]} == expected

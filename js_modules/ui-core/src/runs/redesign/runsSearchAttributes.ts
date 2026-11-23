@@ -59,8 +59,12 @@ export const normalizeRunId = (value: string) => value.trim().toLowerCase();
 export const isFullRunId = (value: string) => FULL_RUN_ID_PATTERN.test(normalizeRunId(value));
 
 export const isTagBackedAttribute = (
-  attribute: RunsSearchAttribute,
-): attribute is TagBackedAttribute => attribute in TAG_KEY_BY_ATTRIBUTE;
+  attribute: string,
+): attribute is TagBackedAttribute =>
+  TAG_BACKED_ATTRIBUTES.some((tagAttribute) => tagAttribute === attribute);
+
+export const supportsRunsSearchNegation = (attribute: string) =>
+  attribute === 'job' || attribute === 'tag' || isTagBackedAttribute(attribute);
 
 export const getAttributeForTagKey = (key: string): TagBackedAttribute | null =>
   TAG_BACKED_ATTRIBUTES.find((attribute) => TAG_KEY_BY_ATTRIBUTE[attribute] === key) ?? null;

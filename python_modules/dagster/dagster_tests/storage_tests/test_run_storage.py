@@ -146,6 +146,33 @@ class TestLegacyRunStorage(TestRunStorage):
         pass
 
 
+@pytest.mark.parametrize(
+    "create_storage",
+    [create_sqlite_run_storage, create_in_memory_storage, create_legacy_run_storage],
+)
+def test_run_storage_exclusion_filters_before_pagination(create_storage):
+    with create_storage() as storage:
+        oldest = storage.add_run(dagster_run(job_name="etl", status=dg.DagsterRunStatus.FAILURE))
+        storage.add_run(
+            dagster_run(job_name="etl", status=dg.DagsterRunStatus.CANCELED, tags={"team": "ops"})
+        )
+        newest = storage.add_run(
+            dagster_run(job_name="etl", status=dg.DagsterRunStatus.CANCELED, tags={"team": "data"})
+        )
+        storage.add_run(dagster_run(job_name="noisy", status=dg.DagsterRunStatus.FAILURE))
+        storage.add_run(dagster_run(job_name="maintenance", status=dg.DagsterRunStatus.CANCELED))
+        storage.add_run(dagster_run(job_name="etl", status=dg.DagsterRunStatus.SUCCESS))
+
+        filters = dg.RunsFilter(
+            statuses=[dg.DagsterRunStatus.FAILURE, dg.DagsterRunStatus.CANCELED],
+            exclude_job_names=["noisy", "maintenance"],
+            exclude_tags=[("team", "ops")],
+        )
+        assert storage.get_runs_count(filters) == 2
+        assert storage.get_run_ids(filters, limit=1) == [newest.run_id]
+        assert storage.get_run_ids(filters, cursor=newest.run_id, limit=1) == [oldest.run_id]
+
+
 @pytest.mark.asyncio
 async def test_batch_run_loader():
     with dg.instance_for_test() as instance:

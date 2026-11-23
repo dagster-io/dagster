@@ -141,10 +141,51 @@ describe('useRunsSearchAutoCompleteProvider', () => {
         'partition:',
         'tag:',
         'snapshot_id:',
+        'not ',
         '()',
       ]),
     );
   });
+
+  it.each(['not ', 'status:FAILURE and not '])(
+    'suggests only excludable attributes after %s',
+    async (line) => {
+      const result = renderSuggestions(line);
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(getRowTexts(result).filter((text) => text.endsWith(':'))).toEqual([
+        'sensor:',
+        'schedule:',
+        'user:',
+        'job:',
+        'code_location:',
+        'backfill:',
+        'partition:',
+        'tag:',
+      ]);
+    },
+  );
+
+  it.each(['not st', 'not status:FA', 'not id:', 'not snapshot_id:'])(
+    'does not suggest completions for %s',
+    async (line) => {
+      const result = renderSuggestions(line);
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(getRowTexts(result)).toEqual([]);
+    },
+  );
+
+  it.each(['not job:hourly and status:FA', 'tag:team="not" and status:FA'])(
+    'suggests status values outside negation in %s',
+    async (line) => {
+      const result = renderSuggestions(line);
+      await waitFor(() => expect(getRowTexts(result)).toEqual(['FAILURE']));
+      expect(parseRunsSearch(applyRows(line, result)[0] ?? '').tokens).toContainEqual({
+        token: 'status',
+        value: 'FAILURE',
+      });
+    },
+  );
 
   it('reports loading until the workspace loads', async () => {
     // Skips fetchSuggestions so no tag value query is in flight.
@@ -168,6 +209,9 @@ describe('useRunsSearchAutoCompleteProvider', () => {
     {line: 'user:', rows: ['"a@b.com"']},
     {line: 'tag:team=', rows: ['team=data', 'team=dev']},
     {line: 'tag:team=da', rows: ['team=data']},
+    {line: 'not job:', rows: ['hourly', 'nightly']},
+    {line: 'not sensor:', rows: ['my_sensor']},
+    {line: 'not tag:team=da', rows: ['team=data']},
     {line: 'tag:"team"=', rows: ['team=data', 'team=dev']},
     {line: 'job:hourly and tag:team=da', rows: ['team=data']},
     {line: `id:${RUN_ID}`, rows: [`"${RUN_ID}"`]},
