@@ -15,6 +15,7 @@ Why not pickle?
 
 import collections.abc
 import dataclasses
+import gc
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import is_dataclass
@@ -47,7 +48,7 @@ from dagster_shared.record import (
     has_generated_new,
     is_record,
 )
-from dagster_shared.serdes.compact import dumps_compact, is_compact_serialized, loads_compact
+from dagster_shared.serdes.compact import is_compact_serialized, loads_compact
 from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster_shared.utils.warnings import disable_dagster_warnings
 
@@ -802,6 +803,28 @@ class FieldSerializer(Serializer):
         descent_path: str,
     ) -> JsonSerializableValue: ...
 
+    def pack_shallow(self, __unpacked_value: Any, whitelist_map: WhitelistMap) -> Any:
+        """Like `pack`, but nested values may be left unpacked: the caller packs them.
+
+        Only used by the compact format, to avoid packing nested values only to walk the packed
+        value again. Overriding it is optional: it must return the same value as `pack` once
+        packed. A field packed as a list of serdes objects of a single class may instead return
+        `PackedObjects`, which saves building a dict per object.
+        """
+        return self.pack(__unpacked_value, whitelist_map, "")
+
+
+class PackedObjects(NamedTuple):
+    """A list of packed serdes objects of a single class, as rows of field values.
+
+    Equivalent to `[{"__class__": class_name, **dict(zip(field_names, row))} for row in rows]`,
+    where the field values in rows may be left unpacked.
+    """
+
+    class_name: str
+    field_names: tuple[str, ...]
+    rows: list[tuple[Any, ...]]
+
 
 class SetToSequenceFieldSerializer(FieldSerializer):
     def unpack(  # ty: ignore[invalid-method-override]
@@ -842,7 +865,20 @@ def serialize_value(
     repeated subtrees. Only readers that include compact format support can deserialize it.
     """
     if compact:
-        return dumps_compact(pack_value(val, whitelist_map), **json_kwargs)
+        check.invariant(not json_kwargs, "json_kwargs are not supported with compact=True")
+        # Encoding allocates many small tuples that can't form reference cycles, so pause the
+        # cyclic garbage collector rather than have it repeatedly scan them.
+        gc_was_enabled = gc.isenabled()
+        gc.disable()
+        try:
+            # imported here, since the packer module depends on this one
+            from dagster_shared.serdes.compact_packer import CompactPacker
+
+            packer = CompactPacker(whitelist_map)
+            return packer.dumps(packer.pack_root(val))
+        finally:
+            if gc_was_enabled:
+                gc.enable()
     serializable_value = _transform_for_serialization(
         val,
         whitelist_map=whitelist_map,

@@ -30,6 +30,7 @@ reference, so equal subtrees deserialize to the same Python object.
 
 import json
 from collections.abc import Callable, Sequence
+from json.encoder import encode_basestring_ascii  # type: ignore
 from typing import Any
 
 COMPACT_SERDES_KEY = "__compact_serdes__"
@@ -45,10 +46,21 @@ _FIRST_CLASS_TAG = 3
 # be meaningfully shorter.
 _MIN_SHARED_STR_LEN = 6
 
-_LIST_KIND = 0
-_DICT_KIND = 1
-_OBJECT_KIND = 2
-_SCALAR_KIND = 3
+# Containers with more children than this are written top-down rather than as text, along with their
+# ancestors up to this depth below the root.
+_MIN_STREAMED_CHILDREN = 1000
+_MAX_STREAMED_DEPTH = 4
+
+
+def json_key(key: Any) -> str:
+    """Convert a dict key the way `json.dumps` does, so that decoded dicts match the legacy format."""
+    if type(key) is str:
+        return key
+    if key is None or type(key) in (bool, int, float):
+        return json.dumps(key)
+    if isinstance(key, str):
+        return str(key)
+    raise TypeError(f"keys must be str, int, float, bool or None, not {type(key).__name__}")
 
 
 def is_compact_serialized(value: str) -> bool:
@@ -56,124 +68,198 @@ def is_compact_serialized(value: str) -> bool:
 
 
 class _Encoder:
+    """Builds the compact encoding of a value.
+
+    Values are hash-consed into nodes: equal subtrees get the same node id. A node is identified by
+    its key, which is also what `dumps` writes:
+
+    * a `str` for strings;
+    * `(type, value)` for other scalars;
+    * `(tag, *child_node_ids)` for lists, dicts and serdes objects, using the tags of the format.
+
+    Children always get lower ids than their parents, so the nodes are in topological order.
+    """
+
     def __init__(self) -> None:
-        # Hash-consed nodes. A node is identified by its kind and the ids of its children (or by
-        # its value for scalars), so equal subtrees get the same id.
         self.node_ids: dict[Any, int] = {}
-        self.kinds: list[int] = []
-        self.payloads: list[Any] = []
-        self.ref_counts: list[int] = []
+        # Node 0 is a placeholder that is never written, so that node ids are truthy and lookups
+        # can be written `node_ids.get(key) or ...`.
+        self.nodes: list[Any] = [None]
         self.class_ids: dict[tuple[str, tuple[str, ...]], int] = {}
         self.classes: list[list[Any]] = []
 
-    def _node(self, key: Any, kind: int, payload: Any, children: tuple[int, ...]) -> int:
-        node_ids = self.node_ids
-        node_id = node_ids.get(key)
+    def intern(self, key: Any) -> int:
+        node_id = self.node_ids.get(key)
         if node_id is None:
-            node_id = len(self.kinds)
-            node_ids[key] = node_id
-            self.kinds.append(kind)
-            self.payloads.append(payload)
-            self.ref_counts.append(0)
-            # children are only counted once per distinct parent, since each distinct parent is
-            # written once
-            ref_counts = self.ref_counts
-            for child in children:
-                ref_counts[child] += 1
+            node_id = self.node_ids[key] = len(self.nodes)
+            self.nodes.append(key)
         return node_id
 
+    def class_tag(self, class_name: str, field_names: tuple[str, ...]) -> int:
+        class_key = (class_name, field_names)
+        class_id = self.class_ids.get(class_key)
+        if class_id is None:
+            class_id = self.class_ids[class_key] = len(self.classes)
+            self.classes.append([class_name, list(field_names)])
+        return _FIRST_CLASS_TAG + class_id
+
     def add(self, value: Any) -> int:
+        """Add a packed (JSON-serializable) value."""
         tval = type(value)
         if tval is str:
-            node_id = self.node_ids.get(value)
-            if node_id is None:
-                node_id = self._node(value, _SCALAR_KIND, value, ())
-            return node_id
+            return self.intern(value)
         if tval is list:
-            add = self.add
-            children = tuple([add(item) for item in value])
-            return self._node((_LIST_KIND, children), _LIST_KIND, children, children)
+            return self.intern((_LIST_TAG, *[self.add(item) for item in value]))
         if tval is dict:
-            add = self.add
             class_name = value.get("__class__")
             if type(class_name) is str:
-                field_names = tuple(value)
-                class_key = (class_name, field_names)
-                class_id = self.class_ids.get(class_key)
-                if class_id is None:
-                    class_id = len(self.classes)
-                    self.class_ids[class_key] = class_id
-                    self.classes.append([class_name, [k for k in field_names if k != "__class__"]])
-                children = tuple([add(v) for k, v in value.items() if k != "__class__"])
-                return self._node(
-                    (_OBJECT_KIND, class_id, children),
-                    _OBJECT_KIND,
-                    (class_id, children),
-                    children,
+                tag = self.class_tag(class_name, tuple([k for k in value if k != "__class__"]))
+                return self.intern(
+                    (tag, *[self.add(v) for k, v in value.items() if k != "__class__"])
                 )
-            children = tuple([node_id for k, v in value.items() for node_id in (add(k), add(v))])
-            return self._node((_DICT_KIND, children), _DICT_KIND, children, children)
+            return self.intern(
+                (
+                    _DICT_TAG,
+                    *[
+                        node_id
+                        for k, v in value.items()
+                        for node_id in (self.intern(json_key(k)), self.add(v))
+                    ],
+                )
+            )
         if value is None or tval is bool or tval is int or tval is float:
-            return self._node((tval, value), _SCALAR_KIND, value, ())
+            return self.intern((tval, value))
         raise TypeError(f"Unexpected packed value type {tval}")
 
-    def _shared(self, node_id: int) -> bool:
-        # Shared nodes are written once in the value table and referenced by index elsewhere.
-        # Small values are cheaper to repeat inline than to reference.
-        if self.ref_counts[node_id] < 2:
-            return False
-        kind = self.kinds[node_id]
-        payload = self.payloads[node_id]
-        if kind == _SCALAR_KIND:
-            return type(payload) is str and len(payload) >= _MIN_SHARED_STR_LEN
-        if kind == _OBJECT_KIND:
-            return True
-        return len(payload) > 0
+    def release(self) -> None:
+        """Free the state only needed to add values, before writing."""
+        self.node_ids = {}
 
-    def encode(self, root_id: int) -> dict[str, Any]:
-        kinds, payloads = self.kinds, self.payloads
-        shared = [self._shared(node_id) for node_id in range(len(kinds))]
-        table: list[Any] = []
-        table_index: dict[int, int] = {}
+    def dumps(self, root_id: int) -> str:
+        """Write the nodes reachable from `root_id`, in the compact format.
 
-        def emit(node_id: int) -> Any:
-            index = table_index.get(node_id)
-            if index is not None:
-                return index
-            kind = kinds[node_id]
-            payload = payloads[node_id]
-            if kind == _SCALAR_KIND:
-                tval = type(payload)
-                body = [_NUMBER_TAG, payload] if tval is int or tval is float else payload
-            elif kind == _OBJECT_KIND:
-                class_id, children = payload
-                body = [_FIRST_CLASS_TAG + class_id, *[emit(c) for c in children]]
+        The encoder can't be used afterwards: its state is released while writing.
+        """
+        self.release()
+        nodes = self.nodes
+        self.nodes = []
+        num_nodes = len(nodes)
+
+        # Find which nodes are referenced by several distinct parents (each distinct parent is
+        # written once). Only container keys, which start with an int tag, have children.
+        used = bytearray(num_nodes)
+        multi = bytearray(num_nodes)
+        for key in nodes:
+            if type(key) is tuple and type(key[0]) is int:
+                for child in key[1:]:
+                    if used[child]:
+                        multi[child] = 1
+                    else:
+                        used[child] = 1
+        used[root_id] = 1
+        streamed = self._find_streamed(nodes, multi, root_id)
+
+        # Text of each node: the index of its value table entry for shared nodes, or its encoding
+        # to inline in its parent. Nodes are written in id order, so children come first and table
+        # entries only reference earlier entries. Once a node's text is part of its parent's text,
+        # it's released unless other parents need it.
+        texts: list[Any] = [None] * num_nodes
+        table: list[str] = []
+        tag_texts = [str(tag) for tag in range(_FIRST_CLASS_TAG + len(self.classes))]
+        get_text = texts.__getitem__
+        streamed_keys: dict[int, tuple] = {}
+        for node_id, key in enumerate(nodes):
+            if not used[node_id]:
+                continue  # unreachable from the root
+            nodes[node_id] = None
+            if streamed[node_id]:
+                streamed_keys[node_id] = key
+                continue
+            if type(key) is str:
+                text = encode_basestring_ascii(key)
+                if multi[node_id] and len(key) >= _MIN_SHARED_STR_LEN:
+                    table.append(text)
+                    text = str(len(table) - 1)
+            elif type(key[0]) is int:
+                children = key[1:]
+                text = f"[{','.join([tag_texts[key[0]], *map(get_text, children)])}]"
+                for child in children:
+                    if not multi[child]:
+                        texts[child] = None
+                if multi[node_id] and children:
+                    table.append(text)
+                    text = str(len(table) - 1)
             else:
-                tag = _LIST_TAG if kind == _LIST_KIND else _DICT_TAG
-                body = [tag, *[emit(c) for c in payload]]
-            if shared[node_id]:
-                index = len(table)
-                table.append(body)
-                table_index[node_id] = index
-                return index
-            return body
+                text = json.dumps(key[1])
+                if key[0] is int or key[0] is float:
+                    text = f"[{_NUMBER_TAG},{text}]"
+            texts[node_id] = text
+        del nodes
 
-        root = emit(root_id)
-        return {
-            COMPACT_SERDES_KEY: COMPACT_SERDES_VERSION,
-            "classes": self.classes,
-            "table": table,
-            "root": root,
-        }
+        out: list[str] = []
+        write = out.append
+        write(
+            f'{{"{COMPACT_SERDES_KEY}":{COMPACT_SERDES_VERSION},'
+            f'"classes":{json.dumps(self.classes, separators=(",", ":"))},"table":['
+        )
+        write(",".join(table))
+        del table
+        write('],"root":')
+        # Streamed nodes are written top-down, without building their text.
+        stack: list[Any] = [root_id]
+        while stack:
+            item = stack.pop()
+            if type(item) is str:
+                write(item)
+                continue
+            key = streamed_keys.pop(item, None)
+            if key is None:
+                write(texts[item])
+                continue
+            write(f"[{tag_texts[key[0]]}")
+            stack.append("]")
+            for child in reversed(key[1:]):
+                stack.append(child)
+                stack.append(",")
+        write("}")
+        del texts, get_text
+        return "".join(out)
+
+    @staticmethod
+    def _find_streamed(nodes: list[Any], multi: bytearray, root_id: int) -> bytearray:
+        """Find the nodes to write top-down rather than as text: containers with many children
+        (e.g. the list of all asset nodes) and their ancestors, if they are used once.
+
+        Their text would be about as large as the output, so building it would hold the output
+        twice.
+        """
+        streamed = bytearray(len(nodes))
+
+        # Large containers are close to the root, so the search is shallow.
+        def search(node_id: int, depth: int) -> bool:
+            key = nodes[node_id]
+            if type(key) is not tuple or type(key[0]) is not int or multi[node_id]:
+                return False
+            if len(key) > _MIN_STREAMED_CHILDREN:
+                streamed[node_id] = 1
+                return True
+            found = False
+            if depth:
+                for child in key[1:]:
+                    if search(child, depth - 1):
+                        found = True
+            if found:
+                streamed[node_id] = 1
+            return found
+
+        search(root_id, _MAX_STREAMED_DEPTH)
+        return streamed
 
 
-def dumps_compact(packed_value: Any, **json_kwargs: Any) -> str:
+def dumps_compact(packed_value: Any) -> str:
     """Write a packed (JSON-serializable) value in the compact format."""
     encoder = _Encoder()
-    root_id = encoder.add(packed_value)
-    envelope = encoder.encode(root_id)
-    json_kwargs.setdefault("separators", (",", ":"))
-    return json.dumps(envelope, **json_kwargs)
+    return encoder.dumps(encoder.add(packed_value))
 
 
 def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool = False) -> Any:
