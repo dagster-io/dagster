@@ -9,6 +9,7 @@ file next to workspace.yaml.
 """
 
 import os
+import re
 import time
 from datetime import datetime, timezone
 
@@ -70,6 +71,13 @@ INNER JOIN msdb.dbo.sysjobs j ON h.job_id = j.job_id
 WHERE j.name = 'RestoreRealpageDaily' AND h.step_id = 0
 ORDER BY h.run_date DESC, h.run_time DESC
 """
+
+# The Entrata API service's own log file. Only its tail is read: the file is tens of MB.
+SERVICE_LOG_PATH = os.environ.get(
+    "HILLPOINTE_ENTRATA_SERVICE_LOG", r"D:\Projects\EntrataBoxScoreAPI\service.txt"
+)
+SERVICE_LOG_TAIL_BYTES = 4_000_000
+_SERVICE_LOG_LINE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),\d+ \[(\w+)\] ([\w.]+): (.*)")
 
 _ENV_VARS = ("SQL_SERVER_HOST", "SQL_USERNAME", "SQL_PASSWORD")
 
@@ -226,6 +234,46 @@ async def realpage_restore_endpoint(request: Request) -> JSONResponse:
             ]
         }
     )
+
+
+def read_service_log(path: str) -> list[dict]:
+    """Warnings and errors in the tail of the service log, newest first.
+
+    A traceback's last line (the exception itself) is kept as the entry's detail.
+    """
+    with open(path, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        f.seek(max(0, f.tell() - SERVICE_LOG_TAIL_BYTES))
+        lines = f.read().decode("utf-8", "replace").splitlines()
+
+    entries: list[dict] = []
+    entry = None
+    for line in lines:
+        if match := _SERVICE_LOG_LINE.match(line):
+            at, level, logger, message = match.groups()
+            entry = None
+            if level != "INFO":
+                entry = {
+                    "at": at,
+                    "level": level,
+                    "logger": logger,
+                    "message": message,
+                    "detail": None,
+                }
+                entries.append(entry)
+        elif entry and line.strip():
+            entry["detail"] = line.strip()
+    entries.reverse()
+    return entries
+
+
+async def entrata_service_log_endpoint(request: Request) -> JSONResponse:
+    """GET /hillpointe/entrata_service_log: recent warnings and errors of the service log."""
+    try:
+        entries = await run_in_threadpool(read_service_log, SERVICE_LOG_PATH)
+    except OSError as exc:
+        return JSONResponse({"error": f"Could not read {SERVICE_LOG_PATH}: {exc.strerror}"}, 502)
+    return JSONResponse({"entries": entries})
 
 
 # "Refresh every screen" button in Settings. Open pages poll this stamp and reload when

@@ -32,6 +32,14 @@ type LogRow = {
   success: boolean | null;
 };
 
+type ServiceLogEntry = {
+  at: string;
+  level: string;
+  logger: string;
+  message: string;
+  detail: string | null;
+};
+
 type RestoreRow = {job: string; runAt: string | null; status: string | null};
 
 type TagLook = {
@@ -227,6 +235,9 @@ const FridayReportRoot = () => {
   const log = useJson<{rows: LogRow[]}>(
     view === 'all' ? `${basePath}/hillpointe/entrata_api_log` : null,
   );
+  const serviceLog = useJson<{entries: ServiceLogEntry[]}>(
+    view === 'all' ? `${basePath}/hillpointe/entrata_service_log` : null,
+  );
   const restore = useJson<{rows: RestoreRow[]}>(
     view === 'all' ? `${basePath}/hillpointe/realpage_restore` : null,
   );
@@ -371,6 +382,51 @@ const FridayReportRoot = () => {
                         />
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </Loaded>
+          </div>
+
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>
+              Entrata service log
+              <span className={styles.cardSub}>
+                Recent warnings and errors in service.txt, newest first · server clock
+              </span>
+            </div>
+            <Loaded
+              error={serviceLog.error}
+              ready={!!serviceLog.data}
+              title="Could not load the service log"
+            >
+              <div className={styles.fridayLog}>
+                <table className={styles.timingsTable}>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Level</th>
+                      <th>Source</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(serviceLog.data?.entries ?? []).map((e, i) => {
+                      const text = e.detail ? `${e.message} — ${e.detail}` : e.message;
+                      return (
+                        <tr key={`${e.at}-${i}`}>
+                          <td className={styles.fridayTime}>{e.at}</td>
+                          <StatusCell
+                            look={e.level === 'WARNING' ? STATUS_TAG.EMPTY : STATUS_TAG.FAILED}
+                            label={e.level}
+                          />
+                          <td>{e.logger}</td>
+                          <td className={styles.fridayMessage} title={text}>
+                            {text}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
