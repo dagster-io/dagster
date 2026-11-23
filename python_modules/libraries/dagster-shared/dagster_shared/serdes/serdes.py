@@ -852,29 +852,12 @@ class SetToSequenceFieldSerializer(FieldSerializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
-    compact: bool = False,
     **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
 
     Objects are first converted to a JSON-serializable form with `pack_value`.
-
-    With `compact=True`, the value is written in the compact format of
-    `dagster_shared.serdes.compact`, which stores class and field names once and deduplicates
-    repeated subtrees. Only readers that include compact format support can deserialize it.
     """
-    if compact:
-        check.invariant(not json_kwargs, "json_kwargs are not supported with compact=True")
-        # imported here, since the packer module depends on this one
-        from dagster_shared.serdes.compact_packer import CompactPacker
-
-        packer = CompactPacker(whitelist_map)
-        try:
-            return packer.dumps(packer.pack_root(val))
-        except RecursionError:
-            # The compact encoder recurses more per level of nesting than the legacy one, and
-            # readers accept both formats: fall back to the legacy format for deep values.
-            del packer
     serializable_value = _transform_for_serialization(
         val,
         whitelist_map=whitelist_map,
@@ -882,6 +865,29 @@ def serialize_value(
         descent_path=_root(val),
     )
     return seven.json.dumps(serializable_value, **json_kwargs)
+
+
+def serialize_value_compact(
+    val: PackableValue,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> str:
+    """Serialize an object to a string in the compact format of `dagster_shared.serdes.compact`,
+    which stores class and field names once and deduplicates repeated values.
+
+    `deserialize_value` reads both formats, but readers that predate the compact format can only
+    read values written by `serialize_value`. Values too deeply nested for the compact encoder are
+    written by `serialize_value`.
+    """
+    # imported here, since the packer module depends on this one
+    from dagster_shared.serdes.compact_packer import CompactPacker
+
+    packer = CompactPacker(whitelist_map)
+    try:
+        return packer.dumps(packer.pack_root(val))
+    except RecursionError:
+        # the compact encoder recurses more per level of nesting than the legacy one
+        del packer
+    return serialize_value(val, whitelist_map)
 
 
 @overload

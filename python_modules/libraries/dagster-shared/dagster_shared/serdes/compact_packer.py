@@ -1,6 +1,6 @@
 """Writes serdes values in the compact format of `dagster_shared.serdes.compact` directly.
 
-`serialize_value(val, compact=True)` must produce the same packed value as `pack_value(val)`. Going
+`serialize_value_compact(val)` must write the same packed value as `pack_value(val)`. Going
 through `pack_value` would build a dict per object and then walk the packed value again, so this
 module packs objects straight into the encoder's nodes instead. Serializers that customize packing
 (`pack_items` or `before_pack`) still go through their generic path.

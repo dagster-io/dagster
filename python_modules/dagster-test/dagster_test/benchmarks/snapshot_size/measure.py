@@ -11,7 +11,7 @@ import time
 from collections import Counter
 
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes import deserialize_value, serialize_value, serialize_value_compact
 
 from dagster_test.benchmarks.snapshot_size.large_check_heavy_defs import build_definitions
 
@@ -33,7 +33,7 @@ def main() -> None:
     built = time.perf_counter()
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
     snapped = time.perf_counter()
-    serialized = serialize_value(snap, compact=args.compact)
+    serialized = serialize_value_compact(snap) if args.compact else serialize_value(snap)
     serialized_at = time.perf_counter()
     roundtrip = deserialize_value(serialized, RepositorySnap)
     deserialized_at = time.perf_counter()

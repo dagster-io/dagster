@@ -8,7 +8,7 @@ import dagster as dg
 import pydantic
 import pytest
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes import deserialize_value, serialize_value, serialize_value_compact
 from dagster_shared.serdes.compact import dumps_compact, is_compact_serialized, loads_compact
 from dagster_shared.serdes.errors import DeserializationError, SerializationError
 from dagster_shared.serdes.serdes import (
@@ -74,7 +74,7 @@ def test_object_roundtrip_and_sharing() -> None:
     value = [Node(f"node-{i}", leaf, Leaf([], Color.RED, frozenset())) for i in range(50)]
 
     legacy = dg.serialize_value(value, whitelist_map=test_map)
-    compact = dg.serialize_value(value, whitelist_map=test_map, compact=True)
+    compact = serialize_value_compact(value, whitelist_map=test_map)
     assert len(compact) * 10 < len(legacy)
 
     deserialized = dg.deserialize_value(compact, whitelist_map=test_map)
@@ -109,9 +109,7 @@ def test_unknown_values(dropped_first: bool) -> None:
 
         shared = Removed("shared value that is long enough")
         kept = [shared] if kept_shared else []
-        return dg.serialize_value(
-            Holder(kept=kept, dropped=shared), whitelist_map=new_map, compact=True
-        )
+        return serialize_value_compact(Holder(kept=kept, dropped=shared), whitelist_map=new_map)
 
     old_map = WhitelistMap.create()
 
@@ -149,7 +147,7 @@ def test_repository_snap_roundtrip() -> None:
 
     repo = dg.Definitions(assets=[partitioned, downstream]).get_repository_def()
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
-    compact = serialize_value(snap, compact=True)
+    compact = serialize_value_compact(snap)
     legacy = serialize_value(snap)
     assert deserialize_value(compact, RepositorySnap) == deserialize_value(legacy, RepositorySnap)
     assert json.loads(legacy) == loads_compact(compact, lambda d: d)
@@ -158,7 +156,7 @@ def test_repository_snap_roundtrip() -> None:
 
 def _assert_compact_matches_legacy(value, whitelist_map) -> None:
     legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
-    compact = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
+    compact = serialize_value_compact(value, whitelist_map=whitelist_map)
     assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
     assert dg.deserialize_value(compact, whitelist_map=whitelist_map) == dg.deserialize_value(
         legacy, whitelist_map=whitelist_map
@@ -280,7 +278,7 @@ def test_packer_serialization_errors_have_descent_paths() -> None:
         x: int
 
     with pytest.raises(SerializationError, match=re.escape("Descent path: <root:dict>.a[1]")):
-        dg.serialize_value({"a": [1, NotWhitelisted(1)]}, whitelist_map=test_map, compact=True)
+        serialize_value_compact({"a": [1, NotWhitelisted(1)]}, whitelist_map=test_map)
 
 
 def test_compact_snapshot_of_large_repository() -> None:
@@ -294,7 +292,7 @@ def test_compact_snapshot_of_large_repository() -> None:
     ]
     repo = dg.Definitions(assets=assets).get_repository_def()
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
-    compact = serialize_value(snap, compact=True)
+    compact = serialize_value_compact(snap)
     legacy = serialize_value(snap)
     assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
 
@@ -363,7 +361,7 @@ def test_differential_with_legacy() -> None:
     whitelist_map = WhitelistMap.create()
     for name, value in _differential_cases(whitelist_map).items():
         legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
-        compact = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
+        compact = serialize_value_compact(value, whitelist_map=whitelist_map)
         assert is_compact_serialized(compact), name
         assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy)), name
         from_compact = dg.deserialize_value(compact, whitelist_map=whitelist_map)
@@ -375,7 +373,7 @@ def test_mixed_key_types_raise_like_legacy() -> None:
     with pytest.raises(TypeError):
         dg.serialize_value({1: "x", "1": "y"})
     with pytest.raises(TypeError):
-        dg.serialize_value({1: "x", "1": "y"}, compact=True)
+        serialize_value_compact({1: "x", "1": "y"})
 
 
 def test_legacy_value_is_not_detected_as_compact() -> None:
@@ -386,7 +384,7 @@ def test_legacy_value_is_not_detected_as_compact() -> None:
 
 def test_decoded_containers_are_not_shared() -> None:
     shared = ["a long enough string", "another long string"]
-    decoded = dg.deserialize_value(dg.serialize_value({"a": shared, "b": shared}, compact=True))
+    decoded = dg.deserialize_value(serialize_value_compact({"a": shared, "b": shared}))
     assert decoded == {"a": shared, "b": shared}
     decoded["a"].append("x")
     assert decoded["b"] == shared
@@ -405,21 +403,44 @@ def test_deep_values_round_trip(depth: int) -> None:
         for _ in range(depth):
             value = make(value)
         # deep values fall back to the legacy format, which recurses less
-        serialized = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
+        serialized = serialize_value_compact(value, whitelist_map=whitelist_map)
         assert dg.deserialize_value(serialized, whitelist_map=whitelist_map) == value
 
 
 def test_direct_packer_matches_packing_then_encoding() -> None:
-    """The direct packer of `serialize_value(compact=True)` must write exactly what encoding the
+    """The direct packer of `serialize_value_compact` must write exactly what encoding the
     output of `pack_value` writes, which serves as the reference implementation.
     """
     from dagster_test.benchmarks.snapshot_size.large_check_heavy_defs import build_definitions
 
     repo = build_definitions(num_groups=30).get_repository_def()
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
-    direct = serialize_value(snap, compact=True)
+    direct = serialize_value_compact(snap)
     reference = dumps_compact(pack_value(snap))
     # the class tables may be in different orders, so compare decoded values
     assert _ordered(loads_compact(direct, lambda d: d)) == _ordered(
         loads_compact(reference, lambda d: d)
     )
+
+
+def test_metadata_pack_shallow_matches_pack() -> None:
+    """`FieldSerializer.pack_shallow` must pack to the same value as `pack`."""
+    from dagster._core.definitions.metadata import MetadataFieldSerializer
+    from dagster_shared.serdes.serdes import _WHITELIST_MAP
+
+    metadata = {
+        "text": dg.MetadataValue.text("a"),
+        "json": dg.MetadataValue.json({"b": [1, {"c": None}]}),
+        "url": dg.MetadataValue.url("http://example.com"),
+        "code": dg.CodeReferencesMetadataValue(
+            code_references=[dg.UrlCodeReference(url="http://example.com/a.py")]
+        ),
+    }
+    serializer = MetadataFieldSerializer.get_instance()
+    shallow = serializer.pack_shallow(metadata, _WHITELIST_MAP)
+    assert isinstance(shallow, PackedObjects)
+    expanded = [
+        {"__class__": shallow.class_name, **dict(zip(shallow.field_names, row))}
+        for row in shallow.rows
+    ]
+    assert pack_value(expanded) == serializer.pack(metadata, _WHITELIST_MAP, "")
