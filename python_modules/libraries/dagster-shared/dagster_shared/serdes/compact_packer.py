@@ -16,12 +16,12 @@ Most of the speed comes from two things:
 """
 
 import collections.abc
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import is_dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from dagster_shared.serdes.compact import _DICT_TAG, _LIST_TAG, _Encoder, json_key
+from dagster_shared.serdes.compact import DICT_TAG, LIST_TAG, Encoder, json_scalar, scalar_key
 from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.serdes.serdes import (
     EMPTY_VALUES_TO_SKIP,
@@ -77,7 +77,7 @@ class _Plan(NamedTuple):
     custom_fields: tuple[tuple[int, "FieldSerializer"], ...] | None
 
 
-class CompactPacker(_Encoder):
+class CompactPacker(Encoder):
     def __init__(self, whitelist_map: "WhitelistMap"):
         super().__init__()
         self.whitelist_map = whitelist_map
@@ -86,8 +86,10 @@ class CompactPacker(_Encoder):
         self.scalar_ids = {
             value: self.intern((type(value), value)) for value in (None, True, False)
         }
-        # node ids of enum members, and their types
-        self.known_ids: dict[Any, int] = {}
+        # node ids of the markers of packed sets and frozensets
+        self.set_markers = {set: self.intern("__set__"), frozenset: self.intern("__frozenset__")}
+        # node ids of enum members, by id, and their types
+        self.enum_ids: dict[int, int] = {}
         self.enum_types: set[type] = set()
         # Per serdes object type seen so far: its serializer, or for plain objects that aren't
         # memoized, their class tag (records and NamedTuples) or their class tag and attribute
@@ -103,7 +105,7 @@ class CompactPacker(_Encoder):
 
     def release(self) -> None:
         super().release()
-        self.known_ids = {}
+        self.enum_ids = {}
         self.object_types = {}
         self.memo = {}
         self.memoized = []
@@ -123,15 +125,15 @@ class CompactPacker(_Encoder):
         if tval is str:
             key = val
         elif val is None or tval is bool or tval is int or tval is float:
-            key = (tval, val)
+            key = scalar_key(val)
         elif tval is list or tval is tuple:  # tuples are packed as lists, like `pack_value`
             if not val:
-                key = (_LIST_TAG,)
+                key = (LIST_TAG,)
             elif tval is tuple or len(val) < _MIN_MEMOIZED_LIST_LEN:
                 # short lists and tuples, mostly of already seen strings (e.g. asset key parts)
                 get = self.node_ids.get
                 key = (
-                    _LIST_TAG,
+                    LIST_TAG,
                     *[
                         (get(item) if type(item) is str else None) or self.pack(item)
                         for item in val
@@ -140,7 +142,7 @@ class CompactPacker(_Encoder):
             else:
                 node_id = self.memo.get(id(val))
                 if node_id is None:
-                    node_id = self.memo[id(val)] = self.intern((_LIST_TAG, *self.pack_all(val)))
+                    node_id = self.memo[id(val)] = self.intern((LIST_TAG, *self.pack_all(val)))
                     self.memoized.append(val)
                 return node_id
         else:
@@ -167,7 +169,7 @@ class CompactPacker(_Encoder):
             elif serializer is not None:
                 return self._pack_memoized_object(val, tval, serializer)
             else:
-                node_id = self.known_ids.get(val) if tval in self.enum_types else None
+                node_id = self.enum_ids.get(id(val)) if tval in self.enum_types else None
                 return self._pack_other(val, tval) if node_id is None else node_id
         # inlined `intern`, since this is the hottest path
         node_ids = self.node_ids
@@ -233,10 +235,17 @@ class CompactPacker(_Encoder):
         """Pack a value that isn't a scalar, list, tuple, or known serdes object type."""
         whitelist_map = self.whitelist_map
         if tval is dict:
-            return self._pack_dict_items(val.items(), self.pack)
+            return self._pack_dict_items(list(val.items()), self.pack)
+        if tval is set or tval is frozenset:
+            # sorted by `str` like `pack_value`, which is plain sorting for sets of strings
+            items = sorted(val) if set(map(type, val)) <= _STR_TYPES else sorted(val, key=str)
+            marker = self.set_markers[tval]
+            return self.intern((DICT_TAG, marker, self.intern((LIST_TAG, *self.pack_all(items)))))
         if isinstance(val, Enum):
             node_id = self.add(_transform_for_serialization(val, whitelist_map, _pack_object, ""))
-            self.known_ids[val] = node_id
+            # enum members are singletons, so they are memoized by identity: members of different
+            # enums can be equal, e.g. with a str mixin
+            self.enum_ids[id(val)] = node_id
             self.enum_types.add(tval)
             return node_id
         if tval is SerializableNonScalarKeyMapping:
@@ -257,30 +266,37 @@ class CompactPacker(_Encoder):
             return self.pack(val)
         if isinstance(val, (set, frozenset)):
             marker = "__set__" if isinstance(val, set) else "__frozenset__"
-            items = self.intern((_LIST_TAG, *self.pack_all(sorted(list(val), key=str))))
-            return self.intern((_DICT_TAG, self.intern(marker), items))
-        if isinstance(val, str):
-            return self.intern(str(val))
+            items = self.intern((LIST_TAG, *self.pack_all(sorted(list(val), key=str))))
+            return self.intern((DICT_TAG, self.intern(marker), items))
+        if isinstance(val, (str, int, float)):
+            # subclasses of JSON scalars, which `json.dumps` writes as their plain value
+            return self.add(json_scalar(val))
         if isinstance(val, collections.abc.Mapping):
-            return self._pack_dict_items(val.items(), self.pack)
+            return self._pack_dict_items(list(val.items()), self.pack)
         if isinstance(val, collections.abc.Sequence):
-            return self.intern((_LIST_TAG, *self.pack_all(list(val))))
+            return self.intern((LIST_TAG, *self.pack_all(list(val))))
         raise SerializationError(f"Unhandled value type {tval}")
 
-    def _pack_dict_items(self, items: Any, pack_value: Any) -> int:
-        """Pack a dict that isn't a serdes object. Keys are converted like `json.dumps` does."""
+    def _pack_dict_items(self, items: Any, pack_value: Callable[[Any], int]) -> int:
+        """Pack a dict that isn't a serdes object, e.g. tags."""
+        keys = [key for key, _ in items]
+        if set(map(type, keys)) - _STR_TYPES or keys != sorted(keys):
+            # keys that must be converted or sorted, like the legacy format does
+            return self.add_dict_items(items, pack_value)
+        # Most dicts have str keys that are already sorted: pack keys and values without a call
+        # when they were already seen.
         get = self.node_ids.get
         intern = self.intern
         scalar_ids = self.scalar_ids
         children = []
         for key, value in items:
-            children.append((get(key) if type(key) is str else None) or intern(json_key(key)))
+            children.append(get(key) or intern(key))
             children.append(
                 scalar_ids[value]
                 if value is None or value is True or value is False
                 else (get(value) if type(value) is str else None) or pack_value(value)
             )
-        return intern((_DICT_TAG, *children))
+        return intern((DICT_TAG, *children))
 
     def pack_packed(self, val: Any) -> int:
         """Pack the result of `FieldSerializer.pack_shallow`: a value that may be partially packed
@@ -296,7 +312,7 @@ class CompactPacker(_Encoder):
             pack = self.pack
             return intern(
                 (
-                    _LIST_TAG,
+                    LIST_TAG,
                     *[
                         intern(
                             (
@@ -315,14 +331,14 @@ class CompactPacker(_Encoder):
             )
         if tval is list:
             if not any(type(item) in _CONTAINER_TYPES for item in val):
-                return self.intern((_LIST_TAG, *self.pack_all(val)))
+                return self.intern((LIST_TAG, *self.pack_all(val)))
             pack_packed = self.pack_packed
-            return self.intern((_LIST_TAG, *[pack_packed(item) for item in val]))
+            return self.intern((LIST_TAG, *[pack_packed(item) for item in val]))
         if tval is not dict:
             return self.pack(val)
         class_name = val.get("__class__")
         if type(class_name) is not str:
-            return self._pack_dict_items(val.items(), self.pack_packed)
+            return self._pack_dict_items(list(val.items()), self.pack_packed)
         keys = tuple(val)
         tag = self.packed_class_tags.get((class_name, keys))
         if tag is None:

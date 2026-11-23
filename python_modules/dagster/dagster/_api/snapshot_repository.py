@@ -9,6 +9,9 @@ from dagster._core.remote_representation.external_data import RepositoryErrorSna
 from dagster._serdes import deserialize_value
 from dagster._utils.error import SerializableErrorInfo
 
+# Set to request repository snapshots in the legacy format instead of the compact one.
+DISABLE_COMPACT_SNAPSHOTS_ENV_VAR = "DAGSTER_DISABLE_COMPACT_REPOSITORY_SNAPSHOTS"
+
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
     from dagster._core.snap import JobSnap
@@ -40,7 +43,9 @@ def sync_get_external_repositories_data_grpc(
                     repository_name,
                 ),
                 defer_snapshots=defer_snapshots,
-                compact_serdes=True,
+                # Servers that don't support the compact format ignore this and reply in the
+                # legacy format, which is still read.
+                compact_serdes=not os.getenv(DISABLE_COMPACT_SNAPSHOTS_ENV_VAR),
             ),
             (RepositorySnap, RepositoryErrorSnap),
         )

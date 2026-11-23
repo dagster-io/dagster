@@ -1,5 +1,5 @@
 # ruff: noqa: T201
-"""Measure the serialized repository snapshot of the posttrain-like mock definitions.
+"""Measure the serialized repository snapshot of large, check-heavy mock definitions.
 
 Usage: python -m dagster_test.benchmarks.snapshot_size.measure [--compact] [--out snapshot.json]
 """
@@ -13,7 +13,7 @@ from collections import Counter
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import deserialize_value, serialize_value
 
-from dagster_test.benchmarks.snapshot_size.posttrain_like_defs import build_definitions
+from dagster_test.benchmarks.snapshot_size.large_check_heavy_defs import build_definitions
 
 
 def _size(value) -> int:

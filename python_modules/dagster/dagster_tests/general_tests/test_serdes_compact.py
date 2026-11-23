@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import re
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Any, NamedTuple
 
 import dagster as dg
@@ -13,6 +13,7 @@ from dagster_shared.serdes.compact import dumps_compact, is_compact_serialized, 
 from dagster_shared.serdes.errors import DeserializationError, SerializationError
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
+    NamedTupleSerializer,
     PackedObjects,
     WhitelistMap,
     _whitelist_for_serdes,
@@ -46,8 +47,8 @@ def test_packed_roundtrip(value) -> None:
     assert is_compact_serialized(serialized)
     assert loads_compact(serialized, lambda d: d) == value
     assert loads_compact(serialized, lambda d: d, expand=True) == value
-    # numbers keep their type
-    assert json.dumps(loads_compact(serialized, lambda d: d)) == json.dumps(value)
+    # numbers keep their type, and dict keys are sorted like the legacy format writes them
+    assert json.dumps(loads_compact(serialized, lambda d: d)) == json.dumps(value, sort_keys=True)
 
 
 def test_object_roundtrip_and_sharing() -> None:
@@ -158,7 +159,7 @@ def test_repository_snap_roundtrip() -> None:
 def _assert_compact_matches_legacy(value, whitelist_map) -> None:
     legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
     compact = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
-    assert loads_compact(compact, lambda d: d) == json.loads(legacy)
+    assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
     assert dg.deserialize_value(compact, whitelist_map=whitelist_map) == dg.deserialize_value(
         legacy, whitelist_map=whitelist_map
     )
@@ -295,4 +296,130 @@ def test_compact_snapshot_of_large_repository() -> None:
     snap = RepositorySnap.from_def(repo, defer_snapshots=True)
     compact = serialize_value(snap, compact=True)
     legacy = serialize_value(snap)
-    assert loads_compact(compact, lambda d: d) == json.loads(legacy)
+    assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
+
+
+class _StrWithStr(str):
+    def __str__(self) -> str:
+        return "overridden"
+
+
+def _ordered(value: Any) -> Any:
+    """A comparable form of a packed value, that keeps the key order of dicts, except for the fields
+    of serdes objects, whose order doesn't matter since objects are constructed from keyword
+    arguments.
+    """
+    if type(value) is dict:
+        items = sorted(value.items()) if "__class__" in value else value.items()
+        return [[key, _ordered(item)] for key, item in items]
+    if type(value) is list:
+        return [_ordered(item) for item in value]
+    return value
+
+
+def _differential_cases(whitelist_map: WhitelistMap) -> dict[str, Any]:
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class StrEnumA(str, Enum):
+        X = "X"
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class StrEnumB(str, Enum):
+        X = "X"
+
+    class Plain(IntEnum):
+        ONE = 1
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class Box(NamedTuple):
+        value: Any
+
+    class TupleYieldingSerializer(NamedTupleSerializer):
+        def pack_items(self, *args, **kwargs):
+            for key, value in super().pack_items(*args, **kwargs):
+                yield key, (tuple(value) if isinstance(value, list) else value)
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map, serializer=TupleYieldingSerializer)
+    class Custom(NamedTuple):
+        items: list
+        name: str
+
+    return {
+        "dict key order": {"b": 1, "a": 2, "c": {"z": 1, "y": 2}},
+        "equal enums of different types": [StrEnumA.X, StrEnumB.X, StrEnumA.X],
+        "enum and str subclass dict keys": {StrEnumA.X: 1, _StrWithStr("k"): 3},
+        "int enum dict keys": {Plain.ONE: 2, 3: 4},
+        "str subclass value": [_StrWithStr("abc"), Box(_StrWithStr("abc"))],
+        "signed zeros": [0.0, -0.0, Box(-0.0), Box(0.0)],
+        "special floats": [float("inf"), float("-inf"), 1e300, 1e-320],
+        "bool vs int vs float": [True, 1, 1.0, False, 0, 0.0],
+        "custom pack_items yielding tuples and str subclasses": Custom(
+            items=[1, _StrWithStr("x")], name=_StrWithStr("n")
+        ),
+        "legacy-looking dict": {"__compact_serdes__": 1, "a": 2},
+    }
+
+
+def test_differential_with_legacy() -> None:
+    whitelist_map = WhitelistMap.create()
+    for name, value in _differential_cases(whitelist_map).items():
+        legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
+        compact = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
+        assert is_compact_serialized(compact), name
+        assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy)), name
+        from_compact = dg.deserialize_value(compact, whitelist_map=whitelist_map)
+        from_legacy = dg.deserialize_value(legacy, whitelist_map=whitelist_map)
+        assert repr(from_compact) == repr(from_legacy), name
+
+
+def test_mixed_key_types_raise_like_legacy() -> None:
+    with pytest.raises(TypeError):
+        dg.serialize_value({1: "x", "1": "y"})
+    with pytest.raises(TypeError):
+        dg.serialize_value({1: "x", "1": "y"}, compact=True)
+
+
+def test_legacy_value_is_not_detected_as_compact() -> None:
+    legacy = dg.serialize_value({"__compact_serdes__": 1, "a": 2})
+    assert not is_compact_serialized(legacy)
+    assert dg.deserialize_value(legacy) == {"__compact_serdes__": 1, "a": 2}
+
+
+def test_decoded_containers_are_not_shared() -> None:
+    shared = ["a long enough string", "another long string"]
+    decoded = dg.deserialize_value(dg.serialize_value({"a": shared, "b": shared}, compact=True))
+    assert decoded == {"a": shared, "b": shared}
+    decoded["a"].append("x")
+    assert decoded["b"] == shared
+
+
+@pytest.mark.parametrize("depth", [50, 200, 400, 900])
+def test_deep_values_round_trip(depth: int) -> None:
+    whitelist_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class Node(NamedTuple):
+        child: Any
+
+    for make in (Node, lambda value: {"child": value}):
+        value: Any = "leaf"
+        for _ in range(depth):
+            value = make(value)
+        # deep values fall back to the legacy format, which recurses less
+        serialized = dg.serialize_value(value, whitelist_map=whitelist_map, compact=True)
+        assert dg.deserialize_value(serialized, whitelist_map=whitelist_map) == value
+
+
+def test_direct_packer_matches_packing_then_encoding() -> None:
+    """The direct packer of `serialize_value(compact=True)` must write exactly what encoding the
+    output of `pack_value` writes, which serves as the reference implementation.
+    """
+    from dagster_test.benchmarks.snapshot_size.large_check_heavy_defs import build_definitions
+
+    repo = build_definitions(num_groups=30).get_repository_def()
+    snap = RepositorySnap.from_def(repo, defer_snapshots=True)
+    direct = serialize_value(snap, compact=True)
+    reference = dumps_compact(pack_value(snap))
+    # the class tables may be in different orders, so compare decoded values
+    assert _ordered(loads_compact(direct, lambda d: d)) == _ordered(
+        loads_compact(reference, lambda d: d)
+    )

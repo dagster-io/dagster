@@ -1,8 +1,8 @@
-"""Mock definitions shaped like a large, check-heavy, partitioned production code location.
+"""Mock definitions shaped like a large, check-heavy, partitioned code location.
 
-The shape is calibrated against an anonymized real code location (~7.9k assets, ~57k asset
-checks, ~1.8k statically partitioned assets) so that the size of its repository snapshot can be
-measured and optimized:
+The shape follows a large production code location (~7.9k assets, ~57k asset checks, ~1.8k
+statically partitioned assets), so that the size and serialization cost of its repository snapshot
+can be measured:
 
 * assets are produced by multi-assets grouped in ~350 groups, with 4-element asset keys;
 * ~24% of assets are statically partitioned, with heavy-tailed partition counts (median ~23,
@@ -34,7 +34,7 @@ CHECK_DESCRIPTIONS = [
     "Passes when at most 5.00% of judged rows failed to evaluate.",
     "More than the configured fraction of terminal episodes must finish successfully.",
 ]
-RESOURCE_KEYS = ["io_manager", "spark", "artifacts_storage", "orchestral", "litellm"]
+RESOURCE_KEYS = ["io_manager", "warehouse", "object_store", "scheduler", "llm"]
 STAGES = ["instances", "generate", "checks", "judges", "lang", "quality", "export"]
 CONFIG_FLAGS = [
     "flagging_mode",
@@ -96,19 +96,19 @@ def _metadata(rng: random.Random, key: dg.AssetKey, group: str, checked: bool) -
         "dagster/code_references": dg.CodeReferencesMetadataValue(
             code_references=[
                 dg.UrlCodeReference(
-                    url=f"https://github.com/example-org/monorepo/tree/687ddc3c94c79826714d0096d5691ac8fc91741a/data/projects/science/posttrain/defs/{group}/defs.yaml#L{rng.randint(1, 400)}"
+                    url=f"https://github.com/example-org/monorepo/tree/687ddc3c94c79826714d0096d5691ac8fc91741a/projects/datasets/defs/{group}/defs.yaml#L{rng.randint(1, 400)}"
                 )
             ]
         ),
         "dagster/uri": dg.MetadataValue.url(f"http://go/s/prod.{path.replace('/', '.')}"),
         "dagster/component_origin": dg.MetadataValue.text(
-            rng.choice(["DataHunterDatasets", "SFTTrainingDatasets", "JsonlDatasets"])
+            rng.choice(["QualityCheckedDatasets", "TrainingDatasets", "JsonlDatasets"])
         ),
-        "pyspark/cluster": dg.MetadataValue.text("spark-connect-posttrain"),
+        "pyspark/cluster": dg.MetadataValue.text("spark-connect-datasets"),
         "example.ai/jsonl-row-model": dg.MetadataValue.text("example.schemas.ConversationRow"),
     }
     if rng.random() < 0.25:
-        metadata["dagstral/iceberg/storage_partition_contract"] = dg.MetadataValue.json(
+        metadata["example/iceberg/storage_partition_contract"] = dg.MetadataValue.json(
             {
                 "dimensions": [{"name": "partition", "storage_field": "partition"}],
                 "physical_fields": {
@@ -119,10 +119,10 @@ def _metadata(rng: random.Random, key: dg.AssetKey, group: str, checked: bool) -
         )
     if checked:
         for flag in CONFIG_FLAGS:
-            metadata[f"example.ai/data-hunter-config/{flag}"] = dg.MetadataValue.text(
+            metadata[f"example.ai/quality-config/{flag}"] = dg.MetadataValue.text(
                 rng.choice(["default", "strict", "none", "0.05"])
             )
-        metadata["example.ai/data-hunter-config/reexport_checks"] = dg.MetadataValue.json(
+        metadata["example.ai/quality-config/reexport_checks"] = dg.MetadataValue.json(
             sorted(rng.sample(CHECK_VOCABULARY, 8))
         )
     return metadata
@@ -137,7 +137,7 @@ def _make_multi_asset(
     partitions_def: dg.PartitionsDefinition | None,
     checked: set[dg.AssetKey],
 ):
-    owner = rng.choice(["team:posttrain", "team:safety", "team:cyber"])
+    owner = rng.choice(["team:datasets", "team:evals", "team:platform"])
     specs = [
         dg.AssetSpec(
             key=key,
@@ -150,7 +150,7 @@ def _make_multi_asset(
             ),
             metadata=_metadata(rng, key, group, key in checked),
             tags={
-                "component": "DataHunterDatasets",
+                "component": "QualityCheckedDatasets",
                 "dagster/kind/jsonl": "",
                 "dagster/kind/spark": "",
                 "example.ai/managed-by": "example",
@@ -188,19 +188,19 @@ def _make_multi_asset(
     return _compute
 
 
-def build_definitions(seed: int = 0) -> dg.Definitions:
+def build_definitions(seed: int = 0, num_groups: int = NUM_GROUPS) -> dg.Definitions:
     warnings.filterwarnings("ignore", category=dg.BetaWarning)
     warnings.filterwarnings("ignore", category=dg.PreviewWarning)
     rng = random.Random(seed)
     assets = []
     jobs = []
-    for group_index in range(NUM_GROUPS):
+    for group_index in range(num_groups):
         top = f"top_{group_index % NUM_TOP_GROUPS:02d}"
         group = f"{top}/{1100 + group_index}_run/variant_{group_index}"
         partitions_def = (
             _partitions_def(rng, group) if rng.random() < PARTITIONED_GROUP_FRACTION else None
         )
-        prefix = ["posttrain", top, f"run_{group_index:04d}"]
+        prefix = ["datasets", top, f"run_{group_index:04d}"]
         keys = [
             dg.AssetKey([*prefix, f"{rng.choice(STAGES)}_{i:02d}"]) for i in range(ASSETS_PER_GROUP)
         ]

@@ -23,9 +23,11 @@ The envelope is a JSON object `{"__compact_serdes__": 1, "classes": [...], "tabl
 * `[3 + i, field_value, ...]`: a serdes object of class `classes[i]`, whose entry is
   `[class_name, [field_name, ...]]`.
 
-Decoding produces exactly the packed value of the legacy format and unpacks it with the same
-object hook, so readers keep their backcompat behavior. Decoded table entries are reused at every
-reference, so equal subtrees deserialize to the same Python object.
+Decoding produces the same packed value as the legacy format, including the key order of dicts
+(sorted, as the legacy format writes with `sort_keys=True`), and unpacks it with the same object
+hook, so readers keep their backcompat behavior. Decoded serdes objects and other immutable values
+are reused at every reference, so equal subtrees deserialize to the same Python object; lists and
+dicts are decoded separately at each reference, so they are never shared.
 """
 
 import json
@@ -35,11 +37,13 @@ from typing import Any
 
 COMPACT_SERDES_KEY = "__compact_serdes__"
 COMPACT_SERDES_VERSION = 1
-COMPACT_SERDES_PREFIX = '{"' + COMPACT_SERDES_KEY + '":'
+# The compact format is always written without whitespace, unlike the legacy format, so this prefix
+# can't match a legacy value.
+COMPACT_SERDES_PREFIX = f'{{"{COMPACT_SERDES_KEY}":{COMPACT_SERDES_VERSION},"classes":'
 
 _NUMBER_TAG = 0
-_LIST_TAG = 1
-_DICT_TAG = 2
+LIST_TAG = 1
+DICT_TAG = 2
 _FIRST_CLASS_TAG = 3
 
 # Strings shorter than this are repeated inline rather than referenced, since a reference would not
@@ -52,29 +56,60 @@ _MIN_STREAMED_CHILDREN = 1000
 _MAX_STREAMED_DEPTH = 4
 
 
+def json_scalar(value: Any) -> Any:
+    """Convert a scalar to the exact type `json.loads(json.dumps(value))` would return, e.g. a str
+    or int subclass (such as a str or int enum) to its plain value.
+    """
+    if isinstance(value, str):
+        return str.__str__(value)
+    if isinstance(value, bool):
+        return bool(value)
+    if isinstance(value, int):
+        return int(value)
+    if isinstance(value, float):
+        return float(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
 def json_key(key: Any) -> str:
     """Convert a dict key the way `json.dumps` does, so that decoded dicts match the legacy format."""
     if type(key) is str:
         return key
-    if key is None or type(key) in (bool, int, float):
-        return json.dumps(key)
     if isinstance(key, str):
-        return str(key)
+        return str.__str__(key)
+    if key is None or isinstance(key, (int, float)):
+        return json.dumps(json_scalar(key) if key is not None else None)
     raise TypeError(f"keys must be str, int, float, bool or None, not {type(key).__name__}")
+
+
+def scalar_key(value: Any) -> tuple[type, Any]:
+    """Node key of a non-str JSON scalar. Floats are keyed by their text, so that equal but distinct
+    values (`0.0` and `-0.0`) aren't merged.
+    """
+    tval = type(value)
+    return (tval, repr(value)) if tval is float else (tval, value)
+
+
+# Marks decoded table entries that are mutable, so not shared between references.
+_MUTABLE = object()
+
+
+def _first(item: tuple[Any, Any]) -> Any:
+    return item[0]
 
 
 def is_compact_serialized(value: str) -> bool:
     return value.startswith(COMPACT_SERDES_PREFIX)
 
 
-class _Encoder:
+class Encoder:
     """Builds the compact encoding of a value.
 
     Values are hash-consed into nodes: equal subtrees get the same node id. A node is identified by
     its key, which is also what `dumps` writes:
 
     * a `str` for strings;
-    * `(type, value)` for other scalars;
+    * `(type, value)` for other scalars (see `scalar_key`);
     * `(tag, *child_node_ids)` for lists, dicts and serdes objects, using the tags of the format.
 
     Children always get lower ids than their parents, so the nodes are in topological order.
@@ -104,12 +139,14 @@ class _Encoder:
         return _FIRST_CLASS_TAG + class_id
 
     def add(self, value: Any) -> int:
-        """Add a packed (JSON-serializable) value."""
+        """Add a packed (JSON-serializable) value. Accepts what `json.dumps` accepts in a packed
+        value: subclasses of JSON types, and tuples as lists.
+        """
         tval = type(value)
         if tval is str:
             return self.intern(value)
-        if tval is list:
-            return self.intern((_LIST_TAG, *[self.add(item) for item in value]))
+        if tval is list or tval is tuple:
+            return self.intern((LIST_TAG, *[self.add(item) for item in value]))
         if tval is dict:
             class_name = value.get("__class__")
             if type(class_name) is str:
@@ -117,19 +154,35 @@ class _Encoder:
                 return self.intern(
                     (tag, *[self.add(v) for k, v in value.items() if k != "__class__"])
                 )
-            return self.intern(
-                (
-                    _DICT_TAG,
-                    *[
-                        node_id
-                        for k, v in value.items()
-                        for node_id in (self.intern(json_key(k)), self.add(v))
-                    ],
-                )
-            )
+            return self.add_dict_items(value.items(), self.add)
         if value is None or tval is bool or tval is int or tval is float:
-            return self.intern((tval, value))
-        raise TypeError(f"Unexpected packed value type {tval}")
+            return self.intern(scalar_key(value))
+        if isinstance(value, (list, tuple, dict)):
+            return self.add(
+                dict(value) if isinstance(value, dict) else list(value)  # ty: ignore[no-matching-overload]
+            )
+        value = json_scalar(value)
+        return self.intern(value if type(value) is str else scalar_key(value))
+
+    def add_dict_items(self, items: Any, add_value: Callable[[Any], int]) -> int:
+        """Add a dict that isn't a serdes object, given its items and how to add each value.
+
+        Keys are converted like `json.dumps` does, and sorted like the legacy format (which writes
+        with `sort_keys=True`), so that decoded dicts have the same key order.
+        """
+        # Sorting the original keys raises on mixed key types, like the legacy format does.
+        converted = [(json_key(key), value) for key, value in sorted(items, key=_first)]
+        intern = self.intern
+        return intern(
+            (
+                DICT_TAG,
+                *[
+                    node_id
+                    for key, value in converted
+                    for node_id in (intern(key), add_value(value))
+                ],
+            )
+        )
 
     def release(self) -> None:
         """Free the state only needed to add values, before writing."""
@@ -190,7 +243,8 @@ class _Encoder:
                     table.append(text)
                     text = str(len(table) - 1)
             else:
-                text = json.dumps(key[1])
+                # non-str scalar: `(type, value)`, with floats as their repr (see `scalar_key`)
+                text = json.dumps(float(key[1]) if key[0] is float else key[1])
                 if key[0] is int or key[0] is float:
                     text = f"[{_NUMBER_TAG},{text}]"
             texts[node_id] = text
@@ -258,7 +312,7 @@ class _Encoder:
 
 def dumps_compact(packed_value: Any) -> str:
     """Write a packed (JSON-serializable) value in the compact format."""
-    encoder = _Encoder()
+    encoder = Encoder()
     return encoder.dumps(encoder.add(packed_value))
 
 
@@ -282,7 +336,10 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
     def decode(encoded: Any) -> Any:
         tval = type(encoded)
         if tval is int:
-            return decode(table[encoded]) if expand else decoded[encoded]
+            if expand:
+                return decode(table[encoded])
+            value = decoded[encoded]
+            return decode(table[encoded]) if value is _MUTABLE else value
         if tval is not list:
             return encoded
         tag = encoded[0]
@@ -292,9 +349,9 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
             for field, item in zip(fields, encoded[1:]):
                 obj[field] = decode(item)
             return object_hook(obj)
-        if tag == _LIST_TAG:
+        if tag == LIST_TAG:
             return [decode(item) for item in encoded[1:]]
-        if tag == _DICT_TAG:
+        if tag == DICT_TAG:
             items = encoded[1:]
             return object_hook(
                 {decode(items[i]): decode(items[i + 1]) for i in range(0, len(items), 2)}
@@ -304,7 +361,11 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
         raise ValueError(f"Unexpected compact serdes tag {tag}")
 
     if not expand:
-        # entries only reference earlier entries, so each one can be decoded once in order
+        # Entries only reference earlier entries, so each one can be decoded once in order.
+        # Mutable lists and dicts must not be shared between references: their table entries are
+        # decoded again at each reference.
         for entry in table:
-            decoded.append(decode(entry))  # noqa: PERF401
-    return decode(envelope["root"])
+            value = decode(entry)
+            decoded.append(_MUTABLE if type(value) in (list, dict) else value)
+    root = decode(envelope["root"])
+    return root

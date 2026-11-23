@@ -15,7 +15,6 @@ Why not pickle?
 
 import collections.abc
 import dataclasses
-import gc
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import is_dataclass
@@ -866,19 +865,16 @@ def serialize_value(
     """
     if compact:
         check.invariant(not json_kwargs, "json_kwargs are not supported with compact=True")
-        # Encoding allocates many small tuples that can't form reference cycles, so pause the
-        # cyclic garbage collector rather than have it repeatedly scan them.
-        gc_was_enabled = gc.isenabled()
-        gc.disable()
-        try:
-            # imported here, since the packer module depends on this one
-            from dagster_shared.serdes.compact_packer import CompactPacker
+        # imported here, since the packer module depends on this one
+        from dagster_shared.serdes.compact_packer import CompactPacker
 
-            packer = CompactPacker(whitelist_map)
+        packer = CompactPacker(whitelist_map)
+        try:
             return packer.dumps(packer.pack_root(val))
-        finally:
-            if gc_was_enabled:
-                gc.enable()
+        except RecursionError:
+            # The compact encoder recurses more per level of nesting than the legacy one, and
+            # readers accept both formats: fall back to the legacy format for deep values.
+            del packer
     serializable_value = _transform_for_serialization(
         val,
         whitelist_map=whitelist_map,
