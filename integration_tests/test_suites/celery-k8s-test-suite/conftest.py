@@ -22,8 +22,9 @@ pytest_plugins = ["dagster_k8s_test_infra.helm"]
 # saturate Docker Hub's anonymous rate limit.
 cluster_provider = define_cluster_provider_fixture(
     additional_kind_images=[
+        "docker.io/busybox:1.37.0",
         "docker.io/bitnamilegacy/rabbitmq:3.8.12",
-        "docker.io/library/postgres:14.6",
+        "docker.io/library/postgres:14.25",
         "docker.io/bitnamilegacy/redis:6.0.16",
         f"docker.io/{LOCALSTACK_IMAGE}",
     ]
