@@ -3,6 +3,8 @@ from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
+from dagster_shared.utils import get_boolean_string_value
+
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external_data import RepositoryErrorSnap, RepositorySnap
@@ -45,7 +47,9 @@ def sync_get_external_repositories_data_grpc(
                 defer_snapshots=defer_snapshots,
                 # Servers that don't support the compact format ignore this and reply in the
                 # legacy format, which is still read.
-                compact_serdes=not os.getenv(DISABLE_COMPACT_SNAPSHOTS_ENV_VAR),
+                compact_serdes=not get_boolean_string_value(
+                    os.getenv(DISABLE_COMPACT_SNAPSHOTS_ENV_VAR, "")
+                ),
             ),
             (RepositorySnap, RepositoryErrorSnap),
         )

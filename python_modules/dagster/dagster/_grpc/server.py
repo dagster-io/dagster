@@ -1096,7 +1096,14 @@ class DagsterApiServer(DagsterApiServicer):
                 defer_snapshots=request.defer_snapshots,
             )
             if request.compact_serdes:
-                return serialize_value_compact(repository_snap)
+                try:
+                    return serialize_value_compact(repository_snap)
+                except Exception:
+                    # The legacy format is always readable, so don't fail the code location.
+                    self._logger.exception(
+                        "Error serializing repository snapshot in the compact format, using the"
+                        " legacy format instead"
+                    )
             return serialize_value(repository_snap)
         except Exception:
             _maybe_log_exception(self._logger, "Repository")
