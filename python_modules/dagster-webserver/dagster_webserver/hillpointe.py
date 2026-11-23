@@ -58,7 +58,8 @@ ORDER BY id DESC
 _REALPAGE_SQL = """
 SELECT
     j.name AS JobName,
-    msdb.dbo.agent_datetime(h.run_date, h.run_time) AS RunDateTime,
+    h.run_date,
+    h.run_time,
     CASE h.run_status
         WHEN 0 THEN 'Failed'
         WHEN 1 THEN 'Succeeded'
@@ -74,7 +75,7 @@ ORDER BY h.run_date DESC, h.run_time DESC
 
 # The Entrata API service's own log file. Only its tail is read: the file is tens of MB.
 SERVICE_LOG_PATH = os.environ.get(
-    "HILLPOINTE_ENTRATA_SERVICE_LOG", r"D:\Projects\EntrataBoxScoreAPI\service.txt"
+    "HILLPOINTE_ENTRATA_SERVICE_LOG", r"D:\Projects\EntrataBoxScoreAPI\service.log"
 )
 SERVICE_LOG_TAIL_BYTES = 4_000_000
 _SERVICE_LOG_LINE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),\d+ \[(\w+)\] ([\w.]+): (.*)")
@@ -225,12 +226,19 @@ async def realpage_restore_endpoint(request: Request) -> JSONResponse:
     except Exception as exc:
         return JSONResponse({"error": f"Could not read the SQL Agent history: {exc}"}, 502)
 
-    # agent_datetime is the SQL Server's local clock, so it is passed through as-is.
+    # run_date (YYYYMMDD) and run_time (HHMMSS) are integers on the SQL Server's local
+    # clock, so they are passed through as-is.
     return JSONResponse(
         {
             "rows": [
-                {"job": job, "runAt": run_at.isoformat() if run_at else None, "status": status}
-                for job, run_at, status in rows
+                {
+                    "job": job,
+                    "runAt": datetime.strptime(
+                        f"{run_date}{run_time:06d}", "%Y%m%d%H%M%S"
+                    ).isoformat(),
+                    "status": status,
+                }
+                for job, run_date, run_time, status in rows
             ]
         }
     )

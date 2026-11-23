@@ -392,7 +392,7 @@ const FridayReportRoot = () => {
             <div className={styles.cardTitle}>
               Entrata service log
               <span className={styles.cardSub}>
-                Recent warnings and errors in service.txt, newest first · server clock
+                Recent warnings and errors in service.log, newest first · server clock
               </span>
             </div>
             <Loaded
