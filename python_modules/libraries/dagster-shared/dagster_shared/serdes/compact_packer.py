@@ -15,12 +15,14 @@ Most of the speed comes from two things:
   can't be reused while encoding.
 """
 
+import collections
 import collections.abc
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import is_dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from dagster_shared.check.record import is_record
 from dagster_shared.serdes.compact import DICT_TAG, LIST_TAG, Encoder, json_scalar, scalar_key
 from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.serdes.serdes import (
@@ -53,6 +55,16 @@ _MEMO_OFF = 0
 
 _STR_TYPES = {str}
 _CONTAINER_TYPES = {list, dict}
+
+
+# The `_asdict` method that `collections.namedtuple` generates: every class has its own function
+# object, but they share their code.
+_DEFAULT_ASDICT_CODE = collections.namedtuple("_Example", "x")._asdict.__code__
+
+
+def _has_default_asdict(klass: type) -> bool:
+    asdict = getattr(klass, "_asdict", None)
+    return getattr(asdict, "__code__", None) is _DEFAULT_ASDICT_CODE
 
 
 class _Plan(NamedTuple):
@@ -374,8 +386,11 @@ class CompactPacker(Encoder):
             return None
         tuple_field_names = None
         attribute_names = None
-        if klass.object_as_mapping is NamedTupleSerializer.object_as_mapping and issubclass(
-            serializer.klass, tuple
+        if (
+            klass.object_as_mapping is NamedTupleSerializer.object_as_mapping
+            and issubclass(serializer.klass, tuple)
+            # `object_as_mapping` uses `_asdict` for NamedTuples, which the class could override
+            and (is_record(serializer.klass) or _has_default_asdict(serializer.klass))
         ):
             # `object_as_mapping` maps the fields of records and NamedTuples to their values, with
             # record fields renamed by `__field_remap__`.

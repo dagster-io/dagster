@@ -24,21 +24,27 @@ The envelope is a JSON object `{"__compact_serdes__": 1, "classes": [...], "tabl
   `[class_name, [field_name, ...]]`.
 
 Decoding produces the same packed value as the legacy format, including the key order of dicts
-(sorted, as the legacy format writes with `sort_keys=True`), and unpacks it with the same object
-hook, so readers keep their backcompat behavior. Decoded serdes objects and other immutable values
-are reused at every reference, so equal subtrees deserialize to the same Python object; lists and
-dicts are decoded separately at each reference, so they are never shared.
+and serdes objects (sorted, as the legacy format writes with `sort_keys=True`), and unpacks it with
+the same object hook, so readers keep their backcompat behavior.
+
+Unlike the legacy format, decoding shares deeply immutable values: a table entry that deserializes
+to a scalar, an enum, or a tuple (including NamedTuples and records) or frozenset of deeply
+immutable values is reused at every reference, so equal subtrees deserialize to the same Python
+object. Other values, such as lists, dicts, sets, dataclasses and records with a list or dict field,
+are decoded again at each reference, so mutating a deserialized value never changes another one.
 """
 
 import json
 from collections.abc import Callable, Sequence
+from enum import Enum
 from json.encoder import encode_basestring_ascii  # type: ignore
 from typing import Any
 
 COMPACT_SERDES_KEY = "__compact_serdes__"
 COMPACT_SERDES_VERSION = 1
-# The compact format is always written without whitespace, unlike the legacy format, so this prefix
-# can't match a legacy value.
+# The compact format is written without whitespace and the legacy format with it, so this prefix
+# only matches a legacy value written with non-default `separators` whose first key is
+# `__compact_serdes__`.
 COMPACT_SERDES_PREFIX = f'{{"{COMPACT_SERDES_KEY}":{COMPACT_SERDES_VERSION},"classes":'
 
 _NUMBER_TAG = 0
@@ -92,6 +98,24 @@ def scalar_key(value: Any) -> tuple[type, Any]:
 
 # Marks decoded table entries that are mutable, so not shared between references.
 _MUTABLE = object()
+
+
+_SCALAR_TYPES = (str, int, float, Enum)
+
+
+def _is_shareable(value: Any, shared_ids: set[int]) -> bool:
+    """Whether a decoded value is deeply immutable, so that it can be reused at every reference to
+    its table entry: scalars, enums, and tuples (including NamedTuples and records) and frozensets
+    whose items are deeply immutable. `shared_ids` holds the ids of the values already known to be.
+    """
+    if value is None or isinstance(value, _SCALAR_TYPES) or id(value) in shared_ids:
+        return True
+    if isinstance(value, tuple):
+        # `@record` classes disallow iteration, but are tuples
+        return all(_is_shareable(item, shared_ids) for item in tuple.__iter__(value))
+    if isinstance(value, frozenset):
+        return all(_is_shareable(item, shared_ids) for item in value)
+    return False
 
 
 def _first(item: tuple[Any, Any]) -> Any:
@@ -316,19 +340,20 @@ def dumps_compact(packed_value: Any) -> str:
     return encoder.dumps(encoder.add(packed_value))
 
 
-def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool = False) -> Any:
+def loads_compact(value: str, object_hook: Callable[[dict], Any]) -> Any:
     """Read a value written by `dumps_compact`.
 
-    `object_hook` is applied bottom-up to every dict of the packed value, like `json.loads`. With
-    `expand=True`, every reference is decoded separately instead of reusing table entries, so that
-    no Python object is shared between references.
+    `object_hook` is applied bottom-up to every dict of the packed value, like `json.loads`.
     """
     envelope = json.loads(value)
     version = envelope.get(COMPACT_SERDES_KEY)
     if version != COMPACT_SERDES_VERSION:
         raise ValueError(f"Unsupported compact serdes version {version}")
-    classes: Sequence[tuple[str, Sequence[str]]] = [
-        (name, fields) for name, fields in envelope["classes"]
+    # Fields are passed to the object hook in sorted order, as the legacy format writes them with
+    # `sort_keys=True`: (class name, [(field name, position in the entry), ...]).
+    classes: Sequence[tuple[str, Sequence[tuple[str, int]]]] = [
+        (name, sorted((field, index + 1) for index, field in enumerate(fields)))
+        for name, fields in envelope["classes"]
     ]
     table: list[Any] = envelope["table"]
     decoded: list[Any] = []
@@ -336,8 +361,6 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
     def decode(encoded: Any) -> Any:
         tval = type(encoded)
         if tval is int:
-            if expand:
-                return decode(table[encoded])
             value = decoded[encoded]
             return decode(table[encoded]) if value is _MUTABLE else value
         if tval is not list:
@@ -346,8 +369,8 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
         if tag >= _FIRST_CLASS_TAG:
             class_name, fields = classes[tag - _FIRST_CLASS_TAG]
             obj: dict[str, Any] = {"__class__": class_name}
-            for field, item in zip(fields, encoded[1:]):
-                obj[field] = decode(item)
+            for field, index in fields:
+                obj[field] = decode(encoded[index])
             return object_hook(obj)
         if tag == LIST_TAG:
             return [decode(item) for item in encoded[1:]]
@@ -360,12 +383,16 @@ def loads_compact(value: str, object_hook: Callable[[dict], Any], expand: bool =
             return encoded[1]
         raise ValueError(f"Unexpected compact serdes tag {tag}")
 
-    if not expand:
-        # Entries only reference earlier entries, so each one can be decoded once in order.
-        # Mutable lists and dicts must not be shared between references: their table entries are
-        # decoded again at each reference.
-        for entry in table:
-            value = decode(entry)
-            decoded.append(_MUTABLE if type(value) in (list, dict) else value)
+    # Entries only reference earlier entries, so each one can be decoded once in order. Mutable
+    # values must not be shared between references: their table entries are decoded again at each
+    # reference.
+    shared_ids: set[int] = set()
+    for entry in table:
+        value = decode(entry)
+        if _is_shareable(value, shared_ids):
+            shared_ids.add(id(value))
+            decoded.append(value)
+        else:
+            decoded.append(_MUTABLE)
     root = decode(envelope["root"])
     return root

@@ -46,7 +46,6 @@ def test_packed_roundtrip(value) -> None:
     serialized = dumps_compact(value)
     assert is_compact_serialized(serialized)
     assert loads_compact(serialized, lambda d: d) == value
-    assert loads_compact(serialized, lambda d: d, expand=True) == value
     # numbers keep their type, and dict keys are sorted like the legacy format writes them
     assert json.dumps(loads_compact(serialized, lambda d: d)) == json.dumps(value, sort_keys=True)
 
@@ -60,7 +59,7 @@ def test_object_roundtrip_and_sharing() -> None:
 
     @_whitelist_for_serdes(whitelist_map=test_map, storage_field_names={"inner": "old_inner"})
     class Leaf(NamedTuple):
-        keys: list[str]
+        keys: frozenset[str]
         color: Color
         tags: frozenset[str]
 
@@ -70,8 +69,8 @@ def test_object_roundtrip_and_sharing() -> None:
         inner: Leaf
         other: Leaf
 
-    leaf = Leaf([f"partition-{i}" for i in range(100)], Color.RED, frozenset({"a"}))
-    value = [Node(f"node-{i}", leaf, Leaf([], Color.RED, frozenset())) for i in range(50)]
+    leaf = Leaf(frozenset(f"partition-{i}" for i in range(100)), Color.RED, frozenset({"a"}))
+    value = [Node(f"node-{i}", leaf, Leaf(frozenset(), Color.RED, frozenset())) for i in range(50)]
 
     legacy = dg.serialize_value(value, whitelist_map=test_map)
     compact = serialize_value_compact(value, whitelist_map=test_map)
@@ -303,13 +302,11 @@ class _StrWithStr(str):
 
 
 def _ordered(value: Any) -> Any:
-    """A comparable form of a packed value, that keeps the key order of dicts, except for the fields
-    of serdes objects, whose order doesn't matter since objects are constructed from keyword
-    arguments.
+    """A comparable form of a packed value, that keeps the key order of dicts, including the fields
+    of serdes objects, which hooks such as `before_unpack` see in that order.
     """
     if type(value) is dict:
-        items = sorted(value.items()) if "__class__" in value else value.items()
-        return [[key, _ordered(item)] for key, item in items]
+        return [[key, _ordered(item)] for key, item in value.items()]
     if type(value) is list:
         return [_ordered(item) for item in value]
     return value
@@ -444,3 +441,111 @@ def test_metadata_pack_shallow_matches_pack() -> None:
         for row in shallow.rows
     ]
     assert pack_value(expanded) == serializer.pack(metadata, _WHITELIST_MAP, "")
+
+
+def test_only_deeply_immutable_values_are_shared() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Frozen(NamedTuple):
+        name: str
+        keys: frozenset[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class WithDict(NamedTuple):
+        name: str
+        tags: dict[str, str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @dataclasses.dataclass
+    class Mutable:
+        items: list[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Root(NamedTuple):
+        frozen: list[Frozen]
+        with_dict: list[WithDict]
+        mutable: list[Mutable]
+        sets: list[set[str]]
+
+    def make() -> Root:
+        return Root(
+            frozen=[Frozen("a long enough name", frozenset({"key one", "key two"}))] * 2,
+            with_dict=[WithDict("a long enough name", {"team": "a long enough team"})] * 2,
+            mutable=[Mutable(["a long enough item"])] * 2,
+            sets=[{"a long enough item"}] * 2,
+        )
+
+    decoded = dg.deserialize_value(
+        serialize_value_compact(make(), whitelist_map=test_map), whitelist_map=test_map
+    )
+    assert decoded == make()
+    assert decoded.frozen[0] is decoded.frozen[1]
+    assert decoded.with_dict[0] is not decoded.with_dict[1]
+    assert decoded.mutable[0] is not decoded.mutable[1]
+    assert decoded.sets[0] is not decoded.sets[1]
+    decoded.with_dict[0].tags["team"] = "changed"
+    decoded.mutable[0].items.append("x")
+    decoded.sets[0].add("x")
+    assert (decoded.with_dict[1], decoded.mutable[1], decoded.sets[1]) == (
+        make().with_dict[1],
+        make().mutable[1],
+        make().sets[1],
+    )
+
+
+def test_hooks_see_fields_in_legacy_order() -> None:
+    test_map = WhitelistMap.create()
+    seen = []
+
+    class _Serializer(NamedTupleSerializer):
+        def before_unpack(self, context, unpacked_dict):
+            seen.append(list(unpacked_dict))
+            return unpacked_dict
+
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=_Serializer)
+    class Fields(NamedTuple):
+        zeta: str
+        alpha: str
+
+    for serialize in (dg.serialize_value, serialize_value_compact):
+        dg.deserialize_value(
+            serialize(Fields("z", "a"), whitelist_map=test_map), whitelist_map=test_map
+        )
+    assert seen == [["alpha", "zeta"], ["alpha", "zeta"]]
+
+
+def test_overridden_asdict_is_respected() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Redacted(NamedTuple("_Redacted", [("name", str), ("secret", str)])):
+        def _asdict(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+            return {"name": self.name, "secret": "<redacted>"}
+
+    value = Redacted("a", "hunter2")
+    assert _ordered(
+        loads_compact(serialize_value_compact(value, whitelist_map=test_map), lambda d: d)
+    ) == _ordered(json.loads(dg.serialize_value(value, whitelist_map=test_map)))
+
+
+def test_direct_packer_fast_paths_only_for_default_packing() -> None:
+    """The direct packer reads the fields of records and NamedTuples itself rather than through
+    the serializer: check that it only does so for serializers and classes that don't customize
+    packing, across every whitelisted class.
+    """
+    from dagster_shared.check.record import is_record
+    from dagster_shared.serdes.compact_packer import CompactPacker
+    from dagster_shared.serdes.serdes import _WHITELIST_MAP, ObjectSerializer
+
+    default_asdict = NamedTuple("_Default", [("x", int)])._asdict.__code__
+    packer = CompactPacker(_WHITELIST_MAP)
+    for serializer in _WHITELIST_MAP.object_serializers.values():
+        plan = packer._plan(serializer)  # noqa: SLF001
+        if plan is None:
+            continue
+        klass = type(serializer)
+        assert klass.pack_items is ObjectSerializer.pack_items, serializer.klass
+        assert klass.before_pack is ObjectSerializer.before_pack, serializer.klass
+        if plan.tuple_field_names is not None and not is_record(serializer.klass):
+            assert serializer.klass._asdict.__code__ is default_asdict, serializer.klass  # pyright: ignore[reportAttributeAccessIssue]

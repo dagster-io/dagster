@@ -472,7 +472,6 @@ class UnpackContext:
 
     def __init__(self):
         self.observed_unknown_serdes_values: set[UnknownSerdesValue] = set()
-        self.observed_any_unknown_serdes_value = False
 
     def assert_no_unknown_values(self, obj: UnpackedValue) -> PackableValue:
         if isinstance(obj, UnknownSerdesValue):
@@ -491,7 +490,6 @@ class UnpackContext:
 
     def observe_unknown_value(self, val: "UnknownSerdesValue") -> "UnknownSerdesValue":
         self.observed_unknown_serdes_values.add(val)
-        self.observed_any_unknown_serdes_value = True
         return val
 
     def clear_ignored_unknown_values(self, obj: T) -> T:
@@ -1247,15 +1245,9 @@ def deserialize_values(
             context = UnpackContext()
             object_hook = partial(_unpack_object, whitelist_map=whitelist_map, context=context)
             if is_compact_serialized(val):
+                # Unknown values are tracked by identity. They are not shared between references,
+                # like any value that isn't deeply immutable, so this matches the legacy format.
                 unpacked_value = loads_compact(val, object_hook)
-                if context.observed_any_unknown_serdes_value:
-                    # Unknown values are tracked by identity, which is ambiguous when a subtree is
-                    # shared between several references. Decode again without sharing.
-                    context = UnpackContext()
-                    object_hook = partial(
-                        _unpack_object, whitelist_map=whitelist_map, context=context
-                    )
-                    unpacked_value = loads_compact(val, object_hook, expand=True)
             else:
                 unpacked_value = seven.json.loads(val, object_hook=object_hook)
             unpacked_value = context.finalize_unpack(unpacked_value)
