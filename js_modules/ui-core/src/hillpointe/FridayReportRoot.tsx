@@ -217,6 +217,20 @@ const StatusCell = ({look, label}: {look: TagLook; label: string}) => (
   </td>
 );
 
+/** A one-line message that opens to its full text on click. */
+const MessageCell = ({text}: {text: string}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <td
+      className={open ? styles.fridayMessageOpen : styles.fridayMessage}
+      title={open ? undefined : text}
+      onClick={() => setOpen(!open)}
+    >
+      {text}
+    </td>
+  );
+};
+
 const FridayReportRoot = () => {
   useTrackPageView();
   useDocumentTitle('Friday report');
@@ -335,9 +349,7 @@ const FridayReportRoot = () => {
                       {j.finishedAt ? etTime.format(new Date(j.finishedAt)) : '—'}
                     </td>
                     <td>{formatDuration(j.durationSeconds)}</td>
-                    <td className={styles.fridayMessage} title={j.message ?? undefined}>
-                      {j.message ?? ''}
-                    </td>
+                    <MessageCell text={j.message ?? ''} />
                   </tr>
                 ))}
               </tbody>
@@ -421,9 +433,7 @@ const FridayReportRoot = () => {
                             label={e.level}
                           />
                           <td>{e.logger}</td>
-                          <td className={styles.fridayMessage} title={text}>
-                            {text}
-                          </td>
+                          <MessageCell text={text} />
                         </tr>
                       );
                     })}

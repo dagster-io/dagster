@@ -1033,12 +1033,23 @@
 }
 
 /* max-width: 0 lets the cell shrink to the leftover width instead of widening the table. */
-.fridayMessage {
+.fridayMessage,
+.fridayMessageOpen {
   width: 40%;
   max-width: 0;
+  cursor: pointer;
+}
+
+.fridayMessage {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Clicked: the whole message, wrapped. */
+.fridayMessageOpen {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* The raw log is long; scroll it inside its card. */
