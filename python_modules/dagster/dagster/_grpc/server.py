@@ -1130,8 +1130,11 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(
-                JobDataSnap.from_job_def(job_def, include_parent_snapshot=True)
+            job_data_snap = JobDataSnap.from_job_def(job_def, include_parent_snapshot=True)
+            ser_job_data = (
+                serialize_value_compact(job_data_snap)
+                if request.compact_serdes
+                else serialize_value(job_data_snap)
             )
             return dagster_api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:

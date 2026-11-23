@@ -512,6 +512,7 @@ class DagsterGrpcClient:
         remote_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        compact_serdes: bool = False,
     ) -> dagster_api_pb2.ExternalJobReply:
         check.inst_param(
             remote_repository_origin,
@@ -524,6 +525,7 @@ class DagsterGrpcClient:
             dagster_api_pb2.ExternalJobRequest,
             serialized_repository_origin=serialize_value(remote_repository_origin),
             job_name=job_name,
+            compact_serdes=compact_serdes,
             timeout=timeout,
         )
 

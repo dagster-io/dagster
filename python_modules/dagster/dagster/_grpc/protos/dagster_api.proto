@@ -188,6 +188,8 @@ message GetCurrentRunsReply {
 message ExternalJobRequest {
   string serialized_repository_origin = 1;
   string job_name = 2;
+  // Set by clients that can read the compact serdes format, as for ExternalRepositoryRequest.
+  bool compact_serdes = 3;
 }
 
 message ExternalJobReply {

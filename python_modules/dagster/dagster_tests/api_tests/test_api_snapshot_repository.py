@@ -320,3 +320,38 @@ def test_server_falls_back_to_legacy_format(monkeypatch):
         )
     assert not is_compact_serialized(serialized)
     assert dg.deserialize_value(serialized, RepositorySnap).name == "bar_repo"
+
+
+def test_external_job_compact_serdes(instance):
+    from dagster_shared.serdes.compact import is_compact_serialized
+
+    with get_bar_repo_code_location(instance) as code_location:
+        repo_origin = RemoteRepositoryOrigin(code_location.origin, "bar_repo")
+        repository_snap = dg.deserialize_value(
+            code_location.client.external_repository(repo_origin, defer_snapshots=True),
+            RepositorySnap,
+        )
+        for job_ref in check.not_none(repository_snap.job_refs):
+            legacy = code_location.client.external_job(repo_origin, job_ref.name)
+            compact = code_location.client.external_job(
+                repo_origin, job_ref.name, compact_serdes=True
+            )
+            assert not is_compact_serialized(legacy.serialized_job_data)
+            assert is_compact_serialized(compact.serialized_job_data)
+            compact_snap = dg.deserialize_value(compact.serialized_job_data, JobDataSnap)
+            assert compact_snap == dg.deserialize_value(legacy.serialized_job_data, JobDataSnap)
+            # job refs identify their snapshot by the hash of its legacy serialization
+            assert compact_snap.job.snapshot_id == job_ref.snapshot_id
+
+
+@pytest.mark.parametrize("disable_compact", [False, True])
+def test_code_location_job_snaps(instance, disable_compact):
+    from dagster._api.snapshot_repository import DISABLE_COMPACT_SNAPSHOTS_ENV_VAR
+
+    env = {DISABLE_COMPACT_SNAPSHOTS_ENV_VAR: "1"} if disable_compact else {}
+    with environ(env), get_bar_repo_code_location(instance) as code_location:
+        repo = code_location.get_repository("bar_repo")
+        for remote_job in repo.get_all_jobs():
+            job_snap = remote_job.job_snapshot
+            assert job_snap.snapshot_id == remote_job.identifying_job_snapshot_id
+            assert job_snap.name == remote_job.name
