@@ -101,15 +101,19 @@ def _select_unique_ids_from_cli(
         cmd.append("--selector")
         cmd.append(selector)
 
-    raw_events = DbtCliResource(project_dir=project).cli(cmd)._stream_stdout()  # noqa
+    invocation = DbtCliResource(project_dir=project).cli(cmd)
     unique_ids = set()
-    for event in raw_events:
+    for event in invocation._stream_stdout():  # noqa
         if isinstance(event, dict):
             try:
                 msg = orjson.loads(event.get("info", {}).get("msg", "{}"))
             except orjson.JSONDecodeError:
                 continue
             unique_ids.add(msg.get("unique_id"))
+
+    # A failed `dbt list` (e.g. a project that no longer parses) streams no unique ids, which
+    # would otherwise load as an empty selection with no error.
+    invocation._raise_on_error()  # noqa
 
     return unique_ids - {None}
 
