@@ -948,6 +948,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         return False
 
+    @property
+    def supports_batched_run_enqueued_events(self) -> bool:
+        """Whether store_event_batch can write RUN_ENQUEUED events, of any number of runs, in one
+        call with the same effects as writing them one at a time.
+        """
+        return False
+
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
 

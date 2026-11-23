@@ -278,11 +278,23 @@ class EventMethods:
         with `batch_metadata`, this does not depend on DAGSTER_EVENT_BATCH_SIZE, so callers that
         already hold a complete batch save a storage round trip per event.
         """
+        self.report_dagster_events_for_runs([(run_id, dagster_events)], log_level)
+
+    def report_dagster_events_for_runs(
+        self,
+        dagster_events_by_run: Sequence[tuple[str, Sequence["DagsterEvent"]]],
+        log_level: str | int = logging.INFO,
+    ) -> None:
+        """Stores the DagsterEvents of several runs, given as (run_id, events) pairs, in a single
+        storage batch write. The events must be writable in one `store_event_batch` call (see
+        `report_dagster_event_batch`).
+        """
         from dagster._core.events.log import EventLogEntry
 
         timestamp = get_current_timestamp()
         events = [
             event
+            for run_id, dagster_events in dagster_events_by_run
             for event in (
                 EventLogEntry(
                     user_message="",
@@ -324,38 +336,57 @@ class EventMethods:
                 for event in events:
                     self._event_storage_impl.store_event(event)
 
-        for event in events:
-            run_id = event.run_id
-            if (
-                not self._event_storage_impl.handles_run_events_in_store_event
-                and event.is_dagster_event
-                and event.get_dagster_event().is_job_event
-            ):
+        if not self._event_storage_impl.handles_run_events_in_store_event:
+            job_events = [
+                event
+                for event in events
+                if event.is_dagster_event and event.get_dagster_event().is_job_event
+            ]
+            if len(job_events) == 1:
+                event = job_events[0]
                 self._run_storage_impl.handle_run_event(
-                    run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
+                    event.run_id,
+                    event.get_dagster_event(),
+                    datetime_from_timestamp(event.timestamp),
                 )
-                run = self._instance.get_run_by_id(run_id)
-                if (
-                    run
-                    and event.get_dagster_event().is_run_failure
-                    and self._instance.run_retries_enabled
-                ):
-                    # Note that this tag is only applied to runs that fail. Successful runs will not
-                    # have a WILL_RETRY_TAG tag.
-                    run_failure_reason = (
-                        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
-                        if run.tags.get(RUN_FAILURE_REASON_TAG)
-                        else None
-                    )
-                    self._instance.add_run_tags(
-                        run_id,
-                        {
-                            WILL_RETRY_TAG: str(
-                                self._should_retry_run(run, run_failure_reason)
-                            ).lower()
-                        },
-                    )
-            for sub in self._subscribers_impl[run_id]:
+            elif job_events:
+                self._run_storage_impl.handle_run_events(
+                    [
+                        (
+                            event.run_id,
+                            event.get_dagster_event(),
+                            datetime_from_timestamp(event.timestamp),
+                        )
+                        for event in job_events
+                    ]
+                )
+
+            # Only run failures need the updated run, so that batches of other run events, e.g.
+            # the enqueued events of many new runs, do not read back every run.
+            if self._instance.run_retries_enabled:
+                for event in job_events:
+                    if not event.get_dagster_event().is_run_failure:
+                        continue
+                    run = self._instance.get_run_by_id(event.run_id)
+                    if run:
+                        # Note that this tag is only applied to runs that fail. Successful runs
+                        # will not have a WILL_RETRY_TAG tag.
+                        run_failure_reason = (
+                            RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
+                            if run.tags.get(RUN_FAILURE_REASON_TAG)
+                            else None
+                        )
+                        self._instance.add_run_tags(
+                            event.run_id,
+                            {
+                                WILL_RETRY_TAG: str(
+                                    self._should_retry_run(run, run_failure_reason)
+                                ).lower()
+                            },
+                        )
+
+        for event in events:
+            for sub in self._subscribers_impl[event.run_id]:
                 sub(event)
 
     def _should_retry_run(self, run, run_failure_reason):

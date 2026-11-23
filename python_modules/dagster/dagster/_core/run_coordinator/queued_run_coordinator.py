@@ -324,6 +324,29 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         assert run
         return run
 
+    def submit_runs(self, contexts: Sequence[SubmitRunContext]) -> Sequence[DagsterRun]:
+        if (
+            len(contexts) <= 1
+            # Subclasses that customize `submit_run` submit each run with it
+            or type(self).submit_run is not QueuedRunCoordinator.submit_run
+            or not self._instance.event_log_storage.supports_batched_run_enqueued_events
+            or any(
+                context.dagster_run.status != DagsterRunStatus.NOT_STARTED for context in contexts
+            )
+        ):
+            return super().submit_runs(contexts)
+
+        # Store every run's enqueued event in one batch, which also updates the runs' status. The
+        # event only changes their status, so update the runs in memory instead of reading them
+        # back.
+        self._instance.report_dagster_events_for_runs(
+            [
+                (context.dagster_run.run_id, [DagsterEvent.job_enqueue(context.dagster_run)])
+                for context in contexts
+            ]
+        )
+        return [context.dagster_run.with_status(DagsterRunStatus.QUEUED) for context in contexts]
+
     def cancel_run(self, run_id: str) -> bool:
         run = self._instance.get_run_by_id(run_id)
         if not run:

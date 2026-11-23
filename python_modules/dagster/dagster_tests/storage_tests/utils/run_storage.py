@@ -170,6 +170,60 @@ class TestRunStorage:
         assert fetched_run.run_id == run_id  # ty: ignore[unresolved-attribute]
         assert fetched_run.job_name == "some_pipeline"  # ty: ignore[unresolved-attribute]
 
+    def test_add_runs(self, storage):
+        run_ids = [make_new_run_id() for _ in range(3)]
+        runs = [
+            create_dagster_run(run_id=run_id, job_name="some_pipeline", tags={"index": str(i)})
+            for i, run_id in enumerate(run_ids)
+        ]
+        assert storage.add_runs(runs) == runs
+
+        assert {run.run_id for run in storage.get_runs()} == set(run_ids)
+        for i, run_id in enumerate(run_ids):
+            assert _get_run_by_id(storage, run_id).tags["index"] == str(i)  # ty: ignore[unresolved-attribute]
+            assert storage.get_runs(dg.RunsFilter(tags={"index": str(i)}))[0].run_id == run_id
+
+        with pytest.raises(DagsterRunAlreadyExists):
+            storage.add_runs(
+                [
+                    create_dagster_run(run_id=make_new_run_id(), job_name="some_pipeline"),
+                    create_dagster_run(run_id=run_ids[0], job_name="some_pipeline"),
+                ]
+            )
+
+    def test_handle_run_events(self, storage):
+        run_ids = [make_new_run_id() for _ in range(3)]
+        for run_id in run_ids:
+            storage.add_run(
+                create_dagster_run(
+                    run_id=run_id,
+                    job_name="some_pipeline",
+                    remote_job_origin=self.fake_job_origin("some_pipeline"),
+                )
+            )
+
+        def _event(event_type: DagsterEventType) -> DagsterEvent:
+            return dg.DagsterEvent(event_type_value=event_type.value, job_name="some_pipeline")
+
+        storage.handle_run_events(
+            [
+                (run_ids[0], _event(DagsterEventType.RUN_ENQUEUED), None),
+                (run_ids[1], _event(DagsterEventType.RUN_ENQUEUED), None),
+                # a later event for the same run applies on top of the earlier one
+                (run_ids[1], _event(DagsterEventType.RUN_STARTING), None),
+                # events for runs that do not exist are ignored, as by handle_run_event
+                (make_new_run_id(), _event(DagsterEventType.RUN_ENQUEUED), None),
+            ]
+        )
+
+        assert _get_run_by_id(storage, run_ids[0]).status == DagsterRunStatus.QUEUED  # ty: ignore[unresolved-attribute]
+        assert _get_run_by_id(storage, run_ids[1]).status == DagsterRunStatus.STARTING  # ty: ignore[unresolved-attribute]
+        assert _get_run_by_id(storage, run_ids[2]).status == DagsterRunStatus.NOT_STARTED  # ty: ignore[unresolved-attribute]
+        assert {
+            run.run_id
+            for run in storage.get_runs(dg.RunsFilter(statuses=[DagsterRunStatus.QUEUED]))
+        } == {run_ids[0]}
+
     def test_clear(self, storage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")

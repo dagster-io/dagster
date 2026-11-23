@@ -1,10 +1,11 @@
 import sys
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -105,6 +106,52 @@ class RunLauncherMethods:
             raise
 
         return submitted_run
+
+    def submit_runs(
+        self, runs: Sequence["DagsterRun"], workspace: "BaseWorkspaceRequestContext"
+    ) -> Sequence["DagsterRun"]:
+        """Submits runs that were just created, as `submit_run` does for each of them in turn, but
+        in fewer storage round trips if the run coordinator supports it. If submission fails
+        partway, some of the runs may have been submitted.
+        """
+        from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
+        from dagster._core.storage.dagster_run import DagsterRunStatus
+
+        # Run coordinators that do not batch submissions submit each run as `submit_run` does,
+        # which also marks a run that cannot be submitted as failed.
+        if type(self.run_coordinator).submit_runs is RunCoordinator.submit_runs:
+            return [self.submit_run(run.run_id, workspace, run=run) for run in runs]
+
+        for run in runs:
+            check.not_none(
+                run.remote_job_origin,
+                "External pipeline origin must be set for submitted runs",
+            )
+            check.not_none(
+                run.job_code_origin,
+                "Python origin must be set for submitted runs",
+            )
+
+        try:
+            return self.run_coordinator.submit_runs(
+                [SubmitRunContext(run, workspace=workspace) for run in runs]
+            )
+        except Exception:
+            # Submit the runs that were not submitted one at a time, so that a run that cannot be
+            # submitted is marked as failed and raises as with `submit_run`.
+            stored_runs_by_id = {
+                run.run_id: run
+                for run in self.get_runs(RunsFilter(run_ids=[run.run_id for run in runs]))  # ty: ignore[unresolved-attribute]
+            }
+            submitted_runs = []
+            for run in runs:
+                stored_run = stored_runs_by_id.get(run.run_id, run)
+                submitted_runs.append(
+                    self.submit_run(run.run_id, workspace, run=stored_run)
+                    if stored_run.status == DagsterRunStatus.NOT_STARTED
+                    else stored_run
+                )
+            return submitted_runs
 
     def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> "DagsterRun":
         """Launch a pipeline run.

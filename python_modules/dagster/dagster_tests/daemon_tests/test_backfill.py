@@ -35,7 +35,7 @@ from dagster._core.execution.asset_backfill import (
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import create_backfill_run, submit_backfill_runs
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.execution.submit_asset_runs import submit_asset_run
+from dagster._core.execution.submit_asset_runs import submit_new_asset_runs
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
@@ -2130,6 +2130,67 @@ def test_asset_backfill_submission_writes_are_bounded(
     )
 
 
+def test_asset_backfill_creates_runs_in_batches_with_few_progress_writes(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, set_default_chunk_size
+):
+    """New runs are created in batches, and progress is written once at least as many runs were
+    submitted since the last write as remain, so a few times for many chunks.
+    """
+    asset_selection = [dg.AssetKey("daily_1")]
+    num_partitions = DEFAULT_CHUNK_SIZE * 8
+    target_partitions = daily_partitions_def.get_partition_keys()[0:num_partitions]
+    asset_graph = workspace_context.create_request_context().asset_graph
+    backfill_id = "backfill_in_batches"
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=target_partitions,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    with (
+        environ({"DAGSTER_ASSET_BACKFILL_RUN_BATCH_SIZE": "3"}),
+        mock.patch.object(instance, "create_runs", wraps=instance.create_runs) as create_runs,
+        mock.patch.object(instance, "create_run", wraps=instance.create_run) as create_run,
+        mock.patch(
+            "dagster._core.execution.asset_backfill._write_updated_backfill_data",
+            wraps=_write_updated_backfill_data,
+        ) as write_progress,
+    ):
+        assert all(
+            not error
+            for error in execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+
+    runs = instance.get_runs()
+    assert len(runs) == num_partitions
+    assert all(run.status != DagsterRunStatus.NOT_STARTED for run in runs)
+    assert create_run.call_count == 0
+    # each chunk of DEFAULT_CHUNK_SIZE (5) runs is split into batches of 3 and 2 runs
+    assert [len(call.args[0]) for call in create_runs.call_args_list] == [3, 2] * 8
+    # 8 chunks, but progress is written after 4, 6, 7 and 8 chunks
+    assert write_progress.call_count == 4
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert not backfill.submitting_run_requests
+    assert (
+        backfill.get_asset_backfill_data(asset_graph)
+        .requested_subset.get_partitions_subset(asset_selection[0])
+        .get_partition_keys()
+        == target_partitions
+    )
+
+
 def test_asset_backfill_submits_runs_concurrently(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, set_default_chunk_size
 ):
@@ -2158,14 +2219,13 @@ def test_asset_backfill_submits_runs_concurrently(
     )
 
     failing_index = DEFAULT_CHUNK_SIZE + 2
-    original_submit_asset_run = submit_asset_run
+    failing_run_id = None
+    original_submit_new_asset_runs = submit_new_asset_runs
 
-    async def submit_or_fail(run_id, run_request, run_request_index, *args, **kwargs):
-        if run_request_index == failing_index:
+    async def submit_or_fail(run_ids, *args, **kwargs):
+        if failing_run_id in run_ids:
             raise DagsterUserCodeUnreachableError("simulated")
-        return await original_submit_asset_run(
-            run_id, run_request, run_request_index, *args, **kwargs
-        )
+        return await original_submit_new_asset_runs(run_ids, *args, **kwargs)
 
     def enqueue_without_executing(run_id, workspace, run=None):
         # The test instance executes runs synchronously in the submitting thread, which is not
@@ -2176,12 +2236,32 @@ def test_asset_backfill_submits_runs_concurrently(
         )
         return instance.get_run_by_id(run_id)
 
+    original_update_backfill = instance.update_backfill
+
+    def record_failing_run_id(backfill):
+        # The run ids are reserved by the first progress write
+        nonlocal failing_run_id
+        if failing_run_id is None and backfill.reserved_run_ids:
+            failing_run_id = backfill.reserved_run_ids[failing_index]
+        return original_update_backfill(backfill)
+
     with (
         ThreadPoolExecutor(4) as submit_threadpool_executor,
+        # Submit each run in its own batch, so that the runs of a chunk are submitted concurrently
+        environ({"DAGSTER_ASSET_BACKFILL_RUN_BATCH_SIZE": "1"}),
         mock.patch.object(instance, "submit_run", side_effect=enqueue_without_executing),
+        mock.patch.object(
+            instance,
+            "submit_runs",
+            side_effect=lambda runs, workspace: [
+                enqueue_without_executing(run.run_id, workspace) for run in runs
+            ],
+        ),
+        mock.patch.object(instance, "update_backfill", side_effect=record_failing_run_id),
     ):
         with mock.patch(
-            "dagster._core.execution.asset_backfill.submit_asset_run", side_effect=submit_or_fail
+            "dagster._core.execution.asset_backfill.submit_new_asset_runs",
+            side_effect=submit_or_fail,
         ):
             errors = [
                 error
@@ -2253,17 +2333,21 @@ def test_asset_backfill_resumes_with_runs_already_created(
 
     # Interrupt the first iteration right after creating the second run, before submitting it
     created = 0
-    original_create_run = instance.create_run
+    original_create_runs = instance.create_runs
 
-    def create_run_then_crash(*args, **kwargs):
+    def create_runs_then_crash(create_run_kwargs):
         nonlocal created
-        run = original_create_run(*args, **kwargs)
-        created += 1
+        runs = original_create_runs(create_run_kwargs)
+        created += len(runs)
         if created == 2:
             raise KeyboardInterrupt("simulated crash")
-        return run
+        return runs
 
-    with mock.patch.object(instance, "create_run", side_effect=create_run_then_crash):
+    with (
+        # Submit each run in its own batch
+        environ({"DAGSTER_ASSET_BACKFILL_RUN_BATCH_SIZE": "1"}),
+        mock.patch.object(instance, "create_runs", side_effect=create_runs_then_crash),
+    ):
         with pytest.raises(KeyboardInterrupt):
             list(
                 execute_backfill_iteration(

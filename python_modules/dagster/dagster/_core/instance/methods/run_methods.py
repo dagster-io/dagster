@@ -187,6 +187,12 @@ class RunMethods:
             asset_graph=asset_graph,
         )
 
+    def create_runs(self, create_run_kwargs: Sequence[Mapping[str, Any]]) -> Sequence[DagsterRun]:
+        """Creates several runs, each from a mapping of `create_run` keyword arguments, in a few
+        storage round trips.
+        """
+        return self.run_domain.create_runs(create_run_kwargs)
+
     def create_reexecuted_run(
         self,
         *,

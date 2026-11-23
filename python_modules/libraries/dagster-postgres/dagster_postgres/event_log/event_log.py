@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, cast  # noqa: UP035
@@ -8,7 +9,12 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    BATCH_WRITABLE_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -47,6 +53,12 @@ from dagster_postgres.utils import (
 
 if TYPE_CHECKING:
     from dagster_postgres.auth import PgTokenProvider
+
+# Whether an executemany can return the inserted ids in the order of its parameters, which
+# requires SQLAlchemy 2.0.10 or later.
+_SUPPORTS_INSERTMANYVALUES_RETURNING = (
+    "sort_by_parameter_order" in inspect.signature(db.insert(db.table("t")).returning).parameters
+)
 
 CHANNEL_NAME = "run_events"
 
@@ -227,8 +239,12 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         event_types = {event.get_dagster_event().event_type for event in events}
 
         check.invariant(
-            all(event_type in BATCH_WRITABLE_EVENTS for event_type in event_types),
-            f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
+            all(
+                event_type in BATCH_WRITABLE_EVENTS or event_type == DagsterEventType.RUN_ENQUEUED
+                for event_type in event_types
+            ),
+            f"{BATCH_WRITABLE_EVENTS} and RUN_ENQUEUED are the only currently supported events"
+            " for batch writes.",
         )
         events = [
             event
@@ -238,10 +254,36 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if len(events) == 0:
             return
 
-        insert_event_statement = self.prepare_insert_event_batch(events)
         with self._connect() as conn:
-            result = conn.execute(insert_event_statement.returning(SqlEventLogStorageTable.c.id))
+            if not _SUPPORTS_INSERTMANYVALUES_RETURNING:
+                insert_event_statement = self.prepare_insert_event_batch(events)
+                result = conn.execute(
+                    insert_event_statement.returning(SqlEventLogStorageTable.c.id)
+                )
+            else:
+                # An executemany, unlike a multi-row VALUES clause, reuses one compiled statement
+                # for batches of any size, and still inserts the rows in a few round trips.
+                result = conn.execute(
+                    SqlEventLogStorageTable.insert().returning(
+                        SqlEventLogStorageTable.c.id, sort_by_parameter_order=True
+                    ),
+                    [self._event_to_row(event) for event in events],
+                )
             event_ids = [cast("int", row[0]) for row in result.fetchall()]
+
+            # As in store_event, notify of run events for listeners from older versions
+            notify_ids = [
+                f"{entry.run_id}_{event_id}"
+                for entry, event_id in zip(events, event_ids)
+                if entry.dagster_event_type == DagsterEventType.RUN_ENQUEUED
+            ]
+            if notify_ids:
+                conn.execute(
+                    db.text(
+                        "SELECT pg_notify(:channel, notify_id) FROM unnest(:notify_ids) AS notify_id"
+                    ),
+                    {"channel": CHANNEL_NAME, "notify_ids": notify_ids},
+                )
 
         if any(event_id is None for event_id in event_ids):
             raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
@@ -264,6 +306,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_batched_planned_events(self) -> bool:
+        return True
+
+    @property
+    def supports_batched_run_enqueued_events(self) -> bool:
         return True
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:

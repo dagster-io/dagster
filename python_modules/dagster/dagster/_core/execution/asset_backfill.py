@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -54,7 +55,11 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.submit_asset_runs import submit_asset_run
+from dagster._core.execution.submit_asset_runs import (
+    PartialRunSubmissionError,
+    submit_asset_run,
+    submit_new_asset_runs,
+)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import NOT_FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -76,6 +81,13 @@ if TYPE_CHECKING:
 
 def get_asset_backfill_run_chunk_size():
     return int(os.getenv("DAGSTER_ASSET_BACKFILL_RUN_CHUNK_SIZE", "25"))
+
+
+def get_asset_backfill_run_batch_size() -> int:
+    """Number of new runs that a backfill creates and submits together, in a few storage round
+    trips.
+    """
+    return int(os.getenv("DAGSTER_ASSET_BACKFILL_RUN_BATCH_SIZE", "100"))
 
 
 # Upper bound on the number of progress writes while submitting the runs of one iteration.
@@ -705,48 +717,103 @@ def _get_requested_asset_graph_subset_from_run_requests(
     asset_graph_view: AssetGraphView,
 ) -> AssetGraphSubset:
     asset_graph = asset_graph_view.asset_graph
-    requested_subset = AssetGraphSubset.create_empty_subset()
+    # Collect the requested partitions of each asset, then build one subset per asset: unioning a
+    # subset per run request is quadratic in the number of run requests, which can be thousands.
+    partition_keys_by_asset_key: dict[AssetKey, list[str]] = defaultdict(list)
+    non_partitioned_asset_keys: set[AssetKey] = set()
+    range_subsets: list[AssetGraphSubset] = []
     for run_request in run_requests:
+        asset_keys = cast("Sequence[AssetKey]", run_request.asset_selection)
         # Run request targets a range of partitions
         range_start = run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG)
         range_end = run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG)
         if range_start and range_end:
-            # When a run request targets a range of partitions, each asset is expected to
-            # have the same partitions def
-            selected_assets = cast("Sequence[AssetKey]", run_request.asset_selection)
-            check.invariant(len(selected_assets) > 0)
-            partition_range = PartitionKeyRange(range_start, range_end)
-            entity_subsets = [
-                asset_graph_view.get_entity_subset_in_range(asset_key, partition_range)
-                for asset_key in selected_assets
-            ]
-            requested_subset = requested_subset | AssetGraphSubset.from_entity_subsets(
-                entity_subsets
-            )
+            check.invariant(len(asset_keys) > 0)
+            if range_start == range_end:
+                # A range of one partition, the most common case for backfills of runs that each
+                # target a single partition
+                for asset_key in asset_keys:
+                    partition_keys_by_asset_key[asset_key].append(range_start)
+            else:
+                # When a run request targets a range of partitions, each asset is expected to
+                # have the same partitions def
+                partition_range = PartitionKeyRange(range_start, range_end)
+                range_subsets.append(
+                    AssetGraphSubset.from_entity_subsets(
+                        [
+                            asset_graph_view.get_entity_subset_in_range(asset_key, partition_range)
+                            for asset_key in asset_keys
+                        ]
+                    )
+                )
+        elif run_request.partition_key is not None:
+            for asset_key in asset_keys:
+                partition_keys_by_asset_key[asset_key].append(run_request.partition_key)
         else:
-            requested_subset = requested_subset | AssetGraphSubset.from_asset_partition_set(
-                {
-                    AssetKeyPartitionKey(asset_key, run_request.partition_key)
-                    for asset_key in cast("Sequence[AssetKey]", run_request.asset_selection)
-                },
-                asset_graph,
-                # don't need expensive checks for whether the partition keys are still in the subset
-                # when just determining what was previously requested in this backfill
-                validate_time_range=False,
-            )
+            non_partitioned_asset_keys.update(asset_keys)
 
+    requested_subset = AssetGraphSubset.from_asset_partition_set(
+        {
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for asset_key, partition_keys in partition_keys_by_asset_key.items()
+            for partition_key in partition_keys
+        }
+        | {AssetKeyPartitionKey(asset_key, None) for asset_key in non_partitioned_asset_keys},
+        asset_graph,
+        # don't need expensive checks for whether the partition keys are still in the subset
+        # when just determining what was previously requested in this backfill
+        validate_time_range=False,
+    )
+    for range_subset in range_subsets:
+        requested_subset = requested_subset | range_subset
     return requested_subset
+
+
+def _unwrap_partial_submission_error(error: Exception) -> tuple[Exception, int]:
+    """The error that stopped a unit of run submission, and the number of runs that the unit
+    submitted before it.
+    """
+    if isinstance(error, PartialRunSubmissionError):
+        return cast("Exception", error.__cause__), error.num_submitted
+    return error, 0
+
+
+def _backfill_status_unchanged(instance: DagsterInstance, backfill: "PartitionBackfill") -> bool:
+    """Whether the stored backfill still has the status of `backfill`, checked without reading the
+    stored backfill if the run storage can count backfills by id.
+    """
+    from dagster._core.execution.backfill import BulkActionsFilter
+
+    try:
+        return (
+            instance.get_backfills_count(
+                BulkActionsFilter(statuses=[backfill.status], backfill_ids=[backfill.backfill_id])
+            )
+            > 0
+        )
+    except (NotImplementedError, check.CheckError):
+        # Run storages that cannot count backfills by id
+        stored_backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+        return stored_backfill.status == backfill.status
 
 
 def _write_updated_backfill_data(
     instance: DagsterInstance,
-    backfill_id: str,
+    backfill: "PartitionBackfill",
     updated_backfill_data: AssetBackfillData,
     asset_graph: RemoteAssetGraph,
     updated_run_requests: Sequence[RunRequest],
     updated_reserved_run_ids: Sequence[str],
-):
-    backfill = check.not_none(instance.get_backfill(backfill_id))
+) -> "PartitionBackfill":
+    """Writes the progress of a backfill, and returns the written backfill.
+
+    `backfill` is this iteration's copy of the backfill. While the iteration runs, other processes
+    only change the backfill's status (e.g. to cancel it), so the stored backfill, which can be
+    megabytes, is only read when its status changed.
+    """
+    if not _backfill_status_unchanged(instance, backfill):
+        backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+
     updated_backfill = backfill.with_asset_backfill_data(
         updated_backfill_data,
         dynamic_partitions_store=instance,
@@ -762,7 +829,7 @@ def _write_updated_backfill_data(
 async def _submit_runs_and_update_backfill_in_chunks(
     asset_graph_view: AssetGraphView,
     workspace_process_context: IWorkspaceProcessContext,
-    backfill_id: str,
+    backfill: "PartitionBackfill",
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
@@ -784,6 +851,7 @@ async def _submit_runs_and_update_backfill_in_chunks(
 
     asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance = asset_graph_view.instance
+    backfill_id = backfill.backfill_id
 
     run_requests = asset_backfill_iteration_result.run_requests
     reserved_run_ids = asset_backfill_iteration_result.reserved_run_ids
@@ -793,25 +861,25 @@ async def _submit_runs_and_update_backfill_in_chunks(
     # as canceled/canceling.
     updated_backfill_data: AssetBackfillData = asset_backfill_iteration_result.backfill_data
     num_submitted = 0
+    # Number of submitted runs that the stored progress covers
+    num_written = 0
     # Shared by the submit threads: concurrent misses for the same job may fetch it more than
     # once, which is harmless.
     run_request_execution_data_cache = {}
     chunk_size = _get_run_submission_chunk_size(len(run_requests))
 
+    def _with_backfill_tags(run_request: RunRequest) -> RunRequest:
+        return run_request._replace(
+            tags={**run_request.tags, **run_tags, BACKFILL_ID_TAG: backfill_id}
+        )
+
     async def _submit(run_request_idx: int) -> None:
-        run_request = run_requests[run_request_idx]
         # create a new request context for each run in case the code location server
         # is swapped out in the middle of the submission process
         workspace = workspace_process_context.create_request_context()
         await submit_asset_run(
             reserved_run_ids[run_request_idx] if reserved_run_ids else None,
-            run_request._replace(
-                tags={
-                    **run_request.tags,
-                    **run_tags,
-                    BACKFILL_ID_TAG: backfill_id,
-                }
-            ),
+            _with_backfill_tags(run_requests[run_request_idx]),
             run_request_idx,
             instance,
             workspace_process_context,
@@ -822,45 +890,81 @@ async def _submit_runs_and_update_backfill_in_chunks(
             run_id_is_new=bool(reserved_run_ids) and reserved_run_ids_are_new,
         )
 
-    def _submit_in_thread(run_request_idx: int) -> None:
-        # Each run is submitted on its own event loop, since the workspace request context and its
-        # data loaders are bound to the loop that uses them.
-        asyncio.run(_submit(run_request_idx))
+    # When the run ids were just reserved, no run exists yet for any of them, so runs are created
+    # and submitted in batches of a few storage round trips each instead of a few per run.
+    submit_in_batches = bool(reserved_run_ids) and reserved_run_ids_are_new
+    batch_size = get_asset_backfill_run_batch_size()
+
+    async def _submit_batch(batch: range) -> int:
+        return await submit_new_asset_runs(
+            [reserved_run_ids[i] for i in batch],
+            [_with_backfill_tags(run_requests[i]) for i in batch],
+            instance,
+            workspace_process_context,
+            run_request_execution_data_cache,
+            logger,
+        )
+
+    async def _submit_unit(unit: range) -> int:
+        """Submits the runs of a unit of work: a batch of new runs, or a single run. Returns the
+        number of runs submitted, or raises `PartialRunSubmissionError` if the unit failed after
+        submitting some of its runs.
+        """
+        if submit_in_batches:
+            return await _submit_batch(unit)
+        await _submit(unit.start)
+        return 1
+
+    def _submit_unit_in_thread(unit: range) -> int:
+        # Each unit runs on its own event loop, since the workspace request context and its data
+        # loaders are bound to the loop that uses them.
+        return asyncio.run(_submit_unit(unit))
 
     for chunk_start in range(0, len(run_requests), chunk_size):
         chunk_indices = range(chunk_start, min(chunk_start + chunk_size, len(run_requests)))
+        # Units of work: a batch of new runs, or a single run.
+        units: list[range] = (
+            [
+                range(start, min(start + batch_size, chunk_indices.stop))
+                for start in range(chunk_indices.start, chunk_indices.stop, batch_size)
+            ]
+            if submit_in_batches
+            else [range(i, i + 1) for i in chunk_indices]
+        )
 
         # Number of runs at the start of the chunk that were submitted. Progress only records this
         # prefix, so that resuming after an error resubmits every run from the first failure on.
         num_submitted_in_chunk = 0
         error: Exception | None = None
-        if submit_threadpool_executor and len(chunk_indices) > 1:
-            # Submitting a run is dominated by storage and code server round trips, so submitting
-            # the runs of a chunk concurrently scales submission with the number of submit workers.
-            # Each run gets a copy of this context, e.g. for the partition loading context, even if
-            # the executor does not propagate contextvars.
+        if submit_threadpool_executor and len(units) > 1:
+            # Submitting runs is dominated by storage and code server round trips, so submitting
+            # the units of a chunk concurrently scales submission with the number of submit
+            # workers. Each unit gets a copy of this context, e.g. for the partition loading
+            # context, even if the executor does not propagate contextvars.
             futures = [
                 submit_threadpool_executor.submit(
-                    contextvars.copy_context().run, _submit_in_thread, i
+                    contextvars.copy_context().run, _submit_unit_in_thread, unit
                 )
-                for i in chunk_indices
+                for unit in units
             ]
-            # Wait for every run of the chunk, so that none is still being submitted once the
+            # Wait for every unit of the chunk, so that none is still being submitted once the
             # progress is written.
             for future in futures:
                 try:
-                    await asyncio.wrap_future(future)
+                    num_submitted_in_unit = await asyncio.wrap_future(future)
                     if error is None:
-                        num_submitted_in_chunk += 1
+                        num_submitted_in_chunk += num_submitted_in_unit
                 except Exception as e:
-                    error = error or e
+                    if error is None:
+                        error, num_submitted_in_unit = _unwrap_partial_submission_error(e)
+                        num_submitted_in_chunk += num_submitted_in_unit
         else:
-            for run_request_idx in chunk_indices:
+            for unit in units:
                 try:
-                    await _submit(run_request_idx)
-                    num_submitted_in_chunk += 1
+                    num_submitted_in_chunk += await _submit_unit(unit)
                 except Exception as e:
-                    error = e
+                    error, num_submitted_in_unit = _unwrap_partial_submission_error(e)
+                    num_submitted_in_chunk += num_submitted_in_unit
                     break
 
         if num_submitted_in_chunk:
@@ -883,7 +987,7 @@ async def _submit_runs_and_update_backfill_in_chunks(
                 )
                 _write_updated_backfill_data(
                     instance,
-                    backfill_id,
+                    backfill,
                     updated_backfill_data,
                     asset_graph,
                     run_requests[num_submitted:],
@@ -891,11 +995,22 @@ async def _submit_runs_and_update_backfill_in_chunks(
                 )
                 raise
 
-        # After each chunk, write the updated backfill data and check to make sure we weren't
-        # interrupted
+        # After each chunk, check that the backfill was not canceled. Each progress write stores
+        # every run request still to be submitted, so writing after every chunk would cost a
+        # multiple of the number of run requests. Instead, write once at least as many runs were
+        # submitted since the last write as are still to be submitted, and when the backfill was
+        # canceled or every run was submitted: a logarithmic number of writes. Resuming
+        # resubmits the runs submitted since the last write, which is a no-op for each of them.
+        num_remaining = len(run_requests) - num_submitted
+        if num_submitted - num_written < num_remaining and _backfill_status_unchanged(
+            instance, backfill
+        ):
+            continue
+
+        num_written = num_submitted
         backfill = _write_updated_backfill_data(
             instance,
-            backfill_id,
+            backfill,
             updated_backfill_data,
             asset_graph,
             run_requests[num_submitted:],
@@ -1196,7 +1311,7 @@ async def execute_asset_backfill_iteration(
             await _submit_runs_and_update_backfill_in_chunks(
                 asset_graph_view,
                 workspace_process_context,
-                updated_backfill.backfill_id,
+                updated_backfill,
                 result,
                 logger,
                 run_tags=updated_backfill.tags,

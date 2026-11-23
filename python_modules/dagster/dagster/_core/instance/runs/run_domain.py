@@ -106,9 +106,99 @@ class RunDomain:
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         """Create a run with the given parameters."""
+        from dagster._core.definitions.partitions.context import partition_loading_context
+
+        dagster_run = self._construct_run_for_creation(
+            job_name=job_name,
+            run_id=run_id,
+            run_config=run_config,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            step_keys_to_execute=step_keys_to_execute,
+            execution_plan_snapshot=execution_plan_snapshot,
+            job_snapshot=job_snapshot,
+            parent_job_snapshot=parent_job_snapshot,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+            resolved_op_selection=resolved_op_selection,
+            op_selection=op_selection,
+            remote_job_origin=remote_job_origin,
+            job_code_origin=job_code_origin,
+            asset_graph=asset_graph,
+        )
+
+        dagster_run = self._instance.run_storage.add_run(dagster_run)
+
+        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
+            with partition_loading_context(dynamic_partitions_store=self._instance):
+                self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
+
+        return dagster_run
+
+    def create_runs(self, create_run_kwargs: Sequence[Mapping[str, Any]]) -> Sequence[DagsterRun]:
+        """Creates several runs, with the same result as calling `create_run` with each mapping of
+        keyword arguments in turn, but in a few storage round trips instead of a few per run.
+
+        Runs are stored before any of their planned events, so if this fails partway, some of the
+        runs may exist without some of their planned events, as with `create_run`.
+        """
+        from dagster._core.definitions.partitions.context import partition_loading_context
+
+        dagster_runs = [self._construct_run_for_creation(**kwargs) for kwargs in create_run_kwargs]
+        dagster_runs = self._instance.run_storage.add_runs(dagster_runs)
+
+        planned_events: list[tuple[str, Sequence[DagsterEvent]]] = []
+        with partition_loading_context(dynamic_partitions_store=self._instance):
+            for dagster_run, kwargs in zip(dagster_runs, create_run_kwargs):
+                execution_plan_snapshot = kwargs["execution_plan_snapshot"]
+                if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
+                    planned_events.append(
+                        (
+                            dagster_run.run_id,
+                            self._get_asset_planned_events(
+                                dagster_run, execution_plan_snapshot, kwargs["asset_graph"]
+                            ),
+                        )
+                    )
+
+        if (
+            self._batch_planned_events()
+            and self._instance.event_log_storage.supports_batched_planned_events
+        ):
+            self._instance.report_dagster_events_for_runs(planned_events, logging.DEBUG)
+        else:
+            for run_id, events in planned_events:
+                self._report_asset_planned_events(run_id, events)
+
+        return dagster_runs
+
+    def _construct_run_for_creation(
+        self,
+        *,
+        job_name: str,
+        run_id: str | None,
+        run_config: Mapping[str, object] | None,
+        status: DagsterRunStatus | None,
+        tags: Mapping[str, Any] | None,
+        root_run_id: str | None,
+        parent_run_id: str | None,
+        step_keys_to_execute: Sequence[str] | None,
+        execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
+        job_snapshot: Optional["JobSnap"],
+        parent_job_snapshot: Optional["JobSnap"],
+        asset_selection: Set[AssetKey] | None,
+        asset_check_selection: Set["AssetCheckKey"] | None,
+        resolved_op_selection: Set[str] | None,
+        op_selection: Sequence[str] | None,
+        remote_job_origin: Optional["RemoteJobOrigin"],
+        job_code_origin: JobPythonOrigin | None,
+        asset_graph: "BaseAssetGraph",
+    ) -> DagsterRun:
+        """Validates the arguments of `create_run` and constructs the run, without storing it."""
         from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
-        from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.remote_origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
@@ -253,12 +343,6 @@ class RunDomain:
             job_code_origin=job_code_origin,
             asset_graph=asset_graph,
         )
-
-        dagster_run = self._instance.run_storage.add_run(dagster_run)
-
-        if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
-            with partition_loading_context(dynamic_partitions_store=self._instance):
-                self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
@@ -852,12 +936,23 @@ class RunDomain:
         asset_graph: "BaseAssetGraph",
     ) -> None:
         """Moved from DagsterInstance._log_asset_planned_events."""
-        from dagster._core.events import (
-            DagsterEvent,
-            DagsterEventBatchMetadata,
-            DagsterEventType,
-            generate_event_batch_id,
+        self._report_asset_planned_events(
+            dagster_run.run_id,
+            self._get_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph),
         )
+
+    @staticmethod
+    def _batch_planned_events() -> bool:
+        return not bool(os.getenv("DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY"))
+
+    def _get_asset_planned_events(
+        self,
+        dagster_run: DagsterRun,
+        execution_plan_snapshot: "ExecutionPlanSnapshot",
+        asset_graph: "BaseAssetGraph",
+    ) -> Sequence["DagsterEvent"]:
+        """The planned events for the assets and asset checks that a run executes."""
+        from dagster._core.events import DagsterEvent, DagsterEventType
 
         job_name = dagster_run.job_name
 
@@ -904,12 +999,7 @@ class RunDomain:
                         )
                         events.append(event)
 
-        batch_id = generate_event_batch_id()
-        last_index = len(events) - 1
-
-        batch_planned_events = not bool(os.getenv("DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY"))
-
-        if batch_planned_events:
+        if self._batch_planned_events():
             # sort events by asset key to ensure they are inserted in a consistent order
             # if they are batched
             events = sorted(
@@ -920,7 +1010,12 @@ class RunDomain:
                     else event.asset_check_planned_data.asset_check_key.to_db_string()
                 ),
             )
+        return events
 
+    def _report_asset_planned_events(self, run_id: str, events: Sequence["DagsterEvent"]) -> None:
+        from dagster._core.events import DagsterEventBatchMetadata, generate_event_batch_id
+
+        batch_planned_events = self._batch_planned_events()
         if (
             batch_planned_events
             and len(events) > 1
@@ -928,9 +1023,11 @@ class RunDomain:
         ):
             # One storage round trip for all of the run's planned events, which matters when
             # backfills create thousands of runs.
-            self._instance.report_dagster_event_batch(events, dagster_run.run_id, logging.DEBUG)
+            self._instance.report_dagster_event_batch(events, run_id, logging.DEBUG)
             return
 
+        batch_id = generate_event_batch_id()
+        last_index = len(events) - 1
         for i, event in enumerate(events):
             batch_metadata = (
                 DagsterEventBatchMetadata(batch_id, i == last_index)
@@ -938,7 +1035,7 @@ class RunDomain:
                 else None
             )
             self._instance.report_dagster_event(
-                event, dagster_run.run_id, logging.DEBUG, batch_metadata=batch_metadata
+                event, run_id, logging.DEBUG, batch_metadata=batch_metadata
             )
 
     def get_materialization_planned_events_for_asset(

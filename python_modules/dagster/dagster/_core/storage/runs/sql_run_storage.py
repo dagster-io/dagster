@@ -113,11 +113,24 @@ class SqlRunStorage(RunStorage):
                 return result.fetchone()
 
     def _get_run_insertion_values(
-        self, dagster_run: DagsterRun, run_creation_time: datetime | None = None
+        self,
+        dagster_run: DagsterRun,
+        run_creation_time: datetime | None = None,
+        *,
+        check_snapshot: bool = True,
+        has_backfill_id_column: bool | None = None,
     ) -> dict[str, Any]:
+        """The values of the runs table row of a run. Callers that insert many runs can check the
+        snapshots and the schema once, and pass `check_snapshot=False` and
+        `has_backfill_id_column`.
+        """
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
-        if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
+        if (
+            check_snapshot
+            and dagster_run.job_snapshot_id
+            and not self.has_job_snapshot(dagster_run.job_snapshot_id)
+        ):
             raise DagsterSnapshotDoesNotExist(
                 f"Snapshot {dagster_run.job_snapshot_id} does not exist in run storage"
             )
@@ -134,7 +147,11 @@ class SqlRunStorage(RunStorage):
             "partition": partition,
             "partition_set": partition_set,
         }
-        if self.has_backfill_id_column():
+        if (
+            has_backfill_id_column
+            if has_backfill_id_column is not None
+            else self.has_backfill_id_column()
+        ):
             values["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
         if run_creation_time:
             values["create_timestamp"] = run_creation_time
@@ -161,6 +178,42 @@ class SqlRunStorage(RunStorage):
             dagster_run.tags_for_storage(),
         )
         return dagster_run
+
+    def add_runs(self, dagster_runs: Sequence[DagsterRun]) -> Sequence[DagsterRun]:
+        if len(dagster_runs) <= 1:
+            return [self.add_run(dagster_run) for dagster_run in dagster_runs]
+
+        # Runs created together usually share their snapshot, so check each snapshot once.
+        for snapshot_id in {run.job_snapshot_id for run in dagster_runs if run.job_snapshot_id}:
+            if not self.has_job_snapshot(snapshot_id):
+                raise DagsterSnapshotDoesNotExist(
+                    f"Snapshot {snapshot_id} does not exist in run storage"
+                )
+
+        now = get_current_datetime()
+        has_backfill_id_column = self.has_backfill_id_column()
+        rows = [
+            self._get_run_insertion_values(
+                dagster_run,
+                now,
+                check_snapshot=False,
+                has_backfill_id_column=has_backfill_id_column,
+            )
+            for dagster_run in dagster_runs
+        ]
+        tag_rows = [
+            dict(run_id=dagster_run.run_id, key=key, value=value)
+            for dagster_run in dagster_runs
+            for key, value in dagster_run.tags_for_storage().items()
+        ]
+        with self.connect() as conn:
+            try:
+                conn.execute(RunsTable.insert(), rows)
+            except db_exc.IntegrityError as exc:
+                raise DagsterRunAlreadyExists from exc
+            if tag_rows:
+                conn.execute(RunTagsTable.insert(), tag_rows)
+        return dagster_runs
 
     def add_historical_run(
         self, dagster_run: DagsterRun, run_creation_time: datetime
@@ -258,6 +311,65 @@ class SqlRunStorage(RunStorage):
                     **kwargs,
                 )
             )
+
+    def handle_run_events(
+        self, run_events: Sequence[tuple[str, DagsterEvent, datetime | None]]
+    ) -> None:
+        # Events that only set a run's status (e.g. RUN_ENQUEUED for many new runs) are applied with
+        # one read and one write for all of them. Others, such as failures that also tag the run,
+        # are handled one at a time.
+        simple_events = [
+            (run_id, event, update_timestamp)
+            for run_id, event, update_timestamp in run_events
+            if event.event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS
+            and event.event_type
+            not in {
+                DagsterEventType.PIPELINE_START,
+                DagsterEventType.PIPELINE_CANCELED,
+                DagsterEventType.PIPELINE_FAILURE,
+                DagsterEventType.PIPELINE_SUCCESS,
+            }
+        ]
+        if len(simple_events) <= 1 or len(simple_events) != len(run_events):
+            super().handle_run_events(run_events)
+            return
+
+        run_ids = list({run_id for run_id, _, _ in simple_events})
+        rows = self.fetchall(
+            db_select([RunsTable.c.run_id, RunsTable.c.run_body, RunsTable.c.status]).where(
+                RunsTable.c.run_id.in_(run_ids)
+            )
+        )
+        runs_by_id = {row["run_id"]: self._row_to_run(row) for row in rows}
+
+        updates = []
+        for run_id, event, update_timestamp in simple_events:
+            run = runs_by_id.get(run_id)
+            if not run:
+                continue
+            new_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+            run = run.with_status(new_status)
+            runs_by_id[run_id] = run
+            updates.append(
+                dict(
+                    target_run_id=run_id,
+                    new_run_body=serialize_value(run),
+                    new_status=new_status.value,
+                    new_update_timestamp=update_timestamp or get_current_datetime(),
+                )
+            )
+        if updates:
+            with self.connect() as conn:
+                conn.execute(
+                    RunsTable.update()
+                    .where(RunsTable.c.run_id == db.bindparam("target_run_id"))
+                    .values(
+                        run_body=db.bindparam("new_run_body"),
+                        status=db.bindparam("new_status"),
+                        update_timestamp=db.bindparam("new_update_timestamp"),
+                    ),
+                    updates,
+                )
 
     def _row_to_run(self, row: dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
