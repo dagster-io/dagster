@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 import click
 from dagster_shared.utils import find_uv_workspace_root
@@ -512,6 +513,8 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
                         os.path.join(code_directory, source_path)
                     ):
                         source_path = f"./{source_path}"
+                    elif os.path.isfile(os.path.join(code_directory, source_path)):
+                        source_path = (Path(code_directory) / source_path).absolute().as_uri()
                     resolved_lines.append(source_path)
                     continue
             resolved_lines.append(line)

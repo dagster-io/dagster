@@ -680,7 +680,7 @@ local-utils = {{ path = "{source_path}" }}
     local_package_paths, deps_lines = deps.collect_requirements(str(tmp_path), "python")
 
     assert local_package_paths == []
-    assert deps_lines == [source_path]
+    assert deps_lines == [(tmp_path / source_path).as_uri()]
 
 
 def test_get_deps_requirements_uv_sources_path_with_version_specifier(tmp_path):
