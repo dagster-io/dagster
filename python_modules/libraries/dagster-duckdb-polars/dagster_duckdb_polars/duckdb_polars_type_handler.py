@@ -3,7 +3,12 @@ from collections.abc import Sequence
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDBIOManager,
+    build_duckdb_io_manager,
+    check_table_slice_names,
+)
 
 
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -39,6 +44,7 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
     ):
         """Stores the polars DataFrame in duckdb."""
+        check_table_slice_names(table_slice)
         if obj.is_empty():
             context.log.warning(
                 "Skipping DuckDB write for empty DataFrame. An empty table will not be created."

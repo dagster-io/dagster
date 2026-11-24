@@ -12,7 +12,8 @@ requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     "sshtunnel",
-    "paramiko",
+    # SSHClient.connect takes transport_factory from 2.12.
+    "paramiko>=2.12",
 ]
 
 [project.urls]

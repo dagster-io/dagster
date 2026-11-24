@@ -12,13 +12,14 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    check_sql_identifier,
     escape_backslash_sql_string_literal,
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 
-from dagster_snowflake.resources import SnowflakeResource
+from dagster_snowflake.resources import SNOWFLAKE_IDENTIFIER_REGEX, SnowflakeResource
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -349,10 +350,20 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         )
 
 
+def check_table_slice_names(table_slice: TableSlice) -> None:
+    if table_slice.database is not None:
+        check_sql_identifier(
+            table_slice.database, field="database", pattern=SNOWFLAKE_IDENTIFIER_REGEX
+        )
+    check_sql_identifier(table_slice.schema, field="schema", pattern=SNOWFLAKE_IDENTIFIER_REGEX)
+    check_sql_identifier(table_slice.table, field="table", pattern=SNOWFLAKE_IDENTIFIER_REGEX)
+
+
 class SnowflakeDbClient(DbClient):
     @staticmethod
     @contextmanager
     def connect(context, table_slice):
+        check_table_slice_names(table_slice)
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}
             if context.resource_config
@@ -365,6 +376,7 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        check_table_slice_names(table_slice)
         with connection.cursor() as cursor:
             cursor.execute(
                 f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
@@ -388,6 +400,7 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
+        check_table_slice_names(table_slice)
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition_dimensions:
             query = (
@@ -403,6 +416,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
+    check_table_slice_names(table_slice)
     if table_slice.partition_dimensions:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"

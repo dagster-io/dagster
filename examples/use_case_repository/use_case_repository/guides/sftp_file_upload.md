@@ -27,6 +27,7 @@ To follow the steps in this guide, you will need:
 - To have Dagster installed. Refer to the [Dagster Installation Guide](https://docs.dagster.io/getting-started/installation) for instructions.
 - A basic understanding of Dagster. Refer to the [Dagster Documentation](https://docs.dagster.io/getting-started/what-why-dagster) for more information.
 - Access to an SFTP server with appropriate credentials.
+- The SFTP server's host key in `~/.ssh/known_hosts`, or in a file you pass as `known_hosts_file`. `SSHResource` rejects hosts whose key it cannot verify.
 
 ---
 

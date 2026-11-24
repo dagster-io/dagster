@@ -45,7 +45,10 @@ from dagster._annotations import preview, public
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dagster._core.storage.db_io_manager import escape_backslash_sql_string_literal
+from dagster._core.storage.db_io_manager import (
+    check_sql_identifier,
+    escape_backslash_sql_string_literal,
+)
 from dagster._time import get_current_timestamp
 from dagster.components.component.state_backed_component import StateBackedComponent
 from dagster.components.resolved.context import ResolutionContext
@@ -85,7 +88,7 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_tr
 from dagster_dbt.dbt_manifest import validate_manifest
 from pydantic import Field
 
-from dagster_snowflake.resources import SnowflakeResource
+from dagster_snowflake.resources import SNOWFLAKE_IDENTIFIER_REGEX, SnowflakeResource
 
 logger = dg.get_dagster_logger()
 
@@ -280,6 +283,7 @@ def build_information_schema_tables_sql(database: str, schemas: list[str]) -> st
     single lightweight query instead of one ``SELECT count(*)`` per model. It is ``NULL`` for
     views, which is exactly the set we skip.
     """
+    check_sql_identifier(database, field="database", pattern=SNOWFLAKE_IDENTIFIER_REGEX)
     return (
         f"SELECT table_schema, table_name, row_count FROM {database}.INFORMATION_SCHEMA.TABLES "
         f"WHERE table_schema IN ({_quote_list(schemas)})"
@@ -292,6 +296,7 @@ def build_information_schema_columns_sql(database: str, schemas: list[str]) -> s
     Returns every column (with type, in ordinal order) for the requested schemas in one
     cloud-services query, replacing per-model ``DESCRIBE TABLE`` round-trips.
     """
+    check_sql_identifier(database, field="database", pattern=SNOWFLAKE_IDENTIFIER_REGEX)
     return (
         "SELECT table_schema, table_name, column_name, data_type "
         f"FROM {database}.INFORMATION_SCHEMA.COLUMNS "

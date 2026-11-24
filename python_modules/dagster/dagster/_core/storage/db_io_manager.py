@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -49,6 +50,19 @@ _BACKSLASH_LITERAL_ESCAPES = {
 def escape_backslash_sql_string_literal(value: str) -> str:
     """Escape the contents of a single-quoted BigQuery or Snowflake literal."""
     return value.translate(_BACKSLASH_LITERAL_ESCAPES)
+
+
+def check_sql_identifier(value: str, *, field: str, pattern: re.Pattern[str]) -> None:
+    """Raise unless ``value`` is safe to write into SQL as a bare identifier.
+
+    Names can come from run config. They are validated rather than quoted, because quoting
+    would change how warehouses fold the case of names that work today.
+    """
+    if not pattern.fullmatch(value):
+        raise DagsterInvariantViolationError(
+            f"Invalid {field} {value!r}: it is written into SQL unquoted, so it must match"
+            f" {pattern.pattern}"
+        )
 
 
 def static_where_clause(

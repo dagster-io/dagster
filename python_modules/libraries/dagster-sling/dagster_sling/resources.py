@@ -41,6 +41,11 @@ logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
+# The table name comes from Sling's log output, which reflects names in the source database,
+# so it is spliced into SQL only when it cannot carry anything but identifiers.
+_SAFE_TABLE_NAME_PART = r"(?:[\w$]+|`[\w$-]+`)"
+SAFE_TABLE_NAME_REGEX = re.compile(rf"{_SAFE_TABLE_NAME_PART}(?:\.{_SAFE_TABLE_NAME_PART})*")
+
 
 @public
 class SlingMode(str, Enum):
@@ -344,7 +349,14 @@ class SlingResource(ConfigurableResource):
 
         Returns:
             int: The number of rows in the table.
+
+        Raises:
+            ValueError: If ``table_name`` is not a plain or backtick-quoted dotted identifier.
         """
+        if not SAFE_TABLE_NAME_REGEX.fullmatch(table_name):
+            raise ValueError(
+                f"Not counting rows: {table_name!r} is not a plain or backtick-quoted table name"
+            )
         select_stmt: str = f"select count(*) as ct from {table_name}"
         output = self.run_sling_cli(
             ["conns", "exec", target_name, select_stmt],

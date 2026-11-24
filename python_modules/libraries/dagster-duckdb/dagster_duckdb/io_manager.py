@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 from collections.abc import Sequence
 from contextlib import contextmanager
@@ -13,6 +14,7 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    check_sql_identifier,
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
@@ -256,6 +258,16 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
         )
 
 
+DUCKDB_IDENTIFIER_REGEX = re.compile(r"[^\W\d]\w*")
+# A schema may name another attached catalog, as in "my_db.my_schema".
+DUCKDB_SCHEMA_REGEX = re.compile(r"(?:[^\W\d]\w*\.)?[^\W\d]\w*")
+
+
+def check_table_slice_names(table_slice: TableSlice) -> None:
+    check_sql_identifier(table_slice.schema, field="schema", pattern=DUCKDB_SCHEMA_REGEX)
+    check_sql_identifier(table_slice.table, field="table", pattern=DUCKDB_IDENTIFIER_REGEX)
+
+
 class DuckDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
@@ -267,10 +279,12 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        check_table_slice_names(table_slice)
         connection.execute(f"create schema if not exists {table_slice.schema};")
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
+        check_table_slice_names(table_slice)
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions:
@@ -281,7 +295,8 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, table_slice):
+        check_table_slice_names(table_slice)
         config = context.resource_config["connection_config"]
 
         # support for `custom_user_agent` was added in v1.0.0
@@ -312,6 +327,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
+    check_table_slice_names(table_slice)
     if table_slice.partition_dimensions:
         query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
         return query + _partition_where_clause(table_slice.partition_dimensions)

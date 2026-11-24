@@ -1,7 +1,10 @@
+import getpass
 import logging
 import os
+from pathlib import Path
 from unittest import mock
 
+import paramiko
 import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -59,6 +62,7 @@ def test_ssh_connection_with_password(ssh_mock) -> None:
             port=12345,
             sock=None,
             look_for_keys=False,
+            transport_factory=mock.ANY,
         )
 
 
@@ -90,7 +94,158 @@ def test_ssh_connection_without_password(ssh_mock) -> None:
             compress=True,
             port=12345,
             sock=None,
+            transport_factory=mock.ANY,
         )
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_defaults_to_current_user(ssh_mock) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", key_file="fake.file")
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["username"] == getpass.getuser()
+
+
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
+def test_tunnel_defaults_to_current_user(ssh_mock) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", key_file="fake.file")
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+    with ssh_resource.get_tunnel(1234):
+        assert ssh_mock.call_args.kwargs["ssh_username"] == getpass.getuser()
+
+
+@pytest.fixture
+def identity_file(home: Path, tmp_path: Path) -> str:
+    """An ~/.ssh/config that names an IdentityFile for remote_host."""
+    (home / ".ssh").mkdir()
+    key_path = str(tmp_path / "id_remote")
+    (home / ".ssh" / "config").write_text(f"Host remote_host\n  IdentityFile {key_path}\n")
+    return key_path
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_uses_identity_file_from_ssh_config(ssh_mock, identity_file: str) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="username")
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["key_filename"] == identity_file
+
+
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
+def test_tunnel_uses_identity_file_from_ssh_config(ssh_mock, identity_file: str) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="username")
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+    with ssh_resource.get_tunnel(1234):
+        assert ssh_mock.call_args.kwargs["ssh_pkey"] == identity_file
+
+
+@mock.patch("paramiko.SSHClient")
+def test_blank_password_falls_back_to_identity_file_from_ssh_config(
+    ssh_mock, identity_file: str
+) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="username", password="  ")
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["key_filename"] == identity_file
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_with_key_string_ignores_identity_file_from_ssh_config(
+    ssh_mock, identity_file: str
+) -> None:
+    ssh_resource = SSHResource(
+        remote_host="remote_host", username="username", key_string=generate_ssh_key()
+    )
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["key_filename"] is None
+
+
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
+def test_tunnel_with_key_string_does_not_warn_about_key_file(
+    ssh_mock, identity_file: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    ssh_resource = SSHResource(
+        remote_host="remote_host", username="username", key_string=generate_ssh_key()
+    )
+    ssh_resource.setup_for_execution(build_init_resource_context())
+    ssh_resource.set_logger(logging.root.getChild("test_resources"))
+
+    with ssh_resource.get_tunnel(1234):
+        assert "key_file" not in caplog.text
+
+
+def test_setup_does_not_need_the_current_user(monkeypatch: pytest.MonkeyPatch) -> None:
+    def no_passwd_entry() -> str:
+        raise KeyError("getpwuid(): uid not found: 1000770000")
+
+    monkeypatch.setattr(getpass, "getuser", no_passwd_entry)
+    ssh_resource = SSHResource(remote_host="remote_host", key_file="fake.file")
+
+    ssh_resource.setup_for_execution(build_init_resource_context())
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_without_setup_uses_key_string(ssh_mock) -> None:
+    ssh_key = generate_ssh_key()
+    ssh_resource = SSHResource(remote_host="remote_host", username="u", key_string=ssh_key)
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["pkey"] == key_from_str(ssh_key)
+
+
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
+def test_tunnel_without_setup_uses_key_string(ssh_mock) -> None:
+    ssh_key = generate_ssh_key()
+    ssh_resource = SSHResource(remote_host="remote_host", username="u", key_string=ssh_key)
+
+    with ssh_resource.get_tunnel(1234):
+        assert ssh_mock.call_args.kwargs["ssh_pkey"] == key_from_str(ssh_key)
+
+
+@pytest.fixture
+def proxy_command(home: Path) -> str:
+    """An ~/.ssh/config that reaches remote_host through a ProxyCommand."""
+    (home / ".ssh").mkdir()
+    (home / ".ssh" / "config").write_text("Host remote_host\n  ProxyCommand cat\n")
+    return "cat"
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_without_setup_uses_proxy_command_from_ssh_config(
+    ssh_mock, proxy_command: str
+) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="u", key_file="/k")
+
+    with ssh_resource.get_connection():
+        sock = ssh_mock.return_value.connect.call_args.kwargs["sock"]
+    sock.close()
+
+    assert isinstance(sock, paramiko.ProxyCommand)
+    assert sock.cmd == [proxy_command]
+
+
+@mock.patch("paramiko.SSHClient")
+def test_ssh_connection_without_setup_uses_configured_credentials(ssh_mock) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="deploy", key_file="/k")
+
+    with ssh_resource.get_connection():
+        assert ssh_mock.return_value.connect.call_args.kwargs["username"] == "deploy"
+        assert ssh_mock.return_value.connect.call_args.kwargs["key_filename"] == "/k"
+
+
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
+def test_tunnel_without_setup_uses_configured_credentials(ssh_mock) -> None:
+    ssh_resource = SSHResource(remote_host="remote_host", username="deploy", key_file="/k")
+
+    with ssh_resource.get_tunnel(1234):
+        assert ssh_mock.call_args.kwargs["ssh_username"] == "deploy"
+        assert ssh_mock.call_args.kwargs["ssh_pkey"] == "/k"
 
 
 @mock.patch("paramiko.SSHClient")
@@ -122,10 +277,11 @@ def test_ssh_connection_with_key_string(ssh_mock) -> None:
             compress=True,
             port=12345,
             sock=None,
+            transport_factory=mock.ANY,
         )
 
 
-@mock.patch("dagster_ssh.resources.SSHTunnelForwarder")
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
 def test_tunnel_with_password(ssh_mock) -> None:
     ssh_resource = SSHResource(
         remote_host="remote_host",
@@ -136,7 +292,7 @@ def test_tunnel_with_password(ssh_mock) -> None:
         key_file="fake.file",
         keepalive_interval=30,
         compress=True,
-        no_host_key_check=False,
+        no_host_key_check=True,
         allow_host_key_change=False,
     )
     ssh_resource.setup_for_execution(build_init_resource_context())
@@ -149,14 +305,15 @@ def test_tunnel_with_password(ssh_mock) -> None:
             ssh_username="username",
             ssh_password="password",
             ssh_pkey="fake.file",
-            ssh_proxy=None,
             local_bind_address=("localhost",),
             remote_bind_address=("localhost", 1234),
             logger=ssh_resource.log,
+            known_host_keys=mock.ANY,
+            accept_unknown=True,
         )
 
 
-@mock.patch("dagster_ssh.resources.SSHTunnelForwarder")
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
 def test_tunnel_without_password(ssh_mock) -> None:
     ssh_resource = SSHResource(
         remote_host="remote_host",
@@ -167,7 +324,7 @@ def test_tunnel_without_password(ssh_mock) -> None:
         key_file="fake.file",
         keepalive_interval=30,
         compress=True,
-        no_host_key_check=False,
+        no_host_key_check=True,
         allow_host_key_change=False,
     )
     ssh_resource.setup_for_execution(build_init_resource_context())
@@ -179,15 +336,16 @@ def test_tunnel_without_password(ssh_mock) -> None:
             ssh_port=12345,
             ssh_username="username",
             ssh_pkey="fake.file",
-            ssh_proxy=None,
             local_bind_address=("localhost",),
             remote_bind_address=("localhost", 1234),
             host_pkey_directories=[],
             logger=ssh_resource.log,
+            known_host_keys=mock.ANY,
+            accept_unknown=True,
         )
 
 
-@mock.patch("dagster_ssh.resources.SSHTunnelForwarder")
+@mock.patch("dagster_ssh.resources.KnownHostTunnelForwarder")
 def test_tunnel_with_string_key(ssh_mock) -> None:
     ssh_key = generate_ssh_key()
 
@@ -200,7 +358,7 @@ def test_tunnel_with_string_key(ssh_mock) -> None:
         key_string=ssh_key,
         keepalive_interval=30,
         compress=True,
-        no_host_key_check=False,
+        no_host_key_check=True,
         allow_host_key_change=False,
     )
     ssh_resource.setup_for_execution(build_init_resource_context())
@@ -212,11 +370,12 @@ def test_tunnel_with_string_key(ssh_mock) -> None:
             ssh_port=12345,
             ssh_username="username",
             ssh_pkey=key_from_str(ssh_key),
-            ssh_proxy=None,
             local_bind_address=("localhost",),
             remote_bind_address=("localhost", 1234),
             host_pkey_directories=[],
             logger=ssh_resource.log,
+            known_host_keys=mock.ANY,
+            accept_unknown=True,
         )
 
 

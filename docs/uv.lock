@@ -2974,7 +2974,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../python_modules/dagster" },
-    { name = "paramiko" },
+    { name = "paramiko", specifier = ">=2.12" },
     { name = "sshtunnel" },
 ]
 

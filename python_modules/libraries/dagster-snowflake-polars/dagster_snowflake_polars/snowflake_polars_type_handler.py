@@ -8,6 +8,7 @@ from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, Tabl
 from dagster_snowflake.snowflake_io_manager import (
     SnowflakeDbClient,
     SnowflakeIOManager,
+    check_table_slice_names,
     partition_where_clause,
 )
 
@@ -59,6 +60,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
     ) -> Mapping[str, RawMetadataValue]:
+        check_table_slice_names(table_slice)
         if obj.is_empty():
             context.log.warning(
                 "Skipping Snowflake write for empty DataFrame. An empty table will not be created."
