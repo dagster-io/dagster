@@ -1,4 +1,12 @@
-import {Box, Button, Icon, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Icon,
+  NonIdealState,
+  Spinner,
+  Tag,
+} from '@dagster-io/ui-components';
 import {ReactNode, useContext, useEffect, useState} from 'react';
 
 import {formatDuration} from './HillpointeRoot';
@@ -38,6 +46,13 @@ type ServiceLogEntry = {
   logger: string;
   message: string;
   detail: string | null;
+};
+
+type LogKind = 'failure' | 'warning' | 'success';
+
+const LOG_LEVEL_TAG: Record<string, TagLook> = {
+  INFO: {intent: 'success', icon: 'check_circle'},
+  WARNING: {intent: 'warning', icon: 'warning'},
 };
 
 type RestoreRow = {job: string; runAt: string | null; status: string | null};
@@ -249,8 +264,11 @@ const FridayReportRoot = () => {
   const log = useJson<{rows: LogRow[]}>(
     view === 'all' ? `${basePath}/hillpointe/entrata_api_log` : null,
   );
+  const [logKinds, setLogKinds] = useState<Set<LogKind>>(new Set(['failure', 'warning']));
   const serviceLog = useJson<{entries: ServiceLogEntry[]}>(
-    view === 'all' ? `${basePath}/hillpointe/entrata_service_log` : null,
+    view === 'all'
+      ? `${basePath}/hillpointe/entrata_service_log?show=${[...logKinds].join(',')}`
+      : null,
   );
   const restore = useJson<{rows: RestoreRow[]}>(
     view === 'all' ? `${basePath}/hillpointe/realpage_restore` : null,
@@ -401,12 +419,31 @@ const FridayReportRoot = () => {
           </div>
 
           <div className={styles.card}>
-            <div className={styles.cardTitle}>
-              Entrata service log
-              <span className={styles.cardSub}>
-                Recent warnings and errors in service.log, newest first · server clock
-              </span>
-            </div>
+            <Box
+              flex={{justifyContent: 'space-between', alignItems: 'center', wrap: 'wrap', gap: 12}}
+            >
+              <div className={styles.cardTitle}>
+                Entrata service log
+                <span className={styles.cardSub}>
+                  Recent entries in service.log, newest first · server clock
+                </span>
+              </div>
+              <ButtonGroup<LogKind>
+                activeItems={logKinds}
+                buttons={[
+                  {id: 'failure', label: 'Failure', icon: 'error'},
+                  {id: 'warning', label: 'Warnings', icon: 'warning'},
+                  {id: 'success', label: 'Success', icon: 'check_circle'},
+                ]}
+                onClick={(id) => {
+                  const next = new Set(logKinds);
+                  if (!next.delete(id)) {
+                    next.add(id);
+                  }
+                  setLogKinds(next);
+                }}
+              />
+            </Box>
             <Loaded
               error={serviceLog.error}
               ready={!!serviceLog.data}
@@ -429,7 +466,7 @@ const FridayReportRoot = () => {
                         <tr key={`${e.at}-${i}`}>
                           <td className={styles.fridayTime}>{e.at}</td>
                           <StatusCell
-                            look={e.level === 'WARNING' ? STATUS_TAG.EMPTY : STATUS_TAG.FAILED}
+                            look={LOG_LEVEL_TAG[e.level] ?? STATUS_TAG.FAILED}
                             label={e.level}
                           />
                           <td>{e.logger}</td>

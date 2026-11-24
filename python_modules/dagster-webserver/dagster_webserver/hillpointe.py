@@ -78,6 +78,9 @@ SERVICE_LOG_PATH = os.environ.get(
     "HILLPOINTE_ENTRATA_SERVICE_LOG", r"D:\Projects\EntrataBoxScoreAPI\service.log"
 )
 SERVICE_LOG_TAIL_BYTES = 4_000_000
+SERVICE_LOG_LIMIT = 500
+# The page's filter names for the log's levels; any other level counts as a failure.
+_SERVICE_LOG_KINDS = {"INFO": "success", "WARNING": "warning"}
 _SERVICE_LOG_LINE = re.compile(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),\d+ \[(\w+)\] ([\w.]+): (.*)")
 
 _ENV_VARS = ("SQL_SERVER_HOST", "SQL_USERNAME", "SQL_PASSWORD")
@@ -244,8 +247,10 @@ async def realpage_restore_endpoint(request: Request) -> JSONResponse:
     )
 
 
-def read_service_log(path: str) -> list[dict]:
-    """Warnings and errors in the tail of the service log, newest first.
+def read_service_log(path: str, kinds: set[str]) -> list[dict]:
+    """The newest entries of each given kind in the tail of the service log, newest first.
+
+    The limit is per kind, so the routine lines cannot crowd out the failures.
 
     A traceback's last line (the exception itself) is kept as the entry's detail.
     """
@@ -260,7 +265,7 @@ def read_service_log(path: str) -> list[dict]:
         if match := _SERVICE_LOG_LINE.match(line):
             at, level, logger, message = match.groups()
             entry = None
-            if level != "INFO":
+            if _SERVICE_LOG_KINDS.get(level, "failure") in kinds:
                 entry = {
                     "at": at,
                     "level": level,
@@ -271,14 +276,22 @@ def read_service_log(path: str) -> list[dict]:
                 entries.append(entry)
         elif entry and line.strip():
             entry["detail"] = line.strip()
-    entries.reverse()
-    return entries
+
+    newest = []
+    counts = dict.fromkeys(kinds, 0)
+    for entry in reversed(entries):
+        kind = _SERVICE_LOG_KINDS.get(entry["level"], "failure")
+        counts[kind] += 1
+        if counts[kind] <= SERVICE_LOG_LIMIT:
+            newest.append(entry)
+    return newest
 
 
 async def entrata_service_log_endpoint(request: Request) -> JSONResponse:
-    """GET /hillpointe/entrata_service_log: recent warnings and errors of the service log."""
+    """GET /hillpointe/entrata_service_log?show=failure,warning,success: recent log entries."""
+    kinds = set(request.query_params.get("show", "failure,warning").split(","))
     try:
-        entries = await run_in_threadpool(read_service_log, SERVICE_LOG_PATH)
+        entries = await run_in_threadpool(read_service_log, SERVICE_LOG_PATH, kinds)
     except OSError as exc:
         return JSONResponse({"error": f"Could not read {SERVICE_LOG_PATH}: {exc.strerror}"}, 502)
     return JSONResponse({"entries": entries})
