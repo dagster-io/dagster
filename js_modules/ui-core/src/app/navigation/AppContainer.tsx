@@ -6,6 +6,7 @@ import {NavCollapseContext} from './NavCollapseProvider';
 import styles from './css/AppContainer.module.css';
 import {NavigationGroup} from './types';
 import {FallLeaves} from '../../hillpointe/FallLeaves';
+import {Snowfall} from '../../hillpointe/Snowfall';
 import {useReloadOnNewBuild, useReloadOnRemoteRefresh} from '../useReloadOnNewBuild';
 
 interface Props {
@@ -40,6 +41,7 @@ export const AppContainer = (props: Props) => {
         <div className={styles.child}>{children}</div>
       </div>
       <FallLeaves />
+      <Snowfall />
     </div>
   );
 };

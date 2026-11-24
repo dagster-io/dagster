@@ -1,0 +1,28 @@
+.flake {
+  position: fixed;
+  top: -10px;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 50%;
+  background: var(--hp-flake, white);
+  opacity: 0.8;
+  animation: snow linear infinite;
+}
+
+@keyframes snow {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(24px, 50vh);
+  }
+  100% {
+    transform: translate(0, calc(100vh + 20px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flake {
+    display: none;
+  }
+}

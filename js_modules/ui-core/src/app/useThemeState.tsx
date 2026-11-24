@@ -13,6 +13,8 @@ export const themeSet = new Set([
   DagsterTheme.AlinosDark,
   DagsterTheme.Halloween,
   DagsterTheme.Fall,
+  DagsterTheme.Christmas,
+  DagsterTheme.Frost,
 ]);
 
 export const useThemeState = () => {

@@ -22,6 +22,7 @@ import {localTimezoneLabel, orgTimezoneLabel} from '../../../app/time/browserTim
 import {requestRefreshEverywhere} from '../../../app/useReloadOnNewBuild';
 import {useThemeState} from '../../../app/useThemeState';
 import {useFallLeavesEnabled} from '../../../hillpointe/FallLeaves';
+import {SNOW_THEMES, useSnowfallEnabled} from '../../../hillpointe/Snowfall';
 import {ROTATE_MAX_SECS, useTimingsRotateSecs} from '../../../hillpointe/timingsRotation';
 import {useStateWithStorage} from '../../../hooks/useStateWithStorage';
 
@@ -38,6 +39,7 @@ export const UserPreferences = ({
   );
   const {theme, setTheme} = useThemeState();
   const [fallLeavesEnabled, setFallLeavesEnabled] = useFallLeavesEnabled();
+  const [snowfallEnabled, setSnowfallEnabled] = useSnowfallEnabled();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
@@ -115,6 +117,16 @@ export const UserPreferences = ({
             checked={fallLeavesEnabled}
             format="switch"
             onChange={(e) => setFallLeavesEnabled(e.target.checked)}
+          />
+        </Box>
+      ) : null}
+      {SNOW_THEMES.includes(theme) ? (
+        <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+          <div>Falling snow</div>
+          <Checkbox
+            checked={snowfallEnabled}
+            format="switch"
+            onChange={(e) => setSnowfallEnabled(e.target.checked)}
           />
         </Box>
       ) : null}

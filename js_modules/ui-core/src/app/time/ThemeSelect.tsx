@@ -54,6 +54,16 @@ export const THEME_OPTIONS: {key: DagsterTheme; label: string; icon: IconName}[]
     label: 'Fall',
     icon: 'eco',
   },
+  {
+    key: DagsterTheme.Christmas,
+    label: 'Christmas',
+    icon: 'star',
+  },
+  {
+    key: DagsterTheme.Frost,
+    label: 'Frost',
+    icon: 'water',
+  },
 ];
 
 export const ThemeSelect = ({theme, onChange}: Props) => {

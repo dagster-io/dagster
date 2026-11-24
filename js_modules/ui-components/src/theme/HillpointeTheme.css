@@ -1002,3 +1002,289 @@
   box-shadow: inset 0 4px 0 hsl(24 92% 54%);
   background: radial-gradient(90% 40% at 50% 0%, hsl(22 70% 16%) 0%, hsl(18 38% 7%) 100%);
 }
+
+/* Christmas: pine-green night backgrounds, snow-white text, gold accent, a
+   Santa-red nav and a candy-cane stripe along the top. Warnings are orange so
+   they stay distinct from the gold accent. */
+.themeChristmas {
+  --browser-color-scheme: dark;
+
+  --color-background-default: hsl(155 35% 6%);
+  --color-background-default-hover: hsl(155 32% 9%);
+  --color-background-light: hsl(155 32% 9%);
+  --color-background-light-hover: hsl(155 28% 13%);
+  --color-background-lighter: hsl(155 28% 13%);
+  --color-background-lighter-hover: hsl(155 25% 18%);
+  --color-background-disabled: hsl(140 30% 85% / 0.1);
+
+  --color-text-default: hsl(45 40% 94%);
+  --color-text-light: hsl(140 18% 76%);
+  --color-text-lighter: hsl(140 12% 60%);
+  --color-text-disabled: hsl(140 12% 60%);
+
+  --color-accent-primary: hsl(43 90% 58%);
+  --color-accent-primary-hover: hsl(45 95% 66%);
+  --color-accent-blue: hsl(43 90% 58%);
+  --color-accent-blue-hover: hsl(45 95% 66%);
+  --color-accent-reversed: hsl(155 35% 6%);
+  --color-accent-reversed-hover: hsl(155 32% 9%);
+  --color-accent-gray: hsl(140 12% 60%);
+  --color-accent-gray-hover: hsl(140 18% 76%);
+  --color-link-default: hsl(43 90% 58%);
+  --color-link-hover: hsl(45 95% 66%);
+  --color-link-disabled: hsl(140 12% 60%);
+  --color-text-blue: hsl(43 90% 58%);
+  --color-focus-ring: hsl(43 90% 58% / 0.6);
+  --color-checkbox-checked: hsl(43 90% 58%);
+  --color-checkbox-unchecked: hsl(140 12% 60%);
+  --color-checkbox-disabled: hsl(140 12% 60%);
+
+  --color-border-default: hsl(140 30% 85% / 0.14);
+  --color-border-hover: hsl(140 30% 85% / 0.26);
+  --color-border-disabled: hsl(140 30% 85% / 0.14);
+  --color-keyline-default: hsl(140 30% 85% / 0.14);
+
+  --color-accent-green: hsl(140 65% 58%);
+  --color-accent-green-hover: hsl(140 70% 66%);
+  --color-accent-red: hsl(0 88% 64%);
+  --color-accent-red-hover: hsl(0 90% 71%);
+  --color-accent-yellow: hsl(26 95% 60%);
+  --color-accent-yellow-hover: hsl(28 100% 67%);
+  --color-text-green: hsl(140 65% 58%);
+  --color-text-red: hsl(0 88% 64%);
+  --color-text-yellow: hsl(26 95% 60%);
+  --color-background-green: hsl(140 65% 58% / 0.2);
+  --color-background-green-hover: hsl(140 65% 58% / 0.3);
+  --color-background-red: hsl(0 88% 64% / 0.2);
+  --color-background-red-hover: hsl(0 88% 64% / 0.3);
+  --color-background-yellow: hsl(26 95% 60% / 0.2);
+  --color-background-yellow-hover: hsl(26 95% 60% / 0.3);
+  --color-background-blue: hsl(43 90% 58% / 0.2);
+  --color-background-blue-hover: hsl(43 90% 58% / 0.3);
+  --color-background-gray: hsl(140 30% 85% / 0.2);
+  --color-background-gray-hover: hsl(140 30% 85% / 0.3);
+
+  --color-nav-background: hsl(355 62% 26%);
+  --color-nav-text: hsl(140 18% 76%);
+  --color-nav-text-hover: hsl(45 40% 94%);
+  --color-nav-text-selected: hsl(45 40% 94%);
+  --color-nav-button: hsl(155 28% 13%);
+  --color-nav-button-hover: hsl(155 25% 18%);
+
+  --color-popover-background: hsl(155 28% 13%);
+  --color-popover-background-hover: hsl(155 25% 18%);
+  --color-dialog-background: hsl(155 40% 3% / 0.75);
+  --color-tooltip-background: hsl(155 25% 18%);
+  --color-tooltip-text: hsl(45 40% 94%);
+  --color-shadow-default: hsl(0 0% 0% / 0.5);
+
+  --color-lineage-edge: hsl(140 30% 85% / 0.26);
+  --color-lineage-edge-highlighted: hsl(43 90% 58%);
+  --color-lineage-node-background: hsl(155 28% 13%);
+  --color-lineage-node-background-hover: hsl(155 25% 18%);
+  --color-lineage-node-border: hsl(140 30% 85% / 0.14);
+  --color-lineage-node-border-hover: hsl(140 30% 85% / 0.26);
+  --color-lineage-node-border-selected: hsl(43 90% 58%);
+  --color-lineage-group-node-background: hsl(155 32% 9%);
+  --color-lineage-group-node-background-hover: hsl(155 28% 13%);
+  --color-lineage-group-node-border: hsl(140 30% 85% / 0.14);
+  --color-lineage-group-node-border-hover: hsl(140 30% 85% / 0.26);
+
+  --color-data-viz-green: hsl(140 65% 58%);
+  --color-data-viz-green-alt: hsl(140 70% 66%);
+  --color-data-viz-red: hsl(0 88% 64%);
+  --color-data-viz-red-alt: hsl(0 90% 71%);
+  --color-data-viz-blue: hsl(43 90% 58%);
+  --color-data-viz-blue-alt: hsl(352 65% 45%);
+  --color-data-viz-yellow: hsl(26 95% 60%);
+  --color-data-viz-yellow-alt: hsl(28 100% 67%);
+  --color-data-viz-gray: hsl(140 12% 60%);
+  --color-data-viz-gray-alt: hsl(140 18% 76%);
+}
+
+/* Nav: Santa red deepening to cranberry, white text. */
+.themeChristmas .hp-nav {
+  background: linear-gradient(180deg, hsl(355 68% 30%) 0%, hsl(350 62% 18%) 100%);
+  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
+  --color-text-default: hsl(0 0% 100%);
+  --color-text-light: hsl(0 0% 100% / 0.9);
+  --color-text-lighter: hsl(0 0% 100% / 0.78);
+  --color-accent-gray: hsl(0 0% 100% / 0.78);
+  --color-accent-primary: hsl(0 0% 100%);
+  --color-accent-blue: hsl(0 0% 100%);
+  --color-link-default: hsl(0 0% 100%);
+  --color-link-hover: hsl(0 0% 100%);
+  --color-background-light: hsl(0 0% 100% / 0.1);
+  --color-background-lighter: hsl(0 0% 100% / 0.12);
+  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
+  --color-background-blue: hsl(0 0% 100% / 0.22);
+  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
+  --color-keyline-default: hsl(0 0% 100% / 0.18);
+  --color-border-default: hsl(0 0% 100% / 0.18);
+  --color-focus-ring: hsl(0 0% 100% / 0.6);
+}
+
+/* Main area: a soft evergreen glow behind the page content. */
+.themeChristmas .hp-main {
+  background: radial-gradient(90% 40% at 50% 0%, hsl(150 45% 13%) 0%, hsl(155 35% 6%) 100%);
+}
+
+/* Candy-cane stripe across the very top of the screen, click-through. */
+.themeChristmas .hp-main::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  pointer-events: none;
+  z-index: 21;
+  background: repeating-linear-gradient(135deg, hsl(0 0% 100%) 0 8px, hsl(355 80% 45%) 8px 16px);
+}
+
+/* Frost: a light theme. Glacier-white pages, deep navy text, ice-blue accent
+   and a deep glacier-blue nav. Snowflakes are tinted blue so they show on the
+   pale background. */
+.themeFrost {
+  --browser-color-scheme: light;
+  --hp-flake: hsl(205 85% 70%);
+
+  --color-background-default: hsl(200 45% 95%);
+  --color-background-default-hover: hsl(200 50% 97%);
+  --color-background-light: hsl(200 50% 97%);
+  --color-background-light-hover: hsl(200 60% 98.5%);
+  --color-background-lighter: hsl(200 60% 98.5%);
+  --color-background-lighter-hover: hsl(0 0% 100%);
+  --color-background-disabled: hsl(210 50% 25% / 0.08);
+
+  --color-text-default: hsl(212 45% 16%);
+  --color-text-light: hsl(210 25% 36%);
+  --color-text-lighter: hsl(208 18% 45%);
+  --color-text-disabled: hsl(208 18% 45%);
+
+  --color-accent-primary: hsl(200 90% 32%);
+  --color-accent-primary-hover: hsl(200 92% 27%);
+  --color-accent-blue: hsl(200 90% 32%);
+  --color-accent-blue-hover: hsl(200 92% 27%);
+  --color-accent-reversed: hsl(200 45% 95%);
+  --color-accent-reversed-hover: hsl(200 50% 97%);
+  --color-accent-gray: hsl(208 18% 45%);
+  --color-accent-gray-hover: hsl(210 25% 36%);
+  --color-link-default: hsl(200 90% 32%);
+  --color-link-hover: hsl(200 92% 27%);
+  --color-link-disabled: hsl(208 18% 45%);
+  --color-text-blue: hsl(200 90% 32%);
+  --color-focus-ring: hsl(200 90% 32% / 0.42);
+  --color-checkbox-checked: hsl(200 90% 32%);
+  --color-checkbox-unchecked: hsl(208 18% 45%);
+  --color-checkbox-disabled: hsl(208 18% 45%);
+
+  --color-border-default: hsl(210 50% 25% / 0.14);
+  --color-border-hover: hsl(210 50% 25% / 0.24);
+  --color-border-disabled: hsl(210 50% 25% / 0.14);
+  --color-keyline-default: hsl(210 50% 25% / 0.14);
+
+  --color-accent-green: hsl(150 65% 26%);
+  --color-accent-green-hover: hsl(150 65% 21%);
+  --color-accent-red: hsl(350 72% 44%);
+  --color-accent-red-hover: hsl(350 72% 39%);
+  --color-accent-yellow: hsl(42 80% 42%);
+  --color-accent-yellow-hover: hsl(42 80% 46%);
+  --color-text-green: hsl(150 65% 26%);
+  --color-text-red: hsl(350 72% 44%);
+  --color-text-yellow: hsl(42 80% 30%);
+  --color-background-green: hsl(150 65% 26% / 0.1);
+  --color-background-green-hover: hsl(150 65% 26% / 0.15);
+  --color-background-red: hsl(350 72% 44% / 0.1);
+  --color-background-red-hover: hsl(350 72% 44% / 0.15);
+  --color-background-yellow: hsl(42 80% 42% / 0.1);
+  --color-background-yellow-hover: hsl(42 80% 42% / 0.15);
+  --color-background-blue: hsl(200 90% 32% / 0.1);
+  --color-background-blue-hover: hsl(200 90% 32% / 0.15);
+  --color-background-gray: hsl(210 50% 25% / 0.1);
+  --color-background-gray-hover: hsl(210 50% 25% / 0.15);
+
+  --color-nav-background: hsl(205 70% 28%);
+  --color-nav-text: hsl(210 25% 36%);
+  --color-nav-text-hover: hsl(212 45% 16%);
+  --color-nav-text-selected: hsl(212 45% 16%);
+  --color-nav-button: hsl(200 60% 98.5%);
+  --color-nav-button-hover: hsl(0 0% 100%);
+
+  --color-popover-background: hsl(200 60% 98.5%);
+  --color-popover-background-hover: hsl(0 0% 100%);
+  --color-dialog-background: hsl(212 45% 16% / 0.35);
+  --color-tooltip-background: hsl(212 45% 16%);
+  --color-tooltip-text: hsl(200 45% 95%);
+  --color-shadow-default: hsl(210 40% 30% / 0.16);
+
+  --color-lineage-edge: hsl(210 50% 25% / 0.24);
+  --color-lineage-edge-highlighted: hsl(200 90% 32%);
+  --color-lineage-node-background: hsl(200 60% 98.5%);
+  --color-lineage-node-background-hover: hsl(0 0% 100%);
+  --color-lineage-node-border: hsl(210 50% 25% / 0.14);
+  --color-lineage-node-border-hover: hsl(210 50% 25% / 0.24);
+  --color-lineage-node-border-selected: hsl(200 90% 32%);
+  --color-lineage-group-node-background: hsl(200 50% 97%);
+  --color-lineage-group-node-background-hover: hsl(200 60% 98.5%);
+  --color-lineage-group-node-border: hsl(210 50% 25% / 0.14);
+  --color-lineage-group-node-border-hover: hsl(210 50% 25% / 0.24);
+
+  --color-data-viz-green: hsl(150 65% 26%);
+  --color-data-viz-green-alt: hsl(150 65% 21%);
+  --color-data-viz-red: hsl(350 72% 44%);
+  --color-data-viz-red-alt: hsl(350 72% 39%);
+  --color-data-viz-blue: hsl(200 90% 32%);
+  --color-data-viz-blue-alt: hsl(215 70% 40%);
+  --color-data-viz-yellow: hsl(42 80% 42%);
+  --color-data-viz-yellow-alt: hsl(42 80% 46%);
+  --color-data-viz-gray: hsl(208 18% 45%);
+  --color-data-viz-gray-alt: hsl(210 25% 36%);
+}
+
+/* Nav: glacier blue deepening to navy, white text. */
+.themeFrost .hp-nav {
+  background: linear-gradient(180deg, hsl(200 75% 36%) 0%, hsl(215 70% 22%) 100%);
+  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
+  --color-text-default: hsl(0 0% 100%);
+  --color-text-light: hsl(0 0% 100% / 0.9);
+  --color-text-lighter: hsl(0 0% 100% / 0.78);
+  --color-accent-gray: hsl(0 0% 100% / 0.78);
+  --color-accent-primary: hsl(0 0% 100%);
+  --color-accent-blue: hsl(0 0% 100%);
+  --color-link-default: hsl(0 0% 100%);
+  --color-link-hover: hsl(0 0% 100%);
+  --color-background-light: hsl(0 0% 100% / 0.1);
+  --color-background-lighter: hsl(0 0% 100% / 0.12);
+  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
+  --color-background-blue: hsl(0 0% 100% / 0.22);
+  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
+  --color-keyline-default: hsl(0 0% 100% / 0.18);
+  --color-border-default: hsl(0 0% 100% / 0.18);
+  --color-focus-ring: hsl(0 0% 100% / 0.6);
+}
+
+/* Main area: a pale ice-blue glow behind the page content. */
+.themeFrost .hp-main {
+  background: radial-gradient(90% 40% at 50% 0%, hsl(195 85% 88%) 0%, hsl(200 45% 95%) 100%);
+}
+
+/* A shimmer of ice across the very top of the screen, click-through. */
+.themeFrost .hp-main::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  pointer-events: none;
+  z-index: 21;
+  background: linear-gradient(
+    90deg,
+    hsl(190 90% 62%),
+    hsl(0 0% 100%),
+    hsl(205 90% 62%),
+    hsl(0 0% 100%),
+    hsl(190 90% 62%)
+  );
+}
