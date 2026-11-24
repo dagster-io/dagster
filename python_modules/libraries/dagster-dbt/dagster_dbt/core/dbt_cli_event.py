@@ -663,6 +663,14 @@ class DbtCoreCliEventMessage(DbtCliEventMessage):
 class DbtFusionCliEventMessage(DbtCliEventMessage):
     """Represents a dbt CLI event that was produced using the dbt Fusion engine."""
 
+    @cached_property
+    def _raw_data(self) -> Mapping[str, Any]:
+        # dbt v2 nests a node's result (`status`, `execution_time`, `num_failures`) under
+        # `data.run_result` instead of directly under `data` as dbt Core does. Fall back to
+        # those values so they are read the same way for both engines.
+        data = self.raw_event["data"]
+        return {**data.get("run_result", {}), **data}
+
     @property
     def is_result_event(self) -> bool:
         unique_id = self.raw_event["data"].get("node_info", {}).get("unique_id")

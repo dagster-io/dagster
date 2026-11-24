@@ -183,3 +183,41 @@ def test_fusion_unit_test_result_is_not_a_result_event(status: str) -> None:
 
     assert not event.is_result_event
     assert list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator())) == []
+
+
+@pytest.mark.parametrize("status,num_failures", [("pass", 0), ("fail", 1), ("warn", 4)])
+def test_fusion_test_result_failed_row_count(status: str, num_failures: int) -> None:
+    """A dbt v2 test result sets the failing row count from `data.run_result`.
+
+    The `NodeFinished` event for a dbt v2 test has only `node_info` and `run_result` under
+    `data`, so reading `data.num_failures` dropped `dagster_dbt/failed_row_count`.
+    """
+    event = DbtFusionCliEventMessage(
+        raw_event={
+            "data": {
+                "node_info": {
+                    "unique_id": "test.jaffle_shop.unique_customers_customer_id",
+                    "node_status": status,
+                    "resource_type": "test",
+                    "node_started_at": "2026-11-24T17:14:05.849806Z",
+                    "node_finished_at": "2026-11-24T17:14:05.858671Z",
+                },
+                "run_result": {
+                    "execution_time": 0.0088,
+                    "num_failures": num_failures,
+                    "status": status,
+                },
+            },
+            "info": {
+                "name": "NodeFinished",
+                "invocation_id": "1ed5a1f0-2ec0-4b4f-9e0f-0a31e2a1a0d1",
+                "msg": "",
+            },
+        },
+        event_history_metadata={},
+    )
+
+    [evaluation] = list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator()))
+
+    assert isinstance(evaluation, AssetCheckEvaluation)
+    assert evaluation.metadata["dagster_dbt/failed_row_count"].value == num_failures
