@@ -222,6 +222,11 @@
   --button-stroke-color-hover: var(--color-border-default);
 }
 
+/* Hillpointe: a toggle that was clicked keeps its flat outline instead of a drop shadow. */
+.buttonGroupItem.button:focus:not(:focus-visible) {
+  box-shadow: var(--button-stroke-color) inset 0px 0px 0px 1px;
+}
+
 /* <JoinedButtons> */
 
 .joinedButtons {
