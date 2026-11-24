@@ -1,6 +1,10 @@
 import asyncio
+import contextvars
+import gc
+import weakref
 
 import dagster as dg
+import dagster._check as check
 import pytest
 from dagster import instance_for_test
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -126,6 +130,37 @@ def test_state_storage_disposed() -> None:
     assert DefsStateStorage.get() is None
 
 
+def test_context_outliving_its_instance_does_not_restore_exited_storage() -> None:
+    with instance_for_test():
+        # enters an ephemeral instance that exits only when the context is collected
+        context = dg.build_op_context()
+
+    with instance_for_test() as instance:
+        del context
+        gc.collect()
+        assert DefsStateStorage.get() is instance.defs_state_storage
+    assert DefsStateStorage.get() is None
+
+
+def test_context_copied_before_exit_does_not_see_exited_storage() -> None:
+    with instance_for_test():
+        # a worker thread or task that copied the context while the instance was entered
+        copied = contextvars.copy_context()
+
+    assert copied.run(DefsStateStorage.get) is None
+
+
+def test_context_copied_before_exit_does_not_keep_exited_storage_alive() -> None:
+    with instance_for_test() as instance:
+        copied = contextvars.copy_context()
+        storage = weakref.ref(check.not_none(instance.defs_state_storage))
+
+    del instance
+    gc.collect()
+    assert storage() is None
+    assert copied.run(DefsStateStorage.get) is None
+
+
 @pytest.mark.asyncio
 async def test_instance_with_manual_async_context_switching():
     """Simulates a scenario that can happen when an instance is entered in an async webserver context."""
@@ -149,7 +184,7 @@ async def test_instance_with_manual_async_context_switching():
     shutdown_task = asyncio.create_task(shutdown_in_different_task(instance_cm, instance))
     await shutdown_task
 
-    # should just set the value to None instead of erroring
+    # the exit runs in a different task's context than the entry, and must not error
     assert DefsStateStorage.get() is None
 
     # everything should still work going forward
