@@ -818,7 +818,10 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
                       {run.status === 'SCHEDULED' ? (
                         'Scheduled'
                       ) : (
-                        <Link to={`/runs/${run.id}`}>{dayjs(run.startTime).fromNow()}</Link>
+                        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                          {run.isRetry ? <Icon name="cached" color={Colors.accentGray()} /> : null}
+                          <Link to={`/runs/${run.id}`}>{dayjs(run.startTime).fromNow()}</Link>
+                        </Box>
                       )}
                     </Box>
                     <div>

@@ -12,6 +12,7 @@ export type TimelineRun = {
   endTime: number;
   automation: null | RunAutomation;
   externalJobSource: null | string;
+  isRetry?: boolean;
 };
 
 export type RowObjectType = 'job' | 'asset' | 'schedule' | 'sensor' | 'legacy-amp' | 'manual';
