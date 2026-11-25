@@ -14,6 +14,9 @@ export const config: VercelConfig = {
   bulkRedirectsPath: 'redirects',
   // The site is served under dagster.io/docs, but Docusaurus emits files at the build root.
   rewrites: [routes.rewrite('/docs/:path*', '/:path*')],
+  // The search page is a client-side tool with no content of its own; keep it out of search engines.
+  // It is also excluded from the sitemap in docusaurus.config.ts.
+  headers: [routes.header('/docs/search', [{key: 'X-Robots-Tag', value: 'noindex'}])],
   redirects: [
     // `/:path*` doesn't catch `/`, and paths already under `/docs` must not get a second prefix.
     routes.redirect('/', 'https://dagster.io/docs', oldDocsHost),
