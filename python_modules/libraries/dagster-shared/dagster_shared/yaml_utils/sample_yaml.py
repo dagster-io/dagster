@@ -77,12 +77,12 @@ def _sample_value_for_subschema(
     json_schema: Mapping[str, Any],
     subschema: Mapping[str, Any],
 ) -> Any:
-    example_value = next(iter(subschema.get("examples", [])), None)
+    examples = subschema.get("examples", [])
 
     subschema = _dereference_schema(json_schema, subschema)
 
-    if example_value:
-        return copy.deepcopy(example_value)
+    if examples:
+        return copy.deepcopy(examples[0])
     if "anyOf" in subschema:
         # TODO: handle anyOf fields more gracefully, for now just choose first option
         return _sample_value_for_subschema(json_schema, subschema["anyOf"][0])
