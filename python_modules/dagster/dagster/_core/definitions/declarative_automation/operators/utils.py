@@ -9,8 +9,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.operators import (
         AndAutomationCondition,
+        BaseDepsAutomationCondition,
         ChecksAutomationCondition,
-        DepsAutomationCondition,
         NotAutomationCondition,
         OrAutomationCondition,
         SinceCondition,
@@ -22,8 +22,8 @@ def has_allow_ignore(
 ) -> TypeIs[
     Union[
         "AndAutomationCondition",
+        "BaseDepsAutomationCondition",
         "ChecksAutomationCondition",
-        "DepsAutomationCondition",
         "NotAutomationCondition",
         "OrAutomationCondition",
         "SinceCondition",
@@ -31,8 +31,8 @@ def has_allow_ignore(
 ]:
     from dagster._core.definitions.declarative_automation.operators import (
         AndAutomationCondition,
+        BaseDepsAutomationCondition,
         ChecksAutomationCondition,
-        DepsAutomationCondition,
         NotAutomationCondition,
         OrAutomationCondition,
         SinceCondition,
@@ -42,8 +42,8 @@ def has_allow_ignore(
         condition,
         (
             AndAutomationCondition,
+            BaseDepsAutomationCondition,
             ChecksAutomationCondition,
-            DepsAutomationCondition,
             NotAutomationCondition,
             OrAutomationCondition,
             SinceCondition,
@@ -56,7 +56,7 @@ def has_resolve_through_virtual(
 ) -> TypeIs[
     Union[
         "AndAutomationCondition",
-        "DepsAutomationCondition",
+        "BaseDepsAutomationCondition",
         "NotAutomationCondition",
         "OrAutomationCondition",
         "SinceCondition",
@@ -64,7 +64,7 @@ def has_resolve_through_virtual(
 ]:
     from dagster._core.definitions.declarative_automation.operators import (
         AndAutomationCondition,
-        DepsAutomationCondition,
+        BaseDepsAutomationCondition,
         NotAutomationCondition,
         OrAutomationCondition,
         SinceCondition,
@@ -74,7 +74,7 @@ def has_resolve_through_virtual(
         condition,
         (
             AndAutomationCondition,
-            DepsAutomationCondition,
+            BaseDepsAutomationCondition,
             NotAutomationCondition,
             OrAutomationCondition,
             SinceCondition,
