@@ -2,6 +2,7 @@
 
 import typing
 
+from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.typing_api import (
     flatten_unions,
     get_mapping_key_value_types,
@@ -199,3 +200,9 @@ def test_flatten_unions() -> None:
     assert flatten_unions(str | float) == {str, float}
     assert flatten_unions(str | float | int) == {str, float, int}
     assert flatten_unions(str | None) == {str, type(None)}
+
+
+def test_optional_inner_type_with_none_first():
+    assert get_optional_inner_type(typing.Union[None, int]) is int  # noqa: UP007
+    assert get_optional_inner_type(type(None) | int) is int
+    assert resolve_dagster_type(type(None) | int).display_name == "Int?"
