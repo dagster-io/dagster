@@ -212,7 +212,7 @@ async def _create_asset_run(
                 if run_request.asset_selection
                 else None,
                 asset_check_selection=frozenset(run_request.asset_check_keys)
-                if run_request.asset_check_keys
+                if run_request.asset_check_keys is not None
                 else None,
                 asset_graph=asset_graph,
             )
