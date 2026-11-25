@@ -614,7 +614,7 @@ def locations_deselect(
 ):
     state_store = state.FileStore(statedir=statedir)
     state_store.deselect(location_names)
-    ui.print("Deselected locations: {locations_names}")
+    ui.print(f"Deselected locations: {', '.join(location_names)}")
 
 
 @app.command(help="Mark the specified locations as included in the current build session")
@@ -624,7 +624,7 @@ def locations_select(
 ):
     state_store = state.FileStore(statedir=statedir)
     state_store.select(location_names)
-    ui.print("Deselected locations: {locations_names}")
+    ui.print(f"Selected locations: {', '.join(location_names)}")
 
 
 def _get_selected_locations(
