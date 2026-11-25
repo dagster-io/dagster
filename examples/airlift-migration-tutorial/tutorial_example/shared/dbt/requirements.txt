@@ -68,7 +68,7 @@ diff-cover==11.0.1
     # via sqlfluff
 duckcli==0.2.1
     # via -r requirements.in
-duckdb==2.0.0
+duckdb==2.0.1
     # via
     #   dbt-duckdb
     #   duckcli
