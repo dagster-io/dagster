@@ -20,7 +20,7 @@ To use this integration, you'll first need to create a GitHub App for it.
    `https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/
    <https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment>`_\
    , You will end up with a private key and App ID, which will be used when configuring the
-   ``dagster-github`` resource. **Note** you will need to grant your app the relevent permissions
+   ``dagster-github`` resource. **Note** you will need to grant your app the relevant permissions
    for the API requests you want to make, for example to post issues it will need read/write access
    for the issues repository permission, more info on GitHub application permissions can be found
    `here <https://developer.github.com/v3/apps/permissions>`_
