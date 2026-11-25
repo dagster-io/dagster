@@ -133,12 +133,16 @@ def with_usage_metadata(
     @wraps(func)
     def wrapper(*args, **kwargs):
         response = func(*args, **kwargs)
+        usage = getattr(response, "usage", None)
+        if usage is None:
+            # Streamed responses (and responses without usage) carry no usage metadata to log.
+            return response
+
         calls_key = f"openai.{response.model}.calls"
         total_tokens_key = f"openai.{response.model}.total_tokens"
         prompt_tokens_key = f"openai.{response.model}.prompt_tokens"
         completion_tokens_key = f"openai.{response.model}.completion_tokens"
 
-        usage = response.usage
         usage_metadata = {
             calls_key: 1,
             total_tokens_key: usage.total_tokens,
