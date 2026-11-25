@@ -221,3 +221,61 @@ def test_fusion_test_result_failed_row_count(status: str, num_failures: int) -> 
 
     assert isinstance(evaluation, AssetCheckEvaluation)
     assert evaluation.metadata["dagster_dbt/failed_row_count"].value == num_failures
+
+
+def _fusion_test_finished_event(node_info: dict, data: dict) -> DbtFusionCliEventMessage:
+    return DbtFusionCliEventMessage(
+        raw_event={
+            "data": {
+                "node_info": {
+                    "unique_id": "test.jaffle_shop.unique_customers_customer_id",
+                    "resource_type": "test",
+                    **node_info,
+                },
+                **data,
+            },
+            "info": {
+                "name": "NodeFinished",
+                "invocation_id": "1ed5a1f0-2ec0-4b4f-9e0f-0a31e2a1a0d1",
+                "msg": "",
+            },
+        },
+        event_history_metadata={},
+    )
+
+
+def test_fusion_test_result_status_and_duration_fall_back_to_run_result() -> None:
+    """Without `node_status` or node timestamps, status and duration come from `run_result`."""
+    event = _fusion_test_finished_event(
+        node_info={"node_status": "None", "node_started_at": "", "node_finished_at": ""},
+        data={"run_result": {"execution_time": 0.25, "num_failures": 3, "status": "Fail"}},
+    )
+
+    [evaluation] = list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator()))
+
+    assert isinstance(evaluation, AssetCheckEvaluation)
+    assert not evaluation.passed
+    assert evaluation.metadata["status"].value == "fail"
+    assert evaluation.metadata["Execution Duration"].value == 0.25
+    assert evaluation.metadata["dagster_dbt/failed_row_count"].value == 3
+
+
+def test_fusion_test_result_top_level_values_take_precedence_over_run_result() -> None:
+    """Values set directly under `data` win over the same keys under `data.run_result`."""
+    event = _fusion_test_finished_event(
+        node_info={"node_status": "None", "node_started_at": "", "node_finished_at": ""},
+        data={
+            "execution_time": 1.5,
+            "num_failures": 0,
+            "status": "Pass",
+            "run_result": {"execution_time": 0.25, "num_failures": 3, "status": "Fail"},
+        },
+    )
+
+    [evaluation] = list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator()))
+
+    assert isinstance(evaluation, AssetCheckEvaluation)
+    assert evaluation.passed
+    assert evaluation.metadata["status"].value == "pass"
+    assert evaluation.metadata["Execution Duration"].value == 1.5
+    assert evaluation.metadata["dagster_dbt/failed_row_count"].value == 0
