@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -14,6 +15,7 @@ from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKe
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.freshness_builder import build_freshness_checks_from_dbt_assets
 
 
@@ -79,8 +81,14 @@ def test_dbt_duplicate_assets_defs(test_last_update_freshness_manifest: dict[str
 def test_last_update_multiple_assets_defs(
     test_last_update_freshness_manifest_multiple_assets_defs: dict[str, Any],
 ) -> None:
+    class PrefixedTranslator(DagsterDbtTranslator):
+        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+            return super().get_asset_key(dbt_resource_props).with_prefix("prefixed")
+
     @dbt_assets(
-        manifest=test_last_update_freshness_manifest_multiple_assets_defs, select="customers"
+        manifest=test_last_update_freshness_manifest_multiple_assets_defs,
+        select="customers",
+        dagster_dbt_translator=PrefixedTranslator(),
     )
     def my_dbt_assets(): ...
 
@@ -95,7 +103,7 @@ def test_last_update_multiple_assets_defs(
     customers_checks = [
         check
         for check in freshness_checks
-        if AssetCheckKey(asset_key=AssetKey(["customers"]), name="freshness_check")
+        if AssetCheckKey(asset_key=AssetKey(["prefixed", "customers"]), name="freshness_check")
         in check.check_keys
     ]
     assert len(customers_checks) == 1
@@ -107,9 +115,9 @@ def test_last_update_multiple_assets_defs(
     assert len(orders_checks) == 1
     customers_check = next(iter(customers_checks))
     orders_check = next(iter(orders_checks))
-    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[
-        FRESHNESS_PARAMS_METADATA_KEY
-    ] == JsonMetadataValue(
+    assert customers_check.check_specs_by_output_name[
+        "prefixed__customers_freshness_check"
+    ].metadata[FRESHNESS_PARAMS_METADATA_KEY] == JsonMetadataValue(
         {
             TIMEZONE_PARAM_KEY: "UTC",
             LOWER_BOUND_DELTA_PARAM_KEY: 86400,
