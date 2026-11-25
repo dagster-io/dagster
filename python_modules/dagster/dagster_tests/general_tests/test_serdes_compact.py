@@ -1,0 +1,551 @@
+import dataclasses
+import json
+import re
+from enum import Enum, IntEnum
+from typing import Any, NamedTuple
+
+import dagster as dg
+import pydantic
+import pytest
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._serdes import deserialize_value, serialize_value, serialize_value_compact
+from dagster_shared.serdes.compact import dumps_compact, is_compact_serialized, loads_compact
+from dagster_shared.serdes.errors import DeserializationError, SerializationError
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    NamedTupleSerializer,
+    PackedObjects,
+    WhitelistMap,
+    _whitelist_for_serdes,
+    pack_value,
+)
+
+VALUES = [
+    None,
+    True,
+    False,
+    0,
+    -3,
+    1.5,
+    1.0,
+    10**30,
+    "",
+    "plain string",
+    [],
+    {},
+    [1, 1.0, True, "1", None],
+    {"a": 1, "__class__x": "not a class"},
+    {"nested": [{"x": [1, 2, {"y": "long repeated string value"}]}] * 3},
+    {"__set__": ["a", "b"]},
+    [[0, 1], [1, 2], [2], [3, "x"]],
+]
+
+
+@pytest.mark.parametrize("value", VALUES)
+def test_packed_roundtrip(value) -> None:
+    serialized = dumps_compact(value)
+    assert is_compact_serialized(serialized)
+    assert loads_compact(serialized, lambda d: d) == value
+    # numbers keep their type, and dict keys are sorted like the legacy format writes them
+    assert json.dumps(loads_compact(serialized, lambda d: d)) == json.dumps(value, sort_keys=True)
+
+
+def test_object_roundtrip_and_sharing() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Color(Enum):
+        RED = "RED"
+
+    @_whitelist_for_serdes(whitelist_map=test_map, storage_field_names={"inner": "old_inner"})
+    class Leaf(NamedTuple):
+        keys: frozenset[str]
+        color: Color
+        tags: frozenset[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map, old_fields={"removed": None})
+    class Node(NamedTuple):
+        name: str
+        inner: Leaf
+        other: Leaf
+
+    leaf = Leaf(frozenset(f"partition-{i}" for i in range(100)), Color.RED, frozenset({"a"}))
+    value = [Node(f"node-{i}", leaf, Leaf(frozenset(), Color.RED, frozenset())) for i in range(50)]
+
+    legacy = dg.serialize_value(value, whitelist_map=test_map)
+    compact = serialize_value_compact(value, whitelist_map=test_map)
+    assert len(compact) * 10 < len(legacy)
+
+    deserialized = dg.deserialize_value(compact, whitelist_map=test_map)
+    assert deserialized == value
+    assert deserialized == dg.deserialize_value(legacy, whitelist_map=test_map)
+    # equal subtrees decode to a single shared object
+    assert deserialized[0].inner is deserialized[1].inner
+
+
+@pytest.mark.parametrize("dropped_first", [False, True])
+def test_unknown_values(dropped_first: bool) -> None:
+    def serialize_with_new_classes(kept_shared: bool) -> str:
+        new_map = WhitelistMap.create()
+
+        @_whitelist_for_serdes(whitelist_map=new_map)
+        class Removed(NamedTuple):
+            value: str
+
+        if dropped_first:
+
+            @_whitelist_for_serdes(whitelist_map=new_map)
+            class Holder(NamedTuple):  # pyright: ignore[reportRedeclaration]
+                dropped: Removed
+                kept: list[Removed]
+
+        else:
+
+            @_whitelist_for_serdes(whitelist_map=new_map)
+            class Holder(NamedTuple):
+                kept: list[Removed]
+                dropped: Removed
+
+        shared = Removed("shared value that is long enough")
+        kept = [shared] if kept_shared else []
+        return serialize_value_compact(Holder(kept=kept, dropped=shared), whitelist_map=new_map)
+
+    old_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=old_map)
+    class Holder(NamedTuple):
+        kept: list
+
+    # the same unknown subtree is under both an ignored field and a kept field
+    with pytest.raises(DeserializationError, match="not in the whitelist"):
+        dg.deserialize_value(serialize_with_new_classes(kept_shared=True), whitelist_map=old_map)
+
+    # unknown values under fields that the reader ignores are dropped
+    assert dg.deserialize_value(
+        serialize_with_new_classes(kept_shared=False), whitelist_map=old_map
+    ) == Holder([])
+
+
+def test_repository_snap_roundtrip() -> None:
+    @dg.asset(
+        partitions_def=dg.StaticPartitionsDefinition(["a", "b"]),
+        check_specs=[
+            dg.AssetCheckSpec(
+                name=f"check_{i}",
+                asset="partitioned",
+                partitions_def=dg.StaticPartitionsDefinition(["a", "b"]),
+            )
+            for i in range(3)
+        ],
+        metadata={"owner_url": dg.MetadataValue.url("http://example.com")},
+    )
+    def partitioned(): ...
+
+    @dg.asset(deps=[partitioned], automation_condition=dg.AutomationCondition.eager())
+    def downstream(): ...
+
+    repo = dg.Definitions(assets=[partitioned, downstream]).get_repository_def()
+    snap = RepositorySnap.from_def(repo, defer_snapshots=True)
+    compact = serialize_value_compact(snap)
+    legacy = serialize_value(snap)
+    assert deserialize_value(compact, RepositorySnap) == deserialize_value(legacy, RepositorySnap)
+    assert json.loads(legacy) == loads_compact(compact, lambda d: d)
+    assert pack_value(deserialize_value(compact, RepositorySnap)) == json.loads(legacy)
+
+
+def _assert_compact_matches_legacy(value, whitelist_map) -> None:
+    legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
+    compact = serialize_value_compact(value, whitelist_map=whitelist_map)
+    assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
+    assert dg.deserialize_value(compact, whitelist_map=whitelist_map) == dg.deserialize_value(
+        legacy, whitelist_map=whitelist_map
+    )
+
+
+def test_packer_matches_legacy_for_serializer_features() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Color(Enum):
+        RED = "RED"
+        BLUE = "BLUE"
+
+    class UpperFieldSerializer(FieldSerializer):
+        def pack(self, value, whitelist_map, descent_path):
+            return value.upper()
+
+        def unpack(self, value, whitelist_map, context):
+            return value.lower()
+
+    class EntriesFieldSerializer(FieldSerializer):
+        def pack(self, value, whitelist_map, descent_path):
+            return [
+                {"__class__": "Entry", "key": k, "value": pack_value(v, whitelist_map)}
+                for k, v in value.items()
+            ]
+
+        def pack_shallow(self, value, whitelist_map):
+            return PackedObjects("Entry", ("key", "value"), [(k, v) for k, v in value.items()])
+
+        def unpack(self, value, whitelist_map, context):
+            return {entry.key: entry.value for entry in value}
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Entry(NamedTuple):
+        key: str
+        value: Any
+
+    @_whitelist_for_serdes(
+        whitelist_map=test_map,
+        storage_name="OldName",
+        storage_field_names={"renamed": "old_renamed"},
+        old_fields={"removed": None},
+        skip_when_empty_fields={"maybe_empty"},
+        skip_when_none_fields={"maybe_none"},
+        field_serializers={"upper": UpperFieldSerializer, "entries": EntriesFieldSerializer},
+    )
+    class Obj(NamedTuple):
+        renamed: str
+        upper: str
+        entries: dict
+        color: Color
+        tags: frozenset
+        maybe_empty: list = []
+        maybe_none: str | None = None
+
+    @_whitelist_for_serdes(
+        whitelist_map=test_map,
+        skip_when_empty_fields={"entries"},
+        field_serializers={"entries": EntriesFieldSerializer},
+    )
+    class SkippedEntries(NamedTuple):
+        name: str
+        entries: dict = {}
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Plain(NamedTuple):
+        first: str
+        second: int | None
+        third: bool
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Model(pydantic.BaseModel):
+        name: str
+        items: list[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @dataclasses.dataclass
+    class Data:
+        values: list[int]
+        model: Model
+
+    objects = [
+        Obj(
+            renamed=f"r{i}",
+            upper="abc",
+            entries={"a": Color.RED, "b": i, "c": None} if i % 2 else {},
+            maybe_empty=[] if i % 3 else ["x"],
+            maybe_none=None if i % 2 else "set",
+            color=Color.BLUE if i % 2 else Color.RED,
+            tags=frozenset({"t1", "t2"}),
+        )
+        for i in range(250)  # more objects than sampled before memoization is turned off
+    ]
+    shared_model = Model(name="shared", items=["a", "b", "c"])
+    value = {
+        "objects": objects,
+        "repeated": [objects[0]] * 3,
+        "models": [Model(name=f"m{i}", items=["x"] * (i % 4)) for i in range(250)],
+        "shared_models": [shared_model] * 250,
+        "data": [Data(values=[1, 2.5, 3], model=shared_model)] * 2,
+        "skipped_entries": [SkippedEntries(name="a"), SkippedEntries(name="b", entries={"k": 1})],
+        # distinct objects: memoization is turned off for the type, after sampling
+        "plain": [
+            Plain(first=f"p{i}", second=i if i % 2 else None, third=i % 3 == 0) for i in range(250)
+        ],
+        "nested": {"tuple": (1, "a", None), "set": {"b", "a"}},
+        # json.dumps converts non-str scalar keys to str
+        "int_keys": {3: True, 1: 1.0},
+    }
+    _assert_compact_matches_legacy(value, test_map)
+
+
+def test_packer_serialization_errors_have_descent_paths() -> None:
+    test_map = WhitelistMap.create()
+
+    class NotWhitelisted(NamedTuple):
+        x: int
+
+    with pytest.raises(SerializationError, match=re.escape("Descent path: <root:dict>.a[1]")):
+        serialize_value_compact({"a": [1, NotWhitelisted(1)]}, whitelist_map=test_map)
+
+
+def test_compact_snapshot_of_large_repository() -> None:
+    assets = [
+        dg.AssetSpec(
+            key=["group", f"asset_{i}"],
+            metadata={"url": dg.MetadataValue.url(f"http://x/{i}"), "count": i},
+            partitions_def=dg.StaticPartitionsDefinition([f"p{j}" for j in range(i % 5 + 1)]),
+        )
+        for i in range(1200)  # more than streamed when writing
+    ]
+    repo = dg.Definitions(assets=assets).get_repository_def()
+    snap = RepositorySnap.from_def(repo, defer_snapshots=True)
+    compact = serialize_value_compact(snap)
+    legacy = serialize_value(snap)
+    assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy))
+
+
+class _StrWithStr(str):
+    def __str__(self) -> str:
+        return "overridden"
+
+
+def _ordered(value: Any) -> Any:
+    """A comparable form of a packed value, that keeps the key order of dicts, including the fields
+    of serdes objects, which hooks such as `before_unpack` see in that order.
+    """
+    if type(value) is dict:
+        return [[key, _ordered(item)] for key, item in value.items()]
+    if type(value) is list:
+        return [_ordered(item) for item in value]
+    return value
+
+
+def _differential_cases(whitelist_map: WhitelistMap) -> dict[str, Any]:
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class StrEnumA(str, Enum):
+        X = "X"
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class StrEnumB(str, Enum):
+        X = "X"
+
+    class Plain(IntEnum):
+        ONE = 1
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class Box(NamedTuple):
+        value: Any
+
+    class TupleYieldingSerializer(NamedTupleSerializer):
+        def pack_items(self, *args, **kwargs):
+            for key, value in super().pack_items(*args, **kwargs):
+                yield key, (tuple(value) if isinstance(value, list) else value)
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map, serializer=TupleYieldingSerializer)
+    class Custom(NamedTuple):
+        items: list
+        name: str
+
+    return {
+        "dict key order": {"b": 1, "a": 2, "c": {"z": 1, "y": 2}},
+        "equal enums of different types": [StrEnumA.X, StrEnumB.X, StrEnumA.X],
+        "enum and str subclass dict keys": {StrEnumA.X: 1, _StrWithStr("k"): 3},
+        "int enum dict keys": {Plain.ONE: 2, 3: 4},
+        "str subclass value": [_StrWithStr("abc"), Box(_StrWithStr("abc"))],
+        "signed zeros": [0.0, -0.0, Box(-0.0), Box(0.0)],
+        "special floats": [float("inf"), float("-inf"), 1e300, 1e-320],
+        "bool vs int vs float": [True, 1, 1.0, False, 0, 0.0],
+        "custom pack_items yielding tuples and str subclasses": Custom(
+            items=[1, _StrWithStr("x")], name=_StrWithStr("n")
+        ),
+        "legacy-looking dict": {"__compact_serdes__": 1, "a": 2},
+    }
+
+
+def test_differential_with_legacy() -> None:
+    whitelist_map = WhitelistMap.create()
+    for name, value in _differential_cases(whitelist_map).items():
+        legacy = dg.serialize_value(value, whitelist_map=whitelist_map)
+        compact = serialize_value_compact(value, whitelist_map=whitelist_map)
+        assert is_compact_serialized(compact), name
+        assert _ordered(loads_compact(compact, lambda d: d)) == _ordered(json.loads(legacy)), name
+        from_compact = dg.deserialize_value(compact, whitelist_map=whitelist_map)
+        from_legacy = dg.deserialize_value(legacy, whitelist_map=whitelist_map)
+        assert repr(from_compact) == repr(from_legacy), name
+
+
+def test_mixed_key_types_raise_like_legacy() -> None:
+    with pytest.raises(TypeError):
+        dg.serialize_value({1: "x", "1": "y"})
+    with pytest.raises(TypeError):
+        serialize_value_compact({1: "x", "1": "y"})
+
+
+def test_legacy_value_is_not_detected_as_compact() -> None:
+    legacy = dg.serialize_value({"__compact_serdes__": 1, "a": 2})
+    assert not is_compact_serialized(legacy)
+    assert dg.deserialize_value(legacy) == {"__compact_serdes__": 1, "a": 2}
+
+
+def test_decoded_containers_are_not_shared() -> None:
+    shared = ["a long enough string", "another long string"]
+    decoded = dg.deserialize_value(serialize_value_compact({"a": shared, "b": shared}))
+    assert decoded == {"a": shared, "b": shared}
+    decoded["a"].append("x")
+    assert decoded["b"] == shared
+
+
+@pytest.mark.parametrize("depth", [50, 200, 400, 900])
+def test_deep_values_round_trip(depth: int) -> None:
+    whitelist_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=whitelist_map)
+    class Node(NamedTuple):
+        child: Any
+
+    for make in (Node, lambda value: {"child": value}):
+        value: Any = "leaf"
+        for _ in range(depth):
+            value = make(value)
+        # deep values fall back to the legacy format, which recurses less
+        serialized = serialize_value_compact(value, whitelist_map=whitelist_map)
+        assert dg.deserialize_value(serialized, whitelist_map=whitelist_map) == value
+
+
+def test_direct_packer_matches_packing_then_encoding() -> None:
+    """The direct packer of `serialize_value_compact` must write exactly what encoding the
+    output of `pack_value` writes, which serves as the reference implementation.
+    """
+    from dagster_test.benchmarks.snapshot_size.large_check_heavy_defs import build_definitions
+
+    repo = build_definitions(num_groups=30).get_repository_def()
+    snap = RepositorySnap.from_def(repo, defer_snapshots=True)
+    direct = serialize_value_compact(snap)
+    reference = dumps_compact(pack_value(snap))
+    # the class tables may be in different orders, so compare decoded values
+    assert _ordered(loads_compact(direct, lambda d: d)) == _ordered(
+        loads_compact(reference, lambda d: d)
+    )
+
+
+def test_metadata_pack_shallow_matches_pack() -> None:
+    """`FieldSerializer.pack_shallow` must pack to the same value as `pack`."""
+    from dagster._core.definitions.metadata import MetadataFieldSerializer
+    from dagster_shared.serdes.serdes import _WHITELIST_MAP
+
+    metadata = {
+        "text": dg.MetadataValue.text("a"),
+        "json": dg.MetadataValue.json({"b": [1, {"c": None}]}),
+        "url": dg.MetadataValue.url("http://example.com"),
+        "code": dg.CodeReferencesMetadataValue(
+            code_references=[dg.UrlCodeReference(url="http://example.com/a.py")]
+        ),
+    }
+    serializer = MetadataFieldSerializer.get_instance()
+    shallow = serializer.pack_shallow(metadata, _WHITELIST_MAP)
+    assert isinstance(shallow, PackedObjects)
+    expanded = [
+        {"__class__": shallow.class_name, **dict(zip(shallow.field_names, row))}
+        for row in shallow.rows
+    ]
+    assert pack_value(expanded) == serializer.pack(metadata, _WHITELIST_MAP, "")
+
+
+def test_only_deeply_immutable_values_are_shared() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Frozen(NamedTuple):
+        name: str
+        keys: frozenset[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class WithDict(NamedTuple):
+        name: str
+        tags: dict[str, str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    @dataclasses.dataclass
+    class Mutable:
+        items: list[str]
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Root(NamedTuple):
+        frozen: list[Frozen]
+        with_dict: list[WithDict]
+        mutable: list[Mutable]
+        sets: list[set[str]]
+
+    def make() -> Root:
+        return Root(
+            frozen=[Frozen("a long enough name", frozenset({"key one", "key two"}))] * 2,
+            with_dict=[WithDict("a long enough name", {"team": "a long enough team"})] * 2,
+            mutable=[Mutable(["a long enough item"])] * 2,
+            sets=[{"a long enough item"}] * 2,
+        )
+
+    decoded = dg.deserialize_value(
+        serialize_value_compact(make(), whitelist_map=test_map), whitelist_map=test_map
+    )
+    assert decoded == make()
+    assert decoded.frozen[0] is decoded.frozen[1]
+    assert decoded.with_dict[0] is not decoded.with_dict[1]
+    assert decoded.mutable[0] is not decoded.mutable[1]
+    assert decoded.sets[0] is not decoded.sets[1]
+    decoded.with_dict[0].tags["team"] = "changed"
+    decoded.mutable[0].items.append("x")
+    decoded.sets[0].add("x")
+    assert (decoded.with_dict[1], decoded.mutable[1], decoded.sets[1]) == (
+        make().with_dict[1],
+        make().mutable[1],
+        make().sets[1],
+    )
+
+
+def test_hooks_see_fields_in_legacy_order() -> None:
+    test_map = WhitelistMap.create()
+    seen = []
+
+    class _Serializer(NamedTupleSerializer):
+        def before_unpack(self, context, unpacked_dict):
+            seen.append(list(unpacked_dict))
+            return unpacked_dict
+
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=_Serializer)
+    class Fields(NamedTuple):
+        zeta: str
+        alpha: str
+
+    for serialize in (dg.serialize_value, serialize_value_compact):
+        dg.deserialize_value(
+            serialize(Fields("z", "a"), whitelist_map=test_map), whitelist_map=test_map
+        )
+    assert seen == [["alpha", "zeta"], ["alpha", "zeta"]]
+
+
+def test_overridden_asdict_is_respected() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Redacted(NamedTuple("_Redacted", [("name", str), ("secret", str)])):
+        def _asdict(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+            return {"name": self.name, "secret": "<redacted>"}
+
+    value = Redacted("a", "hunter2")
+    assert _ordered(
+        loads_compact(serialize_value_compact(value, whitelist_map=test_map), lambda d: d)
+    ) == _ordered(json.loads(dg.serialize_value(value, whitelist_map=test_map)))
+
+
+def test_direct_packer_fast_paths_only_for_default_packing() -> None:
+    """The direct packer reads the fields of records and NamedTuples itself rather than through
+    the serializer: check that it only does so for serializers and classes that don't customize
+    packing, across every whitelisted class.
+    """
+    from dagster_shared.check.record import is_record
+    from dagster_shared.serdes.compact_packer import CompactPacker
+    from dagster_shared.serdes.serdes import _WHITELIST_MAP, ObjectSerializer
+
+    default_asdict = NamedTuple("_Default", [("x", int)])._asdict.__code__
+    packer = CompactPacker(_WHITELIST_MAP)
+    for serializer in _WHITELIST_MAP.object_serializers.values():
+        plan = packer._plan(serializer)  # noqa: SLF001
+        if plan is None:
+            continue
+        klass = type(serializer)
+        assert klass.pack_items is ObjectSerializer.pack_items, serializer.klass
+        assert klass.before_pack is ObjectSerializer.before_pack, serializer.klass
+        if plan.tuple_field_names is not None and not is_record(serializer.klass):
+            assert serializer.klass._asdict.__code__ is default_asdict, serializer.klass  # pyright: ignore[reportAttributeAccessIssue]
