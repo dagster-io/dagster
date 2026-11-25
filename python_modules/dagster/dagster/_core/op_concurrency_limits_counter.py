@@ -85,6 +85,7 @@ class GlobalOpConcurrencyLimitsCounter:
         slot_count_offset: int = 0,
         pool_granularity: PoolGranularity | None = None,
         concurrency_info_by_key: dict[str, "ConcurrencyKeyInfo"] | None = None,
+        in_progress_pool_counts: Mapping[str, int] | None = None,
     ):
         self._root_pools_by_run = {}
         # Callers that build several counters within one dequeue pass share this cache so each
@@ -96,9 +97,6 @@ class GlobalOpConcurrencyLimitsCounter:
         self._in_progress_pool_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
         self._pool_granularity = pool_granularity if pool_granularity else PoolGranularity.OP
-        self._in_progress_run_ids: set[str] = set(
-            [record.dagster_run.run_id for record in in_progress_run_records]
-        )
         self._started_run_pools_allotted_seconds = int(
             os.getenv("DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS", "5")
         )
@@ -115,8 +113,13 @@ class GlobalOpConcurrencyLimitsCounter:
         # priority order
         self._fetch_concurrency_info(instance, configured_queued_pool_names)
 
-        # fetch all the outstanding pools for in-progress runs
-        self._process_in_progress_runs(in_progress_run_records)
+        # fetch all the outstanding pools for in-progress runs. Callers that build several counters
+        # from the same in-progress runs pass the counts from the first one, since recomputing them
+        # costs O(in-progress runs) per counter.
+        if in_progress_pool_counts is None:
+            self._process_in_progress_runs(in_progress_run_records)
+        else:
+            self._in_progress_pool_counts.update(in_progress_pool_counts)
 
     def _get_queued_pool_names(self, queued_runs: Sequence[DagsterRun]) -> set[str]:
         queued_pool_names = set()
@@ -200,6 +203,10 @@ class GlobalOpConcurrencyLimitsCounter:
 
             for pool, count in self._slot_counts_for_run(record.dagster_run).items():
                 self._in_progress_pool_counts[pool] += count
+
+    @property
+    def in_progress_pool_counts(self) -> Mapping[str, int]:
+        return self._in_progress_pool_counts
 
     def is_blocked(self, run: DagsterRun) -> bool:
         # if any of the ops in the run can make progress (not blocked by concurrency keys), we

@@ -3,7 +3,13 @@ import os
 import sys
 import threading
 import time
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import (
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from typing import TYPE_CHECKING
@@ -207,16 +213,38 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         max_concurrent_runs = run_queue_config.max_concurrent_runs
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
-        in_progress_run_records = self._get_in_progress_run_records(instance)
-        in_progress_runs = [record.dagster_run for record in in_progress_run_records]
-
         max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
-        max_runs_to_launch = max_concurrent_runs - len(in_progress_run_records)
+
+        # Loading every in-progress run is the most expensive part of this pass when many runs are
+        # in flight, so only load them when tag or pool limits need them. Otherwise, a count query
+        # is enough to enforce max_concurrent_runs.
+        in_progress_run_records: Sequence[RunRecord] | None = None
+
+        def get_in_progress_run_records() -> Sequence[RunRecord]:
+            nonlocal in_progress_run_records
+            if in_progress_run_records is None:
+                in_progress_run_records = self._get_in_progress_run_records(instance)
+            return in_progress_run_records
+
+        # Counts for in-progress runs, built once and copied for each filtering pass.
+        in_progress_tag_counter: TagConcurrencyLimitsCounter | None = None
+        if tag_concurrency_limits:
+            in_progress_tag_counter = TagConcurrencyLimitsCounter(
+                tag_concurrency_limits,
+                [record.dagster_run for record in get_in_progress_run_records()],
+            )
+            num_in_progress = len(get_in_progress_run_records())
+        elif max_concurrent_runs_enabled:
+            num_in_progress = self._get_in_progress_run_count(instance)
+        else:
+            num_in_progress = 0
+
+        max_runs_to_launch = max_concurrent_runs - num_in_progress
         if max_concurrent_runs_enabled:
             # Possibly under 0 if runs were launched without queuing
             if max_runs_to_launch <= 0:
                 self._logger.info(
-                    f"{len(in_progress_run_records)} runs are currently in progress. Maximum is {max_concurrent_runs}, won't launch more."
+                    f"{num_in_progress} runs are currently in progress. Maximum is {max_concurrent_runs}, won't launch more."
                 )
                 return []
 
@@ -241,45 +269,22 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             )
 
         logged_this_iteration = False
-        # Paginate through our runs list so we don't need to hold every run
-        # in memory at once. The maximum number of runs we'll hold in memory is
-        # max_runs_to_launch + page_size.
 
         concurrency_keys = None
         pool_limits = None
-        # Shared across the per-page counters so each pool is fetched at most once per iteration.
+        # Shared across counters so each pool is fetched at most once per iteration.
         # Without this the pass costs O(pages * pools) storage round trips.
         concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}
+        # Pool slots held by in-progress runs, computed once and shared across counters.
+        in_progress_pool_counts: Mapping[str, int] | None = None
 
-        while has_more:
-            queued_runs = instance.get_runs(
-                RunsFilter(statuses=[DagsterRunStatus.QUEUED]),
-                cursor=cursor,
-                limit=self._page_size,
-                ascending=True,
-            )
-            has_more = len(queued_runs) >= self._page_size
-
-            if not queued_runs:
-                has_more = False
-                return batch
-
-            if not logged_this_iteration:
-                logged_this_iteration = True
-                self._logger.info(
-                    "Priority sorting and checking tag concurrency limits for queued runs."
-                    + locations_clause
-                )
-
-            cursor = queued_runs[-1].run_id
-
-            tag_concurrency_limits_counter = TagConcurrencyLimitsCounter(
-                tag_concurrency_limits, in_progress_runs
-            )
-            batch += queued_runs
-            batch = self._priority_sort(batch)
-
-            if run_queue_config.should_block_op_concurrency_limited_runs:
+        def filter_and_truncate(runs: list[DagsterRun]) -> list[DagsterRun]:
+            nonlocal concurrency_keys, pool_limits, in_progress_pool_counts
+            runs = self._priority_sort(runs)
+            global_concurrency_limits_counter = None
+            if run_queue_config.should_block_op_concurrency_limited_runs and any(
+                run.run_op_concurrency for run in runs
+            ):
                 try:
                     # fetch global concurrency information at most once per iteration
                     if concurrency_keys is None:
@@ -290,62 +295,122 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
                     global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
                         instance,
-                        batch,
-                        in_progress_run_records,
+                        runs,
+                        get_in_progress_run_records(),
                         concurrency_keys=concurrency_keys,
                         pool_limits=pool_limits,
                         slot_count_offset=run_queue_config.op_concurrency_slot_buffer,
                         pool_granularity=concurrency_config.pool_config.pool_granularity,
                         concurrency_info_by_key=concurrency_info_by_key,
+                        in_progress_pool_counts=in_progress_pool_counts,
+                    )
+                    in_progress_pool_counts = (
+                        global_concurrency_limits_counter.in_progress_pool_counts
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
                     # when we cannot initialize the global concurrency counter, we should fall back
                     # to not blocking any runs based on op concurrency limits
                     global_concurrency_limits_counter = None
-            else:
-                global_concurrency_limits_counter = None
 
-            to_remove = []
-            for run in batch:
-                if tag_concurrency_limits_counter.is_blocked(run):
-                    to_remove.append(run)
-                    continue
-                else:
-                    tag_concurrency_limits_counter.update_counters_with_launched_item(run)
-
-                if (
-                    global_concurrency_limits_counter
-                    and global_concurrency_limits_counter.is_blocked(run)
-                ):
-                    to_remove.append(run)
-                    if run.run_id not in self._global_concurrency_blocked_runs:
-                        with self._global_concurrency_blocked_runs_lock:
-                            self._global_concurrency_blocked_runs.add(run.run_id)
-                        concurrency_blocked_info = json.dumps(
-                            global_concurrency_limits_counter.get_blocked_run_debug_info(run)
-                        )
-                        self._logger.info(
-                            f"Run {run.run_id} is blocked by global concurrency limits: {concurrency_blocked_info}"
-                        )
-                    continue
-                elif global_concurrency_limits_counter:
-                    global_concurrency_limits_counter.update_counters_with_launched_item(run)
-
-                location_name = (
-                    run.remote_job_origin.location_name if run.remote_job_origin else None
+            if (
+                in_progress_tag_counter
+                or global_concurrency_limits_counter
+                or paused_location_names
+            ):
+                runs = self._filter_blocked_runs(
+                    runs,
+                    in_progress_tag_counter.copy() if in_progress_tag_counter else None,
+                    global_concurrency_limits_counter,
+                    paused_location_names,
                 )
-                if location_name and location_name in paused_location_names:
-                    to_remove.append(run)
-                    continue
 
-            for run in to_remove:
-                batch.remove(run)
+            if max_concurrent_runs_enabled:
+                runs = runs[:max_runs_to_launch]
+            return runs
 
-            if max_runs_to_launch >= 1:
-                batch = batch[:max_runs_to_launch]
+        # Paginate through the queue, filtering the accumulated batch every so often so that blocked
+        # runs, and runs beyond max_runs_to_launch, are not held in memory. Each filtering pass is
+        # greedy in priority order and drops runs for good, so (as when every page was filtered)
+        # the result can depend on where passes fall when several limits interact. Filtering the
+        # whole batch on every page was quadratic in the number of runs kept, so the batch is
+        # filtered once it has grown to twice the size it had after the previous pass (and to at
+        # least a page). This keeps the pass linear in the queue length and holds at most about
+        # twice the kept runs plus a page in memory. While at most half a page of runs is kept,
+        # this filters every page, as before.
+        filter_threshold = self._page_size
+        batch_is_filtered = True
+        while has_more:
+            queued_runs = instance.get_runs(
+                RunsFilter(statuses=[DagsterRunStatus.QUEUED]),
+                cursor=cursor,
+                limit=self._page_size,
+                ascending=True,
+            )
+            has_more = len(queued_runs) >= self._page_size
 
+            if not queued_runs:
+                break
+
+            if not logged_this_iteration:
+                logged_this_iteration = True
+                self._logger.info(
+                    "Priority sorting and checking tag concurrency limits for queued runs."
+                    + locations_clause
+                )
+
+            cursor = queued_runs[-1].run_id
+            batch += queued_runs
+            batch_is_filtered = False
+
+            if len(batch) >= filter_threshold:
+                batch = filter_and_truncate(batch)
+                batch_is_filtered = True
+                filter_threshold = max(2 * len(batch), self._page_size)
+
+        if not batch_is_filtered:
+            batch = filter_and_truncate(batch)
         return batch
+
+    def _filter_blocked_runs(
+        self,
+        batch: Sequence[DagsterRun],
+        tag_concurrency_limits_counter: TagConcurrencyLimitsCounter | None,
+        global_concurrency_limits_counter: GlobalOpConcurrencyLimitsCounter | None,
+        paused_location_names: AbstractSet[str],
+    ) -> list[DagsterRun]:
+        unblocked = []
+        for run in batch:
+            if tag_concurrency_limits_counter:
+                if tag_concurrency_limits_counter.is_blocked(run):
+                    continue
+                tag_concurrency_limits_counter.update_counters_with_launched_item(run)
+
+            if global_concurrency_limits_counter and global_concurrency_limits_counter.is_blocked(
+                run
+            ):
+                if run.run_id not in self._global_concurrency_blocked_runs:
+                    with self._global_concurrency_blocked_runs_lock:
+                        self._global_concurrency_blocked_runs.add(run.run_id)
+                    concurrency_blocked_info = json.dumps(
+                        global_concurrency_limits_counter.get_blocked_run_debug_info(run)
+                    )
+                    self._logger.info(
+                        f"Run {run.run_id} is blocked by global concurrency limits: {concurrency_blocked_info}"
+                    )
+                continue
+            elif global_concurrency_limits_counter:
+                global_concurrency_limits_counter.update_counters_with_launched_item(run)
+
+            location_name = run.remote_job_origin.location_name if run.remote_job_origin else None
+            if location_name and location_name in paused_location_names:
+                continue
+
+            unblocked.append(run)
+        return unblocked
+
+    def _get_in_progress_run_count(self, instance: DagsterInstance) -> int:
+        return instance.get_runs_count(filters=RunsFilter(statuses=ACTIVE_RUN_STATUSES))
 
     def _get_in_progress_run_records(self, instance: DagsterInstance) -> Sequence[RunRecord]:
         return instance.get_run_records(filters=RunsFilter(statuses=ACTIVE_RUN_STATUSES))

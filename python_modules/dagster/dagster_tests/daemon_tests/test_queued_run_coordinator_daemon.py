@@ -1068,6 +1068,93 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
     @pytest.mark.parametrize(
         "run_coordinator_config",
+        [dict(max_concurrent_runs=-1), dict(max_concurrent_runs=10)],
+    )
+    def test_in_progress_runs_not_loaded_without_limits(
+        self, workspace_context, daemon, job_handle, instance
+    ):
+        """Loading every in-progress run is only needed to evaluate tag or pool limits."""
+        for _ in range(2):
+            self.create_run(
+                instance,
+                job_handle,
+                status=DagsterRunStatus.STARTED,
+                asset_graph=workspace_context.create_request_context().asset_graph,
+            )
+        queued_run_id = make_new_run_id()
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=queued_run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+
+        with mock.patch.object(
+            QueuedRunCoordinatorDaemon,
+            "_get_in_progress_run_records",
+            side_effect=AssertionError("in-progress runs should not be loaded"),
+        ):
+            list(daemon.run_iteration(workspace_context))
+
+        assert self.get_run_ids(instance.run_launcher.queue()) == [queued_run_id]
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            dict(
+                max_concurrent_runs=7,
+                tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 2}],
+            ),
+            dict(
+                max_concurrent_runs=-1,
+                tag_concurrency_limits=[{"key": "database", "value": "tiny", "limit": 2}],
+            ),
+        ],
+    )
+    def test_limits_across_pages(
+        self, workspace_context, daemon, job_handle, instance, page_size, run_coordinator_config
+    ):
+        """A single tag limit applies to the queue as a whole, in priority order, regardless of
+        paging.
+        """
+        asset_graph = workspace_context.create_request_context().asset_graph
+        self.create_run(
+            instance,
+            job_handle,
+            status=DagsterRunStatus.STARTED,
+            tags={"database": "tiny"},
+            asset_graph=asset_graph,
+        )
+        run_ids_by_tags = []
+        for i in range(3 * page_size + 2):
+            run_id = make_new_run_id()
+            tags = {"database": "tiny" if i % 2 else "large", PRIORITY_TAG: str(i % 3)}
+            self.create_queued_run(
+                instance, job_handle, run_id=run_id, tags=tags, asset_graph=asset_graph
+            )
+            run_ids_by_tags.append((run_id, tags))
+
+        list(daemon.run_iteration(workspace_context))
+
+        # Expected: highest priority first (FIFO within a priority), one tiny slot left by the
+        # in-progress run, and six slots in total when capped.
+        ordered = sorted(
+            enumerate(run_ids_by_tags), key=lambda item: (-int(item[1][1][PRIORITY_TAG]), item[0])
+        )
+        expected = []
+        tiny = 1
+        for _, (run_id, tags) in ordered:
+            if tags["database"] == "tiny":
+                if tiny >= 2:
+                    continue
+                tiny += 1
+            expected.append(run_id)
+        if run_coordinator_config["max_concurrent_runs"] != -1:
+            expected = expected[:6]
+        assert self.get_run_ids(instance.run_launcher.queue()) == expected
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
         [
             {"block_op_concurrency_limited_runs": {"enabled": True}},
         ],
