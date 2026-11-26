@@ -468,6 +468,8 @@ export enum RunsFeedView {
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  excludeJobNames?: InputMaybe<Array<Scalars['String']['input']>>;
+  excludeTags?: InputMaybe<Array<ExecutionTag>>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;

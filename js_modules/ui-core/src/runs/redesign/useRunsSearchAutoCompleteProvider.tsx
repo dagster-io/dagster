@@ -1,7 +1,7 @@
 import {IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {getTagPairAtCursor} from './getTagPairAtCursor';
+import {getRunsSearchContextAtCursor} from './getRunsSearchContextAtCursor';
 import {
   FULL_RUN_ID_MESSAGE,
   RUNS_SEARCH_ATTRIBUTES,
@@ -11,6 +11,7 @@ import {
   formatRunsSearchValue,
   getAttributeForTagKey,
   isFullRunId,
+  supportsRunsSearchNegation,
   tagValueToCodeLocation,
 } from './runsSearchAttributes';
 import {COMMON_COLLATOR} from '../../app/Util';
@@ -151,6 +152,7 @@ type RunsSearchHintOptions = {
   tagValues: string[];
   tagKeys: string[];
   keyQuoted: boolean;
+  isNegated: boolean;
 };
 
 const createRunsSearchHint = ({
@@ -159,11 +161,15 @@ const createRunsSearchHint = ({
   tagValues,
   tagKeys,
   keyQuoted,
+  isNegated,
 }: RunsSearchHintOptions) => {
   const tagPairs = valueKey ? tagValues.map((value) => ({key: valueKey, value})) : [];
+  const attributes = isNegated
+    ? RUNS_SEARCH_ATTRIBUTES.filter(supportsRunsSearchNegation)
+    : RUNS_SEARCH_ATTRIBUTES;
   const provider = createProvider({
     attributesMap: Object.fromEntries(
-      RUNS_SEARCH_ATTRIBUTES.map((attribute) => [
+      attributes.map((attribute) => [
         attribute,
         attribute === 'tag' ? tagPairs : valuesByAttribute[attribute],
       ]),
@@ -177,6 +183,9 @@ const createRunsSearchHint = ({
   return createSelectionAutoComplete({
     ...provider,
     getAttributeValueResultsMatchingQuery: (props) => {
+      if (isNegated && !supportsRunsSearchNegation(props.attribute)) {
+        return [];
+      }
       if (props.attribute === 'tag' && props.key === undefined) {
         return getTagKeyResults({
           tagKeys,
@@ -203,7 +212,7 @@ const createRunsSearchHint = ({
       return results;
     },
     supportsTraversal: false,
-    supportsNot: false,
+    supportsNot: !isNegated,
   });
 };
 
@@ -222,8 +231,8 @@ const useRunsSearchResults = ({
   tagKeys,
   loading,
 }: RunsSearchResultsOptions) => {
-  const {valueKey, keyRangeEnd, keyQuoted} = useMemo(
-    () => getTagPairAtCursor(line, cursorIndex),
+  const {valueKey, keyRangeEnd, keyQuoted, isNegated} = useMemo(
+    () => getRunsSearchContextAtCursor(line, cursorIndex),
     [line, cursorIndex],
   );
   const tagValues = useRunTagValues(valueKey);
@@ -236,8 +245,9 @@ const useRunsSearchResults = ({
         tagValues: tagValues.values,
         tagKeys,
         keyQuoted,
+        isNegated,
       }),
-    [valuesByAttribute, valueKey, tagValues.values, tagKeys, keyQuoted],
+    [valuesByAttribute, valueKey, tagValues.values, tagKeys, keyQuoted, isNegated],
   );
 
   const results = useSelectionAutoCompleteResults(hint, line, cursorIndex);

@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
+from itertools import islice
 from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP035
 
 import sqlalchemy as db
@@ -86,6 +87,21 @@ from dagster._utils.merger import merge_dicts
 class SnapshotType(Enum):
     PIPELINE = "PIPELINE"
     EXECUTION_PLAN = "EXECUTION_PLAN"
+
+
+def _exclude_tag_matches(
+    query: SqlAlchemyQuery,
+    tags: Sequence[tuple[str, str]],
+    tags_table: db.Table,
+    tag_owner_id: db.Column,
+    owner_id: db.Column,
+) -> SqlAlchemyQuery:
+    for key, value in tags:
+        matching_tag = db.exists().where(
+            db.and_(tag_owner_id == owner_id, tags_table.c.key == key, tags_table.c.value == value)
+        )
+        query = query.where(~matching_tag)
+    return query
 
 
 class SqlRunStorage(RunStorage):
@@ -309,6 +325,13 @@ class SqlRunStorage(RunStorage):
 
         if filters.job_name:
             query = query.where(RunsTable.c.pipeline_name == filters.job_name)
+
+        if filters.exclude_job_names:
+            query = query.where(RunsTable.c.pipeline_name.notin_(filters.exclude_job_names))
+
+        query = _exclude_tag_matches(
+            query, filters.exclude_tags, RunTagsTable, RunTagsTable.c.run_id, RunsTable.c.run_id
+        )
 
         if filters.statuses:
             query = query.where(
@@ -963,6 +986,26 @@ class SqlRunStorage(RunStorage):
                 query = query.where(
                     BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
                 )
+        if (
+            filters
+            and (filters.exclude_job_names or filters.exclude_tags)
+            and self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+        ):
+            if filters.exclude_job_names:
+                query = query.where(
+                    db.or_(
+                        BulkActionsTable.c.job_name.is_(None),
+                        BulkActionsTable.c.job_name.notin_(filters.exclude_job_names),
+                    )
+                )
+            if filters.exclude_tags:
+                query = _exclude_tag_matches(
+                    query,
+                    filters.exclude_tags,
+                    BackfillTagsTable,
+                    BackfillTagsTable.c.backfill_id,
+                    BulkActionsTable.c.key,
+                )
         if filters and filters.statuses:
             query = query.where(
                 BulkActionsTable.c.status.in_([status.value for status in filters.statuses])
@@ -973,6 +1016,8 @@ class SqlRunStorage(RunStorage):
             query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
         if filters and filters.backfill_ids:
             query = query.where(BulkActionsTable.c.key.in_(filters.backfill_ids))
+        if filters and filters.exclude_backfill_ids:
+            query = query.where(BulkActionsTable.c.key.notin_(filters.exclude_backfill_ids))
         if filters and filters.selector_id:
             query = query.where(BulkActionsTable.c.selector_id == filters.selector_id)
         return query
@@ -1009,6 +1054,33 @@ class SqlRunStorage(RunStorage):
 
         return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
 
+    def _backfill_exclusions_require_body(self, filters: BulkActionsFilter) -> bool:
+        return bool(
+            (filters.exclude_job_names or filters.exclude_tags)
+            and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)
+        )
+
+    def _iter_backfills_with_unindexed_exclusions(
+        self, query: SqlAlchemyQuery, filters: BulkActionsFilter, limit: int | None = None
+    ) -> Iterable[PartitionBackfill]:
+        # The serialized backfill is the source of truth before the job/tag migration.
+        # Apply exclusions before taking a page, since excluded rows may span it.
+        excluded_jobs = set(filters.exclude_job_names or ())
+        excluded_tags = filters.exclude_tags or ()
+        with self.connect() as conn, db_result(conn, query) as rows:
+            backfills = (deserialize_value(row[0], PartitionBackfill) for row in rows)
+            matching = (
+                backfill
+                for backfill in backfills
+                if (backfill.job_name is None or backfill.job_name not in excluded_jobs)
+                and not any(backfill.tags.get(key) == value for key, value in excluded_tags)
+                and (
+                    not filters.tags
+                    or self._apply_backfill_tags_filter_to_results([backfill], filters.tags)
+                )
+            )
+            yield from islice(matching, limit or None)
+
     def get_backfills(
         self,
         filters: BulkActionsFilter | None = None,
@@ -1028,8 +1100,12 @@ class SqlRunStorage(RunStorage):
 
         table = self._add_backfill_filters_to_table(BulkActionsTable, filters)
         query = self._backfills_query(filters=filters).select_from(table)
-        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
+        if filters and self._backfill_exclusions_require_body(filters):
+            query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor)
+            return list(self._iter_backfills_with_unindexed_exclusions(query, filters, limit))
+
+        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         rows = self.fetchall(query)
         backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
 
@@ -1045,6 +1121,10 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills_count(self, filters: BulkActionsFilter | None = None) -> int:
         check.opt_inst_param(filters, "filters", BulkActionsFilter)
+        if filters and self._backfill_exclusions_require_body(filters):
+            query = self._backfills_query(filters=filters)
+            return sum(1 for _ in self._iter_backfills_with_unindexed_exclusions(query, filters))
+
         if filters and filters.tags:
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills

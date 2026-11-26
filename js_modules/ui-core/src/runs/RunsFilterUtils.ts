@@ -16,8 +16,10 @@ export type RunFilterTokenType =
   | 'pipeline'
   | 'partition'
   | 'job'
+  | '-job'
   | 'snapshotId'
   | 'tag'
+  | '-tag'
   | 'backfill'
   | 'created_date_before'
   | 'created_date_after';
@@ -43,7 +45,9 @@ const RUN_PROVIDERS_EMPTY = [
   {token: 'status', values: () => []},
   {token: 'pipeline', values: () => []},
   {token: 'job', values: () => []},
+  {token: '-job', values: () => []},
   {token: 'tag', values: () => []},
+  {token: '-tag', values: () => []},
   {token: 'snapshotId', values: () => []},
   {token: 'created_date_before', values: () => []},
   {token: 'created_date_after', values: () => []},
@@ -106,6 +110,8 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       obj.createdAfter = parseInt(item.value);
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
+    } else if (item.token === '-job') {
+      (obj.excludeJobNames ??= []).push(item.value);
     } else if (item.token === 'id') {
       obj.runIds = obj.runIds || [];
       obj.runIds.push(item.value);
@@ -121,6 +127,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key, value}];
       }
+    } else if (item.token === '-tag') {
+      const {key, value} = splitTagFilterValue(item.value);
+      (obj.excludeTags ??= []).push({key, value});
     }
   }
 

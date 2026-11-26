@@ -9,6 +9,7 @@ export type SuggestionFilterSuggestion<TValue> = {final?: boolean; value: TValue
 
 type Args<TValue> = {
   name: string;
+  filterBarTagLabel?: JSX.Element;
   icon: IconName;
 
   // Allows creating a custom search result from the query
@@ -42,6 +43,7 @@ export type SuggestionFilter<TValue> = FilterObject<SuggestionFilterSuggestion<T
 
 export function useSuggestionFilter<TValue>({
   name,
+  filterBarTagLabel,
   icon,
   freeformSearchResult,
   state,
@@ -179,6 +181,7 @@ export function useSuggestionFilter<TValue>({
       activeJSX: (
         <SetFilterActiveState
           name={name}
+          filterBarTagLabel={filterBarTagLabel}
           state={new Set(state)}
           getStringValue={getStringValue}
           getTooltipText={getTooltipText}
@@ -195,6 +198,7 @@ export function useSuggestionFilter<TValue>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       name,
+      filterBarTagLabel,
       icon,
       state,
       nextSuggestionsLoading,

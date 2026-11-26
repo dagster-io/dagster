@@ -2795,6 +2795,8 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
+  excludeJobNames: [String!]
+  excludeTags: [ExecutionTag!]
 }
 
 input PipelineSelector {

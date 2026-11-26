@@ -5405,6 +5405,8 @@ export {RunsFeedView};
 type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  excludeJobNames?: InputMaybe<Array<Scalars['String']['input']>>;
+  excludeTags?: InputMaybe<Array<ExecutionTag>>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -15755,6 +15757,9 @@ export const buildRunsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.7,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.2,
+    excludeJobNames:
+      overrides && overrides.hasOwnProperty('excludeJobNames') ? overrides.excludeJobNames! : [],
+    excludeTags: overrides && overrides.hasOwnProperty('excludeTags') ? overrides.excludeTags! : [],
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'celer',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')

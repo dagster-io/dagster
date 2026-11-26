@@ -90,7 +90,7 @@ const TAG_FORMAT_MESSAGE = 'tag needs key=value, for example tag:team=data';
 const BARE_VALUE_MESSAGE = 'Add an attribute, for example job:my_job';
 const SYNTAX_MESSAGE = 'Check the search syntax, for example job:my_job and status:FAILURE';
 const INCOMPLETE_MESSAGE = 'Finish the search before applying it';
-const NOT_MESSAGE = "not isn't supported in runs search";
+const NOT_MESSAGE = 'Use not with a single job or tag filter';
 const TRAVERSAL_MESSAGE = "Traversal (+) isn't supported in runs search";
 const FUNCTION_MESSAGE = "Functions aren't supported in runs search";
 const WILDCARD_MESSAGE = "Wildcards (*) aren't supported in runs search";
@@ -99,7 +99,6 @@ type ContextClass = new (...args: never[]) => ParserRuleContext;
 
 // Expressions runs search rejects outright, and the message for each.
 const UNSUPPORTED_EXPRESSION_MESSAGES = [
-  [NotExpressionContext, NOT_MESSAGE],
   [IncompleteNotExpressionContext, NOT_MESSAGE],
   [IncompleteAndExpressionContext, 'Add a search term after and'],
   [IncompleteOrExpressionContext, 'Add a search term after or'],
@@ -382,6 +381,22 @@ class RunsSearchVisitor
     return this.visitOperator('or', ctx);
   }
 
+  visitNotExpression(ctx: NotExpressionContext): RunsSearchNode {
+    const node = this.visitNode(ctx.expr(), ctx);
+    if (node.type === 'error') {
+      return node;
+    }
+    if (node.type !== 'term' || (node.token.token !== 'job' && node.token.token !== 'tag')) {
+      return createErrorNode(NOT_MESSAGE, ctx);
+    }
+
+    const token: RunFilterToken = {
+      token: node.token.token === 'job' ? '-job' : '-tag',
+      value: node.token.value,
+    };
+    return {...node, token, conflictKey: getTokenString(token), ...getContextRange(ctx)};
+  }
+
   visitCommaExpressionWrapper1(ctx: CommaExpressionWrapper1Context) {
     return this.visitOperator('or', ctx);
   }
@@ -493,6 +508,9 @@ const createValueGroup = (node: RunsSearchNode): ValueGroup | SyntaxError => {
 
   const operands = flattenOperands(node, 'or');
   const terms = operands.filter((operand) => operand.type === 'term');
+  if (terms.some(({token}) => token.token === '-job' || token.token === '-tag')) {
+    return {message: OR_MESSAGE, ...range};
+  }
   const attributes = new Set(terms.map((term) => term.attribute));
   const [attribute] = [...attributes];
 

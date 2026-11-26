@@ -7,21 +7,41 @@ import {
   AttributeExpressionContext,
   AttributeValueContext,
   IncompleteAttributeExpressionMissingSecondValueContext,
+  IncompleteNotExpressionContext,
+  NotExpressionContext,
 } from '../../selection/generated/SelectionAutoCompleteParser';
 
-type TagPairAtCursor = {
+type RunsSearchContextAtCursor = {
   /** The key of the pair whose value the cursor is in or right after. */
   valueKey: string | null;
   /** Where a key row's replacement ends: just past the `=`. */
   keyRangeEnd: number | null;
   /** Whether the key the cursor is on was typed in quotes. */
   keyQuoted: boolean;
+  isNegated: boolean;
 };
 
-class TagPairAtCursorVisitor extends BaseSelectionVisitor {
+class RunsSearchContextVisitor extends BaseSelectionVisitor {
   public valueKey: string | null = null;
   public keyRangeEnd: number | null = null;
   public keyQuoted = false;
+  public isNegated = false;
+
+  public visitNotExpression(ctx: NotExpressionContext) {
+    this.visitNegation(ctx);
+  }
+
+  public visitIncompleteNotExpression(ctx: IncompleteNotExpressionContext) {
+    this.visitNegation(ctx);
+  }
+
+  private visitNegation(ctx: IncompleteNotExpressionContext | NotExpressionContext) {
+    const notEnd = (ctx.notToken().stop?.stop ?? 0) + 1;
+    if (this.cursorIndex >= notEnd) {
+      this.isNegated = true;
+    }
+    this.visitChildren(ctx);
+  }
 
   private isCursorOn(ctx: AttributeValueContext) {
     const start = ctx.start?.start ?? 0;
@@ -72,18 +92,22 @@ class TagPairAtCursorVisitor extends BaseSelectionVisitor {
   }
 }
 
-/** The `tag` pair under the cursor: the key whose value it's in, or the end of the key it's on. */
-export const getTagPairAtCursor = (line: string, cursorIndex: number): TagPairAtCursor => {
+/** The negation and tag pair, if any, that contain the cursor. */
+export const getRunsSearchContextAtCursor = (
+  line: string,
+  cursorIndex: number,
+): RunsSearchContextAtCursor => {
   const treeAtCursor = getParseTreeAtCursor(line, cursorIndex);
   if (!treeAtCursor) {
     return {
       valueKey: null,
       keyRangeEnd: null,
       keyQuoted: false,
+      isNegated: false,
     };
   }
 
-  const visitor = new TagPairAtCursorVisitor({
+  const visitor = new RunsSearchContextVisitor({
     line: treeAtCursor.line,
     cursorIndex: cursorIndex - treeAtCursor.startOffset,
   });
@@ -94,5 +118,6 @@ export const getTagPairAtCursor = (line: string, cursorIndex: number): TagPairAt
     keyRangeEnd:
       visitor.keyRangeEnd !== null ? treeAtCursor.startOffset + visitor.keyRangeEnd : null,
     keyQuoted: visitor.keyQuoted,
+    isNegated: visitor.isNegated,
   };
 };

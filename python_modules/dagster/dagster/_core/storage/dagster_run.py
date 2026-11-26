@@ -644,6 +644,8 @@ class RunsFilter(IHaveNew):
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
         exclude_subruns (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
+        exclude_job_names (Optional[Sequence[str]]): Exclude runs for any of these jobs.
+        exclude_tags (Optional[Sequence[Tuple[str, str]]]): Exclude runs with any of these exact tag key/value pairs.
     """
 
     run_ids: Sequence[str] | None
@@ -656,6 +658,8 @@ class RunsFilter(IHaveNew):
     created_after: datetime | None
     created_before: datetime | None
     exclude_subruns: bool | None
+    exclude_job_names: Sequence[str]
+    exclude_tags: Sequence[tuple[str, str]]
 
     def __new__(
         cls,
@@ -669,6 +673,8 @@ class RunsFilter(IHaveNew):
         created_after: datetime | None = None,
         created_before: datetime | None = None,
         exclude_subruns: bool | None = None,
+        exclude_job_names: Sequence[str] | None = None,
+        exclude_tags: Sequence[tuple[str, str]] | None = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -684,6 +690,8 @@ class RunsFilter(IHaveNew):
             created_after=created_after,
             created_before=created_before,
             exclude_subruns=exclude_subruns,
+            exclude_job_names=exclude_job_names or [],
+            exclude_tags=exclude_tags or [],
         )
 
     @staticmethod

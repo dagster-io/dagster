@@ -20,19 +20,20 @@ const getScalarTerms = (
 ): RenderedTerm[] =>
   value !== undefined ? [{attribute, text: `${attribute}:${formatRunsSearchValue(value)}`}] : [];
 
-const getTagTerm = (tagValue: string): RenderedTerm => {
+const getTagTerm = (tagValue: string, excluded = false): RenderedTerm => {
   const {key, value} = splitTagFilterValue(tagValue);
   const attributeTerm = getAttributeTermForTag(key, value);
+  const operator = excluded ? 'not ' : '';
 
   if (attributeTerm) {
     return {
       attribute: attributeTerm.attribute,
-      text: `${attributeTerm.attribute}:${formatRunsSearchValue(attributeTerm.value)}`,
+      text: `${operator}${attributeTerm.attribute}:${formatRunsSearchValue(attributeTerm.value)}`,
     };
   }
   return {
     attribute: 'tag',
-    text: `tag:${formatRunsSearchValue(key)}=${formatRunsSearchValue(value)}`,
+    text: `${operator}tag:${formatRunsSearchValue(key)}=${formatRunsSearchValue(value)}`,
   };
 };
 
@@ -54,8 +55,13 @@ export const getRunsSearchText = (tokens: RunFilterToken[]) => {
       text: `status:${formatRunsSearchValue(value)}`,
     })),
     ...getScalarTerms('job', getValues(tokens, ['job', 'pipeline']).at(-1)),
+    ...getValues(tokens, ['-job']).map((value) => ({
+      attribute: 'job' as const,
+      text: `not job:${formatRunsSearchValue(value)}`,
+    })),
     ...getScalarTerms('snapshot_id', getValues(tokens, ['snapshotId']).at(-1)),
-    ...getValues(tokens, ['tag']).map(getTagTerm),
+    ...getValues(tokens, ['tag']).map((value) => getTagTerm(value)),
+    ...getValues(tokens, ['-tag']).map((value) => getTagTerm(value, true)),
   ];
 
   return RUNS_SEARCH_ATTRIBUTES.flatMap((attribute) => {

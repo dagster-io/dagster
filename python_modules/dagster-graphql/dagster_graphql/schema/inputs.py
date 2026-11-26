@@ -56,6 +56,8 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
+    excludeJobNames = graphene.List(graphene.NonNull(graphene.String))
+    excludeTags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
@@ -82,6 +84,12 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             run_ids=self.runIds if self.runIds else None,
             job_name=self.pipelineName,
             tags=tags,
+            exclude_job_names=list(self.excludeJobNames) if self.excludeJobNames else None,
+            exclude_tags=(
+                [(tag["key"], tag["value"]) for tag in list(self.excludeTags)]
+                if self.excludeTags
+                else None
+            ),
             statuses=statuses,
             snapshot_id=self.snapshotId,
             updated_before=updated_before,
