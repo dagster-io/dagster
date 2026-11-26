@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta
+from hashlib import sha256
 from random import randint
 from unittest import mock
 
@@ -87,6 +88,43 @@ def test_source_asset_versioned_asset():
 
     mat1, mat2 = materialize_twice([source1, asset1], asset1, instance)
     assert_same_versions(mat1, mat2, "abc")
+
+
+def test_partitioned_observable_source_data_versions_are_used_for_input_provenance():
+    datasets = dg.StaticPartitionsDefinition(["a", "b"])
+    codes = dg.StaticPartitionsDefinition(["c", "d"])
+    downstream_partitions = dg.MultiPartitionsDefinition({"datasets": datasets, "codes": codes})
+
+    @dg.observable_source_asset(partitions_def=datasets)
+    def dataset_source():
+        return dg.DataVersionsByPartition({"a": "1", "b": "2"})
+
+    @dg.observable_source_asset(partitions_def=codes)
+    def code_source():
+        return dg.DataVersionsByPartition({"c": "3", "d": "4"})
+
+    @dg.asset(partitions_def=downstream_partitions, deps=[dataset_source, code_source])
+    def downstream(): ...
+
+    with dg.instance_for_test() as instance:
+        observe([dataset_source], instance=instance)
+        observe([code_source], instance=instance)
+        result = dg.materialize(
+            [dataset_source, code_source, downstream],
+            selection=[downstream],
+            partition_key=dg.MultiPartitionKey({"datasets": "a", "codes": "c"}),
+            instance=instance,
+        )
+
+    materialization = result.asset_materializations_for_node("downstream")[0]
+    assert (
+        get_upstream_version_from_mat_provenance(materialization, dataset_source.key)
+        == sha256(b"1").hexdigest()
+    )
+    assert (
+        get_upstream_version_from_mat_provenance(materialization, code_source.key)
+        == sha256(b"3").hexdigest()
+    )
 
 
 def test_source_asset_non_versioned_asset_deps():
