@@ -13,11 +13,11 @@ logger = logging.getLogger("dagster")
 WATCH_INTERVAL = 1
 REQUEST_TIMEOUT = 2
 MAX_RECONNECT_ATTEMPTS = 10
-# How often to check whether the location is stuck in a transient unreachable-error state and, if
-# so, attempt a recovery refresh. Deliberately independent of WATCH_INTERVAL: the server-id poll
-# runs frequently to detect server changes quickly, while the recovery check runs on a slower,
-# fixed cadence because refreshing an errored location is comparatively expensive and a stuck
-# location rarely recovers within a single second.
+# How often to check whether the location is stuck in a transient unreachable-error state, or was
+# loaded from a server other than the one now answering, and if so, refresh it. Deliberately
+# independent of WATCH_INTERVAL: the server-id poll runs frequently to detect server changes
+# quickly, while the recovery check runs on a slower, fixed cadence because refreshing a location
+# is comparatively expensive and a stuck location rarely recovers within a single second.
 ERROR_RECOVERY_INTERVAL = 10
 
 
@@ -78,6 +78,14 @@ def watch_grpc_server_thread(
     from a syntax error in user code) are treated as non-transient and not retried here, to avoid
     log spam and wasted gRPC traffic on permanently-broken locations.
 
+    The same check also refreshes a location whose server ID differs from the one GetServerId
+    now returns. During a Kubernetes rolling deployment the old pod can still answer for a few
+    seconds after the new pod's ID has triggered `on_updated`, so the refresh that follows can
+    load from the old pod, after which the ID never changes again. Because each poll opens a
+    fresh channel, a poll that reaches the old pod while both pods still back the Service can also
+    refresh a location that loaded correctly from the new pod. This settles once the old pod
+    leaves, so an extra refresh and its info log during a rollout are expected.
+
     The thread only exits when shutdown_event is set. on_updated, on_disconnect, and
     on_reconnected may fire multiple times over the thread's lifetime; on_error fires at most
     once per disconnect → reconnect-exhausted transition.
@@ -121,23 +129,38 @@ def watch_grpc_server_thread(
         server_id.current = None
         server_id.error = True
 
-    def attempt_error_recovery() -> None:
-        """Refresh the location if it is stuck in a transient unreachable-error state.
+    def attempt_error_recovery(polled_server_id: str) -> None:
+        """Refresh the location if it is stuck in a transient unreachable-error state, or was
+        loaded from a server other than the one now answering.
 
         Runs on its own fixed cadence, independent of the server-id watch/reconnect logic. Does
         not fire any on_* event — the refresh itself emits whatever state events are warranted.
         """
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+
         location_entry = get_location_entry(location_name)
         if location_entry is None:
             return
         load_error = location_entry.load_error
-        if load_error is None or load_error.cls_name != DagsterUserCodeUnreachableError.__name__:
+        location = location_entry.code_location
+        if (
+            load_error is not None
+            and load_error.cls_name == DagsterUserCodeUnreachableError.__name__
+        ):
+            logger.info(
+                f"Location {location_name} is stuck in a transient unreachable-error state; "
+                "attempting a recovery refresh"
+            )
+        elif (
+            isinstance(location, GrpcServerCodeLocation) and location.server_id != polled_server_id
+        ):
+            logger.info(
+                f"Location {location_name} was loaded from server {location.server_id}, but "
+                f"server {polled_server_id} is now answering; refreshing"
+            )
+        else:
             return
 
-        logger.info(
-            f"Location {location_name} is stuck in a transient unreachable-error state; "
-            "attempting a recovery refresh"
-        )
         try:
             refresh_code_location(location_name)
         except Exception as exc:
@@ -161,7 +184,7 @@ def watch_grpc_server_thread(
             now = time.monotonic()
             if now - last_recovery_check >= error_recovery_interval:
                 last_recovery_check = now
-                attempt_error_recovery()
+                attempt_error_recovery(new_server_id)
 
             shutdown_event.wait(watch_interval)
 
