@@ -416,6 +416,13 @@ class AssetGraphView(LoadingContext):
             ),
         )
 
+        if parent_key == subset.key:
+            # A self-dependent asset's first partitions map to partitions of itself
+            # that precede its partitions definition start. Those can never exist and
+            # must not block the asset from materializing, so they are not reported as
+            # required but nonexistent (mirrors BaseAssetGraph.get_parents_partitions).
+            required_but_nonexistent_subset = self.get_empty_subset(key=parent_key)
+
         return parent_subset, required_but_nonexistent_subset
 
     @use_partition_loading_context

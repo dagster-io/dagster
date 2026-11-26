@@ -882,6 +882,53 @@ def test_self_dependent_partition_mapping_with_asset_deps():
     dg.materialize([the_multi_asset], partition_key="2023-08-20")
 
 
+def test_sibling_in_same_multi_asset_errors_on_nonexistent_upstream_partition():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01", end_date="2023-01-11")
+
+    @dg.multi_asset(
+        ins={
+            "a_in": dg.AssetIn(
+                key="a",
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=0, end_offset=1),
+            )
+        },
+        outs={
+            "a": dg.AssetOut(is_required=False),
+            "b": dg.AssetOut(is_required=False),
+        },
+        internal_asset_deps={"a": set(), "b": {dg.AssetKey("a")}},
+        partitions_def=partitions_def,
+        can_subset=True,
+    )
+    def sibling_multi_asset(a_in):
+        del a_in
+        yield dg.Output(1, "a")
+        yield dg.Output(2, "b")
+
+    with pytest.raises(dg.DagsterInvariantViolationError, match="depends on invalid partitions"):
+        dg.materialize([sibling_multi_asset], partition_key="2023-01-10")
+
+
+def test_self_dependent_first_partition_does_not_error():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01", end_date="2023-01-11")
+
+    @dg.asset(
+        partitions_def=partitions_def,
+        deps=[
+            dg.AssetDep(
+                "self_first",
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        ],
+    )
+    def self_first(context: AssetExecutionContext):
+        assert list(context.asset_partition_keys_for_input("self_first")) == []
+        return 1
+
+    result = dg.materialize([self_first], partition_key="2023-01-01")
+    assert result.success
+
+
 def test_dynamic_partition_mapping_with_asset_deps():
     partitions_def = dg.DynamicPartitionsDefinition(name="fruits")
 
