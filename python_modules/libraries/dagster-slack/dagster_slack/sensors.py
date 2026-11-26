@@ -31,10 +31,7 @@ def _build_slack_blocks_and_text(
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
-        text = (
-            f'*Job "{context.dagster_run.job_name}" failed.'
-            f" `{context.dagster_run.run_id.split('-')[0]}`*"
-        )
+        text = f'*Job "{context.run.job_name}" failed. `{context.run.run_id.split("-")[0]}`*'
 
         blocks.extend(
             [
@@ -53,7 +50,7 @@ def _build_slack_blocks_and_text(
         )
 
     if webserver_base_url:
-        url = f"{webserver_base_url}/runs/{context.dagster_run.run_id}"
+        url = f"{webserver_base_url}/runs/{context.run.run_id}"
         blocks.append(
             {
                 "type": "actions",
@@ -179,7 +176,7 @@ def make_slack_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.dagster_run.job_name} failed!"
+                    f"Job {context.run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 

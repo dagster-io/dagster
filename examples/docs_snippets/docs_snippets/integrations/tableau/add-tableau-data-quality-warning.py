@@ -24,7 +24,7 @@ def upstream_asset(): ...
 def tableau_run_failure_sensor(
     context: dg.RunFailureSensorContext, tableau: TableauCloudWorkspace
 ):
-    asset_keys = context.dagster_run.asset_selection or set()
+    asset_keys = context.run.asset_selection or set()
     for asset_key in asset_keys:
         data_source_id = upstream_asset.metadata_by_key.get(asset_key, {}).get(
             "dagster/tableau_data_source_id"
