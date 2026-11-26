@@ -1,5 +1,6 @@
 import calendar
 import datetime
+from contextlib import contextmanager, nullcontext
 
 import pytest
 from dagster import HourlyPartitionsDefinition
@@ -8,10 +9,25 @@ from dagster._utils.schedules import (
     _croniter_string_iterator,
     cron_string_iterator,
     get_smallest_cron_interval,
+    has_nonzero_minute_offset,
     is_valid_cron_string,
     reverse_cron_string_iterator,
 )
 from dagster_shared.check import CheckError
+from freezegun import freeze_time
+
+LORD_HOWE_SOUTHERN_SUMMER = create_datetime(2026, 1, 15, 12, 0, 0, tz="Australia/Lord_Howe")
+
+
+@contextmanager
+def pin_lord_howe_summer_now():
+    """Pin schedules' datetime.now to Lord Howe DST (+11:00) so has_nonzero_minute_offset tests
+    fail if the helper only inspects the current offset.
+    """
+    has_nonzero_minute_offset.cache_clear()
+    with freeze_time(LORD_HOWE_SOUTHERN_SUMMER):
+        yield
+    has_nonzero_minute_offset.cache_clear()
 
 
 def test_cron_iterator_always_advances():
@@ -642,12 +658,21 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
             start_timestamp = start_timestamp - timestamp_interval
 
 
+def test_has_nonzero_minute_offset_reflects_zone_not_current_date():
+    with pin_lord_howe_summer_now():
+        # Lord_Howe is +11:00 in summer and +10:30 in winter; must be True year-round.
+        assert has_nonzero_minute_offset("Australia/Lord_Howe") is True
+        assert has_nonzero_minute_offset("America/New_York") is False
+        assert has_nonzero_minute_offset("Asia/Kolkata") is True
+
+
 @pytest.mark.parametrize(
     "execution_timezone",
     [
         "Asia/Kolkata",
         "Asia/Kathmandu",
         "Australia/Adelaide",
+        "Australia/Lord_Howe",
         "America/St_Johns",
         "Pacific/Chatham",
     ],
@@ -680,6 +705,7 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
         "Asia/Kolkata",
         "Asia/Kathmandu",
         "Australia/Adelaide",
+        "Australia/Lord_Howe",
         "America/St_Johns",
         "Pacific/Chatham",
     ],
@@ -688,28 +714,53 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
 def test_hourly_cron_non_hour_offset_timezone_minute_fidelity(
     execution_timezone: str, cron_minute: int
 ):
-    cron_string = f"{cron_minute} * * * *"
-    start_timestamp = create_datetime(2026, 2, 16, 0, 0, 0, tz=execution_timezone).timestamp()
+    pin_now = (
+        pin_lord_howe_summer_now() if execution_timezone == "Australia/Lord_Howe" else nullcontext()
+    )
+    with pin_now:
+        cron_string = f"{cron_minute} * * * *"
+        start_timestamp = create_datetime(2026, 2, 16, 0, 0, 0, tz=execution_timezone).timestamp()
 
-    fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
-    raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
+        fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+        raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
 
-    fast_times = [next(fast_iter) for _ in range(6)]
-    raw_times = [next(raw_iter) for _ in range(6)]
+        fast_times = [next(fast_iter) for _ in range(6)]
+        raw_times = [next(raw_iter) for _ in range(6)]
 
-    for fast_time, raw_time in zip(fast_times, raw_times):
-        assert fast_time == raw_time
-        assert fast_time.minute == cron_minute
+        for fast_time, raw_time in zip(fast_times, raw_times):
+            assert fast_time == raw_time
+            assert fast_time.minute == cron_minute
 
-    if cron_minute == 0:
-        hourly_partitions = HourlyPartitionsDefinition(
-            start_date="2026-02-16-00:00",
-            timezone=execution_timezone,
-        )
+        if cron_minute == 0:
+            hourly_partitions = HourlyPartitionsDefinition(
+                start_date="2026-02-16-00:00",
+                timezone=execution_timezone,
+            )
 
-        for tick_time in fast_times:
-            partition_key = hourly_partitions.get_partition_key_for_timestamp(tick_time.timestamp())
-            assert partition_key == tick_time.strftime("%Y-%m-%d-%H:%M")
+            for tick_time in fast_times:
+                partition_key = hourly_partitions.get_partition_key_for_timestamp(
+                    tick_time.timestamp()
+                )
+                assert partition_key == tick_time.strftime("%Y-%m-%d-%H:%M")
+
+
+@pytest.mark.parametrize("cron_minute", [0, 30])
+def test_hourly_cron_lord_howe_winter_minute_fidelity(cron_minute: int):
+    execution_timezone = "Australia/Lord_Howe"
+    with pin_lord_howe_summer_now():
+        assert has_nonzero_minute_offset(execution_timezone) is True
+        cron_string = f"{cron_minute} * * * *"
+        start_timestamp = create_datetime(2026, 7, 16, 0, 0, 0, tz=execution_timezone).timestamp()
+
+        fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+        raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
+
+        fast_times = [next(fast_iter) for _ in range(6)]
+        raw_times = [next(raw_iter) for _ in range(6)]
+
+        for fast_time, raw_time in zip(fast_times, raw_times):
+            assert fast_time == raw_time
+            assert fast_time.minute == cron_minute
 
 
 def test_last_day_of_month_cron_schedule():

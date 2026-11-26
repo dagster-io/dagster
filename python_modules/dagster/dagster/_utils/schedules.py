@@ -37,8 +37,18 @@ class CroniterShim(_croniter):
 
 @functools.cache
 def has_nonzero_minute_offset(tz_str: str) -> bool:
-    offset = datetime.datetime.now(get_timezone(tz_str)).utcoffset()
-    return offset is not None and (offset.total_seconds() % 3600) != 0
+    """Whether the zone uses a non-whole-hour UTC offset in either half of the year."""
+    tz = get_timezone(tz_str)
+    year = 2026
+    for month in (1, 7):
+        offset = (
+            datetime.datetime(year, month, 1, tzinfo=datetime.timezone.utc)
+            .astimezone(tz)
+            .utcoffset()
+        )
+        if offset is not None and (offset.total_seconds() % 3600) != 0:
+            return True
+    return False
 
 
 def _is_simple_cron(
