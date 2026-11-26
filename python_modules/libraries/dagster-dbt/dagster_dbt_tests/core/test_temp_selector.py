@@ -1,5 +1,6 @@
 """Tests for selector file generation when selection exceeds threshold."""
 
+import shutil
 import textwrap
 from pathlib import Path
 from typing import cast
@@ -181,6 +182,164 @@ def test_temp_selector_file_used_with_many_models(large_dbt_project: tuple[Path,
         assert content == _EXISTING_SELECTORS_CONTENT, (
             "Existing selectors.yml content should be unchanged."
         )
+
+
+def test_large_selection_skips_build_dirs_and_removes_temp_project(
+    large_dbt_project: tuple[Path, dict],
+):
+    """The >200 path copies the project without target/ or logs/ and deletes that copy."""
+    from dagster import AssetExecutionContext, materialize
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    project_dir, manifest = large_dbt_project
+    (project_dir / "target").mkdir(exist_ok=True)
+    (project_dir / "target" / "bulky.txt").write_text("artifact")
+    (project_dir / "logs").mkdir(exist_ok=True)
+    (project_dir / "logs" / "dbt.log").write_text("log")
+    (project_dir / ".git").mkdir(exist_ok=True)
+    (project_dir / ".git" / "config").write_text("git")
+    (project_dir / ".venv").mkdir(exist_ok=True)
+    (project_dir / ".venv" / "pyvenv.cfg").write_text("venv")
+
+    dbt_project = DbtProject(project_dir=str(project_dir))
+    copied_roots: list[Path] = []
+    copied_names: list[set[str]] = []
+    real_copytree = shutil.copytree
+
+    def spy_copytree(src, dst, *args, **kwargs):
+        result = real_copytree(src, dst, *args, **kwargs)
+        if Path(src).resolve() == project_dir.resolve():
+            root = Path(dst)
+            copied_roots.append(root)
+            copied_names.append({child.name for child in root.iterdir()})
+        return result
+
+    captured: dict[str, Path] = {}
+
+    @dbt_assets(manifest=manifest, project=dbt_project)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        invocation = dbt.cli(["run"], context=context)
+        captured["project_dir"] = invocation.project_dir
+        captured["target_path"] = invocation.target_path
+        yield from invocation.stream()
+
+    subset = list(my_dbt_assets.keys)[: _NUM_MODELS - 5]
+    with (
+        mock.patch("dagster_dbt.asset_utils._SELECTION_ARGS_THRESHOLD", 10),
+        mock.patch("dagster_dbt.asset_utils.shutil.copytree", spy_copytree),
+    ):
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=str(project_dir))},
+            selection=subset,
+            raise_on_error=False,
+        )
+
+    assert result.success, "Dbt run with a large selection should succeed."
+    assert copied_roots, "The large-selection path should copy the project."
+    temp_root = copied_roots[0]
+    names = copied_names[0]
+    assert captured["project_dir"].resolve() == temp_root.resolve()
+    assert "target" not in names
+    assert "logs" not in names
+    assert ".git" not in names
+    assert ".venv" not in names
+    assert "models" in names
+    assert "dbt_packages" in names
+    # Artifacts are written on the real project, then the copy is removed.
+    assert temp_root.resolve() not in captured["target_path"].resolve().parents
+    assert (captured["target_path"] / "run_results.json").exists()
+    assert not temp_root.exists()
+    assert (project_dir / "target" / "bulky.txt").read_text() == "artifact"
+    assert (project_dir / "logs" / "dbt.log").read_text() == "log"
+
+
+def test_relative_project_dir_artifacts_survive_temp_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A relative DbtProject.project_dir must not leave artifacts inside the temp copy.
+
+    With project_dir="analytics", the default target path used to stay relative
+    (`analytics/target/<run>`). dbt runs from the temporary copy, so those files
+    were deleted with it and get_artifact() looked in the wrong place.
+    """
+    from dagster import AssetExecutionContext, materialize
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    analytics = tmp_path / "analytics"
+    analytics.mkdir()
+    (analytics / "dbt_project.yml").write_text(
+        textwrap.dedent(
+            """
+            name: analytics
+            config-version: 2
+            version: "1.0"
+            profile: analytics
+            model-paths: ["models"]
+            target-path: target
+            """
+        ).strip()
+    )
+    (analytics / "profiles.yml").write_text(
+        textwrap.dedent(
+            """
+            analytics:
+              target: dev
+              outputs:
+                dev:
+                  type: duckdb
+                  path: ":memory:"
+                  schema: main
+            """
+        ).strip()
+    )
+    models = analytics / "models"
+    models.mkdir()
+    (models / "m0.sql").write_text("select 0 as id")
+    (models / "m1.sql").write_text("select 1 as id")
+
+    monkeypatch.chdir(tmp_path)
+    project = DbtProject(project_dir="analytics")
+    assert not project.project_dir.is_absolute()
+
+    manifest = (
+        DbtCliResource(project_dir="analytics")
+        .cli(["parse"], target_path=tmp_path / "parse_target")
+        .wait()
+        .get_artifact("manifest.json")
+    )
+
+    captured: dict[str, Path] = {}
+
+    @dbt_assets(manifest=manifest, project=project)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        invocation = dbt.cli(["run"], context=context)
+        captured["project_dir"] = invocation.project_dir
+        captured["target_path"] = invocation.target_path
+        yield from invocation.stream()
+        # The file has to be readable after the stream finishes and the copy is gone.
+        captured["run_results"] = invocation.get_artifact("run_results.json")
+
+    subset = list(my_dbt_assets.keys)[:1]
+    with mock.patch("dagster_dbt.asset_utils._SELECTION_ARGS_THRESHOLD", 0):
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir="analytics")},
+            selection=subset,
+            raise_on_error=False,
+        )
+
+    assert result.success, "Dbt run with a relative project dir should succeed."
+    real_project = analytics.resolve()
+    temp_project = captured["project_dir"].resolve()
+    target_path = captured["target_path"]
+    assert target_path.is_absolute()
+    assert target_path.resolve().is_relative_to(real_project)
+    assert real_project != temp_project
+    assert not target_path.resolve().is_relative_to(temp_project)
+    assert (target_path / "run_results.json").exists()
+    assert captured["run_results"]
+    assert not captured["project_dir"].exists()
 
 
 def test_temp_selector_file_includes_exclude(large_dbt_project: tuple[Path, dict]):
