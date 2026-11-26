@@ -14,6 +14,9 @@ from dagster_gcp.bigquery.io_manager import (
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load Pandas DataFrames as BigQuery tables.
 
+    Set ``preserve_column_case=True`` on the I/O manager to preserve column names.
+    By default, writes uppercase column names and reads lowercase them.
+
     Examples:
         .. code-block:: python
 
@@ -50,10 +53,18 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
             )
         else:
-            with_uppercase_cols = obj.rename(columns=str.upper)
+            preserve_column_case = (
+                context.resource_config.get("preserve_column_case", False)
+                if context.resource_config
+                else False
+            )
+            if not preserve_column_case:
+                dataframe = obj.rename(columns=str.upper)
+            else:
+                dataframe = obj
 
             job = connection.load_table_from_dataframe(
-                dataframe=with_uppercase_cols,
+                dataframe=dataframe,
                 destination=f"{table_slice.schema}.{table_slice.table}",
                 project=table_slice.database,
                 location=context.resource_config.get("location")
@@ -95,8 +106,13 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             location=context.resource_config.get("location") if context.resource_config else None,
             timeout=context.resource_config.get("timeout") if context.resource_config else None,
         ).to_dataframe()
-
-        result.columns = map(str.lower, result.columns)
+        preserve_column_case = (
+            context.resource_config.get("preserve_column_case", False)
+            if context.resource_config
+            else False
+        )
+        if not preserve_column_case:
+            result.columns = map(str.lower, result.columns)
         return result
 
     @property
@@ -206,6 +222,10 @@ Examples:
 
 class BigQueryPandasIOManager(BigQueryIOManager):
     """An I/O manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
+
+    Set ``preserve_column_case=True`` to preserve column name casing on reads and writes.
+    The default is ``False``, which uppercases writes and lowercases reads. Existing tables
+    with uppercase column names will load with uppercase names when this option is enabled.
 
     Returns:
         IOManagerDefinition
