@@ -461,6 +461,7 @@ class DagsterGrpcClient:
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
+        compact_serdes: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> str:
         check.inst_param(
@@ -475,6 +476,7 @@ class DagsterGrpcClient:
             # rename this param name
             serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
+            compact_serdes=compact_serdes,
             timeout=timeout,
         )
 
@@ -484,6 +486,7 @@ class DagsterGrpcClient:
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
+        compact_serdes: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> str:
         check.inst_param(
@@ -498,6 +501,7 @@ class DagsterGrpcClient:
             # rename this param name
             serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
+            compact_serdes=compact_serdes,
             timeout=timeout,
         )
 
@@ -508,6 +512,7 @@ class DagsterGrpcClient:
         remote_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        compact_serdes: bool = False,
     ) -> dagster_api_pb2.ExternalJobReply:
         check.inst_param(
             remote_repository_origin,
@@ -520,6 +525,7 @@ class DagsterGrpcClient:
             dagster_api_pb2.ExternalJobRequest,
             serialized_repository_origin=serialize_value(remote_repository_origin),
             job_name=job_name,
+            compact_serdes=compact_serdes,
             timeout=timeout,
         )
 
@@ -527,6 +533,7 @@ class DagsterGrpcClient:
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
+        compact_serdes: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> AsyncIterable[dict]:
         async for res in self._gen_streaming_query(
@@ -535,6 +542,7 @@ class DagsterGrpcClient:
             # Rename parameter
             serialized_repository_python_origin=serialize_value(remote_repository_origin),
             defer_snapshots=defer_snapshots,
+            compact_serdes=compact_serdes,
             timeout=timeout,
         ):
             yield {

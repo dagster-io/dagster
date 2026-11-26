@@ -410,17 +410,25 @@ class ExternalRepositoryRequest(google.protobuf.message.Message):
 
     SERIALIZED_REPOSITORY_PYTHON_ORIGIN_FIELD_NUMBER: builtins.int
     DEFER_SNAPSHOTS_FIELD_NUMBER: builtins.int
+    COMPACT_SERDES_FIELD_NUMBER: builtins.int
     serialized_repository_python_origin: builtins.str
     defer_snapshots: builtins.bool
+    compact_serdes: builtins.bool
+    """Set by clients that can read the compact serdes format. Servers that predate this field
+    ignore it and reply in the legacy format, which every reader still accepts.
+    """
     def __init__(
         self,
         *,
         serialized_repository_python_origin: builtins.str = ...,
         defer_snapshots: builtins.bool = ...,
+        compact_serdes: builtins.bool = ...,
     ) -> None: ...
     def ClearField(
         self,
         field_name: typing.Literal[
+            "compact_serdes",
+            b"compact_serdes",
             "defer_snapshots",
             b"defer_snapshots",
             "serialized_repository_python_origin",
@@ -717,18 +725,27 @@ class ExternalJobRequest(google.protobuf.message.Message):
 
     SERIALIZED_REPOSITORY_ORIGIN_FIELD_NUMBER: builtins.int
     JOB_NAME_FIELD_NUMBER: builtins.int
+    COMPACT_SERDES_FIELD_NUMBER: builtins.int
     serialized_repository_origin: builtins.str
     job_name: builtins.str
+    compact_serdes: builtins.bool
+    """Set by clients that can read the compact serdes format, as for ExternalRepositoryRequest."""
     def __init__(
         self,
         *,
         serialized_repository_origin: builtins.str = ...,
         job_name: builtins.str = ...,
+        compact_serdes: builtins.bool = ...,
     ) -> None: ...
     def ClearField(
         self,
         field_name: typing.Literal[
-            "job_name", b"job_name", "serialized_repository_origin", b"serialized_repository_origin"
+            "compact_serdes",
+            b"compact_serdes",
+            "job_name",
+            b"job_name",
+            "serialized_repository_origin",
+            b"serialized_repository_origin",
         ],
     ) -> None: ...
 

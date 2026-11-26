@@ -3,11 +3,17 @@ from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
+from dagster_shared.serdes.compact import is_compact_serialized
+from dagster_shared.utils import get_boolean_string_value
+
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external_data import RepositoryErrorSnap, RepositorySnap
 from dagster._serdes import deserialize_value
 from dagster._utils.error import SerializableErrorInfo
+
+# Set to request repository snapshots in the legacy format instead of the compact one.
+DISABLE_COMPACT_SNAPSHOTS_ENV_VAR = "DAGSTER_DISABLE_COMPACT_REPOSITORY_SNAPSHOTS"
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
@@ -21,12 +27,16 @@ def sync_get_external_repositories_data_grpc(
     from dagster._core.remote_origin import RemoteRepositoryOrigin
     from dagster._core.remote_representation.code_location import CodeLocation
     from dagster._core.remote_representation.external_data import (
+        JobDataSnap,
         extract_serialized_job_snap_from_serialized_job_data_snap,
     )
     from dagster._core.snap import JobSnap
 
     check.inst_param(code_location, "code_location", CodeLocation)
 
+    # Servers that don't support the compact format ignore the request and reply in the legacy
+    # format, which is still read.
+    compact_serdes = not get_boolean_string_value(os.getenv(DISABLE_COMPACT_SNAPSHOTS_ENV_VAR, ""))
     repo_datas = {}
     for repository_name in code_location.repository_names:  # type: ignore
         repo_origin = RemoteRepositoryOrigin(
@@ -40,6 +50,7 @@ def sync_get_external_repositories_data_grpc(
                     repository_name,
                 ),
                 defer_snapshots=defer_snapshots,
+                compact_serdes=compact_serdes,
             ),
             (RepositorySnap, RepositoryErrorSnap),
         )
@@ -59,6 +70,7 @@ def sync_get_external_repositories_data_grpc(
                         lambda job_ref: api_client.external_job(
                             repo_origin,
                             job_ref.name,
+                            compact_serdes=compact_serdes,
                         ),
                         job_refs,
                     )
@@ -75,12 +87,15 @@ def sync_get_external_repositories_data_grpc(
                     raise Exception(
                         f"Error fetching job data for {job_ref.name} in code server:\n{error}"
                     )
-                job_snap = deserialize_value(
-                    extract_serialized_job_snap_from_serialized_job_data_snap(
-                        job_response.serialized_job_data
-                    ),
-                    JobSnap,
-                )
+                if is_compact_serialized(job_response.serialized_job_data):
+                    job_snap = deserialize_value(job_response.serialized_job_data, JobDataSnap).job
+                else:
+                    job_snap = deserialize_value(
+                        extract_serialized_job_snap_from_serialized_job_data_snap(
+                            job_response.serialized_job_data
+                        ),
+                        JobSnap,
+                    )
 
                 job_snaps[job_ref.name] = job_snap
 

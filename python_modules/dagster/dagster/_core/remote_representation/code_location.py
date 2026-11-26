@@ -68,6 +68,7 @@ if TYPE_CHECKING:
         PartitionSetExecutionParamSnap,
         PartitionTagsSnap,
     )
+    from dagster._core.snap import JobSnap
 
 
 class CodeLocation(AbstractContextManager):
@@ -740,7 +741,6 @@ class GrpcServerCodeLocation(CodeLocation):
             self._container_context = list_repositories_response.container_context
 
             self._job_snaps_by_name = defaultdict(dict)
-            self._job_snaps_by_snapshot_id = {}
 
             self.remote_repositories = {}
 
@@ -760,11 +760,20 @@ class GrpcServerCodeLocation(CodeLocation):
                 )
                 for job_snap in job_snaps.values():
                     self._job_snaps_by_name[repo_name][job_snap.name] = job_snap
-                    self._job_snaps_by_snapshot_id[job_snap.snapshot_id] = job_snap
 
         except:
             self.cleanup()
             raise
+
+    @cached_property
+    def _job_snaps_by_snapshot_id(self) -> Mapping[str, "JobSnap"]:
+        # Computing a snapshot ID serializes the whole job snapshot, which is slow for large jobs,
+        # so only index them by ID once a job ref needs its parent snapshot.
+        return {
+            job_snap.snapshot_id: job_snap
+            for job_snaps in self._job_snaps_by_name.values()
+            for job_snap in job_snaps.values()
+        }
 
     def _job_ref_to_snap(self, repository_name: str, job_ref: "JobRefSnap") -> "JobDataSnap":
         from dagster._core.remote_representation.external_data import JobDataSnap

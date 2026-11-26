@@ -34,6 +34,7 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
@@ -561,8 +562,25 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         return self.remote_asset_check_nodes_by_key[key]
 
     def _get_asset_check_node_from_remote_asset_check_node(
-        self, remote_node: RemoteAssetCheckNode
+        self,
+        remote_node: RemoteAssetCheckNode,
+        partitions_defs_by_snap_id: dict[int, tuple[PartitionsSnap, PartitionsDefinition]]
+        | None = None,
     ) -> AssetCheckNode:
+        partitions_snap = remote_node.asset_check.partitions_def_snapshot
+        if partitions_snap is None:
+            partitions_def = None
+        elif partitions_defs_by_snap_id is None:
+            partitions_def = partitions_snap.get_partitions_definition()
+        else:
+            # Checks of the same asset usually share their partitions snapshot object, which can
+            # be expensive to convert (e.g. a static definition validates all of its keys).
+            # Entries keep their snap alive so that its id is not reused.
+            cached = partitions_defs_by_snap_id.get(id(partitions_snap))
+            if cached is None:
+                cached = (partitions_snap, partitions_snap.get_partitions_definition())
+                partitions_defs_by_snap_id[id(partitions_snap)] = cached
+            partitions_def = cached[1]
         return AssetCheckNode(
             remote_node.asset_check.key,
             remote_node.asset_check.additional_asset_keys,
@@ -570,16 +588,17 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             remote_node.asset_check.description,
             remote_node.asset_check.automation_condition,
             {},  # metadata not yet on AssetCheckNodeSnap
-            remote_node.asset_check.partitions_def_snapshot.get_partitions_definition()
-            if remote_node.asset_check.partitions_def_snapshot
-            else None,
+            partitions_def,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
     def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:
+        partitions_defs_by_snap_id: dict[int, tuple[PartitionsSnap, PartitionsDefinition]] = {}
         return {
-            k: self._get_asset_check_node_from_remote_asset_check_node(v)
+            k: self._get_asset_check_node_from_remote_asset_check_node(
+                v, partitions_defs_by_snap_id
+            )
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 

@@ -229,3 +229,129 @@ def test_job_data_snap_layout():
 
     # must remain last position
     assert get_storage_fields(JobDataSnap)[-1] == "pipeline_snapshot"
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_external_repository_compact_serdes(instance, streaming):
+    import asyncio
+
+    from dagster_shared.serdes.compact import is_compact_serialized
+
+    with get_bar_repo_code_location(instance) as code_location:
+        repo_origin = RemoteRepositoryOrigin(code_location.origin, "bar_repo")
+
+        async def _fetch(compact_serdes: bool) -> str:
+            if streaming:
+                chunks = [
+                    chunk["serialized_external_repository_chunk"]
+                    async for chunk in code_location.client.gen_streaming_external_repository(
+                        repo_origin, defer_snapshots=True, compact_serdes=compact_serdes
+                    )
+                ]
+                return "".join(chunks)
+            return await code_location.client.gen_external_repository(
+                repo_origin, defer_snapshots=True, compact_serdes=compact_serdes
+            )
+
+        legacy = asyncio.run(_fetch(compact_serdes=False))
+        compact = asyncio.run(_fetch(compact_serdes=True))
+        assert not is_compact_serialized(legacy)
+        assert is_compact_serialized(compact)
+        assert dg.deserialize_value(compact, RepositorySnap) == dg.deserialize_value(
+            legacy, RepositorySnap
+        )
+
+
+@pytest.mark.parametrize(
+    "env_value,expect_compact",
+    [(None, True), ("", True), ("0", True), ("false", True), ("1", False), ("true", False)],
+)
+def test_client_requests_compact_snapshots(instance, env_value, expect_compact):
+    from dagster._api.snapshot_repository import DISABLE_COMPACT_SNAPSHOTS_ENV_VAR
+
+    with get_bar_repo_code_location(instance) as code_location:
+        requested = []
+        original = code_location.client.external_repository
+
+        def _external_repository(*args, **kwargs):
+            requested.append(kwargs["compact_serdes"])
+            return original(*args, **kwargs)
+
+        code_location.client.external_repository = _external_repository  # type: ignore
+        with environ({DISABLE_COMPACT_SNAPSHOTS_ENV_VAR: env_value}):
+            repo_datas = sync_get_external_repositories_data_grpc(
+                code_location.client, code_location, defer_snapshots=True
+            )
+        assert requested == [expect_compact]
+        assert repo_datas["bar_repo"][0].name == "bar_repo"
+
+
+def test_server_falls_back_to_legacy_format(monkeypatch):
+    import logging
+    import threading
+
+    from dagster._grpc import server as server_module
+    from dagster._grpc.__generated__ import dagster_api_pb2
+    from dagster_shared.serdes.compact import is_compact_serialized
+
+    def _broken(*args, **kwargs):
+        raise Exception("broken compact encoder")
+
+    monkeypatch.setattr(server_module, "serialize_value_compact", _broken)
+    with get_bar_repo_code_location() as code_location:
+        repo_origin = RemoteRepositoryOrigin(code_location.origin, "bar_repo")
+        # serve the same definitions from this process, so that the patch applies
+        servicer = server_module.DagsterApiServer(
+            server_termination_event=threading.Event(),
+            logger=logging.getLogger("test"),
+            server_threadpool_executor=None,  # type: ignore
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                python_file=dg.file_relative_path(__file__, "api_tests_repo.py"),
+                attribute="bar_repo",
+            ),
+        )
+        serialized = servicer._get_serialized_external_repository_data(  # noqa: SLF001
+            dagster_api_pb2.ExternalRepositoryRequest(
+                serialized_repository_python_origin=dg.serialize_value(repo_origin),
+                defer_snapshots=True,
+                compact_serdes=True,
+            )
+        )
+    assert not is_compact_serialized(serialized)
+    assert dg.deserialize_value(serialized, RepositorySnap).name == "bar_repo"
+
+
+def test_external_job_compact_serdes(instance):
+    from dagster_shared.serdes.compact import is_compact_serialized
+
+    with get_bar_repo_code_location(instance) as code_location:
+        repo_origin = RemoteRepositoryOrigin(code_location.origin, "bar_repo")
+        repository_snap = dg.deserialize_value(
+            code_location.client.external_repository(repo_origin, defer_snapshots=True),
+            RepositorySnap,
+        )
+        for job_ref in check.not_none(repository_snap.job_refs):
+            legacy = code_location.client.external_job(repo_origin, job_ref.name)
+            compact = code_location.client.external_job(
+                repo_origin, job_ref.name, compact_serdes=True
+            )
+            assert not is_compact_serialized(legacy.serialized_job_data)
+            assert is_compact_serialized(compact.serialized_job_data)
+            compact_snap = dg.deserialize_value(compact.serialized_job_data, JobDataSnap)
+            assert compact_snap == dg.deserialize_value(legacy.serialized_job_data, JobDataSnap)
+            # job refs identify their snapshot by the hash of its legacy serialization
+            assert compact_snap.job.snapshot_id == job_ref.snapshot_id
+
+
+@pytest.mark.parametrize("disable_compact", [False, True])
+def test_code_location_job_snaps(instance, disable_compact):
+    from dagster._api.snapshot_repository import DISABLE_COMPACT_SNAPSHOTS_ENV_VAR
+
+    env = {DISABLE_COMPACT_SNAPSHOTS_ENV_VAR: "1"} if disable_compact else {}
+    with environ(env), get_bar_repo_code_location(instance) as code_location:
+        repo = code_location.get_repository("bar_repo")
+        for remote_job in repo.get_all_jobs():
+            job_snap = remote_job.job_snapshot
+            assert job_snap.snapshot_id == remote_job.identifying_job_snapshot_id
+            assert job_snap.name == remote_job.name
