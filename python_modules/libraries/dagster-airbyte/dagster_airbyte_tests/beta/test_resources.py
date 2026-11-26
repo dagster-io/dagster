@@ -6,11 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
-from dagster import AssetExecutionContext, AssetKey, Failure, materialize
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, Failure, materialize
 from dagster._core.events import DagsterEventType
-from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
+from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator, airbyte_assets
 from dagster_airbyte.resources import AirbyteWorkspace
-from dagster_airbyte.translator import AirbyteJobStatusType
+from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
 
@@ -25,7 +25,9 @@ from dagster_airbyte_tests.beta.conftest import (
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
+    TEST_DESTINATION_DATABASE,
     TEST_DESTINATION_ID,
+    TEST_DESTINATION_SCHEMA,
     TEST_JOB_ID,
     TEST_PASSWORD,
     TEST_STREAM_PREFIX,
@@ -687,6 +689,52 @@ def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
         r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
     )
     assert re.search(r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err)
+
+
+class DestinationKeyTranslator(DagsterAirbyteTranslator):
+    def get_asset_spec(self, props: AirbyteConnectionTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(props)
+        return default_spec.replace_attributes(
+            key=AssetKey([str(props.database), str(props.schema), props.table_name])
+        )
+
+
+def test_sync_and_poll_materialization_with_destination_based_translator(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    airbyte_cloud_sync_and_poll: MagicMock,
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    cleaned_connection_id = clean_name(TEST_CONNECTION_ID)
+
+    @airbyte_assets(
+        connection_id=TEST_CONNECTION_ID,
+        workspace=resource,
+        name=cleaned_connection_id,
+        dagster_airbyte_translator=DestinationKeyTranslator(),
+    )
+    def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+        yield from airbyte.sync_and_poll(context=context)
+
+    table_name = f"{TEST_STREAM_PREFIX}{TEST_ANOTHER_STREAM_NAME}"
+    expected_key = AssetKey([TEST_DESTINATION_DATABASE, TEST_DESTINATION_SCHEMA, table_name])
+    assert expected_key in my_airbyte_assets.keys
+
+    result = materialize(
+        [my_airbyte_assets],
+        resources={"airbyte": resource},
+    )
+    assert result.success
+    materialized_asset_keys = {
+        event.asset_key
+        for event in result.events_for_node(cleaned_connection_id)
+        if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+    }
+    assert my_airbyte_assets.keys == materialized_asset_keys
+
+    captured = capsys.readouterr()
+    assert "An unexpected asset was materialized" not in captured.err
+    assert "Assets were not materialized" not in captured.err
 
 
 def test_airbyte_oss_api_url_configuration() -> None:
