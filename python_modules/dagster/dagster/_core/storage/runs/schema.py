@@ -25,7 +25,7 @@ RunsTable = db.Table(
         "mode", db.Text
     ),  # The mode column may be filled with garbage data. In 0.13.0, it is no longer populated.
     db.Column("status", db.String(63)),
-    db.Column("run_body", db.Text),
+    db.Column("run_body", MySQLCompatabilityTypes.LongText),
     db.Column("partition", db.Text),
     db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
