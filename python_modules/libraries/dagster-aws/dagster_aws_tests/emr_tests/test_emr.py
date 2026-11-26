@@ -202,4 +202,5 @@ def test_is_emr_step_complete(emr_cluster_config):
 
         with pytest.raises(EmrError) as exc_info:
             emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
-            assert "step failed" in str(exc_info.value)
+
+        assert f"EMR step {emr_step_id} failed" in str(exc_info.value)
