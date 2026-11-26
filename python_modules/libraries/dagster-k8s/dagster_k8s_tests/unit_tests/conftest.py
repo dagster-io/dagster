@@ -55,3 +55,26 @@ def k8s_run_launcher_instance(kubeconfig_file):
             }
         ) as instance:
             yield instance
+
+
+@pytest.fixture
+def k8s_instance(kubeconfig_file):
+    default_config = {
+        "service_account_name": "webserver-admin",
+        "instance_config_map": "dagster-instance",
+        "postgres_password_secret": "dagster-postgresql-secret",
+        "dagster_home": "/opt/dagster/dagster_home",
+        "job_image": "fake_job_image",
+        "load_incluster_config": False,
+        "kubeconfig_file": kubeconfig_file,
+    }
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": default_config,
+            }
+        }
+    ) as instance:
+        yield instance
