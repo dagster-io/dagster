@@ -182,6 +182,9 @@ spec:
     {{- if $_.Values.dagsterWebserver.schedulerName }}
       schedulerName: {{ $_.Values.dagsterWebserver.schedulerName }}
     {{- end }}
+    {{- if $_.Values.dagsterWebserver.priorityClassName }}
+      priorityClassName: {{ $_.Values.dagsterWebserver.priorityClassName | quote }}
+    {{- end }}
 
 
 {{ end }}
