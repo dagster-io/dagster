@@ -189,20 +189,9 @@ The `run_coordinator` key allows you to configure the run coordinator for your i
 Refer to the following tabs for available options and sample configuration.
 
 <Tabs>
-<TabItem value="DefaultRunCoordinator (default)" label="DefaultRunCoordinator (default)">
+<TabItem value="QueuedRunCoordinator (default)" label="QueuedRunCoordinator (default)">
 
-The default run coordinator, the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the [run launcher](#run-launcher). There isn't a notion of `Queued` runs.
-
-<CodeExample
-  path="docs_snippets/docs_snippets/deployment/oss/dagster_instance/dagster.yaml"
-  startAfter="start_marker_run_coordinator_default"
-  endBefore="end_marker_run_coordinator_default"
-/>
-
-</TabItem>
-<TabItem value="QueuedRunCoordinator" label="QueuedRunCoordinator">
-
-The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note that this requires an active [dagster-daemon process](/deployment/execution/dagster-daemon) to launch the runs.**
+Used by default, the <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note that this requires an active [dagster-daemon process](/deployment/execution/dagster-daemon) to launch the runs.**
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
@@ -210,6 +199,17 @@ This run coordinator supports both limiting the overall number of concurrent run
   path="docs_snippets/docs_snippets/deployment/oss/dagster_instance/dagster.yaml"
   startAfter="start_marker_run_coordinator_queued"
   endBefore="end_marker_run_coordinator_queued"
+/>
+
+</TabItem>
+<TabItem value="DefaultRunCoordinator" label="DefaultRunCoordinator">
+
+The <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the [run launcher](#run-launcher). There isn't a notion of `Queued` runs.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/deployment/oss/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_coordinator_default"
+  endBefore="end_marker_run_coordinator_default"
 />
 
 </TabItem>
