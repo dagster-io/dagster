@@ -253,6 +253,12 @@ export const ASSETS_FRESHNESS_INFO_QUERY = gql`
       assetKey {
         path
       }
+      freshnessStatusInfo {
+        freshnessStatus
+        freshnessStatusMetadata {
+          lastMaterializedTimestamp
+        }
+      }
       freshnessInfo {
         ...AssetNodeLiveFreshnessInfoFragment
       }

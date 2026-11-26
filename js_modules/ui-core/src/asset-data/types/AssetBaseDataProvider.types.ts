@@ -29,6 +29,8 @@ export type AssetCheckPartitionRangeStatus =
 
 export type AssetCheckSeverity = 'ERROR' | 'WARN';
 
+export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
+
 export type AssetKeyInput = {
   path: Array<string>;
 };
@@ -383,6 +385,14 @@ export type AssetsFreshnessInfoQuery = {
     __typename: 'AssetNode';
     id: string;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    freshnessStatusInfo: {
+      __typename: 'FreshnessStatusInfo';
+      freshnessStatus: Types.AssetHealthStatus;
+      freshnessStatusMetadata: {
+        __typename: 'AssetHealthFreshnessMeta';
+        lastMaterializedTimestamp: number | null;
+      } | null;
+    } | null;
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   }>;
 };
@@ -394,4 +404,4 @@ export type AssetNodeLiveFreshnessInfoFragment = {
 
 export const AssetGraphLiveQueryVersion = 'c8f79137c3b2f47eb62184e17c8cd11a9c6f1216561a7fe956ec638af9b2dfbd';
 
-export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';
+export const AssetsFreshnessInfoQueryVersion = '7d875be3b039d76c562ae13c6e7e0bb215a96b09b65907352f95889599e4d6d8';

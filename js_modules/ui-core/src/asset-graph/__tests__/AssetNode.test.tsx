@@ -10,9 +10,11 @@ import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/builders';
-import {AssetNode} from '../AssetNode';
+import {AssetHealthStatus} from '../../graphql/types';
+import {AssetNode, AssetNodeWithLiveData} from '../AssetNode';
 import {AllAssetNodeFacets} from '../AssetNodeFacets';
-import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../Utils';
+import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
+import {LiveDataForNodeWithStaleData, MISSING_LIVE_DATA, tokenForAssetKey} from '../Utils';
 import {
   AssetNodeScenariosBase,
   AssetNodeScenariosPartitioned,
@@ -124,6 +126,57 @@ describe('AssetNode', function () {
       });
     }),
   );
+
+  it('renders live freshness status when asset health is disabled', async () => {
+    const definition = buildAssetNode({assetKey: buildAssetKey({path: ['freshnessStatusFacet']})});
+    const liveData = {
+      ...MISSING_LIVE_DATA,
+      freshnessStatusInfo: {
+        freshnessStatus: AssetHealthStatus.DEGRADED,
+        freshnessStatusMetadata: {lastMaterializedTimestamp: null},
+      },
+    };
+
+    render(
+      <MemoryRouter>
+        <AssetNodeWithLiveData
+          facets={new Set([AssetNodeFacet.Freshness])}
+          definition={definition}
+          liveData={liveData}
+          selected={false}
+          assetHealthEnabled={false}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Failed')).toBeVisible();
+  });
+
+  it('keeps legacy freshness warnings when status info is not applicable', async () => {
+    const definition = buildAssetNode({assetKey: buildAssetKey({path: ['legacyFreshnessFacet']})});
+    const liveData = {
+      ...MISSING_LIVE_DATA,
+      freshnessInfo: {__typename: 'AssetFreshnessInfo' as const, currentMinutesLate: 30},
+      freshnessStatusInfo: {
+        freshnessStatus: AssetHealthStatus.NOT_APPLICABLE,
+        freshnessStatusMetadata: null,
+      },
+    };
+
+    render(
+      <MemoryRouter>
+        <AssetNodeWithLiveData
+          facets={new Set([AssetNodeFacet.Freshness])}
+          definition={definition}
+          liveData={liveData}
+          selected={false}
+          assetHealthEnabled={false}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('30 minutes')).toBeVisible();
+  });
 });
 
 function scenarioAssetKey(scenario: AssetNodeScenario) {
