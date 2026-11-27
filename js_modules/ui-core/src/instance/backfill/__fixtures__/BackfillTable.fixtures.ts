@@ -1,5 +1,3 @@
-import {MockedResponse} from '@apollo/client/testing';
-
 import {
   buildAssetKey,
   buildErrorChainLink,
@@ -7,14 +5,10 @@ import {
   buildPartitionSet,
   buildPipelineTag,
   buildPythonError,
-  buildQuery,
   buildRepositoryOrigin,
-  buildRun,
 } from '../../../graphql/builders';
-import {BulkActionStatus, RunStatus} from '../../../graphql/types';
+import {BulkActionStatus} from '../../../graphql/types';
 import {DagsterTag} from '../../../runs/RunTag';
-import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from '../BackfillRow';
-import {SingleBackfillQuery} from '../types/BackfillRow.types';
 import {BackfillTableFragment} from '../types/BackfillTable.types';
 
 function buildTimePartitionNames(start: Date, count: number) {
@@ -109,23 +103,6 @@ export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPart
   ],
 });
 
-export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfillQuery> = {
-  request: {
-    query: SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-    variables: {
-      backfillId: 'sjqzcfhe',
-    },
-  },
-  result: {
-    data: buildQuery({
-      partitionBackfillOrError: buildPartitionBackfill({
-        id: 'sjqzcfhe',
-        cancelableRuns: [],
-      }),
-    }),
-  },
-};
-
 export const BackfillTableFragmentCompletedAssetJob = buildPartitionBackfill({
   id: 'pwgcpiwc',
   status: BulkActionStatus.COMPLETED,
@@ -174,23 +151,6 @@ export const BackfillTableFragmentCompletedAssetJob = buildPartitionBackfill({
   ],
 });
 
-export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<SingleBackfillQuery> = {
-  request: {
-    query: SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-    variables: {
-      backfillId: 'pwgcpiwc',
-    },
-  },
-  result: {
-    data: buildQuery({
-      partitionBackfillOrError: buildPartitionBackfill({
-        id: 'pwgcpiwc',
-        cancelableRuns: [],
-      }),
-    }),
-  },
-};
-
 export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildPartitionBackfill({
   id: 'pqdiepuf',
   status: BulkActionStatus.COMPLETED,
@@ -215,26 +175,6 @@ export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = buildP
   partitionNames: ['2022-07-01', '2022-08-01', '2022-09-01', '2022-10-01'],
   assetSelection: null,
 });
-
-export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBackfillQuery> = {
-  request: {
-    query: SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-    variables: {
-      backfillId: 'pqdiepuf',
-    },
-  },
-  result: {
-    data: buildQuery({
-      partitionBackfillOrError: buildPartitionBackfill({
-        id: 'pqdiepuf',
-        isAssetBackfill: true,
-        cancelableRuns: [
-          buildRun({runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c', status: RunStatus.QUEUED}),
-        ],
-      }),
-    }),
-  },
-};
 
 export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment =
   buildPartitionBackfill({
