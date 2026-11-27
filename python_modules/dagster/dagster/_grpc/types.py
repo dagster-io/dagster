@@ -496,6 +496,21 @@ class CancelExecutionResult:
     serializable_error_info: SerializableErrorInfo | None
 
 
+MAX_CANCEL_EXECUTIONS_BATCH_SIZE = 500
+
+
+@whitelist_for_serdes
+@record
+class CancelExecutionsRequest:
+    run_ids: Sequence[str]
+
+
+@whitelist_for_serdes
+@record
+class CancelExecutionsResult:
+    results: Mapping[str, CancelExecutionResult]
+
+
 @whitelist_for_serdes
 @record
 class CanCancelExecutionRequest:

@@ -26,6 +26,7 @@ service DagsterApi {
   rpc SyncExternalSensorExecution (ExternalSensorExecutionRequest) returns (ExternalSensorExecutionReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
+  rpc CancelExecutions (CancelExecutionsRequest) returns (CancelExecutionsReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
@@ -223,4 +224,12 @@ message ReloadCodeWithStateRequest {
 message ReloadCodeWithStateReply {
   string serialized_error = 1;
   string serialized_server_id = 2;
+}
+
+message CancelExecutionsRequest {
+  string serialized_cancel_executions_request = 1;
+}
+
+message CancelExecutionsReply {
+  string serialized_cancel_executions_result = 1;
 }

@@ -20,8 +20,12 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import DagsterApiStub, dagster_api_pb2
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import (
+    MAX_CANCEL_EXECUTIONS_BATCH_SIZE,
     CanCancelExecutionRequest,
     CancelExecutionRequest,
+    CancelExecutionResult,
+    CancelExecutionsRequest,
+    CancelExecutionsResult,
     ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -39,7 +43,7 @@ from dagster._grpc.utils import (
     max_rx_bytes,
     max_send_bytes,
 )
-from dagster._serdes import serialize_value
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 CLIENT_HEARTBEAT_INTERVAL = 1
@@ -680,6 +684,63 @@ class DagsterGrpcClient:
         )
 
         return res.serialized_cancel_execution_result
+
+    def cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
+        """Cancel runs with one request per MAX_CANCEL_EXECUTIONS_BATCH_SIZE run IDs.
+
+        Servers that predate CancelExecutions get one CancelExecution request per run. Other
+        request failures are raised and not retried, since the server may have acted on them.
+        """
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        unique_run_ids = list(dict.fromkeys(run_ids))
+        results: dict[str, CancelExecutionResult] = {}
+        for offset in range(0, len(unique_run_ids), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
+            results.update(
+                self._cancel_executions(
+                    unique_run_ids[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]
+                ).results
+            )
+        return CancelExecutionsResult(results=results)
+
+    def _cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
+        try:
+            response = self._get_response(
+                "CancelExecutions",
+                dagster_api_pb2.CancelExecutionsRequest(
+                    serialized_cancel_executions_request=serialize_value(
+                        CancelExecutionsRequest(run_ids=run_ids)
+                    )
+                ),
+            )
+        except Exception as error:
+            if not (
+                isinstance(error, grpc.RpcError)
+                and cast("grpc.Call", error).code() == grpc.StatusCode.UNIMPLEMENTED
+            ):
+                self._raise_grpc_exception(error, timeout=DEFAULT_GRPC_TIMEOUT)
+            return CancelExecutionsResult(
+                results={run_id: self._cancel_execution_result(run_id) for run_id in run_ids}
+            )
+        result = deserialize_value(
+            response.serialized_cancel_executions_result, CancelExecutionsResult
+        )
+        check.invariant(
+            set(result.results) == set(run_ids), "Incomplete batch cancellation response"
+        )
+        return result
+
+    def _cancel_execution_result(self, run_id: str) -> CancelExecutionResult:
+        # Every run is attempted: an error cancelling one run is returned as its result.
+        try:
+            return deserialize_value(
+                self.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
+            )
+        except Exception:
+            return CancelExecutionResult(
+                success=False,
+                message=None,
+                serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+            )
 
     def can_cancel_execution(
         self,
