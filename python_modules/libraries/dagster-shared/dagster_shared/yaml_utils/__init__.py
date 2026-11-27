@@ -168,6 +168,11 @@ def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) 
     )
 
 
+# libyaml's loader is several times faster and reports the same node positions, when PyYAML is
+# built with it.
+_FAST_SAFE_LOADER: type[yaml.SafeLoader] = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
+
 def parse_yamls_with_source_position(
     src: str,
     filename: str = "<string>",
@@ -194,8 +199,35 @@ def parse_yamls_with_source_position(
         ValueAndSourcePositionTree: An object containing the parsed YAML value and the corresponding
             source position information.
     """
+    # Without a final line break, libyaml ends the last block collection one line later than the
+    # pure-Python loader. Files end with one.
+    if _FAST_SAFE_LOADER is not yaml.SafeLoader and src.endswith("\n"):
+        try:
+            return _parse_yamls_with_source_position(
+                src, filename, implicits_to_remove, _FAST_SAFE_LOADER
+            )
+        except yaml.YAMLError:
+            # Parse again in Python, whose errors carry the source snippet and can be renamed.
+            pass
+    try:
+        return _parse_yamls_with_source_position(
+            src, filename, implicits_to_remove, yaml.SafeLoader
+        )
+    except yaml.MarkedYAMLError as e:
+        if e.context_mark is not None:
+            e.context_mark.name = filename
+        if e.problem_mark is not None:
+            e.problem_mark.name = filename
+        raise e
 
-    class SourcePositionLoader(yaml.SafeLoader, _CanRemoveImplicitResolver):
+
+def _parse_yamls_with_source_position(
+    src: str,
+    filename: str,
+    implicits_to_remove: Sequence[str],
+    base_loader: type[yaml.SafeLoader],
+) -> list[ValueAndSourcePositionTree]:
+    class SourcePositionLoader(base_loader, _CanRemoveImplicitResolver):
         def construct_object(self, node: Any, deep: Any = False) -> ValueAndSourcePositionTree:
             """Returns a ValueAndSourcePositionTree object where:
             - Its value is what the regular yaml.SafeLoader returns
@@ -249,15 +281,7 @@ def parse_yamls_with_source_position(
     for implicit_to_remove in implicits_to_remove:
         SourcePositionLoader.remove_implicit_resolver(implicit_to_remove)
 
-    try:
-        value_and_tree_nodes = list(yaml.load_all(src, Loader=SourcePositionLoader))
-    except yaml.MarkedYAMLError as e:
-        if e.context_mark is not None:
-            e.context_mark.name = filename
-        if e.problem_mark is not None:
-            e.problem_mark.name = filename
-        raise e
-
+    value_and_tree_nodes = list(yaml.load_all(src, Loader=SourcePositionLoader))
     return check.is_list(value_and_tree_nodes, of_type=ValueAndSourcePositionTree)
 
 

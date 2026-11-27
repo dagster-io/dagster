@@ -6,6 +6,7 @@ from pathlib import Path
 import dagster_shared.check as check
 import pytest
 import yaml
+from dagster_shared import yaml_utils
 from dagster_shared.yaml_utils import (
     dump_run_config_yaml,
     load_run_config_yaml,
@@ -14,6 +15,7 @@ from dagster_shared.yaml_utils import (
     load_yaml_from_path,
     merge_yaml_strings,
     merge_yamls,
+    parse_yamls_with_source_position,
     safe_load_yaml,
 )
 
@@ -171,3 +173,33 @@ def test_load_datetime_string():
     assert load_run_config_yaml(date_config_yaml) == {
         "ops": {"my_op": {"config": {"start": "2022-06-10T00:00:00.000000+00:00"}}}
     }
+
+
+_SOURCE_POSITION_CASES = [
+    "a: 1\n",
+    "a:\n  b: [1, 2]\n  c:\n    - x\n    - {d: e}\n",
+    "a:\n  b: 1",
+    "start: 2022-06-10T00:00:00.000000+00:00\n",
+    "a: 1\n---\nb:\n  - c\n",
+    "a: &x 1\nb: *x\n",
+    "",
+    "# only a comment\n",
+]
+
+
+@pytest.mark.parametrize("src", _SOURCE_POSITION_CASES)
+def test_parse_yamls_with_source_position_matches_the_pure_python_loader(
+    src: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parsed = parse_yamls_with_source_position(src, filename="f.yaml")
+    monkeypatch.setattr(yaml_utils, "_FAST_SAFE_LOADER", yaml.SafeLoader)
+    assert parse_yamls_with_source_position(src, filename="f.yaml") == parsed
+
+
+@pytest.mark.parametrize("src", ["a: [1\n", "a: 'b\n", "a:\n  - b\n c: d\n"])
+def test_parse_yamls_with_source_position_errors_name_the_file(src: str) -> None:
+    with pytest.raises(yaml.MarkedYAMLError) as error:
+        parse_yamls_with_source_position(src, filename="f.yaml")
+    assert error.value.problem_mark is not None
+    assert error.value.problem_mark.name == "f.yaml"
+    assert error.value.problem_mark.buffer is not None
