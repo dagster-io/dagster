@@ -1,8 +1,16 @@
+from importlib.metadata import PackageNotFoundError, version
+
 import boto3
 import dagster._check as check
+from botocore.config import Config
 from botocore.handlers import disable_signing
 
 from dagster_aws.utils import construct_boto_client_retry_config
+
+try:
+    _DAGSTER_AWS_PRODUCT = f"dagster-aws/{version('dagster-aws')}"
+except PackageNotFoundError:
+    _DAGSTER_AWS_PRODUCT = "dagster-aws/dev"
 
 
 class S3Callback:
@@ -22,6 +30,14 @@ class S3Callback:
         )
 
 
+def construct_user_agent_config(user_agent_extra: str | None = None) -> Config:
+    # Append any caller-supplied value after the product token, space-separated.
+    combined = (
+        f"{_DAGSTER_AWS_PRODUCT} {user_agent_extra}" if user_agent_extra else _DAGSTER_AWS_PRODUCT
+    )
+    return Config(user_agent_extra=combined)
+
+
 def construct_s3_client(
     max_attempts: int,
     region_name: str | None = None,
@@ -33,6 +49,7 @@ def construct_s3_client(
     aws_access_key_id: str | None = None,
     aws_secret_access_key: str | None = None,
     aws_session_token: str | None = None,
+    user_agent_extra: str | None = None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
@@ -43,6 +60,10 @@ def construct_s3_client(
     check.opt_str_param(profile_name, "aws_access_key_id")
     check.opt_str_param(profile_name, "aws_secret_access_key")
     check.opt_str_param(profile_name, "aws_session_token")
+    check.opt_str_param(user_agent_extra, "user_agent_extra")
+    config = construct_boto_client_retry_config(max_attempts).merge(
+        construct_user_agent_config(user_agent_extra)
+    )
 
     client_session = boto3.session.Session(profile_name=profile_name)
     s3_client = client_session.resource(
@@ -54,7 +75,7 @@ def construct_s3_client(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         aws_session_token=aws_session_token,
-        config=construct_boto_client_retry_config(max_attempts),
+        config=config,
     ).meta.client
 
     if use_unsigned_session:

@@ -26,6 +26,8 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir
 from typing_extensions import Self
 
+from dagster_aws.s3.utils import construct_user_agent_config
+
 POLLING_INTERVAL = 5
 
 
@@ -92,7 +94,11 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
-            "s3", use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
+            "s3",
+            use_ssl=use_ssl,
+            verify=_verify,
+            endpoint_url=endpoint_url,
+            config=construct_user_agent_config(),
         ).meta.client
         self._s3_bucket = check.str_param(bucket, "bucket")
         self._s3_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
