@@ -122,6 +122,9 @@ message ExternalPipelineSubsetSnapshotReply {
 message ExternalRepositoryRequest {
   string serialized_repository_python_origin = 1;
   bool defer_snapshots = 2;
+  // Set by clients that can read the compact serdes format. Servers that predate this field
+  // ignore it and reply in the legacy format, which every reader still accepts.
+  bool compact_serdes = 3;
 }
 
 message ExternalRepositoryReply {

@@ -56,6 +56,7 @@ from dagster._utils.typed_dict import init_optional_typeddict
 from dagster_cloud_cli.core.errors import raise_http_error
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData
 from dagster_shared.record import copy, record
+from dagster_shared.utils import get_boolean_string_value
 from typing_extensions import Self
 
 from dagster_cloud.agent.queries import GET_AGENTS_QUERY
@@ -1005,6 +1006,11 @@ class DagsterCloudUserCodeLauncher(
 
         upload_repo_datas: list[DagsterCloudUploadRepositoryData] = []
 
+        # The serialized snapshot is uploaded as-is, so the compact format can only be requested
+        # once every reader of uploaded snapshots supports it.
+        compact_serdes = get_boolean_string_value(
+            os.getenv("DAGSTER_CLOUD_COMPACT_REPOSITORY_SNAPSHOTS", "")
+        )
         for (
             repository_name,
             code_pointer,
@@ -1018,6 +1024,7 @@ class DagsterCloudUserCodeLauncher(
                             repository_name,
                         ),
                         defer_snapshots=True,
+                        compact_serdes=compact_serdes,
                     )
                 ]
 
@@ -1034,6 +1041,7 @@ class DagsterCloudUserCodeLauncher(
                         repository_name,
                     ),
                     defer_snapshots=True,
+                    compact_serdes=compact_serdes,
                 )
 
             # Don't deserialize in case there are breaking changes - let the server do it

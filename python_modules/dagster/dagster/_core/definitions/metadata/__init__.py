@@ -6,6 +6,7 @@ from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeAlias, Un
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     PackableValue,
+    PackedObjects,
     UnpackContext,
     WhitelistMap,
     pack_value,
@@ -198,6 +199,15 @@ class MetadataFieldSerializer(FieldSerializer):
             }
             for k, v in metadata_dict.items()
         ]
+
+    def pack_shallow(
+        self, metadata_dict: Mapping[str, MetadataValue], whitelist_map: WhitelistMap
+    ) -> PackedObjects:
+        return PackedObjects(
+            class_name="EventMetadataEntry",
+            field_names=("label", "entry_data", "description"),
+            rows=[(k, v, None) for k, v in metadata_dict.items()],
+        )
 
     def unpack(  # ty: ignore[invalid-method-override]
         self,

@@ -107,7 +107,7 @@ from dagster._grpc.utils import (
     max_rx_bytes,
     max_send_bytes,
 )
-from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes import deserialize_value, serialize_value, serialize_value_compact
 from dagster._utils import get_run_crash_explanation, safe_tempfile_path_unmanaged
 from dagster._utils.container import (
     ContainerUtilizationMetrics,
@@ -1091,12 +1091,20 @@ class DagsterApiServer(DagsterApiServicer):
                 RemoteRepositoryOrigin,
             )
 
-            return serialize_value(
-                RepositorySnap.from_def(
-                    self._get_repo_for_origin(repository_origin),
-                    defer_snapshots=request.defer_snapshots,
-                )
+            repository_snap = RepositorySnap.from_def(
+                self._get_repo_for_origin(repository_origin),
+                defer_snapshots=request.defer_snapshots,
             )
+            if request.compact_serdes:
+                try:
+                    return serialize_value_compact(repository_snap)
+                except Exception:
+                    # The legacy format is always readable, so don't fail the code location.
+                    self._logger.exception(
+                        "Error serializing repository snapshot in the compact format, using the"
+                        " legacy format instead"
+                    )
+            return serialize_value(repository_snap)
         except Exception:
             _maybe_log_exception(self._logger, "Repository")
             return serialize_value(

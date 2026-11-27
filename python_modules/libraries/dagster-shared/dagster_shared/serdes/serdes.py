@@ -47,6 +47,7 @@ from dagster_shared.record import (
     has_generated_new,
     is_record,
 )
+from dagster_shared.serdes.compact import is_compact_serialized, loads_compact
 from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster_shared.utils.warnings import disable_dagster_warnings
 
@@ -799,6 +800,28 @@ class FieldSerializer(Serializer):
         descent_path: str,
     ) -> JsonSerializableValue: ...
 
+    def pack_shallow(self, __unpacked_value: Any, whitelist_map: WhitelistMap) -> Any:
+        """Like `pack`, but nested values may be left unpacked: the caller packs them.
+
+        Only used by the compact format, to avoid packing nested values only to walk the packed
+        value again. Overriding it is optional: it must return the same value as `pack` once
+        packed. A field packed as a list of serdes objects of a single class may instead return
+        `PackedObjects`, which saves building a dict per object.
+        """
+        return self.pack(__unpacked_value, whitelist_map, "")
+
+
+class PackedObjects(NamedTuple):
+    """A list of packed serdes objects of a single class, as rows of field values.
+
+    Equivalent to `[{"__class__": class_name, **dict(zip(field_names, row))} for row in rows]`,
+    where the field values in rows may be left unpacked.
+    """
+
+    class_name: str
+    field_names: tuple[str, ...]
+    rows: list[tuple[Any, ...]]
+
 
 class SetToSequenceFieldSerializer(FieldSerializer):
     def unpack(  # ty: ignore[invalid-method-override]
@@ -840,6 +863,29 @@ def serialize_value(
         descent_path=_root(val),
     )
     return seven.json.dumps(serializable_value, **json_kwargs)
+
+
+def serialize_value_compact(
+    val: PackableValue,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> str:
+    """Serialize an object to a string in the compact format of `dagster_shared.serdes.compact`,
+    which stores class and field names once and deduplicates repeated values.
+
+    `deserialize_value` reads both formats, but readers that predate the compact format can only
+    read values written by `serialize_value`. Values too deeply nested for the compact encoder are
+    written by `serialize_value`.
+    """
+    # imported here, since the packer module depends on this one
+    from dagster_shared.serdes.compact_packer import CompactPacker
+
+    packer = CompactPacker(whitelist_map)
+    try:
+        return packer.dumps(packer.pack_root(val))
+    except RecursionError:
+        # the compact encoder recurses more per level of nesting than the legacy one
+        del packer
+    return serialize_value(val, whitelist_map)
 
 
 @overload
@@ -1197,10 +1243,13 @@ def deserialize_values(
         unpacked_values = []
         for val in vals:
             context = UnpackContext()
-            unpacked_value = seven.json.loads(
-                val,
-                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
-            )
+            object_hook = partial(_unpack_object, whitelist_map=whitelist_map, context=context)
+            if is_compact_serialized(val):
+                # Unknown values are tracked by identity. They are not shared between references,
+                # like any value that isn't deeply immutable, so this matches the legacy format.
+                unpacked_value = loads_compact(val, object_hook)
+            else:
+                unpacked_value = seven.json.loads(val, object_hook=object_hook)
             unpacked_value = context.finalize_unpack(unpacked_value)
             is_match = (
                 match_type(unpacked_value, as_type)  # type: ignore
