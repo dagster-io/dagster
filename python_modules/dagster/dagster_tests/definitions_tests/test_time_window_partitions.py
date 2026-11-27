@@ -1766,6 +1766,30 @@ def test_get_partition_windows():
         ).get_last_partition_window() == time_window("2023-02-01", "2023-03-01")
 
 
+@pytest.mark.parametrize("execution_timezone", ["UTC", "Europe/Berlin"])
+def test_leap_day_partition_key_for_timestamp(execution_timezone: str) -> None:
+    partitions_def = TimeWindowPartitionsDefinition(
+        start="2024-02-29",
+        fmt=DATE_FORMAT,
+        cron_schedule="0 0 29 2 *",
+        timezone=execution_timezone,
+    )
+    before = create_datetime(2028, 2, 28, 12, tz=execution_timezone)
+    boundary = create_datetime(2028, 2, 29, tz=execution_timezone)
+    after = create_datetime(2028, 2, 29, 12, tz=execution_timezone)
+
+    assert partitions_def.get_partition_key_for_timestamp(before.timestamp()) == "2024-02-29"
+    assert partitions_def.get_partition_key_for_timestamp(boundary.timestamp()) == "2028-02-29"
+    assert (
+        partitions_def.get_partition_key_for_timestamp(boundary.timestamp(), end_closed=True)
+        == "2024-02-29"
+    )
+    assert partitions_def.get_partition_key_for_timestamp(after.timestamp()) == "2028-02-29"
+    window = partitions_def.time_window_for_partition_key("2028-02-29")
+    assert window.start == boundary
+    assert window.end == create_datetime(2032, 2, 29, tz=execution_timezone)
+
+
 def test_invalid_cron_schedule():
     # creating a new partition definition with an invalid cron schedule should raise an error
     with pytest.raises(dg.DagsterInvalidDefinitionError):
