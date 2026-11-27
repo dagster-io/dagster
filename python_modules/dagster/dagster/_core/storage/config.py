@@ -59,7 +59,9 @@ def pg_config() -> UserConfigSchema:
                 "db_name": StringSource,
                 "port": Field(IntSource, is_required=False, default_value=5432),
                 "params": Field(Permissive(), is_required=False, default_value={}),
-                "scheme": Field(StringSource, is_required=False, default_value="postgresql"),
+                "scheme": Field(
+                    StringSource, is_required=False, default_value="postgresql+psycopg2"
+                ),
             },
             is_required=False,
         ),
