@@ -373,6 +373,15 @@ def backfills_daemon_config() -> Field:
                     " decrease latency for backfill run submission."
                 ),
             ),
+            "max_queued_runs": Field(
+                IntSource,
+                is_required=False,
+                description=(
+                    "Maximum number of queued runs per backfill. A backfill at the limit submits"
+                    " more runs as its queued runs are dequeued. Only has an effect with a run"
+                    " coordinator that queues runs, such as the QueuedRunCoordinator."
+                ),
+            ),
         },
         is_required=False,
     )

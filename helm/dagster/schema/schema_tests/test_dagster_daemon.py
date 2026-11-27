@@ -8,6 +8,7 @@ from dagster._core.instance.config import (
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
+from pydantic import ValidationError
 from schema.charts.dagster.subschema.daemon import (
     Backfills,
     Daemon,
@@ -638,10 +639,13 @@ def test_backfill_threading(instance_template: HelmTemplate):
     assert instance["backfills"]["use_threads"] is True
     assert instance["backfills"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["backfills"]
+    assert "max_queued_runs" not in instance["backfills"]
 
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            backfills=Backfills.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+            backfills=Backfills.construct(
+                useThreads=True, numWorkers=4, numSubmitWorkers=8, maxQueuedRuns=100
+            )
         )
     )
 
@@ -653,6 +657,7 @@ def test_backfill_threading(instance_template: HelmTemplate):
     assert instance["backfills"]["use_threads"] is True
     assert instance["backfills"]["num_workers"] == 4
     assert instance["backfills"]["num_submit_workers"] == 8
+    assert instance["backfills"]["max_queued_runs"] == 100
 
 
 def test_scheduler_name(template: HelmTemplate):
@@ -835,3 +840,9 @@ def test_daemon_extra_prepend_init_containers(template: HelmTemplate):
         container.name == "extra-init-container" and container.image == "busybox"
         for container in daemon_deployment.spec.template.spec.init_containers
     )
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_backfill_queue_limit_must_be_positive(limit: int):
+    with pytest.raises(ValidationError, match="greater than 0"):
+        Backfills(useThreads=True, maxQueuedRuns=limit)
