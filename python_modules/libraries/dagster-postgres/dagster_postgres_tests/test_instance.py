@@ -1,3 +1,4 @@
+import os
 import tempfile
 from urllib.parse import unquote, urlparse
 
@@ -313,3 +314,89 @@ def test_configured_other_schema(hostname):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
+
+
+def _pg_storages(instance):
+    return (instance.run_storage, instance.event_log_storage, instance.schedule_storage)
+
+
+def test_connection_pool_default(conn_string):
+    with instance_for_test(
+        overrides={"storage": {"postgres": {"postgres_url": conn_string}}}
+    ) as instance:
+        for storage in _pg_storages(instance):
+            assert isinstance(storage._engine.pool, db.pool.NullPool)  # noqa: SLF001
+
+
+def test_connection_pool_config(conn_string):
+    with instance_for_test(
+        overrides={
+            "storage": {
+                "postgres": {
+                    "postgres_url": conn_string,
+                    "pool": {"pool_size": 2, "max_overflow": 1, "pool_recycle": 60},
+                }
+            }
+        }
+    ) as instance:
+        pools = [storage._engine.pool for storage in _pg_storages(instance)]  # noqa: SLF001
+        for pool in pools:
+            assert isinstance(pool, db.pool.QueuePool)
+            assert pool.size() == 2
+            assert pool._max_overflow == 1  # noqa: SLF001
+            assert pool._recycle == 60  # noqa: SLF001
+            assert pool._pre_ping  # noqa: SLF001
+
+        instance.wipe()
+        for _ in range(10):
+            instance.get_runs(limit=1)
+        # every query reused the same pooled connection
+        assert pools[0].checkedin() == 1
+
+    # disposing the instance closes the pooled connections
+    for pool in pools:
+        assert pool.checkedin() == 0
+
+
+def test_connection_pool_defaults_when_block_empty(conn_string):
+    with instance_for_test(
+        overrides={"storage": {"postgres": {"postgres_url": conn_string, "pool": {}}}}
+    ) as instance:
+        pool = instance.run_storage._engine.pool  # noqa: SLF001
+        assert isinstance(pool, db.pool.QueuePool)
+        assert pool.size() == 5
+        assert pool._max_overflow == 10  # noqa: SLF001
+        assert pool._recycle == 3600  # noqa: SLF001
+
+
+def _backend_pid(storage) -> int:
+    with storage.connect() as conn:
+        return conn.execute(db.text("SELECT pg_backend_pid()")).scalar()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires os.fork")
+def test_connection_pool_after_fork(conn_string):
+    """A forked child gets fresh pools, so disposing them leaves the parent's sessions intact."""
+    with instance_for_test(
+        overrides={"storage": {"postgres": {"postgres_url": conn_string, "pool": {}}}}
+    ) as instance:
+        run_storage = instance.run_storage
+        parent_pool = run_storage._engine.pool  # noqa: SLF001
+        parent_pid = _backend_pid(run_storage)
+        assert parent_pool.checkedin() == 1
+
+        child = os.fork()
+        if child == 0:  # pragma: no cover - runs in the child
+            exit_code = 1
+            try:
+                child_pool = run_storage._engine.pool  # noqa: SLF001
+                if child_pool is not parent_pool and child_pool.checkedin() == 0:
+                    instance.dispose()
+                    exit_code = 0
+            finally:
+                os._exit(exit_code)
+
+        _, wait_status = os.waitpid(child, 0)
+        assert os.waitstatus_to_exitcode(wait_status) == 0
+        # the parent's pooled connection survived the child's dispose
+        assert _backend_pid(run_storage) == parent_pid

@@ -113,6 +113,8 @@ class StorageMethods:
         self._local_artifact_storage.dispose()
         self._run_storage.dispose()
         self._event_storage.dispose()
+        if self._schedule_storage:
+            self._schedule_storage.dispose()
 
     def file_manager_directory(self, run_id: str) -> str:
         return self._local_artifact_storage.file_manager_dir(run_id)
