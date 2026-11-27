@@ -9,6 +9,9 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping, Metadat
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.subset.default import (
+    try_coalesce_to_single_partition_key_range,
+)
 from dagster._core.definitions.partitions.utils import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
@@ -376,6 +379,13 @@ class InputContext:
             partition_key_ranges = subset.get_partition_key_ranges(
                 self._asset_partitions_def  # ty: ignore[invalid-argument-type]
             )
+            if len(partition_key_ranges) != 1:
+                coalesced_range = try_coalesce_to_single_partition_key_range(
+                    subset.get_partition_keys(),
+                    self._asset_partitions_def,  # ty: ignore[invalid-argument-type]
+                )
+                if coalesced_range is not None:
+                    return coalesced_range
         if len(partition_key_ranges) != 1:
             check.failed(
                 "Tried to access asset_partition_key_range, but there are "

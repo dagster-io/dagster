@@ -1,8 +1,12 @@
 from typing import Any
 
 import dagster as dg
+import pytest
 from dagster import OutputContext
+from dagster._check import CheckError
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.execution.context.input import InputContext
+from dagster._time import create_datetime
 
 
 def test_build_output_context_asset_key():
@@ -107,3 +111,94 @@ def test_output_context_with_explicit_partitions_def():
     assert tw.start.month == 1
     assert tw.start.day == 15
     assert tw.end.day == 16
+
+
+def _rectangle_multi_partitions_def(source_partitions_def):
+    return dg.MultiPartitionsDefinition(
+        {
+            "partition": dg.HourlyPartitionsDefinition(create_datetime(2023, 12, 1)),
+            "source": source_partitions_def,
+        }
+    )
+
+
+_RECTANGLE_RANGE = dg.PartitionKeyRange("2023-12-01-00:00|A", "2023-12-01-02:00|B")
+_RECTANGLE_KEYS = sorted(
+    f"2023-12-01-0{hour}:00|{source}" for hour in range(3) for source in ["A", "B"]
+)
+
+
+def _assert_rectangle_context(context):
+    key_range = context.asset_partition_key_range
+    assert key_range == _RECTANGLE_RANGE
+    assert isinstance(key_range.start, MultiPartitionKey)
+    assert isinstance(key_range.end, MultiPartitionKey)
+    assert key_range.start.keys_by_dimension == {
+        "partition": "2023-12-01-00:00",
+        "source": "A",
+    }
+    assert key_range.end.keys_by_dimension == {
+        "partition": "2023-12-01-02:00",
+        "source": "B",
+    }
+    assert sorted(context.asset_partition_keys) == _RECTANGLE_KEYS
+    assert context.asset_partitions_time_window == dg.TimeWindow(
+        create_datetime(2023, 12, 1, 0), create_datetime(2023, 12, 1, 3)
+    )
+
+
+def test_output_context_multi_partition_rectangle_key_range():
+    context = dg.build_output_context(
+        asset_key=dg.AssetKey(["my_asset"]),
+        asset_partitions_def=_rectangle_multi_partitions_def(
+            dg.StaticPartitionsDefinition(["A", "B", "C"])
+        ),
+        asset_partition_key_range=_RECTANGLE_RANGE,
+        instance=dg.DagsterInstance.ephemeral(),
+    )
+    _assert_rectangle_context(context)
+
+
+def test_input_context_multi_partition_rectangle_key_range():
+    context = dg.build_input_context(
+        asset_key=dg.AssetKey(["my_asset"]),
+        asset_partitions_def=_rectangle_multi_partitions_def(
+            dg.StaticPartitionsDefinition(["A", "B", "C"])
+        ),
+        asset_partition_key_range=_RECTANGLE_RANGE,
+        instance=dg.DagsterInstance.ephemeral(),
+    )
+    _assert_rectangle_context(context)
+
+
+def test_input_context_dynamic_multi_partition_rectangle_key_range():
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("rectangle_sources", ["A", "B", "C"])
+    context = dg.build_input_context(
+        asset_key=dg.AssetKey(["my_asset"]),
+        asset_partitions_def=_rectangle_multi_partitions_def(
+            dg.DynamicPartitionsDefinition(name="rectangle_sources")
+        ),
+        asset_partition_key_range=_RECTANGLE_RANGE,
+        instance=instance,
+    )
+    _assert_rectangle_context(context)
+
+
+def test_output_context_dynamic_rectangle_without_store_still_raises():
+    # build_output_context has no step context, so the accessor's partition
+    # loading context has no dynamic partitions store; the rectangle cannot be
+    # resolved and the pre-existing error is preserved. In real execution the
+    # step context supplies the instance.
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("rectangle_sources_no_store", ["A", "B", "C"])
+    context = dg.build_output_context(
+        asset_key=dg.AssetKey(["my_asset"]),
+        asset_partitions_def=_rectangle_multi_partitions_def(
+            dg.DynamicPartitionsDefinition(name="rectangle_sources_no_store")
+        ),
+        asset_partition_key_range=_RECTANGLE_RANGE,
+        instance=instance,
+    )
+    with pytest.raises(CheckError, match=r"\(2\) key ranges associated with this output"):
+        context.asset_partition_key_range  # noqa: B018
