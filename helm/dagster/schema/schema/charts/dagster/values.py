@@ -24,6 +24,7 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     redis: subschema.Redis
     flower: subschema.Flower
     ingress: subschema.Ingress
+    httpRoute: subschema.HTTPRoute
     imagePullSecrets: list[kubernetes.SecretRef]
     computeLogManager: subschema.ComputeLogManager
     scheduler: subschema.Scheduler
