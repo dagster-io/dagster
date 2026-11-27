@@ -207,6 +207,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(dagster_run)
 
+    def add_runs(self, dagster_runs: Sequence["DagsterRun"]) -> Sequence["DagsterRun"]:
+        return self._storage.run_storage.add_runs(dagster_runs)
+
     def add_historical_run(
         self, dagster_run: "DagsterRun", run_creation_time: datetime
     ) -> "DagsterRun":
@@ -216,6 +219,11 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         self, run_id: str, event: "DagsterEvent", update_timestamp: datetime | None = None
     ) -> None:
         return self._storage.run_storage.handle_run_event(run_id, event, update_timestamp)
+
+    def handle_run_events(
+        self, run_events: Sequence[tuple[str, "DagsterEvent", datetime | None]]
+    ) -> None:
+        return self._storage.run_storage.handle_run_events(run_events)
 
     def get_runs(  # ty: ignore[invalid-method-override]
         self,

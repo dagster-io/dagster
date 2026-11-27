@@ -89,7 +89,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.test_utils import create_run_for_test, freeze_time
+from dagster._core.test_utils import create_run_for_test, environ, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._time import get_current_datetime
@@ -1854,6 +1854,214 @@ class TestEventLogStorage:
                 dg.AssetCheckKey(dg.AssetKey("my_asset_name"), "my_check"),
                 dg.AssetCheckKey(dg.AssetKey("my_other_asset"), "my_other_check"),
             }
+
+    def test_create_run_writes_planned_events_in_one_batch(self, storage, instance):
+        if not storage.supports_batched_planned_events:
+            pytest.skip("storage does not support batched planned events")
+
+        @dg.multi_asset(
+            specs=[dg.AssetSpec("planned_a"), dg.AssetSpec("planned_b")],
+            check_specs=[dg.AssetCheckSpec("planned_check", asset="planned_a")],
+        )
+        def my_assets():
+            pass
+
+        job_def = dg.Definitions(assets=[my_assets]).resolve_implicit_global_asset_job_def()
+        # batching planned events does not depend on DAGSTER_EVENT_BATCH_SIZE
+        with (
+            environ({"DAGSTER_EVENT_BATCH_SIZE": "0"}),
+            mock.patch.object(
+                storage, "store_event_batch", wraps=storage.store_event_batch
+            ) as store_event_batch,
+            mock.patch.object(storage, "store_event", wraps=storage.store_event) as store_event,
+        ):
+            run = instance.create_run_for_job(job_def)
+
+        assert store_event_batch.call_count == 1
+        assert store_event.call_count == 0
+        assert self._get_planned_asset_keys_from_event_log(instance, run.run_id) == {
+            dg.AssetKey("planned_a"),
+            dg.AssetKey("planned_b"),
+        }
+        assert self._get_planned_check_keys_from_event_log(instance, run.run_id) == {
+            dg.AssetCheckKey(dg.AssetKey("planned_a"), "planned_check")
+        }
+
+    def test_create_runs(self, storage, instance):
+        """Creating runs together stores the same runs, tags and planned events as creating them
+        one at a time.
+        """
+        from dagster._core.execution.api import create_execution_plan
+        from dagster._core.snap import snapshot_from_execution_plan
+
+        @dg.multi_asset(
+            specs=[dg.AssetSpec("batch_a"), dg.AssetSpec("batch_b")],
+            check_specs=[dg.AssetCheckSpec("batch_check", asset="batch_a")],
+        )
+        def my_assets():
+            pass
+
+        job_def = dg.Definitions(assets=[my_assets]).resolve_implicit_global_asset_job_def()
+        execution_plan_snapshot = snapshot_from_execution_plan(
+            create_execution_plan(job_def), job_def.get_job_snapshot_id()
+        )
+
+        def _kwargs(run_id, index):
+            return dict(
+                job_name=job_def.name,
+                run_id=run_id,
+                run_config=None,
+                status=dg.DagsterRunStatus.NOT_STARTED,
+                tags={"index": str(index)},
+                root_run_id=None,
+                parent_run_id=None,
+                step_keys_to_execute=None,
+                execution_plan_snapshot=execution_plan_snapshot,
+                job_snapshot=job_def.get_job_snapshot(),
+                parent_job_snapshot=None,
+                asset_selection=None,
+                asset_check_selection=None,
+                resolved_op_selection=None,
+                op_selection=None,
+                remote_job_origin=None,
+                job_code_origin=None,
+                asset_graph=job_def.asset_layer.asset_graph,
+            )
+
+        batch_run_ids = [make_new_run_id() for _ in range(3)]
+        single_run_id = make_new_run_id()
+        runs = instance.create_runs([_kwargs(run_id, i) for i, run_id in enumerate(batch_run_ids)])
+        single_run = instance.create_run(**_kwargs(single_run_id, 0))
+
+        assert [run.run_id for run in runs] == batch_run_ids
+        for i, run in enumerate(runs):
+            stored_run = check.not_none(instance.get_run_by_id(run.run_id))
+            assert stored_run == run
+            assert stored_run.tags["index"] == str(i)
+            assert run._replace(run_id=single_run_id, tags=single_run.tags) == single_run
+            assert self._get_planned_asset_keys_from_event_log(
+                instance, run.run_id
+            ) == self._get_planned_asset_keys_from_event_log(instance, single_run_id)
+            assert self._get_planned_check_keys_from_event_log(
+                instance, run.run_id
+            ) == self._get_planned_check_keys_from_event_log(instance, single_run_id)
+        assert self._get_planned_asset_keys_from_event_log(instance, single_run_id) == {
+            dg.AssetKey("batch_a"),
+            dg.AssetKey("batch_b"),
+        }
+
+    def test_store_run_enqueued_event_batch(self, storage, instance):
+        """The enqueued events of several runs are stored in one batch, and set each run's status,
+        as when they are stored one at a time.
+        """
+        if not storage.supports_batched_run_enqueued_events:
+            pytest.skip("storage does not support batched run enqueued events")
+
+        run_ids = [make_new_run_id() for _ in range(3)]
+        with create_and_delete_test_runs(instance, run_ids):
+            runs = [check.not_none(instance.get_run_by_id(run_id)) for run_id in run_ids]
+            with (
+                mock.patch.object(
+                    storage, "store_event_batch", wraps=storage.store_event_batch
+                ) as store_event_batch,
+                mock.patch.object(storage, "store_event", wraps=storage.store_event) as store_event,
+            ):
+                instance.report_dagster_events_for_runs(
+                    [(run.run_id, [dg.DagsterEvent.job_enqueue(run)]) for run in runs]
+                )
+
+            assert store_event_batch.call_count == 1
+            assert store_event.call_count == 0
+            for run_id in run_ids:
+                records = storage.get_records_for_run(
+                    run_id, of_type=DagsterEventType.RUN_ENQUEUED
+                ).records
+                assert len(records) == 1
+                assert records[0].event_log_entry.run_id == run_id
+                assert check.not_none(instance.get_run_by_id(run_id)).status == (
+                    dg.DagsterRunStatus.QUEUED
+                )
+
+    def test_store_mixed_event_batch(self, storage, instance):
+        """A batch mixing batch-writable event types, with repeated asset keys, has the same
+        effect as storing the events one at a time.
+        """
+        a, b = dg.AssetKey(["a"]), dg.AssetKey(["b"])
+        check_key = dg.AssetCheckKey(a, "my_check")
+        run_id = make_new_run_id()
+
+        def _entry(event_type, data):
+            return dg.EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id,
+                timestamp=time.time(),
+                dagster_event=dg.DagsterEvent(event_type.value, "nonce", event_specific_data=data),
+            )
+
+        with create_and_delete_test_runs(instance, [run_id]):
+            storage.store_event_batch(
+                [
+                    _entry(
+                        DagsterEventType.ASSET_MATERIALIZATION,
+                        StepMaterializationData(dg.AssetMaterialization(a, partition="1")),
+                    ),
+                    _entry(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        AssetMaterializationPlannedData(a, partition="2"),
+                    ),
+                    _entry(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        AssetMaterializationPlannedData(a, partition="3"),
+                    ),
+                    _entry(
+                        DagsterEventType.ASSET_OBSERVATION,
+                        AssetObservationData(dg.AssetObservation(b)),
+                    ),
+                    _entry(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                        AssetMaterializationPlannedData(b),
+                    ),
+                    _entry(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+                        AssetCheckEvaluationPlanned(asset_key=a, check_name="my_check"),
+                    ),
+                ]
+            )
+
+            assert {
+                record.event_log_entry.dagster_event_type
+                for record in storage.get_records_for_run(run_id).records
+            } == {
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                DagsterEventType.ASSET_OBSERVATION,
+                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+            }
+            assert self._get_planned_asset_keys_from_event_log(instance, run_id) == {a, b}
+
+            # each asset record reflects all of its events, not only the last one
+            records = {
+                record.asset_entry.asset_key: record.asset_entry
+                for record in storage.get_asset_records([a, b])
+            }
+            assert set(records) == {a, b}
+            assert records[a].last_run_id == run_id
+            last_materialization = records[a].last_materialization_record
+            assert last_materialization
+            assert last_materialization.partition_key == "1"
+            assert records[b].last_run_id == run_id
+            assert records[b].last_materialization_record is None
+
+            for key, partition in ((a, "2"), (a, "3"), (b, None)):
+                info = storage.get_latest_planned_materialization_info(key, partition)
+                assert info and info.run_id == run_id
+
+            checks = storage.get_asset_check_execution_history(check_key, limit=10)
+            assert len(checks) == 1
+            assert checks[0].run_id == run_id
+            assert checks[0].status == AssetCheckExecutionRecordStatus.PLANNED
 
     def test_asset_materialization_fetch(self, storage, instance):
         asset_key = dg.AssetKey(["path", "to", "asset_one"])

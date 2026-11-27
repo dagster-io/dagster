@@ -57,6 +57,13 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             dagster_run (DagsterRun): The run to add.
         """
 
+    def add_runs(self, dagster_runs: Sequence[DagsterRun]) -> Sequence[DagsterRun]:
+        """Add several runs to storage, as `add_run` does for each of them. Storages may override
+        this to add them in fewer round trips. If adding fails partway, some of the runs may have
+        been added.
+        """
+        return [self.add_run(dagster_run) for dagster_run in dagster_runs]
+
     @abstractmethod
     def add_historical_run(
         self, dagster_run: DagsterRun, run_creation_time: datetime
@@ -73,6 +80,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             run_id (str)
             event (DagsterEvent)
         """
+
+    def handle_run_events(
+        self, run_events: Sequence[tuple[str, DagsterEvent, datetime | None]]
+    ) -> None:
+        """Update run storage for a sequence of (run_id, event, update_timestamp), as
+        `handle_run_event` does for each of them in turn. Storages may override this to update the
+        runs in fewer round trips.
+        """
+        for run_id, event, update_timestamp in run_events:
+            self.handle_run_event(run_id, event, update_timestamp)
 
     @abstractmethod
     def get_runs(

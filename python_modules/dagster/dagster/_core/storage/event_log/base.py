@@ -940,6 +940,21 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def handles_run_events_in_store_event(self) -> bool:
         return False
 
+    @property
+    def supports_batched_planned_events(self) -> bool:
+        """Whether store_event_batch can write a run's planned events in one call with the same
+        effects as writing them one at a time. When true, run creation writes them in one batch
+        regardless of DAGSTER_EVENT_BATCH_SIZE.
+        """
+        return False
+
+    @property
+    def supports_batched_run_enqueued_events(self) -> bool:
+        """Whether store_event_batch can write RUN_ENQUEUED events, of any number of runs, in one
+        call with the same effects as writing them one at a time.
+        """
+        return False
+
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
 

@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from functools import cached_property
 from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
@@ -34,7 +35,7 @@ CURRENT_SNAPSHOT_VERSION = 1
 
 def create_execution_plan_snapshot_id(execution_plan_snapshot: "ExecutionPlanSnapshot") -> str:
     check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-    return create_snapshot_id(execution_plan_snapshot)
+    return execution_plan_snapshot.snapshot_id
 
 
 @whitelist_for_serdes(
@@ -96,6 +97,12 @@ class ExecutionPlanSnapshot(
                 repository_load_data, "repository_load_data", RepositoryLoadData
             ),
         )
+
+    @cached_property
+    def snapshot_id(self) -> str:
+        # Hashing serializes the whole plan. The snapshot is immutable, so hash it once: callers
+        # that create many runs from one plan, like backfills, would otherwise hash it per run.
+        return create_snapshot_id(self)
 
     @property
     def asset_selection(self) -> AbstractSet[AssetKey]:

@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ContextManager, cast  # noqa: UP035
@@ -8,7 +9,12 @@ import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    BATCH_WRITABLE_EVENTS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
@@ -47,6 +53,12 @@ from dagster_postgres.utils import (
 
 if TYPE_CHECKING:
     from dagster_postgres.auth import PgTokenProvider
+
+# Whether an executemany can return the inserted ids in the order of its parameters, which
+# requires SQLAlchemy 2.0.10 or later.
+_SUPPORTS_INSERTMANYVALUES_RETURNING = (
+    "sort_by_parameter_order" in inspect.signature(db.insert(db.table("t")).returning).parameters
+)
 
 CHANNEL_NAME = "run_events"
 
@@ -222,15 +234,17 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset_check_event(event, event_id)
 
     def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
-        from dagster import DagsterEventType
-
         check.sequence_param(events, "event", of_type=EventLogEntry)
 
         event_types = {event.get_dagster_event().event_type for event in events}
 
         check.invariant(
-            all(event_type in BATCH_WRITABLE_EVENTS for event_type in event_types),
-            f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
+            all(
+                event_type in BATCH_WRITABLE_EVENTS or event_type == DagsterEventType.RUN_ENQUEUED
+                for event_type in event_types
+            ),
+            f"{BATCH_WRITABLE_EVENTS} and RUN_ENQUEUED are the only currently supported events"
+            " for batch writes.",
         )
         events = [
             event
@@ -240,27 +254,63 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if len(events) == 0:
             return
 
-        if event_types == {DagsterEventType.ASSET_MATERIALIZATION} or event_types == {
-            DagsterEventType.ASSET_OBSERVATION
-        }:
-            insert_event_statement = self.prepare_insert_event_batch(events)
-            with self._connect() as conn:
+        with self._connect() as conn:
+            if not _SUPPORTS_INSERTMANYVALUES_RETURNING:
+                insert_event_statement = self.prepare_insert_event_batch(events)
                 result = conn.execute(
                     insert_event_statement.returning(SqlEventLogStorageTable.c.id)
                 )
-                event_ids = [cast("int", row[0]) for row in result.fetchall()]
+            else:
+                # An executemany, unlike a multi-row VALUES clause, reuses one compiled statement
+                # for batches of any size, and still inserts the rows in a few round trips.
+                result = conn.execute(
+                    SqlEventLogStorageTable.insert().returning(
+                        SqlEventLogStorageTable.c.id, sort_by_parameter_order=True
+                    ),
+                    [self._event_to_row(event) for event in events],
+                )
+            event_ids = [cast("int", row[0]) for row in result.fetchall()]
 
-            if any(event_id is None for event_id in event_ids):
-                raise DagsterInvariantViolationError(
-                    "Cannot store asset event tags for null event id."
+            # As in store_event, notify of run events for listeners from older versions
+            notify_ids = [
+                f"{entry.run_id}_{event_id}"
+                for entry, event_id in zip(events, event_ids)
+                if entry.dagster_event_type == DagsterEventType.RUN_ENQUEUED
+            ]
+            if notify_ids:
+                conn.execute(
+                    db.text(
+                        "SELECT pg_notify(:channel, notify_id) FROM unnest(:notify_ids) AS notify_id"
+                    ),
+                    {"channel": CHANNEL_NAME, "notify_ids": notify_ids},
                 )
 
+        if any(event_id is None for event_id in event_ids):
+            raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
+
+        asset_events = [
+            (entry, event_id)
+            for entry, event_id in zip(events, event_ids)
+            if entry.dagster_event_type in ASSET_EVENTS and entry.get_dagster_event().asset_key
+        ]
+        if asset_events:
             with self.index_transaction() as conn:
-                self._store_asset_event_tags(conn, events, event_ids)
-                # We only update the asset table with the last event.
-                self._store_asset_event(conn, events[-1], event_ids[-1])
-        else:
-            return super().store_event_batch(events)
+                self._store_asset_event_tags(
+                    conn, [entry for entry, _ in asset_events], [eid for _, eid in asset_events]
+                )
+                self._store_asset_events(conn, asset_events)
+
+        for entry, event_id in zip(events, event_ids):
+            if entry.dagster_event_type in ASSET_CHECK_EVENTS:
+                self.store_asset_check_event(entry, event_id)
+
+    @property
+    def supports_batched_planned_events(self) -> bool:
+        return True
+
+    @property
+    def supports_batched_run_enqueued_events(self) -> bool:
+        return True
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
@@ -303,21 +353,41 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # run id for a set of assets in one roundtrip call to event log storage.
         # https://github.com/dagster-io/dagster/pull/7319
 
-        values = self._get_asset_entry_values(
-            event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
-        )
-        query = postgresql.insert(AssetKeyTable).values(
-            asset_key=event.dagster_event.asset_key.to_string(),
-            **values,
-        )
-        if values:
-            query = query.on_conflict_do_update(
-                index_elements=[AssetKeyTable.c.asset_key],
-                set_=dict(**values),
+        self._store_asset_events(conn, [(event, event_id)])
+
+    def _store_asset_events(
+        self, conn: Connection, entries_and_ids: Sequence[tuple[EventLogEntry, int]]
+    ) -> None:
+        """Upserts the asset table rows for a sequence of asset events, with the same result as
+        upserting them one at a time, in one statement per set of updated columns.
+        """
+        has_asset_key_index_cols = self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+        # A multi-row upsert cannot touch the same row twice, so fold the events for each asset
+        # key into one row. Later events overwrite the columns they set, as sequential upserts do.
+        values_by_asset_key: dict[str, dict[str, Any]] = {}
+        for entry, event_id in entries_and_ids:
+            if not (entry.dagster_event and entry.dagster_event.asset_key):
+                continue
+            values_by_asset_key.setdefault(entry.dagster_event.asset_key.to_string(), {}).update(
+                self._get_asset_entry_values(entry, event_id, has_asset_key_index_cols)
             )
-        else:
-            query = query.on_conflict_do_nothing()
-        conn.execute(query)
+
+        rows_by_columns: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+        for asset_key, values in values_by_asset_key.items():
+            rows_by_columns.setdefault(tuple(sorted(values)), []).append(
+                {"asset_key": asset_key, **values}
+            )
+
+        for columns, rows in rows_by_columns.items():
+            query = postgresql.insert(AssetKeyTable).values(rows)
+            if columns:
+                query = query.on_conflict_do_update(
+                    index_elements=[AssetKeyTable.c.asset_key],
+                    set_={column: query.excluded[column] for column in columns},
+                )
+            else:
+                query = query.on_conflict_do_nothing()
+            conn.execute(query)
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]

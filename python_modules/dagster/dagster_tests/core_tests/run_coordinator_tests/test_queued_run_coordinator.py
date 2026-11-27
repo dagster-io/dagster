@@ -174,6 +174,26 @@ class TestQueuedRunCoordinator:
             == 0
         )
 
+    def test_submit_runs(self, instance, coordinator, workspace, remote_job):
+        """Submitting runs together has the same result as submitting them one at a time."""
+        runs = [
+            self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
+            for _ in range(3)
+        ]
+        returned_runs = coordinator.submit_runs(
+            [dg.SubmitRunContext(run, workspace) for run in runs]
+        )
+        assert [run.run_id for run in returned_runs] == [run.run_id for run in runs]
+        assert all(run.status == DagsterRunStatus.QUEUED for run in returned_runs)
+
+        assert len(instance.run_launcher.queue()) == 0
+        for run in runs:
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.QUEUED
+            records = instance.get_records_for_run(
+                run.run_id, of_type=DagsterEventType.PIPELINE_ENQUEUED
+            ).records
+            assert len(records) == 1
+
     def test_cancel_run(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
 

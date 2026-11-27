@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
@@ -42,6 +43,13 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         Returns:
             PipelineRun: The queued run
         """
+
+    def submit_runs(self, contexts: Sequence[SubmitRunContext]) -> Sequence[DagsterRun]:
+        """Submit several runs, as `submit_run` does for each of them in turn. Run coordinators
+        may override this to submit them in fewer round trips. If submission fails partway, some
+        of the runs may have been submitted.
+        """
+        return [self.submit_run(context) for context in contexts]
 
     @abstractmethod
     def cancel_run(self, run_id: str) -> bool:

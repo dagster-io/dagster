@@ -2,8 +2,8 @@ import asyncio
 import logging
 import sys
 import time
-from collections.abc import Sequence
-from typing import AbstractSet, NamedTuple  # noqa: UP035
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetOrCheckKey
@@ -110,6 +110,40 @@ async def get_job_execution_data_from_run_request(
     return run_request_execution_data_cache[pipeline_selector]
 
 
+def _create_run_kwargs(
+    run_id: str | None,
+    run_request: RunRequest,
+    execution_data: RunRequestExecutionData,
+    asset_graph: RemoteWorkspaceAssetGraph,
+) -> dict[str, Any]:
+    """Keyword arguments of `DagsterInstance.create_run` for an asset run request."""
+    remote_job = execution_data.remote_job
+    return dict(
+        job_snapshot=remote_job.job_snapshot,
+        execution_plan_snapshot=execution_data.remote_execution_plan.execution_plan_snapshot,
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        job_name=remote_job.name,
+        run_id=run_id,
+        resolved_op_selection=None,
+        op_selection=None,
+        run_config=run_request.run_config or {},
+        step_keys_to_execute=None,
+        tags=run_request.tags,
+        root_run_id=None,
+        parent_run_id=None,
+        status=DagsterRunStatus.NOT_STARTED,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
+        asset_selection=frozenset(run_request.asset_selection)
+        if run_request.asset_selection
+        else None,
+        asset_check_selection=frozenset(run_request.asset_check_keys)
+        if run_request.asset_check_keys
+        else None,
+        asset_graph=asset_graph,
+    )
+
+
 async def _create_asset_run(
     run_id: str | None,
     run_request: RunRequest,
@@ -189,35 +223,11 @@ async def _create_asset_run(
                 should_retry = True
 
         if not should_retry:
-            remote_job = check.not_none(execution_data).remote_job
-            remote_execution_plan = check.not_none(execution_data).remote_execution_plan
-
-            run = instance.create_run(
-                job_snapshot=remote_job.job_snapshot,
-                execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
-                parent_job_snapshot=remote_job.parent_job_snapshot,
-                job_name=remote_job.name,
-                run_id=run_id,
-                resolved_op_selection=None,
-                op_selection=None,
-                run_config=run_request.run_config or {},
-                step_keys_to_execute=None,
-                tags=run_request.tags,
-                root_run_id=None,
-                parent_run_id=None,
-                status=DagsterRunStatus.NOT_STARTED,
-                remote_job_origin=remote_job.get_remote_origin(),
-                job_code_origin=remote_job.get_python_origin(),
-                asset_selection=frozenset(run_request.asset_selection)
-                if run_request.asset_selection
-                else None,
-                asset_check_selection=frozenset(run_request.asset_check_keys)
-                if run_request.asset_check_keys
-                else None,
-                asset_graph=asset_graph,
+            return instance.create_run(
+                **_create_run_kwargs(
+                    run_id, run_request, check.not_none(execution_data), asset_graph
+                )
             )
-
-            return run
 
         if i < EXECUTION_PLAN_CREATION_RETRIES:
             # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
@@ -321,7 +331,11 @@ async def submit_job_entity_run(
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
     check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
 
-    instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
+    instance.submit_run(
+        run_to_submit.run_id,
+        workspace_process_context.create_request_context(),
+        run=run_to_submit,
+    )
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
     check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
@@ -344,10 +358,15 @@ async def submit_asset_run(
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
+    *,
+    run_id_is_new: bool = False,
 ) -> DagsterRun:
     """Submits a run for a run request that targets an asset selection. If the run already exists,
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
+
+    Callers that have already checked that no run with `run_id` exists (e.g. with one query for
+    many runs) can pass `run_id_is_new=True` to skip checking again.
     """
     entity_keys: Sequence[AssetOrCheckKey] = [
         *(run_request.asset_selection or []),
@@ -357,7 +376,7 @@ async def submit_asset_run(
     check.invariant(len(entity_keys) > 0)
 
     # check if the run already exists
-    existing_run = instance.get_run_by_id(run_id) if run_id else None
+    existing_run = instance.get_run_by_id(run_id) if run_id and not run_id_is_new else None
     if existing_run:
         if existing_run.status != DagsterRunStatus.NOT_STARTED:
             logger.warn(
@@ -389,7 +408,11 @@ async def submit_asset_run(
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
     check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
 
-    instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
+    instance.submit_run(
+        run_to_submit.run_id,
+        workspace_process_context.create_request_context(),
+        run=run_to_submit,
+    )
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
     check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
@@ -402,3 +425,114 @@ async def submit_asset_run(
     )
 
     return run_to_submit
+
+
+class PartialRunSubmissionError(Exception):
+    """Raised from the error that stopped `submit_new_asset_runs` partway, after it submitted the
+    runs of the run requests before the one that failed.
+    """
+
+    def __init__(self, num_submitted: int):
+        super().__init__(f"Submitted {num_submitted} runs before failing")
+        self.num_submitted = num_submitted
+
+
+async def submit_new_asset_runs(
+    run_ids: Sequence[str],
+    run_requests: Sequence[RunRequest],
+    instance: DagsterInstance,
+    workspace_process_context: IWorkspaceProcessContext,
+    run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
+    logger: logging.Logger,
+) -> int:
+    """Creates and submits a run for each run request that targets an asset selection, with the
+    given run ids, which no run may have yet. Has the same result as `submit_asset_run` for each run
+    request in turn, but creates and submits the runs in a few storage round trips.
+
+    Returns the number of runs submitted. If preparing the run for a run request fails, the runs of
+    the run requests before it are submitted, then `PartialRunSubmissionError` is raised from the
+    error.
+    """
+    check.invariant(len(run_ids) == len(run_requests))
+    workspace = workspace_process_context.create_request_context()
+    asset_graph = workspace.asset_graph
+
+    create_run_kwargs = []
+    error: Exception | None = None
+    for i, (run_id, run_request) in enumerate(zip(run_ids, run_requests)):
+        check.invariant(len(run_request.entity_keys) > 0)
+        try:
+            execution_data = await get_job_execution_data_from_run_request(
+                asset_graph,
+                run_request,
+                instance,
+                workspace=workspace,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+            )
+        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError):
+            execution_data = None
+        except Exception as e:
+            error = e
+            break
+
+        if execution_data is None or not all(
+            key
+            in _get_execution_plan_entity_keys(
+                execution_data.remote_execution_plan.execution_plan_snapshot
+            )
+            for key in run_request.entity_keys
+        ):
+            # The code server may be out of sync with the daemon. `submit_asset_run` retries
+            # after the workspace is refreshed, so submit this run and the rest with it.
+            num_submitted = _create_and_submit_runs(
+                instance, workspace, create_run_kwargs, run_requests, logger
+            )
+            for j in range(i, len(run_requests)):
+                try:
+                    await submit_asset_run(
+                        run_ids[j],
+                        run_requests[j],
+                        j,
+                        instance,
+                        workspace_process_context,
+                        workspace_process_context.create_request_context(),
+                        run_request_execution_data_cache,
+                        {},
+                        logger,
+                        run_id_is_new=True,
+                    )
+                except Exception as e:
+                    raise PartialRunSubmissionError(num_submitted) from e
+                num_submitted += 1
+            return num_submitted
+
+        create_run_kwargs.append(
+            _create_run_kwargs(run_id, run_request, execution_data, asset_graph)
+        )
+
+    num_submitted = _create_and_submit_runs(
+        instance, workspace, create_run_kwargs, run_requests, logger
+    )
+    if error is not None:
+        raise PartialRunSubmissionError(num_submitted) from error
+    return num_submitted
+
+
+def _create_and_submit_runs(
+    instance: DagsterInstance,
+    workspace: BaseWorkspaceRequestContext,
+    create_run_kwargs: Sequence[Mapping[str, Any]],
+    run_requests: Sequence[RunRequest],
+    logger: logging.Logger,
+) -> int:
+    if not create_run_kwargs:
+        return 0
+    runs = instance.create_runs(create_run_kwargs)
+    instance.submit_runs(runs, workspace)
+    for run, run_request in zip(runs, run_requests):
+        asset_key_str = ", ".join([key.to_user_string() for key in run_request.entity_keys])
+        logger.info(
+            f"Submitted run {run.run_id} for assets/checks {asset_key_str} with tags"
+            f" {run_request.tags}"
+        )
+    return len(runs)
