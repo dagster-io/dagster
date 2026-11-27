@@ -16,11 +16,12 @@ from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_shared.yaml_utils import safe_load_yaml
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import QueuePool
 
 ensure_dagster_tests_import()
@@ -234,3 +235,231 @@ def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
 
         assert asset_key not in storage.all_asset_keys()
         assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+
+
+@contextmanager
+def _queued_cancellation_instance(conn_string):
+    with (
+        _clean_storage(conn_string),
+        instance_for_test(
+            overrides={"storage": {"postgres": {"postgres_url": conn_string}}}
+        ) as instance,
+    ):
+        instance.wipe()
+        yield instance
+
+
+def _create_queued_run(instance):
+    from dagster._core.remote_origin import (
+        GrpcServerCodeLocationOrigin,
+        RemoteJobOrigin,
+        RemoteRepositoryOrigin,
+    )
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+    from dagster._core.test_utils import create_run_for_test
+
+    return create_run_for_test(
+        instance,
+        status=DagsterRunStatus.QUEUED,
+        remote_job_origin=RemoteJobOrigin(
+            RemoteRepositoryOrigin(GrpcServerCodeLocationOrigin("localhost", port=1234), "repo"),
+            "job",
+        ),
+    )
+
+
+def test_run_cancellation_batch(conn_string):
+    from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+    from dagster._core.storage.runs.schema import RunsTable
+    from dagster._serdes import deserialize_value
+    from sqlalchemy import event as sql_event
+
+    with _queued_cancellation_instance(conn_string) as instance:
+        runs = [_create_queued_run(instance) for _ in range(3)]
+        statements = []
+
+        def before_execute(conn, cursor, statement, parameters, context, executemany):
+            statements.append(statement)
+
+        sql_event.listen(Engine, "before_cursor_execute", before_execute)
+        try:
+            instance.report_run_cancellation_batch(runs)
+        finally:
+            sql_event.remove(Engine, "before_cursor_execute", before_execute)
+        assert len([s for s in statements if s.startswith("INSERT INTO event_logs")]) == 1
+        assert len([s for s in statements if "pg_notify" in s]) == 1
+        assert len([s for s in statements if s.startswith("UPDATE runs")]) == 1
+        for run in runs:
+            record = instance.get_run_record_by_id(run.run_id)
+            assert record.dagster_run.status == DagsterRunStatus.CANCELED
+            assert record.end_time is not None
+            logs = instance.all_logs(run.run_id)
+            assert [e.dagster_event_type for e in logs] == [
+                DagsterEventType.RUN_CANCELING,
+                DagsterEventType.RUN_CANCELED,
+            ]
+            assert record.end_time == logs[-1].timestamp
+        with instance.run_storage.connect() as conn:
+            for (body,) in conn.execute(db_select([RunsTable.c.run_body])):
+                assert deserialize_value(body, DagsterRun).status == DagsterRunStatus.CANCELED
+
+
+@pytest.mark.parametrize("failure_point", ["event_insert", "notification", "later_chunk"])
+def test_atomic_cancellation_rolls_back_all_state(conn_string, failure_point):
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+    from sqlalchemy import event as sql_event
+
+    with _queued_cancellation_instance(conn_string) as instance:
+        runs = [
+            _create_queued_run(instance)
+            for _ in range(501 if failure_point == "later_chunk" else 2)
+        ]
+        inserts = 0
+
+        def fail(conn, cursor, statement, parameters, context, executemany):
+            nonlocal inserts
+            if statement.startswith("INSERT INTO event_logs"):
+                inserts += 1
+                if failure_point == "event_insert" or (
+                    failure_point == "later_chunk" and inserts == 2
+                ):
+                    raise RuntimeError("injected transaction failure")
+            if "pg_notify" in statement and failure_point == "notification":
+                raise RuntimeError("injected transaction failure")
+
+        sql_event.listen(Engine, "before_cursor_execute", fail)
+        try:
+            with pytest.raises(RuntimeError, match="injected transaction failure"):
+                instance.report_run_cancellation_batch(runs)
+        finally:
+            sql_event.remove(Engine, "before_cursor_execute", fail)
+        assert all(run.status == DagsterRunStatus.QUEUED for run in instance.get_runs())
+        assert not instance.all_logs(runs[0].run_id)
+        assert not instance.all_logs(runs[-1].run_id)
+        instance.report_run_cancellation_batch(runs)
+        assert all(run.status == DagsterRunStatus.CANCELED for run in instance.get_runs())
+
+
+def test_atomic_cancellation_revalidates_status(conn_string):
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+
+    with _queued_cancellation_instance(conn_string) as instance:
+        run = _create_queued_run(instance)
+        instance.report_dagster_event(
+            DagsterEvent(DagsterEventType.RUN_START.value, job_name=run.job_name), run.run_id
+        )
+        assert instance.event_log_storage.cancel_queued_runs([run]) == []
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTED
+        assert [e.dagster_event_type for e in instance.all_logs(run.run_id)] == [
+            DagsterEventType.RUN_START
+        ]
+
+
+def test_postgres_listener_uses_serial_reporting(conn_string):
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+
+    with _queued_cancellation_instance(conn_string) as instance:
+        run = _create_queued_run(instance)
+        seen = []
+
+        def listener(event):
+            seen.append(
+                (
+                    event.dagster_event_type,
+                    instance.get_run_by_id(run.run_id).status,
+                    len(instance.all_logs(run.run_id)),
+                )
+            )
+
+        instance.add_event_listener(run.run_id, listener)
+        with patch.object(instance.event_log_storage, "cancel_queued_runs") as batch:
+            instance.report_run_cancellation_batch([run])
+            batch.assert_not_called()
+        assert seen == [
+            (DagsterEventType.RUN_CANCELING, DagsterRunStatus.CANCELING, 1),
+            (DagsterEventType.RUN_CANCELED, DagsterRunStatus.CANCELED, 2),
+        ]
+
+
+def test_queued_state_and_events_are_not_visible_before_commit(conn_string):
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+    from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
+    from dagster._core.storage.runs.schema import RunsTable
+    from sqlalchemy import (
+        create_engine,
+        event as sql_event,
+        func,
+    )
+
+    with _queued_cancellation_instance(conn_string) as instance:
+        run = _create_queued_run(instance)
+        observed = []
+        engine = create_engine(conn_string, isolation_level="AUTOCOMMIT")
+
+        def observe(conn, cursor, statement, parameters, context, executemany):
+            if statement.startswith("INSERT INTO event_logs"):
+                with engine.connect() as other:
+                    status = other.execute(
+                        db_select([RunsTable.c.status]).where(RunsTable.c.run_id == run.run_id)
+                    ).scalar()
+                    count = other.execute(
+                        db_select([func.count()]).select_from(SqlEventLogStorageTable)
+                    ).scalar()
+                    observed.append((status, count))
+
+        sql_event.listen(Engine, "before_cursor_execute", observe)
+        try:
+            instance.report_run_cancellation_batch([run])
+        finally:
+            sql_event.remove(Engine, "before_cursor_execute", observe)
+            engine.dispose()
+        assert observed == [(DagsterRunStatus.QUEUED.value, 0)]
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
+
+
+@pytest.mark.parametrize("hook", ["report_run_canceling", "should_store_event"])
+def test_postgres_custom_instance_hook_uses_serial_path(conn_string, hook):
+    with _queued_cancellation_instance(conn_string) as instance:
+        run = _create_queued_run(instance)
+        with (
+            patch.object(instance, hook, wraps=getattr(instance, hook)) as called,
+            patch.object(instance.event_log_storage, "cancel_queued_runs") as batch,
+        ):
+            instance.report_run_cancellation_batch([run])
+            assert called.called
+            batch.assert_not_called()
+
+
+def test_postgres_custom_run_storage_hook_uses_serial_path(conn_string):
+    with _queued_cancellation_instance(conn_string) as instance:
+        run = _create_queued_run(instance)
+        with (
+            patch.object(
+                instance.run_storage,
+                "handle_run_event",
+                wraps=instance.run_storage.handle_run_event,
+            ) as hook,
+            patch.object(instance.event_log_storage, "cancel_queued_runs") as batch,
+        ):
+            instance.report_run_cancellation_batch([run])
+            assert hook.call_count == 2
+            batch.assert_not_called()
+
+
+def test_postgres_mixed_storage_does_not_enable_atomic_fast_path(conn_string):
+    with (
+        _clean_storage(conn_string),
+        instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster_postgres.event_log",
+                    "class": "PostgresEventLogStorage",
+                    "config": {"postgres_url": conn_string},
+                }
+            }
+        ) as instance,
+    ):
+        assert not instance.event_log_storage.supports_queued_run_cancellation
+        run = _create_queued_run(instance)
+        instance.report_run_cancellation_batch([run])
+        assert len(instance.all_logs(run.run_id)) == 2
