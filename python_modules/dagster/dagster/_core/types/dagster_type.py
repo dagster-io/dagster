@@ -872,7 +872,39 @@ class TypeHintInferredDagsterType(DagsterType):
         return self.python_type.__name__
 
 
+_RESOLVE_DAGSTER_TYPE_CACHE: dict[object, DagsterType] = {}
+"""Successful ``resolve_dagster_type`` results, keyed by annotation.
+
+Resolving an annotation always gives the same result: a class that has been resolved cannot be
+remapped by ``make_python_type_usable_as_dagster_type``. Annotations that embed ``DagsterType``
+instances are not cached, because two distinct types with the same name compare equal.
+"""
+
+
+def _contains_dagster_type(annotation: object) -> bool:
+    return any(
+        isinstance(arg, DagsterType) or _contains_dagster_type(arg)
+        for arg in get_args(annotation)
+    )
+
+
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
+    if isinstance(dagster_type, DagsterType):
+        return dagster_type
+    try:
+        cached = _RESOLVE_DAGSTER_TYPE_CACHE.get(dagster_type)
+    except TypeError:
+        # Unhashable input: the uncached path raises the user-facing error.
+        return _resolve_dagster_type_uncached(dagster_type)
+    if cached is not None:
+        return cached
+    resolved = _resolve_dagster_type_uncached(dagster_type)
+    if not _contains_dagster_type(dagster_type):
+        _RESOLVE_DAGSTER_TYPE_CACHE[dagster_type] = resolved
+    return resolved
+
+
+def _resolve_dagster_type_uncached(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._core.definitions.result import MaterializeResult, ObserveResult
     from dagster._core.types.primitive_mapping import (

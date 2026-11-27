@@ -1,5 +1,6 @@
 import dagster as dg
 import pytest
+from dagster._core.types import dagster_type
 from dagster._core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
     DagsterTypeKind,
@@ -230,3 +231,50 @@ def test_comparison():
     assert resolve_dagster_type(
         dg.Dict[dg.Int, dg.Dict[dg.String, dg.Int]]
     ) != resolve_dagster_type(dg.Dict[dg.String, dg.Dict[dg.String, dg.Int]])
+
+
+def test_resolve_dagster_type_is_memoized(monkeypatch: pytest.MonkeyPatch):
+    class SomeClass:
+        pass
+
+    for annotation in (int, str, None, dg.Int, list[int], dict[str, int], SomeClass):
+        first = resolve_dagster_type(annotation)
+        assert annotation is None or annotation in dagster_type._RESOLVE_DAGSTER_TYPE_CACHE  # noqa: SLF001
+        assert resolve_dagster_type(annotation) is first
+
+    # Cache hits skip the uncached resolution path entirely.
+    def unexpected_resolution(_: object) -> dg.DagsterType:
+        pytest.fail("Expected a memoized result")
+
+    monkeypatch.setattr(dagster_type, "_resolve_dagster_type_uncached", unexpected_resolution)
+    assert resolve_dagster_type(list[int]) is resolve_dagster_type(list[int])
+    assert resolve_dagster_type(SomeClass).typing_type is SomeClass
+
+
+def test_resolve_dagster_type_does_not_cache_failures():
+    # Unhashable inputs (e.g. an instance where a type was meant) still raise.
+    for _ in range(2):
+        with pytest.raises(dg.DagsterInvalidDefinitionError, match="hashable"):
+            resolve_dagster_type({"not": "a type"})
+
+    # Hashable but invalid inputs raise on every call and are not cached.
+    for _ in range(2):
+        with pytest.raises(dg.DagsterInvalidDefinitionError):
+            resolve_dagster_type("not a type")
+    assert "not a type" not in dagster_type._RESOLVE_DAGSTER_TYPE_CACHE  # noqa: SLF001
+
+
+def test_resolve_dagster_type_does_not_conflate_equal_dagster_types():
+    # DagsterType equality is by key, so two distinct types with the same name compare equal.
+    # Neither the types themselves nor annotations embedding them may be served from the cache.
+    foo_a = dg.DagsterType(name="Foo", type_check_fn=lambda _, _v: True)
+    foo_b = dg.DagsterType(name="Foo", type_check_fn=lambda _, _v: False)
+    assert foo_a == foo_b
+    assert resolve_dagster_type(foo_a) is foo_a
+    assert resolve_dagster_type(foo_b) is foo_b
+
+    assert list[foo_a] == list[foo_b]
+    assert resolve_dagster_type(list[foo_a]).inner_types[0] is foo_a
+    assert resolve_dagster_type(list[foo_b]).inner_types[0] is foo_b
+    assert resolve_dagster_type(list[foo_b] | None).inner_types[0].inner_types[0] is foo_b
+    assert list[foo_a] not in dagster_type._RESOLVE_DAGSTER_TYPE_CACHE  # noqa: SLF001
