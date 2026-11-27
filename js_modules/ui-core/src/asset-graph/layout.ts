@@ -1,4 +1,4 @@
-import * as dagre from 'dagre';
+import * as dagre from '@dagrejs/dagre';
 
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {
@@ -9,6 +9,7 @@ import {
   isGroupId,
   parseGroupId,
 } from './Utils';
+import {compactLayout} from './compactLayout';
 import type {IBounds, IPoint} from '../graph/common';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
@@ -43,23 +44,23 @@ export type AssetGraphLayout = {
   groups: {[name: string]: GroupLayout};
 };
 const MARGIN = 100;
+const GROUP_PADDING_X = 15;
+const COMPACTION_GROUP_GAP = 24;
 
 export type LayoutAssetGraphConfig = dagre.GraphLabel & {
   /** Pass `auto` to use getAssetNodeDimensions, or a value to give nodes a fixed height */
   nodeHeight: number | 'auto';
   /** Our asset groups have "title bars" - use these numbers to adjust the bounding boxes.
-   * Note that these adjustments are applied post-dagre layout. For padding > nodesep, you
-   * may need to set "clusterpaddingtop", "clusterpaddingbottom" so Dagre lays out the boxes
-   * with more spacing.
+   * Note that these adjustments are applied post-dagre layout.
    */
   groupPaddingTop: number;
   groupPaddingBottom: number;
   groupRendering: 'if-varied' | 'always';
-
-  /** Supported in Dagre, just not documented. Additional spacing between group nodes */
-  clusterpaddingtop?: number;
-  clusterpaddingbottom?: number;
-  ranker?: 'tight-tree' | 'longest-path' | 'network-simplex';
+  /** After dagre runs, close gaps across the ranks wider than this (0 packs fully). Omit to keep
+   * dagre's positions. */
+  compactionMaxGap?: number;
+  /** See `straightEdgeBonus` in compactLayout. */
+  compactionStraightEdgeBonus?: number;
 };
 
 export type LayoutAssetGraphOptions = {
@@ -83,13 +84,15 @@ export const Config = {
     groupPaddingTop: 65,
     groupPaddingBottom: 16,
     groupRendering: 'if-varied' as 'if-varied' | 'always',
-    clusterpaddingtop: 100,
+    compactionMaxGap: 250 as number | undefined,
+    compactionStraightEdgeBonus: 100,
   },
   vertical: {
     ranker: 'tight-tree',
     marginx: MARGIN,
     marginy: MARGIN,
-    ranksep: 20,
+    // Leaves room for group headers between groups stacked in successive ranks.
+    ranksep: 40,
     rankdir: 'TB',
     nodesep: 40,
     edgesep: 10,
@@ -97,6 +100,8 @@ export const Config = {
     groupPaddingTop: 55,
     groupPaddingBottom: 16,
     groupRendering: 'if-varied' as 'if-varied' | 'always',
+    compactionMaxGap: 250 as number | undefined,
+    compactionStraightEdgeBonus: 100,
   },
 };
 
@@ -107,16 +112,12 @@ export const layoutAssetGraph = (
   try {
     return layoutAssetGraphImpl(graphData, opts);
   } catch {
-    try {
-      return layoutAssetGraphImpl(graphData, {
-        ...opts,
-        overrides: {
-          ranker: 'longest-path',
-        },
-      });
-    } catch {
-      return layoutAssetGraphImpl(graphData, {...opts, overrides: {ranker: 'network-simplex'}});
-    }
+    // tight-tree throws on many grouped graphs. longest-path fails on the same graphs, so
+    // retry once with network-simplex.
+    return layoutAssetGraphImpl(graphData, {
+      ...opts,
+      overrides: {...opts.overrides, ranker: 'network-simplex'},
+    });
   }
 };
 
@@ -214,6 +215,7 @@ export const layoutAssetGraphImpl = (
   };
 
   const groupsPresent = config.groupRendering === 'if-varied' ? allGroupIds.size > 1 : true;
+  const parentById: {[id: string]: string | undefined} = {};
 
   if (groupsPresent) {
     for (const id of visibleGroupIds) {
@@ -226,6 +228,7 @@ export const layoutAssetGraphImpl = (
       const parent = deepestVisibleAncestor(id);
       if (parent !== undefined) {
         g.setParent(id, parent);
+        parentById[id] = parent;
       }
     }
   }
@@ -246,6 +249,7 @@ export const layoutAssetGraphImpl = (
     g.setNode(node.id, label);
     if (groupsPresent && leafId) {
       g.setParent(node.id, leafId);
+      parentById[node.id] = leafId;
     }
   });
 
@@ -330,6 +334,65 @@ export const layoutAssetGraphImpl = (
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
+  // Ranks run along x in horizontal layouts, so boxes compact along y, and vice versa.
+  const axis = opts.direction === 'horizontal' ? 'y' : 'x';
+  const size = axis === 'y' ? 'height' : 'width';
+  let compacted = false;
+  if (config.compactionMaxGap !== undefined) {
+    const targets: {[id: string]: IBounds} = {};
+    for (const [id, node] of Object.entries(nodes)) {
+      targets[id] = node.bounds;
+    }
+    for (const id of visibleGroupIds) {
+      const group = groups[id];
+      if (group && !group.expanded && group.bounds.width > 0) {
+        targets[id] = group.bounds;
+      }
+    }
+    // Compact copies, so a failure leaves dagre's layout intact.
+    const boxes = Object.fromEntries(Object.entries(targets).map(([id, b]) => [id, {...b}]));
+    try {
+      compactLayout(
+        {
+          boxes,
+          groups: groupsPresent
+            ? [...visibleGroupIds].filter((id) => expandedGroupsSet.has(id))
+            : [],
+          parentOf: (id) => parentById[id],
+          edges: g.edges(),
+        },
+        {
+          axis,
+          maxGap: config.compactionMaxGap,
+          straightEdgeBonus: config.compactionStraightEdgeBonus,
+          nodeGap: config.nodesep ?? 0,
+          groupGap: COMPACTION_GROUP_GAP,
+          groupPadding: {
+            x: GROUP_PADDING_X,
+            top: config.groupPaddingTop,
+            bottom: config.groupPaddingBottom,
+          },
+        },
+      );
+      compacted = true;
+    } catch (error) {
+      console.error('Asset graph compaction failed, keeping the uncompacted layout', error);
+    }
+    if (compacted) {
+      for (const [id, bounds] of Object.entries(boxes)) {
+        const target = targets[id];
+        if (target) {
+          target[axis] = bounds[axis];
+        }
+        // Edges below are built from dagre's node centers.
+        const dagreNode = g.node(id);
+        if (dagreNode) {
+          dagreNode[axis] = bounds[axis] + bounds[size] / 2;
+        }
+      }
+    }
+  }
+
   // Walk groups deepest-first so each group's header padding is baked in
   // before its bounds get propagated to its visible ancestor.
   if (groupsPresent) {
@@ -361,7 +424,7 @@ export const layoutAssetGraphImpl = (
       }
       if (group.expanded) {
         group.bounds = padBounds(group.bounds, {
-          x: 15,
+          x: GROUP_PADDING_X,
           top: config.groupPaddingTop,
           bottom: config.groupPaddingBottom,
         });
@@ -370,6 +433,26 @@ export const layoutAssetGraphImpl = (
       if (anc !== undefined) {
         accumulate(anc, group.bounds);
       }
+    }
+  }
+
+  if (compacted) {
+    // Expanded groups can be edge endpoints, and their dagre positions are stale after compaction.
+    for (const id of visibleGroupIds) {
+      const group = groups[id];
+      const dagreNode = g.node(id);
+      if (group?.expanded && group.bounds.width > 0 && dagreNode) {
+        dagreNode[axis] = group.bounds[axis] + group.bounds[size] / 2;
+      }
+    }
+    let extent = 1;
+    for (const {bounds} of [...Object.values(nodes), ...Object.values(groups)]) {
+      extent = Math.max(extent, bounds[axis] + bounds[size]);
+    }
+    if (axis === 'y') {
+      maxHeight = extent;
+    } else {
+      maxWidth = extent;
     }
   }
 

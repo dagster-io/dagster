@@ -1,12 +1,13 @@
-import docker
 import pytest
 from dagster import RetryRequested, job, op
 from dagster_docker import docker_container_op, execute_docker_container
 from dagster_docker.ops.docker_container_op import _get_container_name
 
+from dagster_docker_tests import docker_client
+
 
 def _get_container_logs(container_name):
-    return str(docker.client.from_env().containers.get(container_name).logs())
+    return str(docker_client().containers.get(container_name).logs())
 
 
 def test_docker_container_op():

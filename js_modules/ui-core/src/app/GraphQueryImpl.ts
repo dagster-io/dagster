@@ -21,69 +21,101 @@ export interface GraphQueryItem {
 type TraverseStepFunction<T> = (item: T, callback: (nextItem: T) => void) => void;
 
 export class GraphTraverser<T extends GraphQueryItem> {
-  itemNameMap: {[name: string]: T} = {};
+  itemNameMap = new Map<string, T>();
 
   constructor(items: T[]) {
-    items.forEach((item) => (this.itemNameMap[item.name] = item));
+    items.forEach((item) => this.itemNameMap.set(item.name, item));
   }
 
   itemNamed(name: string): T | undefined {
-    return this.itemNameMap[name];
+    return this.itemNameMap.get(name);
   }
 
-  traverse(rootItem: T, nextItemsForItem: TraverseStepFunction<T>, maxDepth: number) {
-    const results: {[key: string]: T} = {};
-    const queue: [T, number][] = [[rootItem, 0]];
-
-    /** This code performs a breadth-first search, putting all the items discovered at depth 1
-     * onto the queue before visiting any items at depth 2. This is important because graphs
-     * can look like this:
+  traverse(roots: T | T[], nextItemsForItem: TraverseStepFunction<T>, maxDepth: number) {
+    /** Breadth-first from all roots at once, so each item is reached at its shortest distance
+     * from any root and is queued only once. Depth limits depend on this, since graphs can
+     * look like this:
      *
      *  /---------\
      * A --> B --> C
      */
-    while (queue.length) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const [item, depth] = queue.shift()!;
-      results[item.name] = item;
+    const visited = new Set<string>();
+    const queue: [T, number][] = [];
+    for (const root of Array.isArray(roots) ? roots : [roots]) {
+      if (!visited.has(root.name)) {
+        visited.add(root.name);
+        queue.push([root, 0]);
+      }
+    }
+
+    // The array iterator also visits entries appended during the loop, so this walks the BFS
+    // without the O(n) `shift()`.
+    for (const [item, depth] of queue) {
       if (depth < maxDepth) {
         nextItemsForItem(item, (next) => {
-          if (!(next.name in results)) {
+          if (!visited.has(next.name)) {
+            visited.add(next.name);
             queue.push([next, depth + 1]);
           }
         });
       }
     }
 
-    return Object.values(results);
+    return queue.map(([item]) => item);
   }
 
-  fetchUpstream(item: T, depth: number) {
-    const step: TraverseStepFunction<T> = (item, callback) =>
-      item.inputs.forEach((input) =>
-        input.dependsOn.forEach((d) => {
-          const item = this.itemNamed(d.solid.name);
-          if (item) {
-            callback(item);
-          }
-        }),
-      );
+  private upstreamStep: TraverseStepFunction<T> = (item, callback) =>
+    item.inputs.forEach((input) =>
+      input.dependsOn.forEach((d) => {
+        const next = this.itemNamed(d.solid.name);
+        if (next) {
+          callback(next);
+        }
+      }),
+    );
 
-    return this.traverse(item, step, depth);
+  private downstreamStep: TraverseStepFunction<T> = (item, callback) =>
+    item.outputs.forEach((output) =>
+      output.dependedBy.forEach((d) => {
+        const next = this.itemNamed(d.solid.name);
+        if (next) {
+          callback(next);
+        }
+      }),
+    );
+
+  fetchUpstream(items: T | T[], depth: number) {
+    return this.traverse(items, this.upstreamStep, depth);
   }
 
-  fetchDownstream(item: T, depth: number) {
-    const step: TraverseStepFunction<T> = (item, callback) =>
-      item.outputs.forEach((output) =>
-        output.dependedBy.forEach((d) => {
-          const item = this.itemNamed(d.solid.name);
-          if (item) {
-            callback(item);
-          }
-        }),
-      );
+  fetchDownstream(items: T | T[], depth: number) {
+    return this.traverse(items, this.downstreamStep, depth);
+  }
 
-    return this.traverse(item, step, depth);
+  /** Items in `selection` with no other selected item downstream. Assumes the graph is acyclic. */
+  sinks(selection: Set<T>) {
+    return this.withoutSelectedNeighbors(selection, this.upstreamStep);
+  }
+
+  /** Items in `selection` with no other selected item upstream. Assumes the graph is acyclic. */
+  roots(selection: Set<T>) {
+    return this.withoutSelectedNeighbors(selection, this.downstreamStep);
+  }
+
+  // Everything reachable (via `step`) from a neighbor of a selected item has a selected item on
+  // the other side, so one traversal replaces a traversal per item. Self-edges (assets that
+  // depend on their own earlier partitions) don't count.
+  private withoutSelectedNeighbors(selection: Set<T>, step: TraverseStepFunction<T>) {
+    const neighbors: T[] = [];
+    for (const item of selection) {
+      step(item, (next) => {
+        if (next.name !== item.name) {
+          neighbors.push(next);
+        }
+      });
+    }
+    const excluded = new Set(this.traverse(neighbors, step, Number.MAX_SAFE_INTEGER));
+    return new Set([...selection].filter((item) => !excluded.has(item)));
   }
 }
 

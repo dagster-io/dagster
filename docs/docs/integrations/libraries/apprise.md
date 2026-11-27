@@ -30,16 +30,14 @@ from dagster_apprise import apprise_notifications, AppriseNotificationsConfig
 
 # Configure notifications
 config = AppriseNotificationsConfig(
-    urls=["discord://webhook_id/webhook_token"], # Discord notification, details should be secure
+    urls=["discord://webhook_id/webhook_token"],  # Discord notification, details should be secure
     events=["SUCCESS", "FAILURE"],  # What to notify about
     include_jobs=["*"],  # All jobs
 )
 
 # Add to your Dagster definitions
 defs = dg.Definitions(
-    assets=[your_assets],
-    jobs=[your_jobs],
-    **apprise_notifications(config).to_dict()
+    assets=[your_assets], jobs=[your_jobs], **apprise_notifications(config).to_dict()
 )
 ```
 
@@ -91,7 +89,7 @@ Use wildcard patterns to control which jobs trigger notifications:
 config = AppriseNotificationsConfig(
     urls=["mailto://user:pass@gmail.com"],
     include_jobs=["prod_*", "critical_*"],  # Only production and critical jobs
-    exclude_jobs=["*_test", "*_dev"],       # Exclude test and dev jobs
+    exclude_jobs=["*_test", "*_dev"],  # Exclude test and dev jobs
     events=["SUCCESS", "FAILURE"],
 )
 ```
@@ -104,10 +102,12 @@ config = AppriseNotificationsConfig(
 from dagster_apprise import apprise_on_failure, apprise_on_success
 import dagster as dg
 
+
 @apprise_on_failure(urls=["mailto://user:pass@gmail.com"])
 @dg.job
 def critical_job():
     my_op()
+
 
 # Or apply to specific ops
 @dg.job
@@ -120,6 +120,7 @@ def selective_notifications():
 ```python
 import dagster as dg
 from dagster_apprise import AppriseResource
+
 
 @dg.op
 def notify_op(apprise: AppriseResource):
@@ -192,8 +193,7 @@ defs = dg.Definitions(
 from dagster_apprise import make_apprise_on_run_failure_sensor
 
 apprise_on_failure = make_apprise_on_run_failure_sensor(
-    urls=["mailto://user:pass@gmail.com"],
-    monitored_jobs=["prod_*"]
+    urls=["mailto://user:pass@gmail.com"], monitored_jobs=["prod_*"]
 )
 
 defs = dg.Definitions(sensors=[apprise_on_failure])

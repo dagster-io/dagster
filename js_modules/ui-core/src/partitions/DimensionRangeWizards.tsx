@@ -2,10 +2,12 @@ import {Box, Heading, Icon} from '@dagster-io/ui-components';
 import {Dispatch, SetStateAction} from 'react';
 
 import {DimensionRangeWizard} from './DimensionRangeWizard';
+import {PartitionDateFilter} from './partitionDateFilter';
 import {
   PartitionDimensionSelection,
   PartitionHealthDataMerged,
 } from '../assets/usePartitionHealthData';
+import {PartitionDefinitionType} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
 export const DimensionRangeWizards = ({
@@ -15,6 +17,8 @@ export const DimensionRangeWizards = ({
   displayedPartitionDefinition,
   repoAddress,
   refetch,
+  dateFilter,
+  onDateFilterChange,
 }: {
   selections: PartitionDimensionSelection[];
   setSelections: Dispatch<SetStateAction<PartitionDimensionSelection[]>>;
@@ -28,7 +32,17 @@ export const DimensionRangeWizards = ({
   } | null;
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
+  dateFilter?: PartitionDateFilter | null;
+  onDateFilterChange?: (filter: PartitionDateFilter | null) => void;
 }) => {
+  // The date window is a single value shared by the caller, so only hand it to
+  // a lone time-window dimension - the one case where the wizard renders the
+  // date range dropdown and the user can change or clear it.
+  const dateFilterDimension =
+    selections.length === 1 && selections[0]?.dimension.type === PartitionDefinitionType.TIME_WINDOW
+      ? selections[0].dimension
+      : null;
+
   return (
     <>
       {selections.map((range, idx) => (
@@ -69,6 +83,10 @@ export const DimensionRangeWizards = ({
               )?.dynamicPartitionsDefinitionName
             }
             showQuickSelectOptionsForStatuses={selections.length === 1}
+            dateFilter={range.dimension === dateFilterDimension ? dateFilter : undefined}
+            onDateFilterChange={
+              range.dimension === dateFilterDimension ? onDateFilterChange : undefined
+            }
           />
         </Box>
       ))}

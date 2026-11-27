@@ -218,7 +218,8 @@ class SlingEventIterator(Iterator[T]):
     def fetch_row_count(self) -> "SlingEventIterator":
         """Fetches row count metadata for each table synced by the Sling CLI.
 
-        Retrieves the row count for each target table.
+        Retrieves the row count for each target table. A table whose name is not a plain or
+        backtick-quoted identifier is skipped with a warning.
 
         Returns:
             SlingEventIterator: An iterator of Dagster events with row count metadata attached.

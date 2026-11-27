@@ -300,6 +300,45 @@ function assertPartitionsQueryResult(query: string, expectedNames: string[]) {
   expect(new Set(result.all.map((asset) => asset.name))).toEqual(new Set(expectedNames));
 }
 
+describe('parseAssetSelectionQuery - key lookups', () => {
+  const graph: AssetGraphQueryItem[] = ['a.b', 'axb', 'prefix/one', 'prefix/two', 'other'].map(
+    (name) => ({
+      name,
+      node: buildAssetNode({assetKey: buildAssetKey({path: name.split('/')})}),
+      inputs: [{dependsOn: []}],
+      outputs: [{dependedBy: []}],
+    }),
+  );
+
+  const query = (q: string) => {
+    const result = parseAssetSelectionQuery(graph, q);
+    if (result instanceof Error) {
+      throw result;
+    }
+    return {
+      all: result.all.map((i) => i.name).sort(),
+      focus: result.focus.map((i) => i.name).sort(),
+    };
+  };
+
+  it('matches exact keys literally', () => {
+    expect(query('key:"a.b"')).toEqual({all: ['a.b'], focus: ['a.b']});
+    expect(query('key:"prefix/one"')).toEqual({all: ['prefix/one'], focus: ['prefix/one']});
+  });
+
+  it('returns nothing for missing keys, including object property names', () => {
+    expect(query('key:"missing"')).toEqual({all: [], focus: []});
+    expect(query('key:"constructor"')).toEqual({all: [], focus: []});
+    expect(query('key:"toString"')).toEqual({all: [], focus: []});
+  });
+
+  it('matches wildcard keys', () => {
+    expect(query('key:"prefix/*"').all).toEqual(['prefix/one', 'prefix/two']);
+    expect(query('key:"a*b"').all).toEqual(['a.b', 'axb']);
+    expect(query('key:"*"').all).toEqual(['a.b', 'axb', 'other', 'prefix/one', 'prefix/two']);
+  });
+});
+
 describe('parseAssetSelectionQuery - partitions', () => {
   it('should filter to unpartitioned assets', () => {
     assertPartitionsQueryResult('partitions:none', ['unpartitioned']);

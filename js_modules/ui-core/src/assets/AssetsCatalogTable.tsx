@@ -2,9 +2,7 @@ import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
 import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
-import {useRouteMatch} from 'react-router-dom';
-import {useSetRecoilState} from 'recoil';
+import {useMemo, useState} from 'react';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_FRAGMENT, ASSET_WORKSPACE_NODE_FRAGMENT} from './AssetTableFragment';
@@ -16,7 +14,7 @@ import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
-import {currentPageAtom} from '../app/analytics';
+import {useRefineCurrentPage} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
@@ -40,11 +38,7 @@ export const AssetsCatalogTable = ({
   setPrefixPath,
   groupSelector,
 }: AssetCatalogTableProps) => {
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
-  const {path} = useRouteMatch();
-  useEffect(() => {
-    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=AssetCatalogTable`}));
-  }, [path, setCurrentPage]);
+  useRefineCurrentPage('?view=AssetCatalogTable');
 
   const [view, setView] = useAssetView();
 

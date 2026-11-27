@@ -19,9 +19,9 @@ The core function is `ComponentTree.for_project`, which builds a `ComponentTree`
 In your test file, it is very convenient to set up a lightweight wrapper function so you only have to set the project root once:
 
 ```python title="my-project/tests/my_test.py"
-
 import dagster as dg
 from pathlib import Path
+
 
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
     # Project root is two parents up from the test file

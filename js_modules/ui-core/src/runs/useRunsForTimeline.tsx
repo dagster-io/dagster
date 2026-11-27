@@ -2,6 +2,7 @@ import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} fro
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
 import {doneStatuses, inProgressStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
 import {TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
@@ -383,6 +384,7 @@ export const useRunsForTimeline = ({
         endTime: run.endTime ? run.endTime * 1000 : now,
         automation: getAutomationForRun(repoAddress, run),
         externalJobSource: run.externalJobSource,
+        isRetry: run.tags.some((tag) => tag.key === DagsterTag.ParentRunId),
       };
 
       if (!jobInfo[runJobKey]) {

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import dagster as dg
 
+from shared.io_managers import make_duckdb_io_manager
+from shared.resources import RiskReviewer, build_llm_resource
 from summit_financial.assets import bronze, gold, silver
 from summit_financial.jobs import (
     summit_context_engineering_job,
@@ -9,9 +11,6 @@ from summit_financial.jobs import (
     summit_risk_scoring_job,
 )
 from summit_financial.schedules import summit_daily_refresh_schedule
-from shared.io_managers import make_duckdb_io_manager
-from shared.resources import RiskReviewer, build_llm_resource
-
 
 defs = dg.Definitions(
     assets=dg.load_assets_from_modules(

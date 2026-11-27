@@ -10,7 +10,7 @@ With most of the integration logic in place, this final section covers best prac
 
 ## Handling multiple partitions
 
-Both the `taxi_trips` asset and the dbt-generated assets are partitioned over time, but they don’t need to use the same partitioning scheme.
+Both the `taxi_trips` asset and the dbt-generated assets are partitioned over time, but they don't need to use the same partitioning scheme.
 
 - `taxi_trips` ingests monthly files, so a **monthly partitioning strategy** makes sense.
 - dbt models can run more frequently (for example, **daily**) to deliver fresher analytical outputs.
@@ -37,7 +37,7 @@ In the asset graph, you can see this difference:
 
 :::tip
 
-When executing Dagster assets, you can only materialize subsets of the graph that share the same partition definition. Because of this, it’s best to separate automation logic between ingestion and transformation layers, especially when they use different granularities.
+When executing Dagster assets, you can only materialize subsets of the graph that share the same partition definition. Because of this, it's best to separate automation logic between ingestion and transformation layers, especially when they use different granularities.
 
 :::
 
@@ -45,7 +45,7 @@ When executing Dagster assets, you can only materialize subsets of the graph tha
 
 Earlier, we used a translator to align upstream Dagster assets (like `taxi_trips`) with their dbt sources (`trips`). This ensured accurate lineage across boundaries.
 
-If you want to define downstream assets that depend on dbt models, you don’t need to re-declare those dbt assets. Instead, simply reference their asset keys in your downstream definitions. Dagster automatically registers all dbt models as assets during parsing, even if they weren’t manually declared in your code.
+If you want to define downstream assets that depend on dbt models, you don't need to re-declare those dbt assets. Instead, simply reference their asset keys in your downstream definitions. Dagster automatically registers all dbt models as assets during parsing, even if they weren't manually declared in your code.
 
 This makes it easy to integrate hand coded and dbt-derived assets in the same graph:
 

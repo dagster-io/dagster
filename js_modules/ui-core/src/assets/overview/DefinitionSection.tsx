@@ -12,10 +12,6 @@ import {Link} from 'react-router-dom';
 
 import {useLinkedAsset} from './useLinkedAsset';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
-import {TimeFromNow} from '../../ui/TimeFromNow';
-import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
-import {AttributeAndValue} from './Common';
 import {CodeLink, getCodeReferenceKey} from '../../code-links/CodeLink';
 import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../../graph/KindTags';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -26,10 +22,14 @@ import {
 } from '../../metadata/TableSchema';
 import {RepositoryLink} from '../../nav/RepositoryLink';
 import {DefinitionOwners} from '../../owners/DefinitionOwners';
+import {AttributeAndValue} from '../../ui/AttributeAndValue';
 import {CopyIconButton} from '../../ui/CopyButton';
+import {TimeFromNow} from '../../ui/TimeFromNow';
 import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
+import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {globalAssetGraphPathForGroup} from '../globalAssetGraphPathToString';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {WorkspaceAssetNode} from '../useAllAssets';

@@ -9,6 +9,7 @@ import uuid
 from collections.abc import Generator, Iterator, Sequence
 from enum import Enum
 from typing import IO, Any, AnyStr
+from urllib.parse import parse_qsl
 
 from dagster import (
     AssetExecutionContext,
@@ -22,6 +23,7 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.snowflake_partner import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 from dagster._utils.env import environ
 from pydantic import Field
 
@@ -38,6 +40,11 @@ from dagster_sling.sling_replication import SlingReplicationParam, validate_repl
 logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+# The table name comes from Sling's log output, which reflects names in the source database,
+# so it is spliced into SQL only when it cannot carry anything but identifiers.
+_SAFE_TABLE_NAME_PART = r"(?:[\w$]+|`[\w$-]+`)"
+SAFE_TABLE_NAME_REGEX = re.compile(rf"{_SAFE_TABLE_NAME_PART}(?:\.{_SAFE_TABLE_NAME_PART})*")
 
 
 @public
@@ -209,6 +216,8 @@ class SlingResource(ConfigurableResource):
         d = _process_env_vars(d)
         if d["connection_string"]:
             d["url"] = d["connection_string"]
+            if d["type"].lower() == "snowflake":
+                d["url"] = _with_snowflake_partner_application(d["url"])
         if "connection_string" in d:
             del d["connection_string"]
         return d
@@ -340,7 +349,14 @@ class SlingResource(ConfigurableResource):
 
         Returns:
             int: The number of rows in the table.
+
+        Raises:
+            ValueError: If ``table_name`` is not a plain or backtick-quoted dotted identifier.
         """
+        if not SAFE_TABLE_NAME_REGEX.fullmatch(table_name):
+            raise ValueError(
+                f"Not counting rows: {table_name!r} is not a plain or backtick-quoted table name"
+            )
         select_stmt: str = f"select count(*) as ct from {table_name}"
         output = self.run_sling_cli(
             ["conns", "exec", target_name, select_stmt],
@@ -638,3 +654,19 @@ def _process_env_vars(config: dict[str, Any]) -> dict[str, Any]:
         else:
             out[key] = value
     return out
+
+
+def _with_snowflake_partner_application(url: str) -> str:
+    # Sling's Go Snowflake driver ignores SF_PARTNER, so the partner ID has to ride on the URL.
+    # Append rather than reparse; as in Go's net/url (used by Sling), the query starts at the first "?".
+    _, has_query, query = url.partition("?")
+    if any(key.lower() == "application" for key, _ in parse_qsl(query)):
+        return url
+    param = f"application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}"
+    if not has_query:
+        separator = "?"
+    elif url.endswith(("?", "&")):
+        separator = ""
+    else:
+        separator = "&"
+    return f"{url}{separator}{param}"

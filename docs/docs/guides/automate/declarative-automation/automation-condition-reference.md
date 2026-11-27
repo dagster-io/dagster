@@ -119,6 +119,21 @@ There are a set of pre-built conditions that make it easier to construct common 
 | `AutomationCondition.any_deps_in_progress`        | Any dependencies are part of an in-progress run                                        |
 | `AutomationCondition.all_deps_updated_since_cron` | All dependencies have been updated since the latest tick of the provided cron schedule |
 
+## Job conditions
+
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+Automation conditions can also be attached to asset jobs, so that the entire job is launched as a single run when the condition becomes true. Job-scoped conditions are built by wrapping an asset-level condition with one of the following, which evaluate it against the job's root assets (the assets in the job's selection that have no parents within the job):
+
+| Condition                                          | Description                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| `AutomationCondition.any_job_root_assets_match(A)` | Condition A is true for at least one of the job's root assets |
+| `AutomationCondition.all_job_root_assets_match(A)` | Condition A is true for all of the job's root assets          |
+
+For more information, see [Automating jobs](/guides/automate/declarative-automation/automating-jobs).
+
 ## Evaluations
 
 Evaluation of each automation condition is handled by an <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />. By default, a sensor with the name `default_automation_condition_sensor` will be available in all code locations that have at least one asset with an `AutomationCondition`. This sensor will evaluate all available conditions every 30 seconds, and launch runs for any conditions that evaluate to true at that time.

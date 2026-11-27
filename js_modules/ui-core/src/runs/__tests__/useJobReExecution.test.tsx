@@ -1,12 +1,17 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {MockLink, MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
+import {ApolloLink} from '../../apollo-client';
+import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {ReexecutionStrategy} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {testId} from '../../testing/testId';
-import {buildLaunchPipelineReexecutionSuccessMock} from '../__fixtures__/Reexecution.fixtures';
+import {
+  buildLaunchPipelineReexecutionErrorMock,
+  buildLaunchPipelineReexecutionSuccessMock,
+} from '../__fixtures__/Reexecution.fixtures';
 import {useJobReexecution} from '../useJobReExecution';
 
 const Wrapper = (props: {
@@ -124,6 +129,84 @@ describe('useJobReexecution', () => {
 
     // Should NOT navigate in the same tab
     expect((await findByTestId('location')).textContent).toEqual('/');
+  });
+
+  it('launches once when clicked again while a launch is in flight', async () => {
+    const user = userEvent.setup();
+    // Count launch requests as they are sent, since the mock only responds after a delay.
+    const launches = jest.fn();
+    const countLink = new ApolloLink((operation, forward) => {
+      if (operation.operationName === 'LaunchPipelineReexecution') {
+        launches();
+      }
+      return forward(operation);
+    });
+    const mockLink = new MockLink([
+      {
+        ...buildLaunchPipelineReexecutionSuccessMock({
+          parentRunId: '1',
+          strategy: ReexecutionStrategy.FROM_FAILURE,
+          extraTags: UI_EXECUTION_TAGS,
+        }),
+        maxUsageCount: 2,
+        delay: 100,
+      },
+    ]);
+    render(
+      <MockedProvider link={ApolloLink.from([countLink, mockLink])}>
+        <MemoryRouter>
+          <Wrapper reexecuteParams={[PARENT_RUN, ReexecutionStrategy.FROM_FAILURE, false]} />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    const button = await screen.findByText('Re-execute');
+    await user.click(button);
+    await user.click(button);
+    expect(launches).toHaveBeenCalledTimes(1);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toEqual('/runs/1234');
+    });
+    expect(launches).toHaveBeenCalledTimes(1);
+  });
+
+  it('launches again after a failed launch', async () => {
+    const user = userEvent.setup();
+    const launches = jest.fn();
+    const countLink = new ApolloLink((operation, forward) => {
+      if (operation.operationName === 'LaunchPipelineReexecution') {
+        launches();
+      }
+      return forward(operation);
+    });
+    const mockLink = new MockLink([
+      {
+        ...buildLaunchPipelineReexecutionErrorMock({
+          parentRunId: '1',
+          strategy: ReexecutionStrategy.FROM_FAILURE,
+          extraTags: UI_EXECUTION_TAGS,
+        }),
+        maxUsageCount: 2,
+      },
+    ]);
+    render(
+      <MockedProvider link={ApolloLink.from([countLink, mockLink])}>
+        <MemoryRouter>
+          <CustomAlertProvider />
+          <Wrapper reexecuteParams={[PARENT_RUN, ReexecutionStrategy.FROM_FAILURE, false]} />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    const button = await screen.findByText('Re-execute');
+    await user.click(button);
+    expect(await screen.findByText('A wild python error appeared!')).toBeVisible();
+    expect(launches).toHaveBeenCalledTimes(1);
+
+    // The failure released the in-flight guard, so the next click is a new launch attempt.
+    await user.click(button);
+    await waitFor(() => expect(launches).toHaveBeenCalledTimes(2));
   });
 
   it('does not open in a new tab when openInNewTab is false', async () => {

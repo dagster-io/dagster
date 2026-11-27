@@ -6,11 +6,11 @@ title: Automation condition sensors
 
 All automation conditions must be evaluated by a [sensor](/guides/automate/sensors). If you have any assets with an automation condition in your code location, a sensor with the name `default_automation_condition_sensor` will be created for you automatically. You'll need to toggle this sensor on in the UI for your code location under the **Automation** tab.
 
-By default, this sensor will evaluate all automation conditions in your code location, and execute the asset or asset check if the condition is met.
+By default, this sensor will evaluate all automation conditions in your code location, and execute the asset, asset check, or asset job if the condition is met. For more information about asset jobs with automation conditions, see [Automating jobs](/guides/automate/declarative-automation/automating-jobs).
 
 The `default_automation_condition_sensor` is created when all of the following are true:
 
-- The code location contains at least one asset with an `AutomationCondition` (or legacy `AutoMaterializePolicy`).
+- The code location contains at least one asset, asset check, or asset job with an `AutomationCondition` (or legacy `AutoMaterializePolicy`).
 - You're on Dagster 1.5 or later.
 - The code location loads and registers definitions successfully.
 
@@ -32,6 +32,12 @@ To add an additional sensor, create a <PyObject section="assets" module="dagster
 />
 
 When you create new sensors, the `default_automation_condition_sensor` will only target the automation conditions that are not already covered by the additional sensors.
+
+:::note
+
+Asset jobs with automation conditions are always evaluated by the `default_automation_condition_sensor` — additional sensors cannot target jobs. For more information, see [Automating jobs](/guides/automate/declarative-automation/automating-jobs).
+
+:::
 
 ### Default to running
 

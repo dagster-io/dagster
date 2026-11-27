@@ -1,3 +1,4 @@
+import re
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
@@ -10,6 +11,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.storage.db_io_manager import check_sql_identifier
 from google.cloud import bigquery
 from pydantic import Field
 
@@ -105,6 +107,11 @@ def bigquery_resource(context):
         yield client
 
 
+# An optional project id and a dataset. A bare project id may contain hyphens, but not "--",
+# which starts a comment; a backtick-quoted one may also be domain-scoped ("example.com:proj").
+DATASET_ID_REGEX = re.compile(r"(?:(?:[^\W\d]\w*(?:-\w+)*|`[\w.:-]+`)\.)?\w+")
+
+
 def fetch_last_updated_timestamps(
     *,
     client: bigquery.Client,
@@ -127,6 +134,7 @@ def fetch_last_updated_timestamps(
         len(table_ids) > 0,
         "At least one table ID must be provided.",
     )
+    check_sql_identifier(dataset_id, field="dataset_id", pattern=DATASET_ID_REGEX)
     query = f"""
         SELECT
             table_id,
@@ -134,10 +142,15 @@ def fetch_last_updated_timestamps(
         FROM
             {dataset_id}.__TABLES__
         WHERE
-            table_id IN ({", ".join([f'"{table_id}"' for table_id in table_ids])})
+            table_id IN UNNEST(@table_ids)
     """
 
-    query_job = client.query(query)
+    query_job = client.query(
+        query,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ArrayQueryParameter("table_ids", "STRING", list(table_ids))]
+        ),
+    )
     results = query_job.result()
     modified_times = {row.table_id: row.last_modified_time for row in results}
 

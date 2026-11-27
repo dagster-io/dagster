@@ -1,4 +1,5 @@
 import base64
+import re
 import sys
 import warnings
 from collections.abc import Iterator, Mapping, Sequence
@@ -17,6 +18,7 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.storage.db_io_manager import check_sql_identifier
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from dagster.components.lib.sql_component.sql_client import SQLClient
@@ -37,6 +39,7 @@ from dagster_snowflake.constants import (
 
 try:
     import snowflake.connector
+    from snowflake.connector.converter import SnowflakeConverter
 except ImportError:
     msg = (
         "Could not import snowflake.connector. This could mean you have an incompatible version "
@@ -1108,6 +1111,13 @@ def snowflake_resource(context) -> SnowflakeConnection:
     )
 
 
+SNOWFLAKE_IDENTIFIER_REGEX = re.compile(r"[^\W\d][\w$]*")
+
+
+def _quote_string_literal(value: str) -> str:
+    return SnowflakeConverter.quote(SnowflakeConverter.escape(value))
+
+
 def fetch_last_updated_timestamps(
     *,
     # Union is required because SqlDbConnection's metaclass doesn't support `|` at runtime.
@@ -1136,9 +1146,13 @@ def fetch_last_updated_timestamps(
         Mapping[str, datetime]: A dictionary of table names to their last updated time in UTC.
     """
     check.invariant(len(tables) > 0, "Must provide at least one table name to query upon.")
+    if database:
+        check_sql_identifier(database, field="database", pattern=SNOWFLAKE_IDENTIFIER_REGEX)
     # Table names in snowflake's information schema are stored in uppercase
     uppercase_tables = [table.upper() for table in tables]
-    tables_str = ", ".join([f"'{table_name}'" for table_name in uppercase_tables])
+    # The connection's paramstyle is caller configuration, so the names are escaped as
+    # string literals here instead of bound as parameters.
+    tables_str = ", ".join([_quote_string_literal(table_name) for table_name in uppercase_tables])
     fully_qualified_table_name = (
         f"{database}.information_schema.tables" if database else "information_schema.tables"
     )
@@ -1146,7 +1160,7 @@ def fetch_last_updated_timestamps(
     query = f"""
     SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered
     FROM {fully_qualified_table_name}
-    WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
+    WHERE table_schema = {_quote_string_literal(schema)} AND table_name IN ({tables_str});
     """
     result = snowflake_connection.cursor().execute(query)
     if not result:

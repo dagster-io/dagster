@@ -16,6 +16,7 @@ import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {DagsterTag} from '../../runs/RunTag';
+import {sortByValue} from '../../util/sortByValue';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
@@ -50,6 +51,7 @@ const ITEMS_BY_KEY = SORT_ITEMS.reduce(
 type UseAssetCatalogGroupAndSortByProps = {
   liveDataByNode: Record<string, AssetHealthFragment>;
   assetsByAssetKey: Map<string, AssetTableFragment>;
+  skip?: boolean;
 };
 
 export type SortBy = (typeof SORT_ITEMS)[number]['key'];
@@ -57,6 +59,7 @@ export type SortBy = (typeof SORT_ITEMS)[number]['key'];
 export const useAssetCatalogGroupAndSortBy = ({
   liveDataByNode,
   assetsByAssetKey,
+  skip = false,
 }: UseAssetCatalogGroupAndSortByProps) => {
   const [sortBy, setSortBy] = useQueryAndLocalStoragePersistedState<SortBy>({
     localStorageKey: usePrefixedCacheKey('catalog-sortBy'),
@@ -86,7 +89,14 @@ export const useAssetCatalogGroupAndSortBy = ({
     encode: useCallback((b: AssetHealthGroupBy) => ({groupBy: b}), []),
   });
 
+  // Only health groupings and materialization sorts read health data, so other views
+  // shouldn't regroup and re-sort every time a health batch lands.
+  const groupLiveData = isHealthGroupBy(groupBy) ? liveDataByNode : EMPTY_LIVE_DATA;
+
   const grouped: Record<string, Grouped<any, any>> = useMemo(() => {
+    if (skip) {
+      return {};
+    }
     switch (groupBy) {
       case AssetHealthGroupBy.code_location:
         return groupByAttribute({
@@ -206,7 +216,7 @@ export const useAssetCatalogGroupAndSortBy = ({
         });
       case AssetHealthGroupBy.materialization_status:
         return groupByAttribute({
-          liveDataByNode,
+          liveDataByNode: groupLiveData,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[
@@ -227,7 +237,7 @@ export const useAssetCatalogGroupAndSortBy = ({
         });
       case AssetHealthGroupBy.freshness_status:
         return groupByAttribute({
-          liveDataByNode,
+          liveDataByNode: groupLiveData,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
@@ -247,7 +257,7 @@ export const useAssetCatalogGroupAndSortBy = ({
         });
       case AssetHealthGroupBy.check_status:
         return groupByAttribute({
-          liveDataByNode,
+          liveDataByNode: groupLiveData,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[
@@ -269,7 +279,7 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.health_status:
       default:
         return groupByAttribute({
-          liveDataByNode,
+          liveDataByNode: groupLiveData,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN]
@@ -288,7 +298,7 @@ export const useAssetCatalogGroupAndSortBy = ({
           },
         });
     }
-  }, [assetsByAssetKey, groupBy, liveDataByNode]);
+  }, [assetsByAssetKey, groupBy, groupLiveData, skip]);
 
   const allGroups = useMemo(() => {
     switch (groupBy) {
@@ -310,30 +320,30 @@ export const useAssetCatalogGroupAndSortBy = ({
     }
   }, [groupBy, grouped]);
 
+  const isMaterializationSort =
+    sortBy === 'materialization_asc' || sortBy === 'materialization_desc';
+  const sortLiveData = isMaterializationSort ? liveDataByNode : undefined;
+
   const groupedAndSorted = useMemo(() => {
-    let sortFn;
+    const healthFor = (asset: AssetWithKey) => sortLiveData?.[tokenForAssetKey(asset.key)] ?? asset;
+    const keyFor = (asset: AssetWithKey) => tokenForAssetKey(asset.key);
+
+    let sortAssets: (assets: AssetWithKey[]) => AssetWithKey[];
     switch (sortBy) {
       case 'materialization_asc':
-        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          sortAssetsByMaterializationTimestamp(
-            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
-            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
-          );
+        sortAssets = (assets) =>
+          sortByValue(assets, healthFor, sortAssetsByMaterializationTimestamp);
         break;
       case 'materialization_desc':
-        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          sortAssetsByMaterializationTimestamp(
-            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
-            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
-          );
+        sortAssets = (assets) =>
+          sortByValue(assets, healthFor, (a, b) => sortAssetsByMaterializationTimestamp(b, a));
         break;
       case 'key_asc':
-        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          COMMON_COLLATOR.compare(tokenForAssetKey(a.key), tokenForAssetKey(b.key));
+        sortAssets = (assets) => sortByValue(assets, keyFor, COMMON_COLLATOR.compare);
         break;
       case 'key_desc':
-        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
-          COMMON_COLLATOR.compare(tokenForAssetKey(b.key), tokenForAssetKey(a.key));
+        sortAssets = (assets) =>
+          sortByValue(assets, keyFor, (a, b) => COMMON_COLLATOR.compare(b, a));
         break;
       default:
         assertUnreachable(sortBy);
@@ -342,11 +352,11 @@ export const useAssetCatalogGroupAndSortBy = ({
     Object.entries(copy).forEach(([group, groupData]) => {
       copy[group as keyof typeof copy] = {
         ...groupData,
-        assets: groupData.assets.slice().sort(sortFn),
+        assets: sortAssets(groupData.assets),
       };
     });
     return copy;
-  }, [grouped, liveDataByNode, sortBy]);
+  }, [grouped, sortLiveData, sortBy]);
 
   return {
     sortBy,
@@ -360,6 +370,10 @@ export const useAssetCatalogGroupAndSortBy = ({
     ITEMS_BY_KEY,
   };
 };
+
+type AssetWithKey = {key: {path: string[]}};
+
+const EMPTY_LIVE_DATA: Record<string, AssetHealthFragment> = {};
 
 export function sortAssetsByMaterializationTimestamp(
   a: AssetHealthFragment | {key: {path: string[]}},
@@ -414,11 +428,20 @@ const groupByAttribute = <TGroup extends string, TAsset extends {key: {path: str
   return byAttribute;
 };
 
+// A Record so that adding a group-by value forces a decision about whether it reads health data;
+// health groupings get an empty map otherwise and would render no rows.
+const READS_HEALTH_DATA: Record<AssetHealthGroupBy, boolean> = {
+  [AssetHealthGroupBy.health_status]: true,
+  [AssetHealthGroupBy.freshness_status]: true,
+  [AssetHealthGroupBy.check_status]: true,
+  [AssetHealthGroupBy.materialization_status]: true,
+  [AssetHealthGroupBy.code_location]: false,
+  [AssetHealthGroupBy.group]: false,
+  [AssetHealthGroupBy.owner]: false,
+  [AssetHealthGroupBy.kind]: false,
+  [AssetHealthGroupBy.tags]: false,
+};
+
 export function isHealthGroupBy(groupBy: AssetHealthGroupBy) {
-  return [
-    AssetHealthGroupBy.health_status,
-    AssetHealthGroupBy.freshness_status,
-    AssetHealthGroupBy.check_status,
-    AssetHealthGroupBy.materialization_status,
-  ].includes(groupBy);
+  return READS_HEALTH_DATA[groupBy];
 }

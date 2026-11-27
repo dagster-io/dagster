@@ -181,3 +181,46 @@ def test_snake_case_dict_type_pep585_format():
                 },
             },
         }
+
+
+def test_typing_style_openapi_types():
+    # kubernetes 37 spells container types List[X] / Dict[K, V]; 12 uses list[X] / dict(K, V) and
+    # 35-36 use list[X] / dict[K, V]. Force the 37 spelling so every test factor covers it.
+    with (
+        mock.patch.object(
+            kubernetes.client.V1CephFSVolumeSource,
+            "openapi_types",
+            {**kubernetes.client.V1CephFSVolumeSource.openapi_types, "monitors": "List[str]"},
+        ),
+        mock.patch.object(
+            kubernetes.client.V1CSIVolumeSource,
+            "openapi_types",
+            {
+                **kubernetes.client.V1CSIVolumeSource.openapi_types,
+                "volume_attributes": "Dict[str, str]",
+            },
+        ),
+    ):
+        assert k8s_snake_case_dict(
+            kubernetes.client.V1Volume,
+            {
+                "name": "my_volume",
+                "cephfs": {"monitors": ["ip1", "ip2"]},
+                "csi": {"driver": "my_driver", "volumeAttributes": {"fooKey": "fooVal"}},
+            },
+        ) == {
+            "name": "my_volume",
+            "cephfs": {"monitors": ["ip1", "ip2"]},
+            "csi": {"driver": "my_driver", "volume_attributes": {"fooKey": "fooVal"}},
+        }
+
+        model = k8s_model_from_dict(
+            kubernetes.client.V1Volume,
+            {
+                "name": "my_volume",
+                "cephfs": {"monitors": ["ip1", "ip2"]},
+                "csi": {"driver": "my_driver", "volume_attributes": {"foo_key": "foo_val"}},
+            },
+        )
+        assert model.cephfs.monitors == ["ip1", "ip2"]
+        assert model.csi.volume_attributes == {"foo_key": "foo_val"}

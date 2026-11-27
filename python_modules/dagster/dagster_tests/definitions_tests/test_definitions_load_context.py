@@ -16,6 +16,7 @@ from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
     initialize_repository_def_from_pointer,
+    reconstruct_repository_def_from_pointer,
     repository_def_from_target_def,
 )
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
@@ -186,3 +187,41 @@ def test_state_backed_defs_loader() -> None:
         defs = loader_cached.build_defs()
         assert len(defs.resolve_all_asset_specs()) == 1
         assert defs.resolve_assets_def("bar")
+
+
+@dg.definitions
+def location_name_defs() -> dg.Definitions:
+    @dg.asset
+    def some_asset(): ...
+
+    return dg.Definitions(assets=[some_asset])
+
+
+def test_code_location_name_plumbing() -> None:
+    """The harness-reported code location name is exposed on the load context, captured on
+    the repository's load data during initialization, and resolves identically on a
+    run-worker-style reconstruction from that load data.
+    """
+    # no harness-reported name -> None
+    assert DefinitionsLoadContext(DefinitionsLoadType.INITIALIZATION).code_location_name is None
+
+    pointer = CodePointer.from_python_file(__file__, "location_name_defs", None)
+    with DefinitionsLoadContext.scoped(
+        DefinitionsLoadContext(
+            DefinitionsLoadType.INITIALIZATION,
+            repository_load_data=RepositoryLoadData(code_location_name="my_location"),
+        )
+    ):
+        # mirrors the gRPC server load: LoadedRepositories seeds a named context, then
+        # builds the repository def through reconstruct_repository_def_from_pointer
+        repo_def = reconstruct_repository_def_from_pointer(pointer)
+
+    load_data = repo_def.repository_load_data
+    assert load_data is not None
+    assert load_data.code_location_name == "my_location"
+
+    # a run worker reconstructing from the stamped load data resolves the same name
+    recon_context = DefinitionsLoadContext(
+        DefinitionsLoadType.RECONSTRUCTION, repository_load_data=load_data
+    )
+    assert recon_context.code_location_name == "my_location"

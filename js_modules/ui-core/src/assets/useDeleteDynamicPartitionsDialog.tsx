@@ -2,8 +2,8 @@ import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 
 import {DeleteDynamicPartitionsDialog} from './DeleteDynamicPartitionsDialog';
-import {useAssetPermissions} from './useAssetPermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
 import {RepoAddress} from '../workspace/types';
 
@@ -56,8 +56,7 @@ export const useDeleteDynamicPartitionsDialog = (
     dropdownOptions: [
       <DeleteDynamicPartitionsMenuItem
         key="delete"
-        assetKeys={opts?.assetKey ? [opts.assetKey] : []}
-        locationName={opts?.repoAddress.location || ''}
+        locationName={opts.repoAddress.location}
         onClick={() => setIsShowing(true)}
       />,
     ],
@@ -65,25 +64,25 @@ export const useDeleteDynamicPartitionsDialog = (
 };
 
 type DeleteDynamicPartitionsMenuItemProps = {
-  assetKeys: AssetKeyInput[];
   locationName: string;
   onClick: () => void;
 };
 
 const DeleteDynamicPartitionsMenuItem = ({
-  assetKeys,
   locationName,
   onClick,
 }: DeleteDynamicPartitionsMenuItemProps) => {
-  // this separate comp exists to defer this expensive query until
-  // the menuItem is rendered instead of when the hook is called
-  const {hasWipePermission} = useAssetPermissions(assetKeys, locationName);
+  // The backend checks edit_dynamic_partitions for the code location, not per asset. Wipe
+  // permission only matters if the user opts to wipe materializations, which the dialog checks.
+  const {
+    permissions: {canEditDynamicPartitions},
+  } = usePermissionsForLocation(locationName);
 
   return (
     <MenuItem
       text="Delete partitions"
       icon={<Icon name="delete" color={Colors.accentRed()} />}
-      disabled={!hasWipePermission}
+      disabled={!canEditDynamicPartitions}
       intent="danger"
       onClick={onClick}
     />

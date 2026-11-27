@@ -5,7 +5,7 @@ import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillFragment
 import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../../runs/RunTag';
-import {RunFilterToken} from '../../runs/RunsFilterInput';
+import {RunFilterToken} from '../../runs/RunsFilterUtils';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
 import {RepoAddress} from '../../workspace/types';

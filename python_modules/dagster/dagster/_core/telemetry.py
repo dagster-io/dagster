@@ -504,7 +504,7 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
     if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
         return
 
-    metadata = {
+    metadata: dict[str, Any] = {
         "run_id_hash": hash_name(job_context.run_id),
         "step_key_hash": hash_name(event.step_key),  # type: ignore
     }

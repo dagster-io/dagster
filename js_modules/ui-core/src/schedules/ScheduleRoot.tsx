@@ -111,7 +111,7 @@ export const ScheduleRoot = (props: Props) => {
             ) : null}
             {selectedTab === 'ticks' ? (
               <TicksTable
-                tabs={tabs}
+                actionBarComponents={tabs}
                 tickResultType="runs"
                 repoAddress={repoAddress}
                 name={scheduleOrError.name}
@@ -120,6 +120,7 @@ export const ScheduleRoot = (props: Props) => {
               <RunsFeedTableWithFilters
                 filter={runsFilter}
                 actionBarComponents={tabs}
+                flushActionBar
                 includeRunsFromBackfills={true}
               />
             )}

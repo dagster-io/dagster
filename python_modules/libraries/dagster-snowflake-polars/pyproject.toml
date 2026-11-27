@@ -8,7 +8,7 @@ version = "1!0+dev"
 description = "Package for integrating Snowflake and Polars with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     "dagster-snowflake==1!0+dev",
@@ -28,9 +28,11 @@ test = [
     "dagster-pipes",
     "dagster-snowflake",
     "dagster-shared",
-    "certifi==2025.1.31",
     "snowflake-connector-python[pandas]>=3.4.0",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster = { path = "../../dagster", editable = true }

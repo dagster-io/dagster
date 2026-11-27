@@ -262,7 +262,7 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
 
     def get_log_keys_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
-    ) -> Sequence[Sequence[str]]:
+    ) -> Sequence[list[str]]:
         directory = self._resolve_path_for_namespace(log_key_prefix)
         objects = self._s3_session.list_objects_v2(
             Bucket=self._s3_bucket, Prefix="/".join(directory)

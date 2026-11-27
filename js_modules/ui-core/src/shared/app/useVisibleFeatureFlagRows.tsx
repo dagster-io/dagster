@@ -23,8 +23,4 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     key: 'Skip optional resource defaults in run config',
     flagType: FeatureFlag.flagSkipOptionalResourceDefaultsInRunConfig,
   },
-  {
-    key: 'Enable experimental component instance UI',
-    flagType: FeatureFlag.flagComponentInstanceUI,
-  },
 ];

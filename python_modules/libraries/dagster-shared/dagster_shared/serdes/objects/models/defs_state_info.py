@@ -10,6 +10,7 @@ LOCAL_STATE_VERSION = "__local__"
 CODE_SERVER_STATE_VERSION = "__code_server__"
 
 
+@whitelist_for_serdes
 class DefsStateManagementType(Enum):
     VERSIONED_STATE_STORAGE = "VERSIONED_STATE_STORAGE"
     LOCAL_FILESYSTEM = "LOCAL_FILESYSTEM"

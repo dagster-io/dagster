@@ -142,11 +142,8 @@ from . import assets
 
 defs = Definitions(
     assets=load_assets_from_modules([assets]),
-    resources={
-        "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager()
-    }
+    resources={"output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager()},
 )
-
 ```
 
 Let's take a look at what's happening here:
@@ -220,9 +217,8 @@ from dagstermill import define_dagstermill_asset
 from dagster import asset, file_relative_path
 import pandas as pd
 
-@asset(
-    group_name="template_tutorial"
-)
+
+@asset(group_name="template_tutorial")
 def iris_dataset():
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
@@ -260,7 +256,7 @@ iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
     notebook_path=file_relative_path(__file__, "notebooks/iris-kmeans.ipynb"),
     group_name="template_tutorial",
-    ins={"iris": AssetIn("iris_dataset")}, # this is the new parameter!
+    ins={"iris": AssetIn("iris_dataset")},  # this is the new parameter!
 )
 ```
 

@@ -5,13 +5,33 @@ from typing import Any
 
 import pytest
 import responses as request_responses
-from aiohttp import hdrs
-from aioresponses import aioresponses
+from aiohttp import ClientResponse, hdrs
+from aioresponses import (
+    aioresponses,
+    core as aioresponses_core,
+)
 from dagster_sigma import SigmaBaseUrl
 
 
+class _MockClientResponse(ClientResponse):
+    """A ClientResponse that aioresponses can construct on aiohttp 3.14.4 and later.
+
+    aiohttp made ``stream_writer`` a required argument, and aioresponses (0.7.9)
+    doesn't pass it, so every mocked response raises a TypeError. aiohttp only
+    reads the writer's ``output_size``, so a fixed stand-in is enough.
+    """
+
+    class _StreamWriter:
+        output_size = 0
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("stream_writer", self._StreamWriter())
+        super().__init__(*args, **kwargs)
+
+
 @pytest.fixture(name="responses")
-def mock_responses() -> Iterator[aioresponses]:
+def mock_responses(monkeypatch: pytest.MonkeyPatch) -> Iterator[aioresponses]:
+    monkeypatch.setattr(aioresponses_core, "ClientResponse", _MockClientResponse)
     with aioresponses() as m:
         yield m
 

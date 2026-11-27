@@ -53,6 +53,7 @@ import shutil
 
 from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
 
+
 @asset
 def cli_command_asset(
     context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
@@ -63,6 +64,7 @@ def cli_command_asset(
         context=context,
         env={"MY_ENV_VAR": "example_value"},
     ).get_materialize_result()
+
 
 defs = Definitions(
     assets=[cli_command_asset],

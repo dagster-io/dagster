@@ -95,8 +95,8 @@ class ActiveExecution:
         # to _gathering while in flight
         self._gathering_dynamic_outputs: dict[str, Mapping[str, list[str] | None]] = {}
         # then on resolution move to _completed
-        self._completed_dynamic_outputs: dict[str, Mapping[str, Sequence[str] | None]] = (
-            dict(self._plan.known_state.dynamic_mappings) if self._plan.known_state else {}
+        self._completed_dynamic_outputs: dict[str, Mapping[str, Sequence[str] | None]] = dict(
+            self._plan.known_state.dynamic_mappings
         )
         self._new_dynamic_mappings: bool = False
 

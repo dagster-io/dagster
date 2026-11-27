@@ -8,6 +8,7 @@ import {useLazyJobPermissions} from '../app/useJobPermissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {ReexecutionStrategy} from '../graphql/types';
+import {useMenuPopover} from '../hooks/useMenuPopover';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {useJobReexecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
@@ -35,6 +36,7 @@ export const JobMenu = (props: Props) => {
 
   const materialize = useMaterializationAction(job.name);
   const reexecute = useJobReexecution();
+  const {buttonRef, menuRef, isMenuOpen, onInteraction, onMenuClick} = useMenuPopover();
 
   const [fetchHasJobPermissions, {hasLaunchExecutionPermission, hasLaunchReexecutionPermission}] =
     useLazyJobPermissions(pipelineSelector, repoAddress.location);
@@ -80,7 +82,7 @@ export const JobMenu = (props: Props) => {
 
   const reExecuteAllItem = (
     <MenuItem
-      icon="replay"
+      icon={reexecute.loading ? <Spinner purpose="caption-text" /> : 'replay'}
       text="Re-execute latest run"
       disabled={!hasLaunchReexecutionPermission || !run || !canRunAllSteps(run)}
       onClick={(e) =>
@@ -91,7 +93,7 @@ export const JobMenu = (props: Props) => {
 
   const reExecuteFromFailureItem = (
     <MenuItem
-      icon="sync_problem"
+      icon={reexecute.loading ? <Spinner purpose="caption-text" /> : 'sync_problem'}
       text="Re-execute latest run from failure"
       disabled={!hasLaunchReexecutionPermission || !run || !canRunFromFailure(run)}
       onClick={(e) =>
@@ -105,9 +107,11 @@ export const JobMenu = (props: Props) => {
       {materialize.launchpadElement}
       {reexecute.launchpadElement}
       <Popover
+        isOpen={isMenuOpen}
+        onInteraction={onInteraction}
         onOpened={() => fetchIfPossible()}
         content={
-          <Menu>
+          <Menu ref={menuRef} onClick={onMenuClick}>
             <MenuLink
               to={workspacePipelinePath({
                 repoName: repoAddress.name,
@@ -154,7 +158,7 @@ export const JobMenu = (props: Props) => {
         }
         position="bottom-left"
       >
-        <Button icon={<Icon name="more_horiz" />} intent="none" />
+        <Button ref={buttonRef} icon={<Icon name="more_horiz" />} intent="none" />
       </Popover>
     </>
   );

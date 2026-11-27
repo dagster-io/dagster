@@ -6,6 +6,7 @@ import time
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
 from dagster import (
     DagsterEvent,
@@ -20,7 +21,7 @@ from dagster._core.launcher import LaunchRunContext
 from dagster._core.op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunRecord,
@@ -32,6 +33,9 @@ from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorksp
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
+
+if TYPE_CHECKING:
+    from dagster._utils.concurrency import ConcurrencyKeyInfo
 
 PAGE_SIZE = int(os.getenv("DAGSTER_RUN_QUEUE_PAGE_SIZE", "100"))
 
@@ -243,6 +247,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         concurrency_keys = None
         pool_limits = None
+        # Shared across the per-page counters so each pool is fetched at most once per iteration.
+        # Without this the pass costs O(pages * pools) storage round trips.
+        concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}
 
         while has_more:
             queued_runs = instance.get_runs(
@@ -289,6 +296,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         pool_limits=pool_limits,
                         slot_count_offset=run_queue_config.op_concurrency_slot_buffer,
                         pool_granularity=concurrency_config.pool_config.pool_granularity,
+                        concurrency_info_by_key=concurrency_info_by_key,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
@@ -340,7 +348,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         return batch
 
     def _get_in_progress_run_records(self, instance: DagsterInstance) -> Sequence[RunRecord]:
-        return instance.get_run_records(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+        return instance.get_run_records(filters=RunsFilter(statuses=ACTIVE_RUN_STATUSES))
 
     def _priority_sort(self, runs: Iterable[DagsterRun]) -> list[DagsterRun]:
         def get_priority(run: DagsterRun) -> int:

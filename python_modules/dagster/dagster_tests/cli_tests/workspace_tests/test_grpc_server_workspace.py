@@ -1,14 +1,20 @@
 from contextlib import ExitStack
 
+import click
 import dagster as dg
 import pytest
+from click.testing import CliRunner
 from dagster._check import CheckError
+from dagster._cli.utils import assert_no_remaining_opts
+from dagster._cli.workspace.cli_target import workspace_opts_to_load_target
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ
 from dagster._core.workspace.load import location_origins_from_config
+from dagster._core.workspace.load_target import GrpcServerTarget
 from dagster._grpc.server import GrpcServerProcess
 from dagster_shared import seven
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 from dagster_shared.yaml_utils import safe_load_yaml
 
 
@@ -113,6 +119,45 @@ def test_grpc_server_env_vars():
 
         assert socket_origin.socket == "barsocket"  # ty: ignore[unresolved-attribute]
         assert socket_origin.host == "barhost"  # ty: ignore[unresolved-attribute]
+
+
+def test_all_grpc_workspace_opts_reach_origin():
+    """Every gRPC workspace option must survive the CLI -> load target -> origin path.
+
+    The origin is what configures the gRPC client, so an option dropped along the way is
+    silently ignored rather than rejected.
+    """
+    captured_origins: list[GrpcServerCodeLocationOrigin] = []
+
+    @click.command(name="test_grpc_opts_command")
+    @workspace_options
+    def command(**opts: object):
+        workspace_opts = WorkspaceOpts.extract_from_cli_options(opts)
+        assert_no_remaining_opts(opts)
+        target = workspace_opts_to_load_target(workspace_opts)
+        assert isinstance(target, GrpcServerTarget)
+        captured_origins.extend(target.create_origins())
+
+    runner = CliRunner()
+    for args in (
+        ["--grpc-port", "4000", "--grpc-host", "barhost", "--use-ssl"],
+        ["--grpc-socket", "barsocket", "--grpc-host", "barhost", "--use-ssl"],
+        ["--grpc-port", "4000"],
+    ):
+        result = runner.invoke(command, args)
+        assert result.exit_code == 0, result.output
+
+    port_origin, socket_origin, default_origin = captured_origins
+
+    # Compared as whole records rather than field by field, so an option the CLI fails to
+    # thread through surfaces here without needing an assertion of its own.
+    assert port_origin == GrpcServerCodeLocationOrigin(host="barhost", port=4000, use_ssl=True)
+    assert socket_origin == GrpcServerCodeLocationOrigin(
+        host="barhost", socket="barsocket", use_ssl=True
+    )
+    assert default_origin == GrpcServerCodeLocationOrigin(
+        host="localhost", port=4000, use_ssl=False
+    )
 
 
 def test_ssl_grpc_server_workspace(instance):

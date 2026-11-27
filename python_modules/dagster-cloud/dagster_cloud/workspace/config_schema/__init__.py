@@ -13,6 +13,10 @@ from dagster import (
 )
 from dagster._config import EvaluationError, StringSource, validate_config
 
+from dagster_cloud.workspace.config_schema.aca import (
+    ACA_CONTAINER_CONTEXT_CONFIG as ACA_CONTAINER_CONTEXT_CONFIG,
+    SHARED_ACA_CONFIG as SHARED_ACA_CONFIG,
+)
 from dagster_cloud.workspace.config_schema.docker import SHARED_DOCKER_CONFIG
 from dagster_cloud.workspace.config_schema.ecs import (
     ECS_CONTAINER_CONTEXT_CONFIG as ECS_CONTAINER_CONTEXT_CONFIG,
@@ -198,6 +202,14 @@ CONFIG_SCHEMA_FIELDS = {
         ),
         is_required=False,
     ),
+    "pex_bundle": Field(
+        config=Noneable(bool),
+        is_required=False,
+        description=(
+            "True if the image was baked from a PEX build (fast deploys) rather than a native"
+            " Docker build (internal only)."
+        ),
+    ),
     "code_source": Field(
         Selector(
             {
@@ -257,6 +269,31 @@ CONFIG_SCHEMA_FIELDS = {
                     is_required=False,
                     description="Specifies a source code reference link for this location.",
                 ),
+                "provider": Field(
+                    config=str,
+                    is_required=False,
+                    description="Git provider hosting the repo this location deploys from.",
+                ),
+                "repo_owner": Field(
+                    config=str,
+                    is_required=False,
+                    description="Owner of the repo this location deploys from.",
+                ),
+                "repo_name": Field(
+                    config=str,
+                    is_required=False,
+                    description="Name of the repo this location deploys from.",
+                ),
+                "base_branch": Field(
+                    config=str,
+                    is_required=False,
+                    description="Branch that pull requests for this location should target.",
+                ),
+                "defs_base_path": Field(
+                    config=str,
+                    is_required=False,
+                    description="Repo-relative path of this location's defs folder.",
+                ),
             }
         ),
         is_required=False,
@@ -267,6 +304,7 @@ CONFIG_SCHEMA_FIELDS = {
                 "k8s": Field(Shape(K8S_CONFIG_FIELDS), is_required=False),
                 "docker": Field(Shape(SHARED_DOCKER_CONFIG), is_required=False),
                 "ecs": Field(Shape(ECS_CONTAINER_CONTEXT_CONFIG), is_required=False),
+                "aca": Field(Shape(ACA_CONTAINER_CONTEXT_CONFIG), is_required=False),
             },
         ),
         description="Metadata for specific compute environments",

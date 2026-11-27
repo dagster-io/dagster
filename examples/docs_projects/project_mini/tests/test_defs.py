@@ -10,13 +10,8 @@ from project_mini.defs.dynamic_fanout.dynamic_fanout import (  # ty: ignore[unre
     final_report,
     process_single_unit,
 )
-from project_mini.defs.partitions_vs_config.with_config import (  # ty: ignore[unresolved-import]
-    CustomerConfig,
-    customer_orders,
-)
-from project_mini.defs.pii_compute_logs.pii_redactor import (
-    redact_pii,  # ty: ignore[unresolved-import]
-)
+from project_mini.defs.partitions_vs_config.with_config import CustomerConfig, customer_orders  # ty: ignore[unresolved-import]
+from project_mini.defs.pii_compute_logs.pii_redactor import redact_pii  # ty: ignore[unresolved-import]
 
 
 def test_pii_redactor_importable():

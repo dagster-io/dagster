@@ -3,7 +3,12 @@ from collections.abc import Sequence
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDBIOManager,
+    build_duckdb_io_manager,
+    check_table_slice_names,
+)
 
 
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -39,6 +44,7 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
     ):
         """Stores the polars DataFrame in duckdb."""
+        check_table_slice_names(table_slice)
         if obj.is_empty():
             context.log.warning(
                 "Skipping DuckDB write for empty DataFrame. An empty table will not be created."
@@ -76,11 +82,13 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         """Loads the input as a Polars DataFrame."""
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return pl.DataFrame()
-        select_statement = connection.execute(
+        # `to_arrow_table()` on a relation returns a pyarrow Table on every duckdb
+        # release we support. duckdb 2.0 removed `.arrow()` from `execute()` results,
+        # and since 1.4 a relation's `.arrow()` returns a RecordBatchReader instead.
+        select_statement = connection.sql(
             DuckDbClient.get_select_statement(table_slice=table_slice)
         )
-        duckdb_to_arrow = select_statement.arrow()
-        return pl.DataFrame(duckdb_to_arrow)
+        return pl.DataFrame(select_statement.to_arrow_table())
 
     @property
     def supported_types(self):

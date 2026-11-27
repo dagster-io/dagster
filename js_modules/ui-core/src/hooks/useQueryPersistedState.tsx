@@ -151,7 +151,8 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         currentQueryString = next;
         const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'indices'})}`;
         if (behavior === 'replace') {
-          history.replace(nextPath);
+          // Keep state saved on this entry, such as a paginated list's previous cursors.
+          history.replace(nextPath, history.location.state);
         } else {
           history.push(nextPath);
         }

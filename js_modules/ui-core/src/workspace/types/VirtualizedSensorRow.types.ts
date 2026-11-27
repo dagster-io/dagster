@@ -1,8 +1,46 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type SingleSensorQueryVariables = Types.Exact<{
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type InstigationTickStatus = 'FAILURE' | 'SKIPPED' | 'STARTED' | 'SUCCESS';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS'
+  | 'SUSPENDED';
+
+export type SensorSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  sensorName: string;
+};
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
+
+export type SingleSensorQueryVariables = Exact<{
   selector: Types.SensorSelector;
 }>;
 
@@ -16,6 +54,7 @@ export type SingleSensorQuery = {
         description: string | null;
         name: string;
         minIntervalSeconds: number;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
         metadata: {
@@ -69,4 +108,4 @@ export type SingleSensorQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SingleSensorQueryVersion = '713c94fb89ff1edd1ca419cb2b5eabe4f317dcef7529a3fd6a186ca28e56b62e';
+export const SingleSensorQueryVersion = '91c21e9bd5951950efdf888d1fdfc7a18eda81463ff4f0bcb1468e3e12851baf';

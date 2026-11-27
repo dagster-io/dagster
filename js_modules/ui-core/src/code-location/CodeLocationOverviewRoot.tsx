@@ -32,8 +32,6 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import styles from './css/CodeLocationOverviewRoot.module.css';
 
-const RIGHT_COLUMN_WIDTH = '360px';
-
 type MetadataRowKey = 'image';
 
 interface Props {
@@ -87,7 +85,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 
   return (
     <>
-      <Box padding={{horizontal: 24}} border="bottom">
+      <Box className={styles.tabs} border="bottom">
         <CodeLocationTabs
           selectedTab="overview"
           repoAddress={repoAddress}
@@ -99,15 +97,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       <Table style={{width: '100%', tableLayout: 'fixed'}}>
         <tbody>
           <tr>
-            <td
-              style={{
-                width: RIGHT_COLUMN_WIDTH,
-                minWidth: RIGHT_COLUMN_WIDTH,
-                verticalAlign: 'middle',
-              }}
-            >
-              Status
-            </td>
+            <td className={styles.detailsLabel}>Status</td>
             <td>
               <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </td>
@@ -150,7 +140,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
             <tbody>
               {libraryVersions.map((version) => (
                 <tr key={version.name}>
-                  <td style={{width: RIGHT_COLUMN_WIDTH}}>
+                  <td className={styles.libraryName}>
                     <Text size={14} family="mono">
                       {version.name}
                     </Text>

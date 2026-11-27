@@ -34,7 +34,7 @@ if [[ -z ${DAGSTER_UI_DONT_BUILD_JS_BUNDLE+x} ]]; then
     echo -e "--- \033[32m:wrench: Building JS bundle\033[0m"
     echo -e "(set DAGSTER_UI_DONT_BUILD_JS_BUNDLE to skip)"
     pushd ${ROOT}
-    make rebuild_ui
+    just rebuild_ui
     popd
 fi
 

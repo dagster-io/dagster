@@ -8,7 +8,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import PoolGranularity
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot, ExecutionStepSnap
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunOpConcurrency,
@@ -84,9 +84,14 @@ class GlobalOpConcurrencyLimitsCounter:
         pool_limits: Sequence[PoolLimit],
         slot_count_offset: int = 0,
         pool_granularity: PoolGranularity | None = None,
+        concurrency_info_by_key: dict[str, "ConcurrencyKeyInfo"] | None = None,
     ):
         self._root_pools_by_run = {}
-        self._concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}
+        # Callers that build several counters within one dequeue pass share this cache so each
+        # pool is fetched from storage at most once per pass.
+        self._concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = (
+            concurrency_info_by_key if concurrency_info_by_key is not None else {}
+        )
         self._launched_pool_counts = defaultdict(int)
         self._in_progress_pool_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
@@ -144,12 +149,14 @@ class GlobalOpConcurrencyLimitsCounter:
                 instance.event_log_storage.initialize_concurrency_limit_to_default(pool_name)
 
     def _fetch_concurrency_info(self, instance: DagsterInstance, pool_names: set[str]):
-        for pool_name in pool_names:
-            if pool_name is None:
-                continue
-
-            self._concurrency_info_by_key[pool_name] = (
-                instance.event_log_storage.get_concurrency_info(pool_name)
+        missing = [
+            pool_name
+            for pool_name in pool_names
+            if pool_name is not None and pool_name not in self._concurrency_info_by_key
+        ]
+        if missing:
+            self._concurrency_info_by_key.update(
+                instance.event_log_storage.get_concurrency_infos(missing)
             )
 
     def _should_allocate_slots_for_in_progress_run(self, record: RunRecord):
@@ -157,7 +164,7 @@ class GlobalOpConcurrencyLimitsCounter:
             return False
 
         status = record.dagster_run.status
-        if status not in IN_PROGRESS_RUN_STATUSES:
+        if status not in ACTIVE_RUN_STATUSES:
             return False
 
         if self._pool_granularity == PoolGranularity.RUN:

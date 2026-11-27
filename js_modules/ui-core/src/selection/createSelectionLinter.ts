@@ -1,6 +1,6 @@
 import {
   AbstractParseTreeVisitor,
-  CharStream,
+  BaseErrorListener,
   CommonTokenStream,
   Lexer,
   Parser,
@@ -8,7 +8,8 @@ import {
 } from 'antlr4ng';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
-import {parseInput} from './SelectionInputParser';
+import {getLeadingWhitespaceLength, parseInput} from './SelectionInputParser';
+import {Utf16CharStream} from './Utf16CharStream';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
@@ -34,8 +35,19 @@ export function createSelectionLinter({
       return [];
     }
 
-    const inputStream = CharStream.fromString(text);
+    // Lex from after the leading whitespace, keeping offsets relative to the whole text. The error
+    // listener reports columns, so the lexer's column starts there too.
+    const start = getLeadingWhitespaceLength(text);
+    const inputStream = new Utf16CharStream(text);
+    inputStream.seek(start);
     const lexer = new LexerKlass(inputStream);
+    lexer.column = start;
+
+    const lexerErrorListener = new CustomErrorListener();
+    const lexerErrorStarts = new LexerErrorStartListener(lexer);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(lexerErrorListener);
+    lexer.addErrorListener(lexerErrorStarts);
 
     const tokens = new CommonTokenStream(lexer);
     tokens.fill(); // Ensure all tokens are loaded before parsing
@@ -44,16 +56,19 @@ export function createSelectionLinter({
 
     const errorListener = new CustomErrorListener();
 
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(errorListener);
-
     parser.removeErrorListeners(); // Remove default console error listener
     parser.addErrorListener(errorListener);
 
     parser.start();
 
+    const lexerErrors = mergeSurrogatePairErrors(
+      text,
+      lexerErrorListener.getErrors(),
+      lexerErrorStarts.starts,
+    );
+
     // Map syntax errors to CodeMirror's lint format
-    const lintErrors = errorListener.getErrors().map((error) => ({
+    const lintErrors = [...lexerErrors, ...errorListener.getErrors()].map((error) => ({
       ...error,
       message: error.message.replace('<EOF>, ', ''),
     }));
@@ -64,12 +79,56 @@ export function createSelectionLinter({
       unsupportedAttributeMessages,
       lintErrors,
     );
-    parseTrees.forEach(({tree}) => tree.accept(attributeVisitor));
+    parseTrees.forEach(({tree, startOffset}) => {
+      attributeVisitor.treeOffset = startOffset;
+      tree.accept(attributeVisitor);
+    });
 
     return lintErrors.concat(attributeVisitor.getErrors());
   };
   return weakMapMemoize(linter, {maxEntries: 20});
 }
+
+// Records where each lexer error starts in the whole text; the error's `from` is a column.
+class LexerErrorStartListener extends BaseErrorListener {
+  starts: number[] = [];
+
+  constructor(private lexer: Lexer) {
+    super();
+  }
+
+  override syntaxError() {
+    this.starts.push(this.lexer.tokenStartCharIndex);
+  }
+}
+
+const isSurrogatePairAt = (text: string, index: number) => {
+  const high = text.charCodeAt(index);
+  const low = text.charCodeAt(index + 1);
+  return high >= 0xd800 && high <= 0xdbff && low >= 0xdc00 && low <= 0xdfff;
+};
+
+/**
+ * The lexer reads UTF-16 code units, so it rejects a character above U+FFFF (an emoji) as two
+ * errors. Merge each such pair into one error that names the whole character.
+ */
+const mergeSurrogatePairErrors = (text: string, errors: SyntaxError[], starts: number[]) =>
+  errors.flatMap((error, index) => {
+    const start = starts[index];
+    const previousStart = starts[index - 1];
+    const nextStart = starts[index + 1];
+    if (start === undefined) {
+      return [error];
+    }
+    if (previousStart === start - 1 && isSurrogatePairAt(text, previousStart)) {
+      return [];
+    }
+    if (nextStart === start + 1 && isSurrogatePairAt(text, start)) {
+      const character = text.slice(start, start + 2);
+      return [{...error, message: `token recognition error at: '${character}'`}];
+    }
+    return [error];
+  });
 
 class InvalidAttributeVisitor
   extends AbstractParseTreeVisitor<void>
@@ -77,6 +136,8 @@ class InvalidAttributeVisitor
 {
   private errors: SyntaxError[] = [];
   private sortedLintErrors: SyntaxError[];
+  /** Start of the current parse tree in the full text; tree token offsets are local to it. */
+  treeOffset = 0;
 
   constructor(
     private supportedAttributes: readonly string[],
@@ -121,11 +182,10 @@ class InvalidAttributeVisitor
   visitAttributeName(ctx: AttributeNameContext) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const attributeName = ctx.IDENTIFIER()!.getText();
-    if (!this.supportedAttributes.includes(attributeName)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const from = ctx.start!.start;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const to = ctx.stop!.stop + 1;
+    const {start, stop} = ctx;
+    if (!this.supportedAttributes.includes(attributeName) && start && stop) {
+      const from = start.start + this.treeOffset;
+      const to = stop.stop + 1 + this.treeOffset;
 
       if (!this.hasOverlap(from, to)) {
         this.errors.push({

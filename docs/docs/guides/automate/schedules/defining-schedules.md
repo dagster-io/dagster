@@ -43,8 +43,9 @@ This example demonstrates how to define a schedule using <PyObject section="sche
 
 ```python
 @schedule(target="*", cron_schedule="0 0 * * *")
-def basic_schedule(): ...
-  # things the schedule does, like returning a RunRequest or SkipReason
+def basic_schedule():
+    ...
+    # things the schedule does, like returning a RunRequest or SkipReason
 ```
 
 :::note

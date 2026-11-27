@@ -1,11 +1,48 @@
-import {createContext, useCallback, useContext, useLayoutEffect, useMemo} from 'react';
+import {createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
-import {atom, useRecoilValue} from 'recoil';
+import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
 
-export const currentPageAtom = atom<{path: string; specificPath: string}>({
+// `pathname` and `depth` identify the `Route` that set `path`, so `useClaimCurrentPage` can
+// keep the innermost one.
+type CurrentPage = {path: string; specificPath: string; pathname?: string; depth?: number};
+
+export const currentPageAtom = atom<CurrentPage>({
   key: 'currentPageAtom',
   default: {path: '/', specificPath: '/'},
 });
+
+// Same rule as the mobile route status: layout effects run child-first, so an enclosing
+// route's write for the same pathname is rejected rather than overwriting its leaf.
+export const useClaimCurrentPage = () => {
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  return useCallback(
+    ({path, pathname, depth}: {path: string; pathname: string; depth: number}) => {
+      setCurrentPage((prev) => {
+        if (prev.pathname === pathname && prev.depth !== undefined && prev.depth > depth) {
+          return prev;
+        }
+        return {specificPath: prev.specificPath, path, pathname, depth};
+      });
+    },
+    [setCurrentPage],
+  );
+};
+
+/**
+ * Append `suffix` (e.g. `?view=events`) to the enclosing route's page name, for pages whose
+ * name depends on state the route can't see.
+ * - Re-applies when the pathname changes, since the route rewrites the bare path then even
+ *   if this component stays mounted.
+ * - Keeps the route's `pathname`/`depth`, so enclosing routes still can't overwrite it.
+ */
+export const useRefineCurrentPage = (suffix: string) => {
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  const {path} = useRouteMatch();
+  const {pathname} = useLocation();
+  useEffect(() => {
+    setCurrentPage((prev) => ({...prev, path: `${path}${suffix}`}));
+  }, [path, pathname, suffix, setCurrentPage]);
+};
 
 export interface GenericAnalytics {
   group?: (groupId: string, traits?: Record<string, any>) => void;

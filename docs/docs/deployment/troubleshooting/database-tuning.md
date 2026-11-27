@@ -59,7 +59,9 @@ class DagsterCleanupDebugLogsConfig(Config):
 
 @op
 def dagster_cleanup_debug_logs(
-    context: OpExecutionContext, postgresql_dagster_engine: ResourceParam[Engine], config: DagsterCleanupDebugLogsConfig
+    context: OpExecutionContext,
+    postgresql_dagster_engine: ResourceParam[Engine],
+    config: DagsterCleanupDebugLogsConfig,
 ):
     # Run in transaction
     with postgresql_dagster_engine.begin() as conn:
@@ -78,7 +80,9 @@ def dagster_cleanup_debug_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} debug logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} debug logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupInfoLogsConfig(Config):
@@ -87,7 +91,9 @@ class DagsterCleanupInfoLogsConfig(Config):
 
 @op
 def dagster_cleanup_info_logs(
-    context: OpExecutionContext, postgresql_dagster_engine: ResourceParam[Engine], config: DagsterCleanupInfoLogsConfig
+    context: OpExecutionContext,
+    postgresql_dagster_engine: ResourceParam[Engine],
+    config: DagsterCleanupInfoLogsConfig,
 ):
     # Run in transaction
     with postgresql_dagster_engine.begin() as conn:
@@ -106,7 +112,9 @@ def dagster_cleanup_info_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} info logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} info logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupWarningLogsConfig(Config):
@@ -136,11 +144,15 @@ def dagster_cleanup_warning_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} warning logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} warning logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupUnimportantEventsConfig(Config):
-    delete_after_days: int = Field(30, description="Number of days to keep transitory/unimportant event logs")
+    delete_after_days: int = Field(
+        30, description="Number of days to keep transitory/unimportant event logs"
+    )
 
 
 @op
@@ -184,7 +196,9 @@ def dagster_cleanup_unimportant_events(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} unimportant events older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} unimportant events older than {config.delete_after_days} days!"
+    )
 
 
 @job(

@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 class AvailablePythonVersion(Enum):
     # Ordering is important here, because some steps will take the highest/lowest available version.
-    V3_10 = "3.10"
     V3_11 = "3.11"
     V3_12 = "3.12"
     V3_13 = "3.13"
@@ -16,8 +15,8 @@ class AvailablePythonVersion(Enum):
 
     @classmethod
     def get_all(cls) -> list["AvailablePythonVersion"]:
-        # omitting 3.11 and 3.13 for now to stay below buildkite limits
-        return [cls["V3_10"], cls["V3_12"], cls["V3_14"]]
+        # omitting 3.13 for now to stay below buildkite limits
+        return [cls["V3_11"], cls["V3_12"], cls["V3_14"]]
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":

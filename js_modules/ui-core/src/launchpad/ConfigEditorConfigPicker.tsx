@@ -9,6 +9,7 @@ import {
   Select,
   Spinner,
   Suggest,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import * as React from 'react';
@@ -23,6 +24,7 @@ import {PartitionSetDetails} from './usePartitionSetDetailsForLaunchpad';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RepositorySelector} from '../graphql/types';
@@ -201,6 +203,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   };
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
 
   // If we are loading the partitions and do NOT have any cached data to display,
   // show the component in a loading state with a spinner and fill it with the
@@ -271,13 +277,19 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
         }}
       />
       {isDynamicPartition ? (
-        <Button
-          onClick={() => {
-            setShowCreatePartition(true);
-          }}
+        <Tooltip
+          content={disabledReasons.canEditDynamicPartitions}
+          canShow={!canEditDynamicPartitions}
         >
-          Add new partition
-        </Button>
+          <Button
+            disabled={!canEditDynamicPartitions}
+            onClick={() => {
+              setShowCreatePartition(true);
+            }}
+          >
+            Add new partition
+          </Button>
+        </Tooltip>
       ) : null}
       {/* Wrapper div to avoid any key conflicts with the key on the Suggestion component */}
       <div>

@@ -1,3 +1,4 @@
+import re
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -13,6 +14,8 @@ from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
+    check_sql_identifier,
+    escape_backslash_sql_string_literal,
     static_where_clause,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
@@ -367,6 +370,20 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             yield mgr
 
 
+# Project ids may contain hyphens, and domain-scoped ones '.' and ':'; tables may contain hyphens.
+# Both are only written inside backticks. Datasets also appear unquoted, in CREATE SCHEMA.
+BIGQUERY_PROJECT_REGEX = re.compile(r"[\w.:-]+")
+BIGQUERY_DATASET_REGEX = re.compile(r"\w+")
+BIGQUERY_TABLE_REGEX = re.compile(r"[\w-]+")
+
+
+def check_table_slice_names(table_slice: TableSlice) -> None:
+    if table_slice.database is not None:
+        check_sql_identifier(table_slice.database, field="database", pattern=BIGQUERY_PROJECT_REGEX)
+    check_sql_identifier(table_slice.schema, field="schema", pattern=BIGQUERY_DATASET_REGEX)
+    check_sql_identifier(table_slice.table, field="table", pattern=BIGQUERY_TABLE_REGEX)
+
+
 class BigQueryClient(DbClient):
     def __init__(
         self,
@@ -381,6 +398,7 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        check_table_slice_names(table_slice)
         try:
             # If partitioned, keep existing behavior (delete matching partitions)
             if table_slice.partition_dimensions:
@@ -407,6 +425,7 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
+        check_table_slice_names(table_slice)
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions:
@@ -420,11 +439,13 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        check_table_slice_names(table_slice)
         connection.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
     @staticmethod
     @contextmanager
     def connect(context, table_slice):
+        check_table_slice_names(table_slice)
         config = context.resource_config or {}
 
         project_val = config.get("project")
@@ -442,6 +463,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
+    check_table_slice_names(table_slice)
     if table_slice.partition_dimensions:
         query = (
             f"DELETE FROM `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
@@ -456,7 +478,9 @@ def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimensi
         (
             _time_window_where_clause(partition_dimension)
             if isinstance(partition_dimension.partitions, TimeWindow)
-            else static_where_clause(partition_dimension)
+            else static_where_clause(
+                partition_dimension, escape_literal=escape_backslash_sql_string_literal
+            )
         )
         for partition_dimension in partition_dimensions
     )

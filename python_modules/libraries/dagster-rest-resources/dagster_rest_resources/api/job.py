@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing_extensions import assert_never
 
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 from dagster_rest_resources.schemas.job import (
     DgApiJob,
     DgApiJobList,
@@ -26,9 +26,7 @@ class DgApiJobApi:
                 for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     location_name = repo.location.name
                     repo_name = repo.name
-                    repository_origin = (
-                        f"{location_name}@{repo_name}" if location_name and repo_name else None
-                    )
+                    repository_origin = f"{location_name}@{repo_name}"
                     jobs.extend(
                         DgApiJob(
                             id=j.id,
@@ -57,9 +55,9 @@ class DgApiJobApi:
                     )
                 return DgApiJobList(items=jobs, total=len(jobs))
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Repository not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Repository not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching jobs: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching jobs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -68,11 +66,11 @@ class DgApiJobApi:
         matching_jobs = [job for job in all_jobs.items if job.name == job_name]
 
         if not matching_jobs:
-            raise DagsterPlusGraphqlError(f"Job not found: {job_name}")
+            raise DagsterPlusClientError(f"Job not found: {job_name}")
 
         if len(matching_jobs) > 1:
             repo_origins = [job.repository_origin or "unknown" for job in matching_jobs]
-            raise DagsterPlusGraphqlError(
+            raise DagsterPlusClientError(
                 f"Multiple jobs found with name '{job_name}' in repositories: {', '.join(repo_origins)}"
             )
 

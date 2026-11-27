@@ -251,7 +251,8 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
         **kwargs: additional keyword arguments for `universal_pathlib.UPath`.
     """
 
-    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
+    # TODO: maybe change this to .pickle? Leaving blank for compatibility.
+    extension: str | None = ""
 
     def __init__(self, base_dir=None, **kwargs):
         from upath import UPath

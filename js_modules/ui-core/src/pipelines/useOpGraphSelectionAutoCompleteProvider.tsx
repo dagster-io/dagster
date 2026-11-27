@@ -2,7 +2,10 @@ import {useMemo} from 'react';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {iconMap} from '../gantt/useGanttChartSelectionAutoCompleteProvider';
-import {createSelectionAutoComplete} from '../selection/SelectionAutoComplete';
+import {
+  createSelectionAutoComplete,
+  useSelectionAutoCompleteResults,
+} from '../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
   createProvider,
@@ -35,9 +38,10 @@ export const useOpGraphSelectionAutoCompleteProvider = (
   return useMemo(
     () => ({
       useAutoComplete: ({line, cursorIndex}) => {
-        const autoCompleteResults = useMemo(
-          () => selectionHint(line, cursorIndex),
-          [line, cursorIndex],
+        const autoCompleteResults = useSelectionAutoCompleteResults(
+          selectionHint,
+          line,
+          cursorIndex,
         );
         return {
           autoCompleteResults,

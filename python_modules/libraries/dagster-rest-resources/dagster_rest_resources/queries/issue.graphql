@@ -8,6 +8,10 @@ fragment IssueFields on Issue {
     ... on Run {
       __typename
       id
+      status
+      jobName
+      startTime
+      endTime
     }
     ... on Asset {
       __typename
@@ -20,10 +24,12 @@ fragment IssueFields on Issue {
     ... on DagsterCloudUser {
       __typename
       displayName
+      email
     }
     ... on ServiceUser {
       __typename
       displayName
+      description
     }
   }
 }
@@ -62,8 +68,18 @@ query ListIssues($limit: Int!, $cursor: String, $filters: IssuesFilter) {
   }
 }
 
-mutation CreateIssue($title: String!, $description: String!, $status: IssueStatus) {
-  createIssue(title: $title, description: $description, status: $status) {
+mutation CreateIssue(
+  $title: String!
+  $description: String!
+  $status: IssueStatus
+  $origin: IssueLinkedObjectInput
+) {
+  createIssue(
+    title: $title
+    description: $description
+    status: $status
+    origin: $origin
+  ) {
     __typename
     ... on CreateIssueSuccess {
       issue {

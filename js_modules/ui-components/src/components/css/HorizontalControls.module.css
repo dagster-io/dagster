@@ -1,5 +1,7 @@
 .container {
   pointer-events: none;
+  /* Space on each side of the dividers; tunable by the surrounding layout. */
+  gap: var(--horizontal-controls-gap, 8px);
 }
 
 .container.container .item {
@@ -9,7 +11,7 @@
 }
 
 .container .item:not(:first-child) {
-  padding-left: 8px;
+  padding-left: var(--horizontal-controls-gap, 8px);
 }
 
 .container .item:not(:first-child)::before {

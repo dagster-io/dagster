@@ -7,7 +7,8 @@ from dagster_rest_resources.__generated__.enums import InstigationTickStatus
 from dagster_rest_resources.__generated__.input_types import ScheduleSelector, SensorSelector
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.tick import DgApiTick, DgApiTickList
@@ -34,8 +35,13 @@ class DgApiTickApi:
         statuses: list[InstigationTickStatus] | None = None,
         before_timestamp: float | None = None,
         after_timestamp: float | None = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> DgApiTickList:
-        location_name, repo_name = self._find_repo_info(sensor_name, "sensor")
+        _check_paging(cursor, before_timestamp)
+        location_name, repo_name = self._repo_info(
+            sensor_name, "sensor", repository_location_name, repository_name
+        )
         result = self._client.get_sensor_ticks(
             sensor_selector=SensorSelector(
                 repositoryLocationName=location_name,
@@ -53,11 +59,11 @@ class DgApiTickApi:
             case "Sensor":
                 return self._build_tick_list(result.sensor_state.ticks)  # ty: ignore[unresolved-attribute]
             case "SensorNotFoundError":
-                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -70,8 +76,13 @@ class DgApiTickApi:
         statuses: list[InstigationTickStatus] | None = None,
         before_timestamp: float | None = None,
         after_timestamp: float | None = None,
+        repository_location_name: str | None = None,
+        repository_name: str | None = None,
     ) -> DgApiTickList:
-        location_name, repo_name = self._find_repo_info(schedule_name, "schedule")
+        _check_paging(cursor, before_timestamp)
+        location_name, repo_name = self._repo_info(
+            schedule_name, "schedule", repository_location_name, repository_name
+        )
         result = self._client.get_schedule_ticks(
             schedule_selector=ScheduleSelector(
                 repositoryLocationName=location_name,
@@ -89,11 +100,23 @@ class DgApiTickApi:
             case "Schedule":
                 return self._build_tick_list(result.schedule_state.ticks)  # ty: ignore[unresolved-attribute]
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
+
+    def _repo_info(
+        self,
+        name: str,
+        entity_type: Literal["sensor", "schedule"],
+        repository_location_name: str | None,
+        repository_name: str | None,
+    ) -> tuple[str, str]:
+        """Use the given repository, or look it up by name when none is given."""
+        if repository_location_name and repository_name:
+            return repository_location_name, repository_name
+        return self._find_repo_info(name, entity_type)
 
     def _find_repo_info(
         self, name: str, entity_type: Literal["sensor", "schedule"]
@@ -110,18 +133,18 @@ class DgApiTickApi:
                         if entity.name == name
                     )
                 if not matches:
-                    raise DagsterPlusGraphqlError(f"{entity_type.capitalize()} not found: {name}")
+                    raise DagsterPlusClientError(f"{entity_type.capitalize()} not found: {name}")
                 if len(matches) > 1:
                     origins = [f"{loc}@{rn}" for loc, rn in matches]
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusClientError(
                         f"Multiple {entity_type}s with name '{name}': {', '.join(origins)}"
                     )
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -136,3 +159,9 @@ class DgApiTickApi:
             total=len(items),
             cursor=items[-1].id if items else None,
         )
+
+
+def _check_paging(cursor: str | None, before_timestamp: float | None) -> None:
+    # The server ignores the cursor when before_timestamp is set.
+    if cursor is not None and before_timestamp is not None:
+        raise DagsterPlusClientError("Pass cursor or before_timestamp, not both.")

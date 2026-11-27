@@ -1,28 +1,16 @@
-import {
-  Box,
-  Icon,
-  TokenizingFieldValue,
-  tokenizedValuesFromStringArray,
-  tokensAsStringArray,
-} from '@dagster-io/ui-components';
+import {Box, Icon} from '@dagster-io/ui-components';
 import {UserDisplay} from '@shared/runs/UserDisplay';
 import memoize from 'lodash/memoize';
-import qs from 'qs';
 import {useCallback, useMemo} from 'react';
 
 import {DagsterTag} from './RunTag';
-import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
-import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
-import {
-  RunTagKeysQuery,
-  RunTagKeysQueryVariables,
-  RunTagValuesQuery,
-  RunTagValuesQueryVariables,
-} from './types/RunsFilterInput.types';
-import {COMMON_COLLATOR} from '../app/Util';
+import {RunFilterToken, RunFilterTokenType, splitTagFilterValue} from './RunsFilterUtils';
+import {useApolloClient} from '../apollo-client';
+import {RUN_TAG_VALUES_QUERY} from './RunTagQueries';
+import {RunTagValuesQuery, RunTagValuesQueryVariables} from './types/RunTagQueries.types';
+import {getSortedRunTagValues, useLazyRunTagKeys, useLazyRunTagValues} from './useRunTagQueries';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RunStatus} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -39,136 +27,6 @@ export interface RunsFilterInputProps {
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;
   enabledFilters?: RunFilterTokenType[];
-}
-
-export type RunFilterTokenType =
-  | 'id'
-  | 'status'
-  | 'pipeline'
-  | 'partition'
-  | 'job'
-  | 'snapshotId'
-  | 'tag'
-  | 'backfill'
-  | 'created_date_before'
-  | 'created_date_after';
-
-export type RunFilterToken = {
-  token?: RunFilterTokenType;
-  value: string;
-};
-
-const RUN_PROVIDERS_EMPTY = [
-  {
-    token: 'id',
-    values: () => [],
-  },
-  {
-    token: 'status',
-    values: () => [],
-  },
-  {
-    token: 'pipeline',
-    values: () => [],
-  },
-  {
-    token: 'job',
-    values: () => [],
-  },
-  {
-    token: 'tag',
-    values: () => [],
-  },
-  {
-    token: 'snapshotId',
-    values: () => [],
-  },
-  {
-    token: 'created_date_before',
-    values: () => [],
-  },
-  {
-    token: 'created_date_after',
-    values: () => [],
-  },
-];
-
-/**
- * This React hook provides run filtering state similar to React.useState(), but syncs
- * the value to the URL query string so that reloading the page / navigating "back"
- * maintains your view as expected.
- *
- * @param enabledFilters: This is useful if you want to ignore some filters that could
- * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
- */
-export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
-  return useQueryPersistedState<RunFilterToken[]>(
-    useMemo(
-      () => ({
-        encode: (tokens) => ({
-          q: tokensAsStringArray(tokens),
-          cursor: undefined,
-          [RUNS_FEED_CURSOR_KEY]: undefined,
-        }),
-        decode: ({q}) => {
-          const values = (Array.isArray(q) ? q : []).map(String);
-          return tokenizedValuesFromStringArray(values, RUN_PROVIDERS_EMPTY).filter(
-            (t) =>
-              !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ) as RunFilterToken[];
-        },
-      }),
-      [enabledFilters],
-    ),
-  );
-}
-
-export function runsPathWithFilters(
-  filterTokens: RunFilterToken[],
-  basePath: string = '/runs',
-  view?: RunsFeedView,
-) {
-  return `${basePath}?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens), view: view?.toLowerCase()},
-    {arrayFormat: 'brackets'},
-  )}`;
-}
-
-export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
-  if (!search[0]) {
-    return {};
-  }
-
-  const obj: RunsFilter = {};
-
-  for (const item of search) {
-    if (item.token === 'created_date_before') {
-      obj.createdBefore = parseInt(item.value);
-    } else if (item.token === 'created_date_after') {
-      obj.createdAfter = parseInt(item.value);
-    } else if (item.token === 'pipeline' || item.token === 'job') {
-      obj.pipelineName = item.value;
-    } else if (item.token === 'id') {
-      obj.runIds = obj.runIds || [];
-      obj.runIds.push(item.value);
-    } else if (item.token === 'status') {
-      obj.statuses = obj.statuses || [];
-      obj.statuses.push(item.value as RunStatus);
-    } else if (item.token === 'snapshotId') {
-      obj.snapshotId = item.value;
-    } else if (item.token === 'tag') {
-      const [key, value = ''] = item.value.split('=');
-      if (obj.tags) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        obj.tags.push({key: key!, value});
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        obj.tags = [{key: key!, value}];
-      }
-    }
-  }
-
-  return obj;
 }
 
 const StatusFilterValues = Object.keys(RunStatus).map((x) => ({
@@ -189,27 +47,18 @@ const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Parti
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
 
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<
-    RunTagKeysQuery,
-    RunTagKeysQueryVariables
-  >(RUN_TAG_KEYS_QUERY);
+  const {fetch: fetchTagKeys, keys: tagKeys} = useLazyRunTagKeys();
   const client = useApolloClient();
 
   const fetchTagValues = useCallback(
     async (tagKey: string) => {
       const {data} = await client.query<RunTagValuesQuery, RunTagValuesQueryVariables>({
         query: RUN_TAG_VALUES_QUERY,
-        variables: {tagKeys: tagKey ? [tagKey] : []},
+        variables: {tagKeys: [tagKey]},
       });
-      if (data?.runTagsOrError?.__typename === 'RunTags') {
-        return (
-          data?.runTagsOrError.tags?.[0]?.values.map((tagValue) =>
-            tagSuggestionValueObject(tagKey, tagValue),
-          ) || []
-        );
-      }
-
-      return [];
+      return getSortedRunTagValues(data).map((tagValue) =>
+        tagSuggestionValueObject(tagKey, tagValue),
+      );
     },
     [client],
   );
@@ -217,21 +66,18 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   const tagSuggestions: SuggestionFilterSuggestion<{
     value: string;
     key?: string;
-  }>[] = useMemo(() => {
-    if (tagKeyData?.runTagKeysOrError?.__typename === 'RunTagKeys') {
-      return (
-        tagKeyData?.runTagKeysOrError.keys
-          .filter((key) => !tagsToExclude.includes(key as DagsterTag))
-          .map((tagKey) => ({
-            final: false,
-            value: {
-              value: tagKey,
-            },
-          })) || []
-      );
-    }
-    return [];
-  }, [tagKeyData]);
+  }>[] = useMemo(
+    () =>
+      tagKeys
+        .filter((key) => !tagsToExclude.includes(key as DagsterTag))
+        .map((tagKey) => ({
+          final: false,
+          value: {
+            value: tagKey,
+          },
+        })),
+    [tagKeys],
+  );
 
   const [fetchSensorValues, sensorValues] = useTagDataFilterValues(DagsterTag.SensorName);
   const [fetchScheduleValues, scheduleValues] = useTagDataFilterValues(DagsterTag.ScheduleName);
@@ -270,9 +116,9 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         ...tagToFilterValue(DagsterTag.Automaterialize, 'true'),
         final: true,
       },
-      ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
-      ...[...scheduleValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
-      ...[...userValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
+      ...sensorValues,
+      ...scheduleValues,
+      ...userValues,
     ],
     [sensorValues, scheduleValues, userValues],
   );
@@ -642,9 +488,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
         })
         .map((token) => {
-          const [key, value] = token.value.split('=');
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return tagSuggestionValueObject(key!, value!).value;
+          const {key, value} = splitTagFilterValue(token.value);
+          return tagSuggestionValueObject(key, value).value;
         });
     }, [tokens]),
 
@@ -747,23 +592,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
   return {button: <span onClick={onFocus}>{button}</span>, activeFiltersJsx};
 };
 
-export function useTagDataFilterValues(tagKey?: DagsterTag) {
-  const [fetch, {data}] = useLazyQuery<RunTagValuesQuery, RunTagValuesQueryVariables>(
-    RUN_TAG_VALUES_QUERY,
-    {
-      variables: {tagKeys: tagKey ? [tagKey] : []},
-    },
-  );
+export function useTagDataFilterValues(tagKey: DagsterTag) {
+  const {fetch, values: tagValues} = useLazyRunTagValues(tagKey);
 
-  const values = useMemo(() => {
-    if (!tagKey || data?.runTagsOrError?.__typename !== 'RunTags') {
-      return [];
-    }
-    return data.runTagsOrError.tags
-      .map((x) => x.values)
-      .flat()
-      .map((x) => ({...tagToFilterValue(tagKey, x), final: true}));
-  }, [data, tagKey]);
+  const values = useMemo(
+    () => tagValues.map((value) => ({...tagToFilterValue(tagKey, value), final: true})),
+    [tagValues, tagKey],
+  );
 
   return [fetch, values] as [typeof fetch, typeof values];
 }
@@ -777,12 +612,15 @@ function tagToFilterValue(key: string, value: string) {
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)
-export const tagValueToFilterObject = memoize((value: string) => ({
-  key: value,
-  type: value.split('=')[0] as DagsterTag,
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  value: value.split('=')[1]!,
-}));
+export const tagValueToFilterObject = memoize((tagValue: string) => {
+  const {key, value} = splitTagFilterValue(tagValue);
+
+  return {
+    key: tagValue,
+    type: key as DagsterTag,
+    value,
+  };
+});
 
 export const tagSuggestionValueObject = memoize(
   (key: string, value: string) => ({
@@ -794,26 +632,3 @@ export const tagSuggestionValueObject = memoize(
   }),
   (key, value) => `${key}:${value}`,
 );
-
-export const RUN_TAG_KEYS_QUERY = gql`
-  query RunTagKeysQuery {
-    runTagKeysOrError {
-      ... on RunTagKeys {
-        keys
-      }
-    }
-  }
-`;
-
-export const RUN_TAG_VALUES_QUERY = gql`
-  query RunTagValuesQuery($tagKeys: [String!]!) {
-    runTagsOrError(tagKeys: $tagKeys) {
-      ... on RunTags {
-        tags {
-          key
-          values
-        }
-      }
-    }
-  }
-`;

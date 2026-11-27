@@ -1,8 +1,8 @@
-import {Box, Tab, Tabs, Tag} from '@dagster-io/ui-components';
+import {Box, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {findRepositoryInLocation} from '../../code-location/findRepositoryInLocation';
-import {TabLink} from '../../ui/TabLink';
+import {RouteTabs} from '../../ui/RouteTabs';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -24,29 +24,34 @@ export const CodeLocationTabs = (props: Props) => {
   );
 
   return (
-    <Tabs selectedTabId={selectedTab}>
-      <TabLink id="overview" title="Overview" to={workspacePathFromAddress(repoAddress, '/')} />
-      {repository ? (
-        <TabLink
-          id="definitions"
-          title="Definitions"
-          to={workspacePathFromAddress(repoAddress, '/definitions')}
-        />
-      ) : (
-        <Tab id="definitions" title="Definitions" disabled />
-      )}
-      <TabLink
-        id="components"
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-            <span>Components</span>
-            <Tag>
-              <span style={{fontWeight: 'normal'}}>Beta</span>
-            </Tag>
-          </Box>
-        }
-        to={workspacePathFromAddress(repoAddress, '/components')}
-      />
-    </Tabs>
+    <RouteTabs
+      selectedTabId={selectedTab}
+      tabs={[
+        {
+          id: 'overview',
+          title: 'Overview',
+          to: workspacePathFromAddress(repoAddress, '/'),
+          mobile: true,
+        },
+        {
+          id: 'definitions',
+          title: 'Definitions',
+          to: workspacePathFromAddress(repoAddress, '/definitions'),
+          disabled: !repository,
+        },
+        {
+          id: 'components',
+          title: (
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <span>Components</span>
+              <Tag>
+                <span style={{fontWeight: 'normal'}}>Beta</span>
+              </Tag>
+            </Box>
+          ),
+          to: workspacePathFromAddress(repoAddress, '/components'),
+        },
+      ]}
+    />
   );
 };

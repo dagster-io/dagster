@@ -2,7 +2,6 @@ from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
 import sqlalchemy.exc as db_exc
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
@@ -26,6 +25,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_result
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from sqlalchemy.dialects import mysql
 from sqlalchemy.engine import Connection
 
 from dagster_mysql.utils import (
@@ -149,33 +149,42 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return cast("str", row[0])
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
+        check.inst_param(event, "event", EventLogEntry)
+        check.int_param(event_id, "event_id")
+
+        with self.index_transaction() as conn:
+            self._store_asset_event(conn, event, event_id)
+
+    def _store_asset_event(self, conn: Connection, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
         # See SqlEventLogStorage.store_asset_event method for more details
+
+        if not (event.dagster_event and event.dagster_event.asset_key):
+            return
 
         values = self._get_asset_entry_values(
             event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
         )
-        with self.index_connection() as conn:
-            if values:
+        if values:
+            conn.execute(
+                mysql.insert(AssetKeyTable)
+                .values(
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    **values,
+                )
+                .on_duplicate_key_update(
+                    **values,
+                )
+            )
+        else:
+            try:
                 conn.execute(
-                    db_dialects.mysql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore  # (possible none)
-                        **values,
-                    )
-                    .on_duplicate_key_update(
-                        **values,
+                    mysql.insert(AssetKeyTable).values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
                     )
                 )
-            else:
-                try:
-                    conn.execute(
-                        db_dialects.mysql.insert(AssetKeyTable).values(
-                            asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore  # (possible none)
-                        )
-                    )
-                except db_exc.IntegrityError:
-                    pass
+            except db_exc.IntegrityError:
+                pass
 
     def _connect(self) -> ContextManager[Connection]:
         return create_mysql_connection(self._engine, __file__, "event log")

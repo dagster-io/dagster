@@ -17,6 +17,14 @@ else
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_release"
 fi
 
+# The earliest tested release predates Dagster's Python 3.11 support, so its user
+# code runs on 3.10, the way an old deployment still would.
+if [ "$USER_CODE_VERSION" = "${EARLIEST_TESTED_RELEASE:-}" ]; then
+    USER_CODE_PYTHON_VERSION="3.10"
+else
+    USER_CODE_PYTHON_VERSION="3.11"
+fi
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 # Support both standalone OSS repo and monorepo
@@ -75,4 +83,5 @@ docker compose build \
     --build-arg WEBSERVER_LIBRARY_VERSION="${WEBSERVER_LIBRARY_VERSION}" \
     --build-arg USER_CODE_VERSION="${USER_CODE_VERSION}" \
     --build-arg USER_CODE_LIBRARY_VERSION="${USER_CODE_LIBRARY_VERSION}" \
-    --build-arg USER_CODE_DEFINITIONS_FILE="${USER_CODE_DEFINITIONS_FILE}"
+    --build-arg USER_CODE_DEFINITIONS_FILE="${USER_CODE_DEFINITIONS_FILE}" \
+    --build-arg USER_CODE_PYTHON_VERSION="${USER_CODE_PYTHON_VERSION}"

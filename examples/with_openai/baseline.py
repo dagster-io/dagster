@@ -6,10 +6,10 @@ import tempfile
 import requests
 from dagster import AssetSelection, Definitions, EnvVar, asset, define_asset_job
 from dagster_openai import OpenAIResource
-from langchain.docstore.document import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
 
 
 @asset

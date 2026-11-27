@@ -195,9 +195,7 @@ from dlt_sources.github import github_reactions
 
 
 @dlt_assets(
-    dlt_source=github_reactions(
-        "dagster-io", "dagster", max_items=250
-    ),
+    dlt_source=github_reactions("dagster-io", "dagster", max_items=250),
     dlt_pipeline=pipeline(
         pipeline_name="github_issues",
         dataset_name="github",

@@ -1,5 +1,6 @@
 ---
-title: Resources
+title: Use resources with assets
+sidebar_label: Resources
 description: Using resources with assets
 sidebar_position: 30
 ---

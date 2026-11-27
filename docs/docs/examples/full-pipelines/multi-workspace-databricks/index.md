@@ -26,7 +26,7 @@ The pipeline:
 
 To follow the steps in this guide, you'll need:
 
-- Python 3.10+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.11+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 - Familiarity with Python and asset-based pipelines.
 - Active Databricks workspaces with job IDs and access tokens.
 - A Kafka broker reachable from your Dagster deployment.

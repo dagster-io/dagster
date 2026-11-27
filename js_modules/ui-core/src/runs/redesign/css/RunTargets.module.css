@@ -1,0 +1,15 @@
+.tag {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 320px;
+}
+
+.previewTitle {
+  font-weight: 600;
+}

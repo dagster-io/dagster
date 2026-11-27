@@ -1,3 +1,4 @@
+import importlib.util
 from pathlib import Path
 from typing import Annotated
 
@@ -8,7 +9,7 @@ from dagster_cloud_cli import gql, ui
 from dagster_cloud_cli.config_utils import dagster_cloud_options
 from dagster_cloud_cli.core.artifacts import download_artifact, upload_artifact
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
-from dagster_cloud_cli.utils import create_stub_app
+from dagster_cloud_cli.utils import create_stub_app, create_stub_command
 
 try:
     from dagster_cloud_cli.commands.deployment.alert_policies.commands import (
@@ -22,6 +23,14 @@ app = Typer(help="Customize your Dagster Cloud deployment.")
 settings_app = Typer(help="Customize your deployment settings.")
 app.add_typer(settings_app, name="settings", no_args_is_help=True)
 app.add_typer(alert_policies_app, name="alert-policies", no_args_is_help=True)
+
+# Lives in the agent package, which this CLI doesn't depend on.
+if importlib.util.find_spec("dagster_cloud") is not None:
+    from dagster_cloud.copy_materializations import copy_materializations_command  # ty: ignore[unresolved-import]
+
+    app.command(name="copy-materializations")(copy_materializations_command)
+else:
+    app.command(name="copy-materializations", hidden=True)(create_stub_command("dagster-cloud"))
 
 
 @settings_app.command(name="set-from-file")

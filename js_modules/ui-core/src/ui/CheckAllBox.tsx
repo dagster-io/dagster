@@ -1,12 +1,14 @@
 import {Checkbox, Tooltip} from '@dagster-io/ui-components';
 import {ReactNode} from 'react';
 
-interface Props {
+interface CheckAllBoxProps {
   checkedCount: number;
   totalCount: number;
   onToggleAll: (checked: boolean) => void;
   size?: 'small' | 'large';
   label?: ReactNode;
+  className?: string;
+  'aria-label'?: string;
 }
 
 export const CheckAllBox = ({
@@ -15,7 +17,9 @@ export const CheckAllBox = ({
   onToggleAll,
   size = 'large',
   label,
-}: Props) => {
+  className,
+  'aria-label': ariaLabel,
+}: CheckAllBoxProps) => {
   return (
     <Tooltip
       content={`${checkedCount} of ${totalCount} selected`}
@@ -32,6 +36,8 @@ export const CheckAllBox = ({
           }
         }}
         label={label}
+        className={className}
+        aria-label={ariaLabel}
       />
     </Tooltip>
   );

@@ -3,31 +3,64 @@
     "__typename": "AssetConnection",
     "nodes": [
       {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
+        "definition": {
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
+          "dependencyKeys": [],
+          "description": "Sends Dagster asset health report to #bot-purina Slack channel",
+          "freshnessPolicy": null,
+          "groupName": "monitoring",
+          "jobNames": [],
+          "kinds": [
+            "slack"
+          ],
+          "metadataEntries": [],
+          "owners": [],
+          "partitionDefinition": null,
+          "tags": []
+        },
         "id": "dagster_open_platform.__repository__.[\"asset_health_report_slack\"]",
         "key": {
           "path": [
             "asset_health_report_slack"
           ]
         },
-        "definition": {
-          "description": "Sends Dagster asset health report to #bot-purina Slack channel",
-          "groupName": "monitoring",
-          "kinds": [
-            "slack"
-          ],
-          "dependencyKeys": [],
-          "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
-          "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
       },
       {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
+        "definition": {
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
+          "dependencyKeys": [],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
+          "metadataEntries": [],
+          "owners": [],
+          "partitionDefinition": null,
+          "tags": []
+        },
         "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"user_roles\"]",
         "key": {
           "path": [
@@ -36,35 +69,22 @@
             "user_roles"
           ]
         },
-        "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
-          "dependencyKeys": [],
-          "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
-          "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
       },
       {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
-        "key": {
-          "path": [
-            "aws",
-            "cloud-prod",
-            "workspace_staging_asset_checks"
-          ]
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
         },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -74,30 +94,40 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
-      },
-      {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
         "key": {
           "path": [
             "aws",
             "cloud-prod",
-            "workspace_staging_assets"
+            "workspace_staging_asset_checks"
           ]
         },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -107,30 +137,40 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
-      },
-      {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
         "key": {
           "path": [
             "aws",
             "cloud-prod",
-            "workspace_staging_external_repo_metadata"
+            "workspace_staging_assets"
           ]
         },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -140,30 +180,40 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
-      },
-      {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
         "key": {
           "path": [
             "aws",
             "cloud-prod",
-            "workspace_staging_jobs"
+            "workspace_staging_external_repo_metadata"
           ]
         },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -173,30 +223,40 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
-      },
-      {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
         "key": {
           "path": [
             "aws",
             "cloud-prod",
-            "workspace_staging_metadata"
+            "workspace_staging_jobs"
           ]
         },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -206,30 +266,40 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
-      },
-      {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
         "key": {
           "path": [
             "aws",
             "cloud-prod",
-            "workspace_staging_partitions"
+            "workspace_staging_metadata"
           ]
         },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
+      },
+      {
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
+        },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -239,16 +309,26 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_partitions"
+          ]
+        },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
       }
     ]
   }

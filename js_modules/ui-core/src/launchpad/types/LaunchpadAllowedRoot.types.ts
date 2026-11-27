@@ -1,12 +1,22 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type LaunchpadRootQueryVariables = Types.Exact<{
-  pipelineName: Types.Scalars['String']['input'];
-  repositoryName: Types.Scalars['String']['input'];
-  repositoryLocationName: Types.Scalars['String']['input'];
-  assetSelection?: Types.InputMaybe<Array<Types.AssetKeyInput> | Types.AssetKeyInput>;
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type LaunchpadRootQueryVariables = Exact<{
+  pipelineName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+  assetSelection?: Array<Types.AssetKeyInput> | Types.AssetKeyInput | null | undefined;
 }>;
 
 export type LaunchpadRootQuery = {

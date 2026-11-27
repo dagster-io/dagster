@@ -7,10 +7,7 @@ from project_mini.defs.dynamic_fanout.dynamic_fanout import (  # ty: ignore[unre
     final_report,
     process_single_unit,
 )
-from project_mini.defs.partitions_vs_config.with_config import (  # ty: ignore[unresolved-import]
-    CustomerConfig,
-    customer_orders,
-)
+from project_mini.defs.partitions_vs_config.with_config import CustomerConfig, customer_orders  # ty: ignore[unresolved-import]
 
 # --- dynamic_fanout helper functions ---
 

@@ -13,12 +13,10 @@ import {
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
 export const useAssetDefinition = (assetKey: AssetKey) => {
-  const {assets, query} = useAllAssets();
+  const {assetsByAssetKey, query} = useAllAssets();
   const cachedDefinition = useMemo(
-    () =>
-      assets?.find((asset) => tokenForAssetKey(asset.key) === tokenForAssetKey(assetKey))
-        ?.definition,
-    [assetKey, assets],
+    () => assetsByAssetKey.get(tokenForAssetKey(assetKey))?.definition,
+    [assetKey, assetsByAssetKey],
   );
   const {localCacheIdPrefix} = useContext(AppContext);
   const result = useIndexedDBCachedQuery<

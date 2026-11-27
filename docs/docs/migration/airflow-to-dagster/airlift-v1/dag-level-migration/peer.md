@@ -1,7 +1,8 @@
 ---
-description: Peer Airflow with Dagster to create asset representations of Airflow DAGs using dagster-airlift.
+description: Peer Airflow with a Dagster code location using dagster-airlift, the first step of migrating Airflow DAGs to Dagster at the DAG level.
 sidebar_position: 200
-title: Peer the Airflow instance with a Dagster code location
+title: Peer the Airflow instance with a Dagster code location (DAG-level migration)
+sidebar_label: Peer the Airflow instance with a Dagster code location
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

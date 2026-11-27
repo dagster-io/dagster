@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 60
 ---
 
-You may have noticed that while configuring our dbt assets, we didn’t define anything related to tests. And yet, our dbt project includes them—specifically for the `stg_zones` model:
+You may have noticed that while configuring our dbt assets, we didn't define anything related to tests. And yet, our dbt project includes them—specifically for the `stg_zones` model:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/analytics/models/staging/staging.yml"

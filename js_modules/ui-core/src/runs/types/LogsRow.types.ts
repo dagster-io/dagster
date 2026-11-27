@@ -1,6 +1,73 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type DagsterEventType =
+  | 'ALERT_FAILURE'
+  | 'ALERT_START'
+  | 'ALERT_SUCCESS'
+  | 'ASSET_CHECK_EVALUATION'
+  | 'ASSET_CHECK_EVALUATION_PLANNED'
+  | 'ASSET_FAILED_TO_MATERIALIZE'
+  | 'ASSET_HEALTH_CHANGED'
+  | 'ASSET_MATERIALIZATION'
+  | 'ASSET_MATERIALIZATION_PLANNED'
+  | 'ASSET_OBSERVATION'
+  | 'ASSET_STORE_OPERATION'
+  | 'ASSET_WIPED'
+  | 'CODE_LOCATION_UPDATED'
+  | 'ENGINE_EVENT'
+  | 'FRESHNESS_STATE_CHANGE'
+  | 'FRESHNESS_STATE_EVALUATION'
+  | 'HANDLED_OUTPUT'
+  | 'HOOK_COMPLETED'
+  | 'HOOK_ERRORED'
+  | 'HOOK_SKIPPED'
+  | 'LOADED_INPUT'
+  | 'LOGS_CAPTURED'
+  | 'OBJECT_STORE_OPERATION'
+  | 'PIPELINE_CANCELED'
+  | 'PIPELINE_CANCELING'
+  | 'PIPELINE_DEQUEUED'
+  | 'PIPELINE_ENQUEUED'
+  | 'PIPELINE_FAILURE'
+  | 'PIPELINE_START'
+  | 'PIPELINE_STARTING'
+  | 'PIPELINE_SUCCESS'
+  | 'RESOURCE_INIT_FAILURE'
+  | 'RESOURCE_INIT_STARTED'
+  | 'RESOURCE_INIT_SUCCESS'
+  | 'RUN_CANCELED'
+  | 'RUN_CANCELING'
+  | 'RUN_DEQUEUED'
+  | 'RUN_ENQUEUED'
+  | 'RUN_FAILURE'
+  | 'RUN_RESUMED'
+  | 'RUN_START'
+  | 'RUN_STARTING'
+  | 'RUN_SUCCESS'
+  | 'RUN_SUSPENDED'
+  | 'STEP_EXPECTATION_RESULT'
+  | 'STEP_FAILURE'
+  | 'STEP_INPUT'
+  | 'STEP_OUTPUT'
+  | 'STEP_RESTARTED'
+  | 'STEP_SKIPPED'
+  | 'STEP_START'
+  | 'STEP_SUCCESS'
+  | 'STEP_UP_FOR_RETRY'
+  | 'STEP_WORKER_STARTED'
+  | 'STEP_WORKER_STARTING';
+
+export type ErrorSource = 'FRAMEWORK_ERROR' | 'INTERRUPT' | 'UNEXPECTED_ERROR' | 'USER_CODE_ERROR';
+
+export type LogLevel = 'CRITICAL' | 'DEBUG' | 'ERROR' | 'INFO' | 'WARNING';
+
+export type ObjectStoreOperationType = 'CP_OBJECT' | 'GET_OBJECT' | 'RM_OBJECT' | 'SET_OBJECT';
 
 export type LogsRowStructuredFragment_AlertFailureEvent = {
   __typename: 'AlertFailureEvent';
@@ -2868,6 +2935,15 @@ export type LogsRowStructuredFragment_RunFailureEvent = {
   } | null;
 };
 
+export type LogsRowStructuredFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowStructuredFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -2888,6 +2964,15 @@ export type LogsRowStructuredFragment_RunStartingEvent = {
 
 export type LogsRowStructuredFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowStructuredFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
   timestamp: string;
@@ -3421,9 +3506,11 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_RunDequeuedEvent
   | LogsRowStructuredFragment_RunEnqueuedEvent
   | LogsRowStructuredFragment_RunFailureEvent
+  | LogsRowStructuredFragment_RunResumedEvent
   | LogsRowStructuredFragment_RunStartEvent
   | LogsRowStructuredFragment_RunStartingEvent
   | LogsRowStructuredFragment_RunSuccessEvent
+  | LogsRowStructuredFragment_RunSuspendedEvent
   | LogsRowStructuredFragment_StepExpectationResultEvent
   | LogsRowStructuredFragment_StepWorkerStartedEvent
   | LogsRowStructuredFragment_StepWorkerStartingEvent;
@@ -3708,6 +3795,14 @@ export type LogsRowUnstructuredFragment_RunFailureEvent = {
   stepKey: string | null;
 };
 
+export type LogsRowUnstructuredFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowUnstructuredFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -3726,6 +3821,14 @@ export type LogsRowUnstructuredFragment_RunStartingEvent = {
 
 export type LogsRowUnstructuredFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowUnstructuredFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   timestamp: string;
   level: Types.LogLevel;
@@ -3792,9 +3895,11 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_RunDequeuedEvent
   | LogsRowUnstructuredFragment_RunEnqueuedEvent
   | LogsRowUnstructuredFragment_RunFailureEvent
+  | LogsRowUnstructuredFragment_RunResumedEvent
   | LogsRowUnstructuredFragment_RunStartEvent
   | LogsRowUnstructuredFragment_RunStartingEvent
   | LogsRowUnstructuredFragment_RunSuccessEvent
+  | LogsRowUnstructuredFragment_RunSuspendedEvent
   | LogsRowUnstructuredFragment_StepExpectationResultEvent
   | LogsRowUnstructuredFragment_StepWorkerStartedEvent
   | LogsRowUnstructuredFragment_StepWorkerStartingEvent;

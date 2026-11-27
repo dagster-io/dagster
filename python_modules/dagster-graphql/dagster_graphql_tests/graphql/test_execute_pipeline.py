@@ -410,9 +410,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
             assert len(events_result.data["logsForRun"]["events"]) == 5
 
-            # exceeding default limit results in an error
             assert events_result.data["logsForRun"]["cursor"]
 
+            # exceeding the default limit clamps down to it rather than erroring
             events_result = execute_dagster_graphql(
                 graphql_context,
                 RUN_EVENTS_QUERY,
@@ -424,10 +424,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["logsForRun"]["__typename"] == "PythonError"
-            assert (
-                "Limit of 10 is too large. Max is 5" in events_result.data["logsForRun"]["message"]
-            )
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            assert len(events_result.data["logsForRun"]["events"]) == 5
 
             # passing in a lower value than max chunk size is respected
             events_result = execute_dagster_graphql(

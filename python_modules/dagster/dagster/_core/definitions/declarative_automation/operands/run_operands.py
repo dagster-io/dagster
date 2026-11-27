@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, AssetOrCheckKey
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
@@ -16,13 +16,13 @@ from dagster._core.loader import LoadingContext
 from dagster._record import record
 
 if TYPE_CHECKING:
-    from dagster._core.event_api import EventLogRecord
     from dagster._core.storage.dagster_run import RunRecord
+    from dagster._core.storage.event_log.base import AssetEventSummaryRecord
 
 
 @whitelist_for_serdes
 @record
-class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
+class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "executed_with_root_target"
@@ -79,7 +79,7 @@ def _get_run_tag_filter_name(
 
 @whitelist_for_serdes
 @record
-class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
+class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     tag_keys: Set[str] | None = None
     tag_values: Mapping[str, str] | None = None
 
@@ -116,7 +116,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
 
     async def _get_run_records_from_materializations(
         self,
-        materializations: Sequence["EventLogRecord"],
+        materializations: Sequence["AssetEventSummaryRecord"],
         context: LoadingContext,
     ) -> Sequence["RunRecord"]:
         from dagster._core.storage.dagster_run import RunRecord
@@ -159,7 +159,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
 
         partitions_to_run_ids = defaultdict(set)
         for materialization in new_materializations:
-            partitions_to_run_ids[materialization.partition_key].add(materialization.run_id)
+            partitions_to_run_ids[materialization.partition].add(materialization.run_id)
 
         matching_partition_keys = set()
 

@@ -1,8 +1,30 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetAutomationQueryVariables = Types.Exact<{
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
+
+export type AssetAutomationQueryVariables = Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
@@ -37,6 +59,7 @@ export type AssetAutomationQuery = {
           __typename: 'Sensor';
           id: string;
           name: string;
+          hasCursorUpdatePermissions: boolean;
           sensorType: Types.SensorType;
           sensorState: {
             __typename: 'InstigationState';
@@ -89,6 +112,7 @@ export type AssetAutomationFragment = {
         __typename: 'Sensor';
         id: string;
         name: string;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
@@ -131,6 +155,7 @@ export type AssetInstigatorFragment_Sensor = {
   __typename: 'Sensor';
   id: string;
   name: string;
+  hasCursorUpdatePermissions: boolean;
   sensorType: Types.SensorType;
   sensorState: {
     __typename: 'InstigationState';
@@ -150,4 +175,4 @@ export type AssetInstigatorFragment =
   | AssetInstigatorFragment_Schedule
   | AssetInstigatorFragment_Sensor;
 
-export const AssetAutomationQueryVersion = 'ba290842b1e65f256ea3b1e95285e050da5a8ee50ecf34b6228299e7dd605425';
+export const AssetAutomationQueryVersion = '619e116f0e9a85be3569b48658509b3808d117b8aa7ec7d6602ee0fa6b15aa3d';

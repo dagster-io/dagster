@@ -385,7 +385,7 @@ def build_schedule_from_dbt_selection(
     dbt_exclude: str | None = DBT_DEFAULT_EXCLUDE,
     dbt_selector: str = DBT_DEFAULT_SELECTOR,
     schedule_name: str | None = None,
-    tags: Mapping[str, str] | None = None,
+    tags: Mapping[str, object] | None = None,
     config: RunConfig | None = None,
     execution_timezone: str | None = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
@@ -402,8 +402,8 @@ def build_schedule_from_dbt_selection(
         dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
         dbt_selector (str): A dbt selector to select resources to materialize.
         schedule_name (Optional[str]): The name of the dbt schedule to create.
-        tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
-            to the scheduled runs.
+        tags (Optional[Mapping[str, object]]): A set of key-value tags to attach to the scheduled
+            runs. Values that are not already strings will be serialized as JSON.
         config (Optional[RunConfig]): The config that parameterizes the execution of this schedule.
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the

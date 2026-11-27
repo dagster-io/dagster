@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import faker from 'faker';
 
-import {DeletionDialog, Props as DeletionDialogProps} from '../DeletionDialog';
+import {DeletionDialog, DeletionDialogProps} from '../DeletionDialog';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -15,11 +15,7 @@ const Template = (props: DeletionDialogProps) => (
   </MockedProvider>
 );
 
-const ids = [
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-];
+const ids = [faker.datatype.uuid(), faker.datatype.uuid(), faker.datatype.uuid()];
 
 export const Success = {
   render: (args: DeletionDialogProps) => <Template {...args} />,

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import dagster as dg
 
@@ -18,9 +18,7 @@ def db_table_update_sensor(
             asset_key=table["table_name"],
             metadata={
                 "last_altered": dg.MetadataValue.text(
-                    datetime.fromtimestamp(
-                        table["last_altered"], tz=timezone.utc
-                    ).isoformat()
+                    datetime.fromtimestamp(table["last_altered"], tz=UTC).isoformat()
                 ),
             },
         )

@@ -1,6 +1,7 @@
 import {JobFallthroughRoot} from '@shared/pipelines/JobFallthroughRoot';
 import {Redirect, Switch} from 'react-router-dom';
 
+import {JobAutomationRoot} from './JobAutomationRoot';
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineRunsFeedRoot} from './PipelineRunsFeedRoot';
 import {Route} from '../app/Route';
@@ -89,6 +90,14 @@ export const PipelineRoot = (props: Props) => {
             <Redirect to={`/locations/${props.match.url.replace(/\/overview$/i, '')}`} />
           )}
         />
+        <Route
+          path={[
+            '/locations/:repoPath/pipelines/:pipelinePath/automation',
+            '/locations/:repoPath/jobs/:pipelinePath/automation',
+          ]}
+        >
+          <JobAutomationRoot repoAddress={repoAddress} />
+        </Route>
         <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
           <JobFallthroughRoot repoAddress={repoAddress} />
         </Route>

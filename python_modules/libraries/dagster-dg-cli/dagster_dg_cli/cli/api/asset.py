@@ -394,7 +394,7 @@ def get_partition_status_command(
     api = DgApiAssetApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
-        stats = api.get_partition_status(asset_key)
+        stats = api.get_partition_status(asset_key.split("/"))
         output = format_partition_status(stats, as_json=output_json)
         click.echo(output)
 

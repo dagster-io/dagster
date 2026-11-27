@@ -21,3 +21,8 @@ class DgApiSchedule(BaseModel):
 
 class DgApiScheduleList(DgApiList["DgApiSchedule"]):
     pass
+
+
+class DgApiScheduleStateResult(BaseModel):
+    name: str
+    status: DgApiInstigationStatus

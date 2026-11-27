@@ -270,6 +270,12 @@ export class LiveDataThreadManager<T> {
   public _unmarkKeysRequested(keys: string[]) {
     keys.forEach((key) => {
       delete this.lastFetchedOrRequested[key];
+
+      // `determineKeysToFetch` only picks up keys that are in `unfetchedKeys` or that have a
+      // `fetched` timestamp. A key that was fetched once and then fails a refresh has neither,
+      // so without this it is never fetched again and the stale cached value is shown until the
+      // page is reloaded.
+      this.unfetchedKeys.add(key);
     });
   }
 

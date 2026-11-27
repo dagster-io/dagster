@@ -1,15 +1,6 @@
 from collections.abc import Iterator, Mapping
 from functools import update_wrapper
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    TypeAlias,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, TypeAlias, Union, cast, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import beta_param, public

@@ -4,16 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Generic,
-    NamedTuple,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, NamedTuple, TypeVar, cast  # noqa: UP035
 
 from dagster_shared.error import DagsterError
 

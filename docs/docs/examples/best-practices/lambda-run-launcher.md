@@ -21,7 +21,7 @@ In this example, we'll explore how to run Dagster jobs on [AWS Lambda functions]
 
 Imagine you have jobs that invoke external APIs, trigger webhooks, or perform quick data validations. These jobs spend more time waiting for containers to start than actually executing. You want sub-second startup times while maintaining full Dagster orchestration.
 
-The key question is: How can you route certain jobs to Lambda for instant execution while keeping heavier workloads on traditional compute?
+How can you route certain jobs to Lambda for instant execution while keeping heavier workloads on traditional compute?
 
 | Solution                                                                    | Best for                                                                     |
 | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -95,7 +95,7 @@ The payload includes:
 
 - `dagster_run`: Run metadata (run_id, job_name, deployment_name, location_name)
 - `run_config`: Job configuration including ops config
-- `environment_variables`: Environment context from Dagster Cloud
+- `environment_variables`: Environment context from Dagster+
 - `dagster_cloud`: Organization and deployment IDs
 - `metadata`: Launcher metadata (launched_at, launcher_version)
 

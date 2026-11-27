@@ -14,6 +14,7 @@ from dagster.components.resolved.form_config import (
     APP_MANAGED,
     UNSET_DEFAULT_SENTINEL,
     ComponentFormConfig,
+    FormWidget,
 )
 from dagster.components.resolved.form_schema import split_form_schema
 from dagster.components.resolved.model import Resolver
@@ -53,7 +54,9 @@ def test_strips_unset_default_sentinel():
 
 
 def test_filters_jinja_string_escape_hatch():
-    # A field made injectable becomes anyOf: [<real>, {type: "string"}].
+    # A field made injectable becomes anyOf: [<real>, {type: "string"}]. The
+    # escape hatch is filtered and the single surviving variant collapses into
+    # the parent so the form renders a plain field, not a variant picker.
     raw = {
         "type": "object",
         "properties": {
@@ -61,7 +64,69 @@ def test_filters_jinja_string_escape_hatch():
         },
     }
     data, _ = split_form_schema(raw)
-    assert data["properties"]["count"]["anyOf"] == [{"type": "integer"}]
+    assert data["properties"]["count"] == {"type": "integer"}
+
+
+def test_drops_null_variant_and_collapses_optional():
+    # ``X | None`` optionals: the null variant encodes optionality already
+    # expressed by the field being non-required, so it's dropped and the real
+    # variant collapses into the parent. A null default is dropped with it.
+    raw = {
+        "type": "object",
+        "properties": {
+            "cron": {
+                "anyOf": [{"type": "string"}, {"type": "null"}],
+                "default": None,
+                "title": "Cron",
+                "description": "keep me",
+            },
+        },
+    }
+    data, _ = split_form_schema(raw)
+    cron = data["properties"]["cron"]
+    assert cron == {"type": "string", "title": "Cron", "description": "keep me"}
+
+
+def test_multi_variant_union_survives_null_drop():
+    raw = {
+        "anyOf": [
+            {"type": "object", "properties": {"a": {"type": "string"}}},
+            {"type": "object", "properties": {"b": {"type": "string"}}},
+            {"type": "null"},
+        ],
+    }
+    data, _ = split_form_schema(raw)
+    assert len(data["anyOf"]) == 2
+    assert all(v["type"] == "object" for v in data["anyOf"])
+
+
+def test_collapse_lifts_ui_hints_from_variant():
+    # A ``multiline`` hint on an Optional[str] lands inside the string variant;
+    # the collapse must lift it to the field's ui node (previously this crashed
+    # the form renderer with "No widget 'textarea'").
+    raw = {
+        "type": "object",
+        "properties": {
+            "notes": {
+                "anyOf": [{"type": "string", "ui:widget": "textarea"}, {"type": "null"}],
+                "default": None,
+            },
+        },
+    }
+    data, ui = split_form_schema(raw)
+    assert data["properties"]["notes"] == {"type": "string"}
+    assert ui["notes"] == {"ui:widget": "textarea"}
+
+
+def test_lifts_ui_order():
+    raw = {
+        "type": "object",
+        "ui:order": ["b", "a"],
+        "properties": {"a": {"type": "string"}, "b": {"type": "string"}},
+    }
+    data, ui = split_form_schema(raw)
+    assert "ui:order" not in data
+    assert ui["ui:order"] == ["b", "a"]
 
 
 def test_keeps_genuine_string_only_anyof():
@@ -124,6 +189,48 @@ def test_recurses_items_and_additional_properties():
     _, ui = split_form_schema(raw)
     assert ui["tags"]["items"] == {"ui:widget": "textarea"}
     assert ui["extra"]["additionalProperties"] == {"ui:placeholder": "value"}
+
+
+def test_field_widget_hint_emitted_as_ui_widget():
+    # Every value in the FormWidget vocabulary is emitted verbatim as ui:widget.
+    for widget in FormWidget:
+        extra = ComponentFormConfig(widget=widget).to_field_json_schema_extra()
+        assert extra["ui:widget"] == widget.value
+
+
+def test_field_widget_precedence():
+    # ``hidden`` wins over an explicit widget...
+    assert (
+        ComponentFormConfig(hidden=True, widget=FormWidget.CRON).to_field_json_schema_extra()[
+            "ui:widget"
+        ]
+        == "hidden"
+    )
+    # ...and an explicit widget wins over the ``multiline`` sugar.
+    assert (
+        ComponentFormConfig(widget=FormWidget.SECRET, multiline=True).to_field_json_schema_extra()[
+            "ui:widget"
+        ]
+        == "secret"
+    )
+
+
+def test_end_to_end_widget_hint_lifted_into_ui_schema():
+    """A ``widget`` hint round-trips through model_json_schema() into the uiSchema."""
+
+    @dataclass
+    class MyComponent(dg.Resolvable):
+        schedule: Annotated[
+            str,
+            Resolver.default(form_config=ComponentFormConfig(widget=FormWidget.CRON)),
+        ]
+
+    raw = MyComponent.model().model_json_schema()
+    data, ui = split_form_schema(raw)
+
+    assert ui["schedule"]["ui:widget"] == "cron"
+    # The hint is stripped from the data schema.
+    assert "ui:" not in repr(data)
 
 
 def test_end_to_end_real_model_schema():

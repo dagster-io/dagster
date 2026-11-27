@@ -2,13 +2,6 @@
 
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {[SubKey in K]?: Maybe<T[SubKey]>};
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {[SubKey in K]: Maybe<T[SubKey]>};
-export type MakeEmpty<T extends {[key: string]: unknown}, K extends keyof T> = {[_ in K]?: never};
-export type Incremental<T> =
-  | T
-  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: {input: string; output: string};
@@ -88,6 +81,10 @@ export enum AssetHealthStatus {
   UNKNOWN = 'UNKNOWN',
   WARNING = 'WARNING',
 }
+
+export type AssetJobKeyInput = {
+  jobName: Scalars['String']['input'];
+};
 
 export type AssetKeyInput = {
   path: Array<Scalars['String']['input']>;
@@ -195,9 +192,11 @@ export enum DagsterEventType {
   RUN_DEQUEUED = 'RUN_DEQUEUED',
   RUN_ENQUEUED = 'RUN_ENQUEUED',
   RUN_FAILURE = 'RUN_FAILURE',
+  RUN_RESUMED = 'RUN_RESUMED',
   RUN_START = 'RUN_START',
   RUN_STARTING = 'RUN_STARTING',
   RUN_SUCCESS = 'RUN_SUCCESS',
+  RUN_SUSPENDED = 'RUN_SUSPENDED',
   STEP_EXPECTATION_RESULT = 'STEP_EXPECTATION_RESULT',
   STEP_FAILURE = 'STEP_FAILURE',
   STEP_INPUT = 'STEP_INPUT',
@@ -457,6 +456,7 @@ export enum RunStatus {
   STARTED = 'STARTED',
   STARTING = 'STARTING',
   SUCCESS = 'SUCCESS',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum RunsFeedView {

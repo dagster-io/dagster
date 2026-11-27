@@ -30,6 +30,13 @@ class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
         name = "AssetCheckHandleInput"
 
 
+class GrapheneAssetJobKeyInput(graphene.InputObjectType):
+    jobName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetJobKeyInput"
+
+
 class GrapheneExecutionTag(graphene.InputObjectType):
     key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)

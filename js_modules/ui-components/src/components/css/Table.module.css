@@ -27,7 +27,7 @@
 }
 
 .table tr th:first-child {
-  padding-left: 24px;
+  padding-left: var(--page-gutter, 24px);
 }
 
 .table.compact tr th:first-child {
@@ -47,7 +47,7 @@
 }
 
 .table tr td:first-child {
-  padding-left: 24px;
+  padding-left: var(--page-gutter, 24px);
 }
 
 .table.compact tr td:first-child {

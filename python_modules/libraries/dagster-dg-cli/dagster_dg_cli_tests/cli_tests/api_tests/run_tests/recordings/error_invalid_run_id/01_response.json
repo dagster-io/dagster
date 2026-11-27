@@ -1,6 +1,7 @@
 {
   "runOrError": {
     "__typename": "RunNotFoundError",
-    "message": "''"
+    "message": "''",
+    "runId": "nonexistent-run-id"
   }
 }

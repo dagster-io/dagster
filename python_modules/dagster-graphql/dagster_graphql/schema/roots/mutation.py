@@ -38,6 +38,7 @@ from dagster_graphql.implementation.execution.launch_execution import (
 from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
 from dagster_graphql.implementation.fetch_app_managed_components import (
     delete_app_managed_component,
+    refresh_component_state,
     set_app_managed_component,
 )
 from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
@@ -55,6 +56,7 @@ from dagster_graphql.implementation.utils import (
 )
 from dagster_graphql.schema.app_managed_components import (
     GrapheneDeleteAppManagedComponentResult,
+    GrapheneRefreshComponentStateResult,
     GrapheneSetAppManagedComponentResult,
 )
 from dagster_graphql.schema.backfill import (
@@ -477,7 +479,9 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
 
 
 class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
-    """Deletes partitions from a dynamic partition set."""
+    """Deletes partitions from a dynamic partition set, optionally wiping materialization
+    events for the deleted partitions from the assets that use the partition set.
+    """
 
     Output = graphene.NonNull(GrapheneDeleteDynamicPartitionsResult)
 
@@ -485,6 +489,14 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         repositorySelector = graphene.NonNull(GrapheneRepositorySelector)
         partitionsDefName = graphene.NonNull(graphene.String)
         partitionKeys = non_null_list(graphene.String)
+        wipeMaterializations = graphene.Argument(
+            graphene.Boolean,
+            description=(
+                "Whether to also wipe materialization events for the deleted partition keys"
+                " from all assets in the repository that use the dynamic partitions"
+                " definition. Requires permission to wipe the affected assets."
+            ),
+        )
 
     class Meta:
         name = "DeleteDynamicPartitionsMutation"
@@ -497,9 +509,14 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         repositorySelector: GrapheneRepositorySelector,
         partitionsDefName: str,
         partitionKeys: Sequence[str],
+        wipeMaterializations: bool | None = None,
     ):
         return delete_dynamic_partitions(
-            graphene_info, repositorySelector, partitionsDefName, partitionKeys
+            graphene_info,
+            repository_selector=repositorySelector,
+            partitions_def_name=partitionsDefName,
+            partition_keys=partitionKeys,
+            wipe_materializations=bool(wipeMaterializations),
         )
 
 
@@ -552,6 +569,30 @@ class GrapheneDeleteAppManagedComponentMutation(graphene.Mutation):
     @require_permission_check(Permissions.EDIT_APP_MANAGED_COMPONENTS)
     def mutate(self, graphene_info: ResolveInfo, locationName: str, componentId: str):
         return delete_app_managed_component(graphene_info, locationName, componentId)
+
+
+class GrapheneRefreshComponentStateMutation(graphene.Mutation):
+    """Refreshes the defs state for a single state-backed component at a code location.
+
+    Waits up to the sync-wait window for the refresh to complete: returns the
+    refreshed component on success, an accepted result if the refresh is still
+    running (callers should poll ``componentsForLocation``), or an error if the
+    refresh failed.
+    """
+
+    Output = graphene.NonNull(GrapheneRefreshComponentStateResult)
+
+    class Arguments:
+        locationName = graphene.NonNull(graphene.String)
+        defsStateKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "RefreshComponentStateMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.REFRESH_COMPONENT_STATE)
+    def mutate(self, graphene_info: ResolveInfo, locationName: str, defsStateKey: str):
+        return refresh_component_state(graphene_info, locationName, defsStateKey)
 
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
@@ -1218,6 +1259,7 @@ class GrapheneMutation(graphene.ObjectType):
     deleteDynamicPartitions = GrapheneDeleteDynamicPartitionsMutation.Field()
     setAppManagedComponent = GrapheneSetAppManagedComponentMutation.Field()
     deleteAppManagedComponent = GrapheneDeleteAppManagedComponentMutation.Field()
+    refreshComponentState = GrapheneRefreshComponentStateMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()

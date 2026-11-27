@@ -5,8 +5,8 @@ import * as React from 'react';
 import {useSelectionReducer} from '../useSelectionReducer';
 
 describe('useSelectionReducer', () => {
-  const Test = ({ids}: {ids: string[]}) => {
-    const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(ids);
+  const Test = ({ids, group = []}: {ids: string[]; group?: string[]}) => {
+    const [{checkedIds}, {onToggleFactory, onToggleAll, onToggleMany}] = useSelectionReducer(ids);
 
     return (
       <div>
@@ -15,6 +15,12 @@ describe('useSelectionReducer', () => {
           aria-label="check-all"
           checked={checkedIds.size === ids.length}
           onChange={(e) => onToggleAll(e.target.checked)}
+        />
+        <input
+          type="checkbox"
+          aria-label="check-group"
+          checked={group.length > 0 && group.every((id) => checkedIds.has(id))}
+          onChange={(e) => onToggleMany(group, e.target.checked)}
         />
         {ids.map((id) => (
           <input
@@ -81,6 +87,26 @@ describe('useSelectionReducer', () => {
     expect(checkD).not.toBeChecked();
   });
 
+  it.each([
+    {from: 9, to: 10, checkedIds: ['j', 'k']},
+    {from: 10, to: 9, checkedIds: ['j', 'k']},
+    {from: 2, to: 12, checkedIds: ['c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']},
+  ])('shift-click selects every row from $from to $to', async ({from, to, checkedIds}) => {
+    const user = userEvent.setup();
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'];
+    render(<Test ids={ids} />);
+
+    await user.click(await screen.findByRole('checkbox', {name: `checkbox-${ids[from]}`}));
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(await screen.findByRole('checkbox', {name: `checkbox-${ids[to]}`}));
+    await user.keyboard('[/ShiftLeft]');
+
+    const checkedBoxes = await screen.findAllByRole('checkbox', {checked: true});
+    expect(checkedBoxes.map((checkbox) => checkbox.getAttribute('aria-label'))).toEqual(
+      checkedIds.map((id) => `checkbox-${id}`),
+    );
+  });
+
   it('allows toggle-all', async () => {
     const user = userEvent.setup();
     render(<Test ids={['a', 'b', 'c', 'd']} />);
@@ -105,6 +131,29 @@ describe('useSelectionReducer', () => {
     await user.click(checkAll);
 
     expect(checkA).not.toBeChecked();
+    expect(checkB).not.toBeChecked();
+    expect(checkC).not.toBeChecked();
+    expect(checkD).not.toBeChecked();
+  });
+
+  it('toggles many items at once without affecting others', async () => {
+    const user = userEvent.setup();
+    render(<Test ids={['a', 'b', 'c', 'd']} group={['b', 'c']} />);
+    const checkGroup = await screen.findByRole('checkbox', {name: /check-group/i});
+    const checkA = await screen.findByRole('checkbox', {name: /checkbox-a/i});
+    const checkB = await screen.findByRole('checkbox', {name: /checkbox-b/i});
+    const checkC = await screen.findByRole('checkbox', {name: /checkbox-c/i});
+    const checkD = await screen.findByRole('checkbox', {name: /checkbox-d/i});
+
+    await user.click(checkA);
+    await user.click(checkGroup);
+    expect(checkA).toBeChecked();
+    expect(checkB).toBeChecked();
+    expect(checkC).toBeChecked();
+    expect(checkD).not.toBeChecked();
+
+    await user.click(checkGroup);
+    expect(checkA).toBeChecked();
     expect(checkB).not.toBeChecked();
     expect(checkC).not.toBeChecked();
     expect(checkD).not.toBeChecked();

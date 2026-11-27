@@ -7,7 +7,11 @@ from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSe
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
+from dagster_snowflake.snowflake_io_manager import (
+    SnowflakeDbClient,
+    SnowflakeIOManager,
+    check_table_slice_names,
+)
 from snowflake.connector.pandas_tools import write_pandas
 
 
@@ -103,6 +107,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     ) -> Mapping[str, RawMetadataValue]:
         from snowflake import connector
 
+        check_table_slice_names(table_slice)
         if obj.empty:
             context.log.warning(
                 "Skipping Snowflake write for empty DataFrame. An empty table will not be created."

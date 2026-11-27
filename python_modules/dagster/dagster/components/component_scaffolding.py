@@ -113,10 +113,12 @@ def scaffold_object(
 
     if isinstance(obj, type) and issubclass(obj, Component) and not append:
         defs_yaml_path = path / "defs.yaml"
+        defs_yml_path = path / "defs.yml"
         component_py_path = path / "component.py"
-        if not (defs_yaml_path.exists() or component_py_path.exists()):
+        if not (defs_yaml_path.exists() or defs_yml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a defs.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {defs_yaml_path} or {component_py_path}."
+                f"Currently all components require a defs.yaml, defs.yml, or component.py file. "
+                f"Please ensure your implementation of scaffold writes this file at {defs_yaml_path} or {component_py_path}."
             )
 
 

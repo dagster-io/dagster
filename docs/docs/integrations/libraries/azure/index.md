@@ -7,6 +7,7 @@ tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure
 pypi: https://pypi.org/project/dagster-azure/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/azure.svg
 canonicalUrl: '/integrations/libraries/azure'
 slug: '/integrations/libraries/azure'

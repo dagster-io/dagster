@@ -29,7 +29,8 @@ export const SelectionHealthDataContext = React.createContext<{
 });
 
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [selections, setSelections] = React.useState<Set<string>>(() => new Set());
+  // Watcher count per selection. An observer is rendered only while its count is above zero.
+  const watcherCounts: Map<string, number> = useMemo(() => new Map(), []);
 
   /**
    * Whenever new listeners are added to a registry, we need to force a re-render of the SelectionHealthDataObserver
@@ -51,25 +52,29 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
       setHealthData?: (data: SelectionHealthData) => void;
       setFilterData?: (data: SelectionFilterData) => void;
     }) => {
-      setSelections((selections) => {
-        const newSelections = new Set(selections);
-        newSelections.add(selection);
-        return newSelections;
-      });
+      watcherCounts.set(selection, (watcherCounts.get(selection) ?? 0) + 1);
       const registry = getSelectionRegistry(selection, registries);
       const unwatch = registry.watchSelection(setHealthData, setFilterData);
       forceRerender();
       return () => {
         unwatch();
+        const count = (watcherCounts.get(selection) ?? 1) - 1;
+        if (count > 0) {
+          watcherCounts.set(selection, count);
+        } else {
+          // Drop the registry too, so a later watcher isn't handed the unmounted observer's data.
+          watcherCounts.delete(selection);
+          delete registries[selection];
+        }
         forceRerender();
       };
     },
-    [registries],
+    [registries, watcherCounts],
   );
 
   return (
     <SelectionHealthDataContext.Provider value={{watchSelection}}>
-      {Array.from(selections).map((selection) => {
+      {Array.from(watcherCounts.keys()).map((selection) => {
         const registry = getSelectionRegistry(selection, registries);
         return (
           <SelectionHealthDataObserver

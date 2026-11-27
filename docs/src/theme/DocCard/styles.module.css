@@ -192,6 +192,9 @@
   line-height: 1rem;
   font-weight: 400;
   color: var(--theme-color-text-light);
+  /* Multi-word pills like "Component available" should stay on one line in the title row. */
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cardDescription {

@@ -16,7 +16,7 @@ The Dagster webserver and daemon are the two _host processes_ in a Dagster deplo
 To build this Docker image, use a Dockerfile like the following, with a name like `Dockerfile_dagster`:
 
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN pip install \
     dagster \
@@ -47,7 +47,7 @@ Each code location typically has its own Docker image, and that image is also us
 To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_user_code`:
 
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN pip install \
     dagster \

@@ -1,11 +1,15 @@
 from pydantic import BaseModel
 
-from dagster_rest_resources.schemas.enums import DgApiIssueStatus
+from dagster_rest_resources.schemas.enums import DgApiIssueStatus, DgApiRunStatus
 from dagster_rest_resources.schemas.util import DgApiPaginatedList
 
 
 class DgApiIssueLinkedRun(BaseModel):
     run_id: str
+    status: DgApiRunStatus | None = None
+    job_name: str | None = None
+    started_at: float | None = None
+    ended_at: float | None = None
 
 
 class DgApiIssueLinkedAsset(BaseModel):
@@ -20,6 +24,9 @@ class DgApiIssue(BaseModel):
     created_by_name: str
     linked_objects: list[DgApiIssueLinkedRun | DgApiIssueLinkedAsset]
     context: str | None = None
+    # a DagsterCloudUser creator has an email; a ServiceUser creator has a description
+    created_by_email: str | None = None
+    created_by_description: str | None = None
 
 
 class DgApiIssueList(DgApiPaginatedList["DgApiIssue"]):

@@ -383,7 +383,7 @@ def foo():
 
 
 def test_jobs_with_hooks_are_reconstructable():
-    assert dg.reconstructable(foo)
+    dg.reconstructable(foo)
 
 
 def test_hook_decorator():

@@ -174,7 +174,6 @@ class DataVersionCache:
         return event
 
     def _check_input_asset_event(self, key: AssetKey, event: "EventLogRecord") -> None:
-        assert event.event_log_entry
         event_data_version = extract_data_version_from_entry(event.event_log_entry)
         if key in self.values and self.values[key] != event_data_version:
             self._context.log.warning(

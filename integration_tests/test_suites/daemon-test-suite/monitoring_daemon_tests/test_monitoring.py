@@ -26,6 +26,11 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 pytest_plugins = ["dagster_postgres.test_fixtures"]
 
+# docker-compose.yml uses fixed container names and host ports, so only one copy of the stack can
+# run at a time.  Each xdist worker would set up its own session-scoped `hostnames` fixture and
+# start a second copy, so tox runs these tests in a separate pytest pass without xdist.
+pytestmark = pytest.mark.serial
+
 compose_file = Path(__file__).parent / "docker-compose.yml"
 
 
@@ -95,7 +100,6 @@ def log_run_events(instance, run_id):
             print(str(log) + "\n")  # noqa: T201
 
 
-@pytest.mark.xdist_group(name="monitoring_compose")
 def test_monitoring():
     # with setup_instance() as instance:
     with instance_for_test(
@@ -117,7 +121,6 @@ def test_monitoring():
             assert all_daemons_healthy(instance)
 
 
-@pytest.mark.xdist_group(name="monitoring_compose")
 def test_docker_monitoring(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 
@@ -196,7 +199,6 @@ def test_docker_monitoring(docker_postgres_instance, aws_env):
                     assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
-@pytest.mark.xdist_group(name="monitoring_compose")
 def test_docker_monitoring_run_out_of_attempts(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
 

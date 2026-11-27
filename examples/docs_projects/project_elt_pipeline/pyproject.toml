@@ -1,6 +1,7 @@
 [project]
 name = "project_elt_pipeline"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
+license = "Apache-2.0"
 version = "0.1.0"
 dependencies = [
     "dagster",

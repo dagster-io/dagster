@@ -32,6 +32,8 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+    DagsterRunTooLargeError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.backfill import PartitionBackfill
@@ -49,6 +51,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.run_size import exceeds_run_size_limit
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
@@ -82,6 +85,11 @@ MAX_FAILURE_RESUBMISSION_RETRIES = 1
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
+# Bounds on how much of a dropped oversized run request ends up in the tick error. Without these
+# the error would reintroduce the payload that dropping the request is meant to keep off the tick.
+MAX_LISTED_OVERSIZED_RUN_REQUESTS = 10
+MAX_OVERSIZED_RUN_REQUEST_FIELD_CHARACTERS = 200
+
 
 # sensor, elapsed, min_interval
 ElapsedInstrumentation = Callable[[RemoteSensor, float | None, int], None]
@@ -91,6 +99,10 @@ def default_elapsed_instrumentation(
     sensor: RemoteSensor, elapsed: float | None, min_interval: int
 ) -> None:
     pass
+
+
+def default_get_sensor_states(instance: DagsterInstance) -> Sequence[InstigatorState]:
+    return instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -176,8 +188,7 @@ class SensorLaunchContext(AbstractContextManager):
         if kwargs:
             check.inst_param(status, "status", TickStatus)
 
-        if status:
-            self._tick = self._tick.with_status(status=status, **kwargs)
+        self._tick = self._tick.with_status(status=status, **kwargs)
 
         if skip_reason:
             self._tick = self._tick.with_reason(skip_reason=skip_reason)
@@ -350,6 +361,10 @@ def execute_sensor_iteration_loop(
     threadpool_executor: ThreadPoolExecutor | None = None,
     submit_threadpool_executor: ThreadPoolExecutor | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
+    *,
+    get_sensor_states: Callable[
+        [DagsterInstance], Sequence[InstigatorState]
+    ] = default_get_sensor_states,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -375,6 +390,7 @@ def execute_sensor_iteration_loop(
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
                 instrument_elapsed=instrument_elapsed,
+                get_sensor_states=get_sensor_states,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -403,6 +419,10 @@ def execute_sensor_iteration(
     sensor_tick_futures: dict[str, Future] | None = None,
     debug_crash_flags: DebugCrashFlags | None = None,
     instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
+    *,
+    get_sensor_states: Callable[
+        [DagsterInstance], Sequence[InstigatorState]
+    ] = default_get_sensor_states,
 ):
     instance = workspace_process_context.instance
 
@@ -414,8 +434,7 @@ def execute_sensor_iteration(
     }
 
     all_sensor_states = {
-        sensor_state.selector_id: sensor_state
-        for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+        sensor_state.selector_id: sensor_state for sensor_state in get_sensor_states(instance)
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
@@ -460,7 +479,20 @@ def execute_sensor_iteration(
                     sensor_type=sensor.sensor_type,
                 ),
             )
-            instance.add_instigator_state(sensor_state)
+            # Add the sensor's state if it doesn't exist yet. all_sensor_states may be out of date
+            # (e.g. read from a replica, or a user saved the state after the read), so the state
+            # may already exist. If it does, the jobs table's unique constraint rejects the insert
+            # and leaves the saved state unchanged, and add_instigator_state raises
+            # DagsterInvariantViolationError. The sensor daemon then skips the sensor until its
+            # next iteration.
+            try:
+                instance.add_instigator_state(sensor_state)
+            except DagsterInvariantViolationError:
+                logger.warning(
+                    f"Skipping sensor evaluation for {sensor.name}: its state already exists in"
+                    " storage but was missing from the sensor states read for this iteration."
+                )
+                continue
         elif is_under_min_interval(sensor_state, sensor):
             continue
 
@@ -599,6 +631,14 @@ def _process_tick_generator(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
     )
+    # The sensor daemon submitted this call to its thread pool's queue because the sensor's status
+    # was not STOPPED. That status may now be stale, or a user may have stopped the sensor while
+    # this call waited in the queue. Skip the evaluation so a stopped sensor doesn't launch runs.
+    if not remote_sensor.get_current_instigator_state(sensor_state).is_running:
+        logger.info(
+            f"Skipping sensor evaluation for {remote_sensor.name}: the sensor is no longer running."
+        )
+        return
     if is_under_min_interval(sensor_state, remote_sensor):
         # check the since we might have been queued before processing
         return
@@ -1071,6 +1111,49 @@ def _resolve_run_requests(
     return resolved_run_ids_with_requests
 
 
+def _describe_run_request(run_request: RunRequest) -> str:
+    parts = [
+        f"{label} {value[:MAX_OVERSIZED_RUN_REQUEST_FIELD_CHARACTERS]}"
+        for label, value in (
+            ("job", run_request.job_name),
+            ("run key", run_request.run_key),
+            ("partition", run_request.partition_key),
+        )
+        if value
+    ]
+    return ", ".join(parts) if parts else "<unidentified run request>"
+
+
+def _split_oversized_run_requests(
+    run_requests: Sequence[RunRequest],
+    limit: int | None,
+    logger: logging.Logger,
+) -> tuple[Sequence[RunRequest], Sequence[str]]:
+    """Separates out run requests whose runs run storage would reject for being too large.
+
+    Oversized requests are returned as descriptions rather than requests, so that a run config or
+    tag payload that can never be launched does not get written into the tick and then read back
+    whenever the tick history is loaded.
+    """
+    if limit is None:
+        return run_requests, []
+
+    launchable = []
+    oversized = []
+    for run_request in run_requests:
+        if exceeds_run_size_limit(run_request, limit):
+            description = _describe_run_request(run_request)
+            logger.warning(
+                f"Dropping run request ({description}) that exceeds the maximum run size of"
+                f" {limit} bytes."
+            )
+            oversized.append(description)
+        else:
+            launchable.append(run_request)
+
+    return launchable, oversized
+
+
 def _handle_run_requests_and_automation_condition_evaluations(
     raw_run_requests: Sequence[RunRequest],
     automation_condition_evaluations: Sequence[AutomationConditionEvaluation[EntityKey]],
@@ -1102,12 +1185,17 @@ def _handle_run_requests_and_automation_condition_evaluations(
         else:
             return make_new_run_id()
 
-    reserved_run_ids = [reserved_run_id(run_request) for run_request in raw_run_requests]
+    run_size_limit = instance.get_run_size_limit_bytes()
+    run_requests, oversized_descriptions = _split_oversized_run_requests(
+        raw_run_requests, run_size_limit, context.logger
+    )
+
+    reserved_run_ids = [reserved_run_id(run_request) for run_request in run_requests]
 
     # update cursor while reserving the relevant work, as now if the tick fails we will still submit
     # the requested runs
     context.set_run_requests(
-        run_requests=raw_run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
+        run_requests=run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
     )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_RESERVED")
@@ -1123,6 +1211,21 @@ def _handle_run_requests_and_automation_condition_evaluations(
         submit_threadpool_executor,
         sensor_debug_crash_flags,
     )
+
+    if oversized_descriptions:
+        # Fail the tick only after the launchable requests have gone out, so that one oversized
+        # request does not hold back the rest of the tick.
+        count = len(oversized_descriptions)
+        listed = oversized_descriptions[:MAX_LISTED_OVERSIZED_RUN_REQUESTS]
+        summary = "; ".join(listed)
+        if count > len(listed):
+            summary += f"; and {count - len(listed)} more"
+        raise DagsterRunTooLargeError(
+            f"Sensor {remote_sensor.name} yielded {count} run"
+            f" {'request' if count == 1 else 'requests'} that exceed the maximum run size of"
+            f" {run_size_limit} bytes and were dropped: {summary}. Reduce the size of the run"
+            " config or tags on these run requests."
+        )
 
 
 def _submit_run_requests(

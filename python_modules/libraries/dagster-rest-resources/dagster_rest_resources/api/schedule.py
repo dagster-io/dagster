@@ -5,8 +5,16 @@ from typing_extensions import assert_never
 
 from dagster_rest_resources.__generated__.input_types import RepositorySelector, ScheduleSelector
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
-from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
+from dagster_rest_resources.schemas.exception import (
+    DagsterPlusClientError,
+    DagsterPlusServerError,
+    DagsterPlusUnauthorizedError,
+)
+from dagster_rest_resources.schemas.schedule import (
+    DgApiSchedule,
+    DgApiScheduleList,
+    DgApiScheduleStateResult,
+)
 
 if TYPE_CHECKING:
     from dagster_rest_resources.__generated__.get_schedule import GetScheduleScheduleOrErrorSchedule
@@ -47,9 +55,9 @@ class DgApiScheduleApi:
                     ]
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
@@ -69,9 +77,9 @@ class DgApiScheduleApi:
                             )
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -97,9 +105,9 @@ class DgApiScheduleApi:
                     repo_name=repository_name,
                 )
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -120,18 +128,62 @@ class DgApiScheduleApi:
                         if s.name == schedule_name
                     )
                 if not matches:
-                    raise DagsterPlusGraphqlError(f"Schedule not found: {schedule_name}")
+                    raise DagsterPlusClientError(f"Schedule not found: {schedule_name}")
                 if len(matches) > 1:
                     origins = [s.code_location_origin for s in matches]
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusClientError(
                         f"Multiple schedules found with name '{schedule_name}' in code locations: {', '.join(origins)}"
                     )
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_start_schedule(
+        self,
+        schedule_name: str,
+        repository_location_name: str,
+        repository_name: str,
+    ) -> DgApiScheduleStateResult:
+        result = self._client.start_schedule(
+            schedule_selector=ScheduleSelector(
+                repositoryLocationName=repository_location_name,
+                repositoryName=repository_name,
+                scheduleName=schedule_name,
+            )
+        ).start_schedule
+
+        match result.typename__:
+            case "ScheduleStateResult":
+                state = result.schedule_state  # ty: ignore[unresolved-attribute]
+                return DgApiScheduleStateResult(name=state.name, status=state.status)
+            case "ScheduleNotFoundError":
+                raise DagsterPlusClientError(f"Schedule not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error starting schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error starting schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_stop_schedule(self, schedule_id: str) -> DgApiScheduleStateResult:
+        """Stop a schedule by its id, as returned on `DgApiSchedule.id`."""
+        result = self._client.stop_schedule(id=schedule_id).stop_running_schedule
+
+        match result.typename__:
+            case "ScheduleStateResult":
+                state = result.schedule_state  # ty: ignore[unresolved-attribute]
+                return DgApiScheduleStateResult(name=state.name, status=state.status)
+            case "ScheduleNotFoundError":
+                raise DagsterPlusClientError(f"Schedule not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error stopping schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error stopping schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

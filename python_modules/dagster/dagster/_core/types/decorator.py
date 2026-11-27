@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional, TypeVar, overload
 
 import dagster._check as check
 from dagster._core.types.dagster_type import (
@@ -9,7 +10,7 @@ from dagster._core.types.dagster_type import (
 if TYPE_CHECKING:
     from dagster._core.types.config_schema import DagsterTypeLoader
 
-T_Type = TypeVar("T_Type", bound=Type[object])
+T_Type = TypeVar("T_Type", bound=type[object])
 
 
 @overload

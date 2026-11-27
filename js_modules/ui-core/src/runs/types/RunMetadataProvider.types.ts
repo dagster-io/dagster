@@ -1,9 +1,19 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type RunStepStatsQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID']['input'];
+export type ObjectStoreOperationType = 'CP_OBJECT' | 'GET_OBJECT' | 'RM_OBJECT' | 'SET_OBJECT';
+
+export type StepEventStatus = 'FAILURE' | 'IN_PROGRESS' | 'SKIPPED' | 'SUCCESS';
+
+export type RunStepStatsQueryVariables = Exact<{
+  runId: string;
 }>;
 
 export type RunStepStatsQuery = {
@@ -468,6 +478,13 @@ export type RunMetadataProviderMessageFragment_RunFailureEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -484,6 +501,13 @@ export type RunMetadataProviderMessageFragment_RunStartingEvent = {
 
 export type RunMetadataProviderMessageFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
+export type RunMetadataProviderMessageFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   timestamp: string;
   stepKey: string | null;
@@ -550,9 +574,11 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_RunDequeuedEvent
   | RunMetadataProviderMessageFragment_RunEnqueuedEvent
   | RunMetadataProviderMessageFragment_RunFailureEvent
+  | RunMetadataProviderMessageFragment_RunResumedEvent
   | RunMetadataProviderMessageFragment_RunStartEvent
   | RunMetadataProviderMessageFragment_RunStartingEvent
   | RunMetadataProviderMessageFragment_RunSuccessEvent
+  | RunMetadataProviderMessageFragment_RunSuspendedEvent
   | RunMetadataProviderMessageFragment_StepExpectationResultEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartedEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartingEvent;

@@ -22,9 +22,10 @@
   gap: 8px;
 }
 
-.logoContainer svg {
-  width: 160px;
-  height: 40px;
+.brandLogo svg {
+  width: auto;
+  height: auto;
+  display: block;
 }
 
 .nav.collapsed .logoContainer {
@@ -51,8 +52,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
 }
 
 .topGroups {
@@ -74,6 +73,15 @@
   width: 204px;
 }
 
+/* In the mobile drawer the panel is wider than the desktop rail; fill it. */
+:global(.dagster-mobile) .group {
+  width: auto;
+}
+
+:global(.dagster-mobile) .bottomGroups {
+  padding-right: 0;
+}
+
 .nav.collapsed .group {
   width: 32px;
 }
@@ -85,6 +93,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  height: 32px;
 }
 
 .nav.collapsed .itemContainer {

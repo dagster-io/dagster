@@ -17,13 +17,14 @@ interface MenuLinkProps
     >,
     LinkProps {
   disabled?: boolean;
+  active?: boolean;
 }
 
 /**
  * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
  */
 export const MenuLink = (props: MenuLinkProps) => {
-  const {icon, intent = 'none', disabled = false, text, to, ...rest} = props;
+  const {icon, intent = 'none', disabled = false, active = false, text, to, ...rest} = props;
 
   if (disabled) {
     return <MenuItem icon={icon} text={text} disabled />;
@@ -32,7 +33,7 @@ export const MenuLink = (props: MenuLinkProps) => {
   return (
     <li role="none" className="popover-dismiss" style={{listStyle: 'none'}}>
       <Link {...rest} to={to} role="menuitem" tabIndex={0} className={styles.menuLink}>
-        <MenuItemContents icon={icon} intent={intent} text={text} />
+        <MenuItemContents icon={icon} intent={intent} text={text} active={active} />
       </Link>
     </li>
   );

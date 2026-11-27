@@ -1,0 +1,27 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  padding: 12px var(--page-gutter, 24px);
+}
+
+/* A fixed column count, so attributes line up from one section to the next. */
+.attributeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 24px;
+}
+
+/* Long asset selections truncate within the column rather than spilling into the next. */
+.targetCell {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+
+  button {
+    line-height: 20px;
+  }
+}
+
+:global(.dagster-mobile) .attributeGrid {
+  grid-template-columns: minmax(0, 1fr);
+}

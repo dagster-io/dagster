@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-rest-resources"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
@@ -31,6 +31,7 @@ async_client = false
 plugins = [
     "ariadne_codegen.contrib.client_forward_refs.ClientForwardRefsPlugin",
     "ariadne_codegen.contrib.no_reimports.NoReimportsPlugin",
+    "dagster_rest_resources.codegen_plugins.TypingGenericsInFragmentsPlugin",
 ]
 
 [dependency-groups]
@@ -38,6 +39,9 @@ test = [
     "dagster-shared",
     "pytest>=9.0.2",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }

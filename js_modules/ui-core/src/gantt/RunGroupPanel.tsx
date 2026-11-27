@@ -15,10 +15,13 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
+import {doneStatuses} from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime} from '../runs/RunUtils';
 
 type Run = RunGroupPanelRunFragment;
+
+const FINISHED_GROUP_REFRESH_INTERVAL = 2 * 60 * 1000;
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -41,7 +44,16 @@ export const RunGroupPanel = ({
   );
 
   const {data, refetch} = queryResult;
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const group = data?.runGroupOrError;
+
+  // A finished group only changes when someone re-executes a run, so check it rarely.
+  const allRunsDone =
+    group?.__typename === 'RunGroup' &&
+    !!group.runs?.every((run) => run && doneStatuses.has(run.status));
+  useQueryRefreshAtInterval(
+    queryResult,
+    allRunsDone ? FINISHED_GROUP_REFRESH_INTERVAL : FIFTEEN_SECONDS,
+  );
 
   // Because the RunGroupPanel makes it's own query for the runs and their statuses,
   // the log + gantt chart UI can show that the run is "completed" for up to 15s before
@@ -52,8 +64,6 @@ export const RunGroupPanel = ({
       refetch();
     }
   }, [refetch, runStatusLastChangedAt]);
-
-  const group = data?.runGroupOrError;
 
   if (!group || group.__typename === 'RunGroupNotFoundError') {
     return null;

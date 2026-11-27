@@ -12,7 +12,6 @@ from harbor_outfitters.schedules import harbor_daily_refresh_schedule
 from shared.io_managers import make_duckdb_io_manager
 from shared.resources import CatalogCoach, build_llm_resource
 
-
 defs = dg.Definitions(
     assets=dg.load_assets_from_modules(
         [bronze, silver, gold],

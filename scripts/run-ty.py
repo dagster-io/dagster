@@ -815,7 +815,7 @@ def print_report(result: RunResult) -> None:
     output = result["output"]
     diags = sorted(output["generalDiagnostics"], key=lambda diag: diag["file"])
 
-    print()  # blank line makes it more readable when run from `make`
+    print()  # blank line makes it more readable when run from `just`
 
     # diagnostics
     for file, file_diags in groupby(diags, key=lambda diag: diag["file"]):

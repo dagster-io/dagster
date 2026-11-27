@@ -1,8 +1,8 @@
 import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
-import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 import {RunSelectionLexer} from './generated/RunSelectionLexer';
 import {RunSelectionParser} from './generated/RunSelectionParser';
 import {weakMapMemoize} from '../util/weakMapMemoize';

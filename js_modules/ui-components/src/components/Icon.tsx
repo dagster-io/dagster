@@ -42,6 +42,7 @@ import base_deployment from '../icon-svgs/base_deployment.svg';
 import blueprint from '../icon-svgs/blueprint.svg';
 import bolt from '../icon-svgs/bolt.svg';
 import branch_deployment from '../icon-svgs/branch_deployment.svg';
+import broadcast_on_home from '../icon-svgs/broadcast_on_home.svg';
 import bug from '../icon-svgs/bug.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
@@ -292,6 +293,7 @@ import partition_stale from '../icon-svgs/partition_stale.svg';
 import partition_success from '../icon-svgs/partition_success.svg';
 import password from '../icon-svgs/password.svg';
 import pause from '../icon-svgs/pause.svg';
+import pending_actions from '../icon-svgs/pending_actions.svg';
 import people from '../icon-svgs/people.svg';
 import plots from '../icon-svgs/plots.svg';
 import preview_tick from '../icon-svgs/preview_tick.svg';
@@ -477,6 +479,7 @@ export const Icons = {
   blueprint,
   bolt,
   branch_deployment,
+  broadcast_on_home,
   bug,
   cached,
   calendar,
@@ -724,6 +727,7 @@ export const Icons = {
   partition_success,
   password,
   pause,
+  pending_actions,
   people,
   plots,
   preview_tick,

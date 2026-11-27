@@ -6,10 +6,15 @@ from typing_extensions import assert_never
 from dagster_rest_resources.__generated__.input_types import RepositorySelector, SensorSelector
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
-from dagster_rest_resources.schemas.sensor import DgApiSensor, DgApiSensorList
+from dagster_rest_resources.schemas.sensor import (
+    DgApiSensor,
+    DgApiSensorList,
+    DgApiSensorStateResult,
+)
 
 if TYPE_CHECKING:
     from dagster_rest_resources.__generated__.get_sensor import GetSensorSensorOrErrorSensor
@@ -50,9 +55,9 @@ class DgApiSensorApi:
                     ]
                     return DgApiSensorList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
@@ -72,9 +77,9 @@ class DgApiSensorApi:
                             )
                     return DgApiSensorList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing sensors: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -100,11 +105,11 @@ class DgApiSensorApi:
                     repo_name=repository_name,
                 )
             case "SensorNotFoundError":
-                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -125,18 +130,64 @@ class DgApiSensorApi:
                         if s.name == sensor_name
                     )
                 if not matches:
-                    raise DagsterPlusGraphqlError(f"Sensor not found: {sensor_name}")
+                    raise DagsterPlusClientError(f"Sensor not found: {sensor_name}")
                 if len(matches) > 1:
                     origins = [s.repository_origin for s in matches]
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusClientError(
                         f"Multiple sensors found with name '{sensor_name}' in repositories: {', '.join(origins)}"
                     )
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_start_sensor(
+        self,
+        sensor_name: str,
+        repository_location_name: str,
+        repository_name: str,
+    ) -> DgApiSensorStateResult:
+        result = self._client.start_sensor(
+            sensor_selector=SensorSelector(
+                repositoryLocationName=repository_location_name,
+                repositoryName=repository_name,
+                sensorName=sensor_name,
+            )
+        ).start_sensor
+
+        match result.typename__:
+            case "Sensor":
+                return DgApiSensorStateResult(
+                    name=result.name,  # ty: ignore[unresolved-attribute]
+                    status=result.sensor_state.status,  # ty: ignore[unresolved-attribute]
+                )
+            case "SensorNotFoundError":
+                raise DagsterPlusClientError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error starting sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error starting sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_stop_sensor(self, sensor_id: str) -> DgApiSensorStateResult:
+        """Stop a sensor by its id, as returned on `DgApiSensor.id`."""
+        result = self._client.stop_sensor(id=sensor_id).stop_sensor
+
+        match result.typename__:
+            case "StopSensorMutationResult":
+                state = result.instigation_state  # ty: ignore[unresolved-attribute]
+                if state is None:
+                    raise DagsterPlusServerError("Error stopping sensor: no sensor state returned")
+                return DgApiSensorStateResult(name=state.name, status=state.status)
+            case "UnauthorizedError":
+                raise DagsterPlusUnauthorizedError(f"Error stopping sensor: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusServerError(f"Error stopping sensor: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

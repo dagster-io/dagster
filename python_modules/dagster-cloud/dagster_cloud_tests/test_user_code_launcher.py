@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 import datetime
 import logging
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Collection, Generator
@@ -31,7 +32,9 @@ from dagster_cloud.workspace.user_code_launcher import (
 from dagster_cloud.workspace.user_code_launcher.user_code_launcher import (
     ACTUAL_ENTRIES_REFRESH_INTERVAL,
     CLEANUP_SERVER_GRACE_PERIOD_SECONDS,
+    InvalidCodeLocationImageError,
     async_serialize_exceptions,
+    is_permanent_image_error,
 )
 from dagster_cloud.workspace.user_code_launcher.utils import unique_resource_name
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData, PexMetadata
@@ -48,7 +51,7 @@ ServerHandle = str
 
 
 class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
-    def __init__(self, requires_images=True):
+    def __init__(self, requires_images=True, start_error_message="Server add failed", **kwargs):
         self._servers: dict[ServerKey, set[ServerHandle]] = {}
         self._multipex_server_handles: dict[ServerKey, set[ServerHandle]] = {}
 
@@ -60,7 +63,8 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
         self._mocked_active_agent_ids: set[str] = set()
 
         self._server_create_counter = 0
-        super().__init__()
+        self._server_create_lock = threading.Lock()
+        super().__init__(**kwargs)
         self.fail_next_add = False
         self.fail_next_add_after_server_added = set()
 
@@ -69,6 +73,7 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
         self.fail_next_remove = False
         self.fail_graphql_writes = False
         self._requires_images = requires_images
+        self._start_error_message = start_error_message
         self._uploaded_entries = []
 
     def get_host_name(self, deployment_name, location_name, metadata):
@@ -109,6 +114,10 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
     def get_code_server_resource_limits(self, deployment_name, location_name):
         return {}
 
+    @property
+    def _max_concurrent_server_spinups(self) -> int:
+        return self._server_spinup_max_workers_from_env()
+
     def _start_new_server_spinup(
         self,
         deployment_name: str,
@@ -119,9 +128,11 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
 
         if self.fail_next_add:
             self.fail_next_add = False
-            raise Exception("Server add failed")
+            raise Exception(self._start_error_message)
 
-        self._server_create_counter = self._server_create_counter + 1
+        with self._server_create_lock:
+            self._server_create_counter = self._server_create_counter + 1
+            port = 4000 + self._server_create_counter
 
         container_name = unique_resource_name(
             deployment_name, location_name, length_limit=50, sanitize_fn=None
@@ -129,7 +140,7 @@ class UserCodeTestLauncher(DagsterCloudUserCodeLauncher[ServerHandle]):
 
         endpoint = ServerEndpoint(
             host=self.get_host_name(deployment_name, location_name, metadata),
-            port=4000 + self._server_create_counter,
+            port=port,
             socket=None,
         )
 
@@ -446,6 +457,64 @@ def test_server_cleanup_parallelized(agent_instance: DagsterCloudAgentInstance):
             {agent_instance.instance_uuid}, include_own_servers=True
         )
         assert time.time() - now < 5
+
+
+def test_server_spinup_parallelized(agent_instance: DagsterCloudAgentInstance):
+    with UserCodeTestLauncher() as user_code_launcher:
+        user_code_launcher.register_instance(agent_instance)
+        user_code_launcher.start(run_reconcile_thread=False)
+
+        spinup_threads = set()
+        original_spinup = user_code_launcher._start_new_server_spinup
+
+        def _slow_spinup(*args, **kwargs):
+            spinup_threads.add(threading.current_thread().name)
+            time.sleep(0.5)
+            return original_spinup(*args, **kwargs)
+
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("test_image:tag1", python_file="foo.py"),
+            time.time(),
+        )
+        entry_map = {(f"dep{i}", f"location{i}"): entry for i in range(20)}
+        user_code_launcher.update_grpc_metadata(
+            entry_map,
+            control_plane_error_locations=set(),
+            control_plane_outdated_locations=set(),
+        )
+
+        with mock.patch.object(user_code_launcher, "_start_new_server_spinup", _slow_spinup):
+            start = time.time()
+            user_code_launcher.reconcile()
+            elapsed = time.time() - start
+
+        # 20 x 0.5s serially is 10s; the default pool of 8 finishes in ~1.5s.
+        assert elapsed < 5
+        assert len(spinup_threads) > 1
+        assert all(name.startswith("dagster_cloud_agent_server_spinup") for name in spinup_threads)
+        user_code_launcher.assert_reconciliation(entry_map, run_reconcile_thread=False)
+        assert len(user_code_launcher.servers) == 20
+        endpoints = user_code_launcher.get_grpc_endpoints().values()
+        assert len({endpoint.port for endpoint in endpoints}) == 20  # ty: ignore[unresolved-attribute]
+
+        # Setting the env var to 1 runs spinup inline on the reconciling thread.
+        with environ({"DAGSTER_CLOUD_CODE_SERVER_SPINUP_MAX_WORKERS": "1"}):
+            threads = user_code_launcher._map_locations(
+                lambda _key: threading.current_thread().name, list(entry_map)[:4]
+            )
+        assert set(threads.values()) == {threading.current_thread().name}
+
+        # The first worker failure is re-raised; the others are logged rather than dropped.
+        def _fail(key):
+            raise RuntimeError(f"boom {key[1]}")
+
+        with mock.patch.object(user_code_launcher, "_logger") as logger:
+            with pytest.raises(RuntimeError, match="boom location0"):
+                user_code_launcher._map_locations(_fail, list(entry_map)[:3])
+        logged = " ".join(str(call) for call in logger.error.call_args_list)
+        assert "location1" in logged
+        assert "location2" in logged
+        assert "location0" not in logged
 
 
 def test_multiple_agents_grpc_spindown(agent_instance: DagsterCloudAgentInstance):
@@ -2198,3 +2267,241 @@ def test_change_from_multipex_to_pex(user_code_launcher: UserCodeTestLauncher):
     assert len(user_code_launcher.multipex_server_handles[("dep1", "location1")]) == 0
 
     assert not user_code_launcher._multipex_servers.get(("dep1", "location1"))
+
+
+def _start_failed_location(launcher: UserCodeTestLauncher):
+    """Start a location whose code server fails to start and whose failure has been uploaded."""
+    launcher.start(run_reconcile_thread=False)
+
+    key = ("dep1", "location1")
+    now = get_current_datetime()
+    entry = UserCodeLauncherEntry(
+        CodeLocationDeployData("test_image:tag1", python_file="foo.py"), now.timestamp()
+    )
+    metadata_map: UserCodeLauncherEntryMap = {key: entry}
+
+    with freeze_time(now):
+        launcher.fail_next_add = True
+        launcher.update_grpc_metadata(
+            metadata_map,
+            control_plane_error_locations=set(),
+            control_plane_outdated_locations={key},
+            upload_outdated=True,
+        )
+        launcher.reconcile()
+
+    def reconcile_at(t: datetime.datetime, *, fail_start: bool = False) -> bool:
+        """Reconcile with the control plane already knowing about the failure; True if still failed."""
+        with freeze_time(t):
+            launcher.fail_next_add = fail_start
+            launcher.update_grpc_metadata(
+                metadata_map,
+                control_plane_error_locations={key},
+                control_plane_outdated_locations=set(),
+            )
+            launcher.reconcile()
+        return isinstance(launcher.get_grpc_endpoints()[key], SerializableErrorInfo)
+
+    assert isinstance(launcher.get_grpc_endpoints()[key], SerializableErrorInfo)
+    return now, reconcile_at
+
+
+def test_failed_start_is_retried_with_backoff(agent_instance: DagsterCloudAgentInstance):
+    with UserCodeTestLauncher(
+        code_location_start_retry={"max_attempts": 2, "backoff_seconds": 100}
+    ) as launcher:
+        launcher.register_instance(agent_instance)
+        now, reconcile_at = _start_failed_location(launcher)
+        refresh = datetime.timedelta(seconds=ACTUAL_ENTRIES_REFRESH_INTERVAL + 1)
+
+        # Before the backoff elapses nothing happens
+        assert reconcile_at(now + refresh)
+
+        # First retry (after 100s) fails again
+        t1 = now + datetime.timedelta(seconds=100) + refresh
+        assert reconcile_at(t1, fail_start=True)
+
+        # Second retry waits twice as long, then succeeds
+        assert reconcile_at(t1 + datetime.timedelta(seconds=100) + refresh)
+        assert not reconcile_at(t1 + datetime.timedelta(seconds=200) + 2 * refresh)
+
+
+def test_failed_start_is_not_retried_by_default(
+    user_code_launcher: UserCodeTestLauncher, caplog: pytest.LogCaptureFixture
+):
+    now, reconcile_at = _start_failed_location(user_code_launcher)
+    refresh = datetime.timedelta(seconds=ACTUAL_ENTRIES_REFRESH_INTERVAL + 1)
+    for n in range(1, 4):
+        assert reconcile_at(now + n * refresh)
+    assert "Retrying failed start" not in caplog.text
+
+
+def test_failed_start_retries_stop_at_max_attempts(
+    agent_instance: DagsterCloudAgentInstance, caplog: pytest.LogCaptureFixture
+):
+    caplog.set_level(logging.INFO)
+    with UserCodeTestLauncher(
+        code_location_start_retry={"max_attempts": 1, "backoff_seconds": 0}
+    ) as launcher:
+        launcher.register_instance(agent_instance)
+        now, reconcile_at = _start_failed_location(launcher)
+        refresh = datetime.timedelta(seconds=ACTUAL_ENTRIES_REFRESH_INTERVAL + 1)
+        # Every attempt fails; after the cap there are no further retries
+        for n in range(1, 5):
+            assert reconcile_at(now + n * refresh, fail_start=True)
+        assert caplog.text.count("Retrying failed start") == 1
+
+
+# Shape of the error a Kubernetes start timeout produces: the pod's log tail and warning events
+# are appended to the message, so unrelated user log lines ride along.
+_K8S_TIMEOUT_ERROR = """Timed out waiting for deployment user-cloud-prod-my-location.
+
+Debug information for Pod user-cloud-prod-my-location-abc:
+
+Pod status: Pending
+Container 'dagster' status: Waiting: ImagePullBackOff
+
+Last 25 log lines for container 'dagster':
+INFO connecting to warehouse
+ERROR warehouse client: 401 Unauthorized
+ERROR config secret 'warehouse-creds' not found, falling back
+
+Warning events for pod:
+{events}
+"""
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        # Kubernetes: bad tag, wrong architecture, bad config
+        'Failed: Failed to pull image "acme/app:typo": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/acme/app:typo": failed to resolve reference: not found',
+        'Failed to pull image "app:v1": no matching manifest for linux/arm64/v8 in the manifest list entries',
+        # Kubernetes startup timeout whose warning events carry the pull failure
+        _K8S_TIMEOUT_ERROR.format(
+            events='Failed: Failed to pull image "acme/app:typo": rpc error: code = NotFound desc = failed to resolve reference "acme/app:typo": not found'
+        ),
+        'Error creating deployment. CreateContainerConfigError: secret "regcred" not found',
+        "Failed to apply default image tag: couldn't parse image reference: invalid reference format",
+        "ErrImageNeverPull: Container image is not present with pull policy of Never",
+        # ECS
+        "CannotPullContainerError: pull image manifest has been retried 5 time(s): failed to resolve ref docker.io/acme/app:v1: not found",
+        # Docker SDK (verbatim from `docker.APIClient().pull`)
+        'docker.errors.NotFound: 404 Client Error for http+docker://localhost/v1.54/images/create?tag=no-such-tag-xyz&fromImage=library%2Falpine: Not Found ("failed to resolve reference "docker.io/library/alpine:no-such-tag-xyz": docker.io/library/alpine:no-such-tag-xyz: not found")',
+        'docker.errors.APIError: 400 Client Error for http+docker://localhost/v1.54/images/create?tag=V1&fromImage=Bad_Name: Bad Request ("invalid reference format: repository name (library/Bad_Name) must be lowercase")',
+        "manifest unknown: manifest unknown while pulling image",
+    ],
+)
+def test_permanent_image_errors(message: str):
+    assert is_permanent_image_error(
+        SerializableErrorInfo(message=message, stack=[], cls_name="Exception", cause=None)
+    )
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        'Failed: Failed to pull image "acme/app:v1": dial tcp 10.0.0.1:443: i/o timeout',
+        'Failed to pull image "acme/app:v1": net/http: TLS handshake timeout',
+        "toomanyrequests: You have reached your pull rate limit",
+        "Failed to pull image: received unexpected HTTP status: 503 Service Unavailable",
+        "CannotPullContainerError: pull image manifest has been retried 5 time(s): i/o timeout",
+        'docker.errors.APIError: 500 Server Error for http+docker://localhost/v1.54/images/create?tag=v1&fromImage=127.0.0.1%3A1%2Fapp: Internal Server Error ("failed to resolve reference "127.0.0.1:1/app:v1": failed to do request: Head "http://127.0.0.1:1/v2/app/manifests/v1": dial tcp 127.0.0.1:1: connect: connection refused")',
+        "Container is in ImagePullBackOff",
+        "Timed out waiting for deployment user-cloud-prod-my-location.",
+        "Timed out after waiting 180s for server localhost:4000.",
+        # "not found" outside of an image pull is not an image error
+        "Timed out after waiting 180s for server. Most recent error: host not found",
+        # Auth failures are indistinguishable from an expired pull token, which a retry fixes
+        'Failed: Failed to pull image "acme/app:v1": pull access denied, repository does not exist or may require authorization',
+        'Failed to pull image "x.azurecr.io/app:v1": unauthorized: authentication required',
+        "docker.errors.ImageNotFound: 404 Client Error for http+docker://localhost/v1.54/images/create?tag=v1&fromImage=acme%2Fapp: Not Found (\"pull access denied for acme/app, repository does not exist or may require 'docker login'\")",
+        # Kubernetes startup timeout: "not found" in the user's logs plus a pull back-off event
+        # must not add up to a permanent verdict
+        _K8S_TIMEOUT_ERROR.format(
+            events='BackOff: Back-off pulling image "acme/app:v1"\nFailed: Error: ImagePullBackOff'
+        ),
+    ],
+)
+def test_transient_start_errors_are_retryable(message: str):
+    assert not is_permanent_image_error(
+        SerializableErrorInfo(message=message, stack=[], cls_name="Exception", cause=None)
+    )
+
+
+def test_invalid_image_config_error_is_permanent():
+    assert is_permanent_image_error(
+        SerializableErrorInfo(
+            message="Your agent's configuration requires you to specify an image.",
+            stack=[],
+            cls_name=InvalidCodeLocationImageError.__name__,
+            cause=None,
+        )
+    )
+
+
+def test_permanent_image_error_is_not_retried(
+    agent_instance: DagsterCloudAgentInstance, caplog: pytest.LogCaptureFixture
+):
+    caplog.set_level(logging.INFO)
+    with UserCodeTestLauncher(
+        code_location_start_retry={"max_attempts": 3, "backoff_seconds": 0},
+        start_error_message='Failed to pull image "acme/app:typo": manifest unknown',
+    ) as launcher:
+        launcher.register_instance(agent_instance)
+        now, reconcile_at = _start_failed_location(launcher)
+        refresh = datetime.timedelta(seconds=ACTUAL_ENTRIES_REFRESH_INTERVAL + 1)
+        for n in range(1, 5):
+            assert reconcile_at(now + n * refresh, fail_start=True)
+        assert "Retrying failed start" not in caplog.text
+        assert caplog.text.count("Not retrying failed start") == 1
+
+
+def test_successful_retry_refunds_budget_and_removal_prunes_state(
+    agent_instance: DagsterCloudAgentInstance, caplog: pytest.LogCaptureFixture
+):
+    caplog.set_level(logging.INFO)
+    with UserCodeTestLauncher(
+        code_location_start_retry={"max_attempts": 1, "backoff_seconds": 0}
+    ) as launcher:
+        launcher.register_instance(agent_instance)
+        now, reconcile_at = _start_failed_location(launcher)
+        key = ("dep1", "location1")
+        refresh = datetime.timedelta(seconds=ACTUAL_ENTRIES_REFRESH_INTERVAL + 1)
+
+        # The single allowed retry succeeds; the next refresh sees a running server and
+        # releases the budget
+        assert not reconcile_at(now + refresh)
+        assert caplog.text.count("Retrying failed start") == 1
+        assert key in launcher._start_retry_state
+        assert not reconcile_at(now + 2 * refresh)
+        assert key not in launcher._start_retry_state
+
+        # Later the running server goes unhealthy, the recovery redeploy fails at startup,
+        # and the same version gets a fresh budget rather than none
+        endpoint = launcher.get_grpc_endpoints()[key]
+        assert isinstance(endpoint, ServerEndpoint)
+        with mock.patch.object(
+            endpoint,
+            "create_client",
+            return_value=mock.MagicMock(
+                list_repositories=lambda: serialize_value(
+                    SerializableErrorInfo(
+                        message="unhealthy", stack=[], cls_name="TestError", cause=None
+                    )
+                )
+            ),
+        ):
+            assert reconcile_at(now + 3 * refresh, fail_start=True)
+        assert not reconcile_at(now + 4 * refresh)
+        assert caplog.text.count("Retrying failed start") == 2
+
+        # Removing the location drops its retry state
+        with freeze_time(now + 5 * refresh):
+            launcher.update_grpc_metadata(
+                {},
+                control_plane_error_locations=set(),
+                control_plane_outdated_locations=set(),
+            )
+            launcher.reconcile()
+        assert key not in launcher._start_retry_state

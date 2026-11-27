@@ -8,6 +8,7 @@ hide_table_of_contents: true
 
 import {Card} from '@site/src/components/Cards';
 import ThemedImage from '@theme/ThemedImage';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 # Welcome to Dagster
 
@@ -19,11 +20,11 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   title="defs/assets.py"
 />
 <ThemedImage
-  alt="Docusaurus themed image"
+  alt="Asset lineage graph in the Dagster UI"
   style={{width: '100%', height: 'auto'}}
   sources={{
-    light: './img/getting-started/lineage-light.jpg',
-    dark: './img/getting-started/lineage-dark.jpg',
+    light: useBaseUrl('/img/getting-started/lineage-light.jpg'),
+    dark: useBaseUrl('/img/getting-started/lineage-dark.jpg'),
   }}
 />
 

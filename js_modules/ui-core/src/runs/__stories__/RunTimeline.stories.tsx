@@ -79,7 +79,7 @@ export const OverlapWithRunning = () => {
         runs: [
           {
             id: faker.datatype.uuid(),
-            status: RunStatus.SUCCESS,
+            status: RunStatus.FAILURE,
             startTime: twoHoursAgo + 20 * 60 * 1000,
             endTime: twoHoursAgo + 95 * 60 * 1000,
             automation: null,
@@ -92,6 +92,7 @@ export const OverlapWithRunning = () => {
             endTime: twoHoursAgo + 110 * 60 * 1000,
             automation: null,
             externalJobSource: null,
+            isRetry: true,
           },
           {
             id: faker.datatype.uuid(),
@@ -100,6 +101,7 @@ export const OverlapWithRunning = () => {
             endTime: now,
             automation: null,
             externalJobSource: null,
+            isRetry: true,
           },
         ],
       },

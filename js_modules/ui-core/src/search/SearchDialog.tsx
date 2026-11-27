@@ -2,6 +2,7 @@ import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
+import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import {useHistory} from 'react-router-dom';
@@ -80,7 +81,7 @@ const sortResultsByFuseScore = (
 
 export const useSearchDialog = () => {
   const history = useHistory();
-  const {loading, searchPrimary, searchSecondary} = useGlobalSearch({
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
@@ -90,15 +91,21 @@ export const useSearchDialog = () => {
 
   const {renderedResults, numRenderedResults} = React.useMemo(() => {
     const results = [...primaryResults, ...secondaryResults].sort(sortResultsByFuseScore);
-    const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
+    // Results can share an href (e.g. same-named asset groups in different code locations), and
+    // href is the row's React key. Keep only the best-scoring one.
+    const renderedResults = uniqBy(results, (result) => result.item.href).slice(
+      0,
+      MAX_DISPLAYED_RESULTS,
+    );
     return {renderedResults, numRenderedResults: renderedResults.length};
   }, [primaryResults, secondaryResults]);
 
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');
     trackEvent('searchOpen');
+    initialize();
     dispatch({type: 'show-dialog'});
-  }, [trackEvent]);
+  }, [initialize, trackEvent]);
 
   React.useEffect(() => {
     __updateSearchVisibility(shown);

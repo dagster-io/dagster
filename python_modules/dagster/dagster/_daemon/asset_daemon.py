@@ -23,12 +23,13 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.automation_condition_sensor_definition import (
     EMIT_BACKFILLS_METADATA_KEY,
+    asset_job_keys_from_sensor_metadata,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
@@ -56,6 +57,7 @@ from dagster._core.execution.submit_asset_runs import (
     RunRequestExecutionData,
     get_job_execution_data_from_run_request,
     submit_asset_run,
+    submit_job_entity_run,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import RemoteInstigatorOrigin
@@ -479,6 +481,16 @@ class AssetDaemon(DagsterDaemon):
     ) -> None:
         pass
 
+    def get_sensor_states(self, instance: DagsterInstance) -> Sequence[InstigatorState]:
+        """Saved state of every sensor (status, last evaluation time, cursor).
+
+        The asset daemon evaluates a sensor only if its status isn't STOPPED and its minimum
+        interval has passed since its last evaluation. Subclasses may return slightly stale
+        states, e.g. from a read replica. This is safe because each evaluation re-reads the
+        sensor's state from storage before acting on it.
+        """
+        return instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+
     def _get_print_sensor_name(self, sensor: RemoteSensor | None) -> str:
         if not sensor:
             return ""
@@ -605,9 +617,7 @@ class AssetDaemon(DagsterDaemon):
 
             all_sensor_states = {
                 sensor_state.selector_id: sensor_state
-                for sensor_state in instance.all_instigator_state(
-                    instigator_type=InstigatorType.SENSOR
-                )
+                for sensor_state in self.get_sensor_states(instance)
             }
 
             if not self._checked_migrations:
@@ -696,7 +706,21 @@ class AssetDaemon(DagsterDaemon):
                         sensor_type=sensor.sensor_type,
                     ),
                 )
-                instance.add_instigator_state(auto_materialize_state)
+                # Add the sensor's state if it doesn't exist yet. all_sensor_states may be out of
+                # date (e.g. read from a replica, or a user saved the state after the read), so the
+                # state may already exist. If it does, the jobs table's unique constraint rejects
+                # the insert and leaves the saved state unchanged, and add_instigator_state raises
+                # DagsterInvariantViolationError. The asset daemon then skips the sensor until its
+                # next iteration.
+                try:
+                    instance.add_instigator_state(auto_materialize_state)
+                except DagsterInvariantViolationError:
+                    self._logger.warning(
+                        f"Skipping sensor evaluation{self._get_print_sensor_name(sensor)}: its"
+                        " state already exists in storage but was missing from the sensor states"
+                        " read for this iteration."
+                    )
+                    continue
             elif is_under_min_interval(
                 auto_materialize_state,
                 sensor,
@@ -875,6 +899,18 @@ class AssetDaemon(DagsterDaemon):
             auto_materialize_instigator_state = check.not_none(
                 instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
+            # The asset daemon submitted this call to its thread pool's queue because the sensor's
+            # status was not STOPPED. That status may now be stale, or a user may have stopped the
+            # sensor while this call waited in the queue. Skip the evaluation so a stopped sensor
+            # doesn't launch runs.
+            if not sensor.get_current_instigator_state(
+                auto_materialize_instigator_state
+            ).is_running:
+                self._logger.info(
+                    f"Skipping sensor evaluation{self._get_print_sensor_name(sensor)}: the sensor"
+                    " is no longer running."
+                )
+                return
             if is_under_min_interval(
                 auto_materialize_instigator_state,
                 sensor,
@@ -917,11 +953,21 @@ class AssetDaemon(DagsterDaemon):
                 eligible_keys = workspace_asset_graph.get_all_asset_keys()
                 eligibility_graph = workspace_asset_graph
 
-            auto_materialize_entity_keys = {
+            auto_materialize_entity_keys: set[EntityKey] = {
                 target_key
                 for target_key in eligible_keys
                 if eligibility_graph.get(target_key).automation_condition is not None
             }
+            if sensor:
+                # Each sensor owns the job keys recorded in its metadata (the default sensor
+                # claims all job keys not explicitly distributed), so jobs are evaluated by
+                # exactly one sensor.
+                auto_materialize_entity_keys |= asset_job_keys_from_sensor_metadata(sensor.metadata)
+            else:
+                # The sensorless daemon mode (`auto_materialize: use_sensors: false`): the
+                # single global evaluation owns every conditioned job, added directly from
+                # the graph being evaluated
+                auto_materialize_entity_keys |= eligibility_graph.automatable_asset_job_keys
             num_target_entities = len(auto_materialize_entity_keys)
 
             auto_observe_asset_keys = {
@@ -1172,6 +1218,9 @@ class AssetDaemon(DagsterDaemon):
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
                 asset_selection=asset_selection,
+                asset_job_keys={
+                    key for key in auto_materialize_entity_keys if isinstance(key, AssetJobKey)
+                },
                 instance=instance,
                 cursor=stored_cursor,
                 materialize_run_tags={
@@ -1233,7 +1282,9 @@ class AssetDaemon(DagsterDaemon):
             # code server moving into an error state or an asset being renamed) causes problems
             async_code_server_tasks = []
             for run_request_index, run_request in enumerate(run_requests):
-                if not run_request.requires_backfill_daemon():
+                # Skip backfill requests (handled separately) and job entity requests
+                # (they have no asset selection, so no execution plan to pre-fetch)
+                if not run_request.requires_backfill_daemon() and run_request.entity_keys:
                     async_code_server_tasks.append(
                         get_job_execution_data_from_run_request(
                             asset_graph,
@@ -1358,6 +1409,28 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
             return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)
+        elif run_request.is_job_entity_request:
+            # job-entity run: a traditional whole-job run rather than an asset run
+            submitted_run = await submit_job_entity_run(
+                run_id=reserved_run_id,
+                run_request=run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        AUTO_MATERIALIZE_TAG: "true",
+                        AUTOMATION_CONDITION_TAG: "true",
+                        ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                    }
+                ),
+                run_request_index=i,
+                instance=instance,
+                workspace_process_context=workspace_process_context,
+                workspace=workspace,
+                asset_graph=workspace.asset_graph,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+                debug_crash_flags=debug_crash_flags,
+                logger=self._logger,
+            )
+            return submitted_run.run_id, {AssetJobKey(check.not_none(run_request.job_name))}
         else:
             submitted_run = await submit_asset_run(
                 run_id=reserved_run_id,

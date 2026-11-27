@@ -86,7 +86,7 @@ def build_time_partition_ranges_generic(
 
     # Convert each status subset to ranges
     for status, subset in subsets.items():
-        if subset:
+        if len(subset) > 0:
             all_ranges.extend(convert_time_window_subset_to_generic_ranges(subset, status))
 
     # Sort by start time

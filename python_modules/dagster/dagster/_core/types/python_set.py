@@ -41,7 +41,7 @@ class TypedSetLoader(DagsterTypeLoader):
 class _TypedPythonSet(DagsterType):
     def __init__(self, item_dagster_type):
         self.item_type = item_dagster_type
-        super(_TypedPythonSet, self).__init__(
+        super().__init__(
             key=f"TypedPythonSet.{item_dagster_type.key}",
             name=None,
             loader=(
@@ -84,7 +84,7 @@ def create_typed_runtime_set(item_dagster_type):
     item_dagster_type = resolve_dagster_type(item_dagster_type)
 
     check.invariant(
-        not item_dagster_type.kind == DagsterTypeKind.NOTHING,
+        item_dagster_type.kind != DagsterTypeKind.NOTHING,
         "Cannot create the runtime type Set[Nothing]. Use List type for fan-in.",
     )
 

@@ -5,7 +5,7 @@ import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {WorkspaceAssetNode} from '../assets/useAllAssets';
-import {hashObject} from '../util/hashObject';
+import {sortByValue} from '../util/sortByValue';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
 type Nullable<T> = {
@@ -50,37 +50,28 @@ export const useAssetSelectionFiltering = <
     [assets, includeExternalAssets],
   );
 
-  // Use a hash of the assetsByKey object to avoid re-rendering the asset graph when the assetsByKey object is updated but the keys are the same
-  const assetsByKeyHash = useMemo(() => hashObject(assetsByKey), [assetsByKey]);
   const {loading, graphQueryItems, graphAssetKeys} = useAssetGraphData(
     assetSelection,
     useMemo(
       () => ({
         hideEdgesToNodesOutsideQuery: true,
-        hideNodesMatching: (node: WorkspaceAssetNode) => {
-          return !assetsByKey.get(tokenForAssetKey(node.assetKey));
-        },
+        hideNodesMatching: getHideNodesNotIn(assetsByKey),
         loading: !!assetsLoading,
         externalAssets,
         skip,
       }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyHash, assetsLoading, externalAssets, skip],
+      [assetsByKey, assetsLoading, externalAssets, skip],
     ),
   );
 
   const filtered = useMemo(() => {
-    return (
-      graphAssetKeys
-        .map((key) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return assetsByKey.get(tokenForAssetKey(key))!;
-        })
-        .filter(Boolean)
-        .sort((a, b) =>
-          COMMON_COLLATOR.compare(displayNameForAssetKey(a.key), displayNameForAssetKey(b.key)),
-        ) ?? []
-    );
+    const assets = graphAssetKeys
+      .map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return assetsByKey.get(tokenForAssetKey(key))!;
+      })
+      .filter(Boolean);
+    return sortByValue(assets, (a) => displayNameForAssetKey(a.key), COMMON_COLLATOR.compare);
   }, [graphAssetKeys, assetsByKey]);
 
   const filteredByKey = useMemo(
@@ -90,6 +81,12 @@ export const useAssetSelectionFiltering = <
 
   return {filtered, filteredByKey, loading, graphAssetKeys, graphQueryItems};
 };
+
+// Memoized so every hook instance filtering the same assets passes the same predicate.
+const getHideNodesNotIn = weakMapMemoize(
+  (assetsByKey: Map<string, unknown>) => (node: WorkspaceAssetNode) =>
+    !assetsByKey.has(tokenForAssetKey(node.assetKey)),
+);
 
 const getExternalAssets = weakMapMemoize(<T extends {definition?: any}>(assets: T[]) => {
   return assets.filter((asset) => !asset.definition);

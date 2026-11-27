@@ -750,6 +750,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED)
         _create_backfill(graphql_context, status=BulkActionStatus.CANCELING)
         _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+        _create_backfill(graphql_context, status=BulkActionStatus.FAILING)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -765,7 +766,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        _assert_results_match_count_match_expected(result, 9)
+        _assert_results_match_count_match_expected(result, 10)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -794,7 +795,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        _assert_results_match_count_match_expected(result, 2)
+        _assert_results_match_count_match_expected(result, 3)
 
         result = execute_dagster_graphql(
             graphql_context,

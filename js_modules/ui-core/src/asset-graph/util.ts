@@ -24,9 +24,10 @@ export function groupAssetsByStatus<
     statuses.loading = true;
     return statuses;
   }
+  const assetsByToken = new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
   Object.keys(liveDataByNode).forEach((key) => {
     const assetLiveData = liveDataByNode[key];
-    const asset = assets.find((asset) => tokenForAssetKey(asset.key) === key);
+    const asset = assetsByToken.get(key);
     if (!asset?.definition) {
       console.warn('Expected a definition for asset with key', key);
       return;

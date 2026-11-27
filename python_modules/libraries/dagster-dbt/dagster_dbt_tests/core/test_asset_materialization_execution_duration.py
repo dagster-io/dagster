@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from dagster import FloatMetadataValue
+import pytest
+from dagster import AssetMaterialization, FloatMetadataValue, Output
 from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
@@ -195,6 +196,97 @@ def test_incremental_log_model_result_to_asset():
     # data.execution_time
     assert asset_materialization_event.metadata.get("Execution Duration") == FloatMetadataValue(
         value=execution_duration_seconds
+    )
+
+
+@pytest.mark.parametrize("status", ["no-op", "reused"])
+def test_success_equivalent_status_yields_materialization(status: str):
+    """Dbt reports a node it deliberately did not rebuild as `no-op` (state reuse) or `reused`.
+    The relation still exists in the warehouse, so a materialization must be emitted or the
+    asset silently stops updating -- nothing raises, because dbt asset outputs are Nothing-typed
+    and optional, so the run just succeeds with the asset missing from the graph.
+    """
+    noop_log_model_result = {
+        "data": {
+            "description": "sql model public.orders",
+            "execution_time": 0.001,  # near-zero — reused, not re-executed
+            "index": 1,
+            "node_info": {
+                "materialized": "table",
+                "node_finished_at": "2025-03-10T12:53:36.900000",
+                "node_name": "public__orders",
+                "node_path": "mart/public__orders.sql",
+                "node_relation": {
+                    "alias": "orders",
+                    "database": "dev",
+                    "relation_name": "dev.public.orders",
+                    "schema": "public",
+                },
+                "node_started_at": "2025-03-10T12:53:36.820592",
+                "node_status": status,
+                "resource_type": "model",
+                "unique_id": "model.pytest_dwh.public__orders",
+            },
+            "status": status,
+            "total": 1,
+        },
+        "info": {
+            "category": "",
+            "code": "Q012",
+            "extra": {},
+            "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+            "level": "info",
+            "msg": "1 of 1 REUSED public.orders (state reuse) .......... [\x1b[33mNO-OP\x1b[0m in 0.00s]",
+            "name": "LogModelResult",
+            "pid": 14251,
+            "thread": "Thread-1 (worker)",
+            "ts": "2025-03-10T12:53:48.825332Z",
+        },
+    }
+
+    event_message = DbtCoreCliEventMessage(
+        raw_event=noop_log_model_result,
+        event_history_metadata={
+            "metadata": {
+                "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+                "generated_at": "2025-03-10T12:54:41.369662Z",
+                "env": {},
+            },
+            "logs": [],
+        },
+    )
+    manifest = {
+        "metadata": {
+            "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+            "generated_at": "2025-03-10T12:54:41.369662Z",
+        },
+        "nodes": {
+            "model.pytest_dwh.public__orders": {
+                "unique_id": "model.pytest_dwh.public__orders",
+                "name": "public__orders",
+                "resource_type": "model",
+                "materialized": "table",
+                "database": "dev",
+                "schema": "public",
+                "alias": "orders",
+                "path": "mart/public__orders.sql",
+                "config": {"schema": "public", "materialized": "table"},
+                "description": "",
+            }
+        },
+    }
+
+    events = list(
+        event_message.to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=DagsterDbtTranslator()
+        )
+    )
+
+    # success-equivalent — we should see one materialization event.
+    mat_events = [e for e in events if isinstance(e, (AssetMaterialization, Output))]
+    assert len(mat_events) == 1, (
+        f"Expected 1 materialization event for success-equivalent status {status!r}; "
+        f"got {len(mat_events)}. Full events: {events!r}"
     )
 
 

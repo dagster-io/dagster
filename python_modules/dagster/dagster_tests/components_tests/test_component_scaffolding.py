@@ -59,8 +59,7 @@ def test_parse_params_model_no_params() -> None:
         parse_params_model(obj=fn_with_scaffolder_with_defaults, json_params=None)
         == TestParamsModelWithDefaults()
     )
-    with pytest.raises(ValidationError) as exc_info:
-        assert exc_info
+    with pytest.raises(ValidationError):
         assert parse_params_model(obj=fn_with_scaffolder_without_defaults, json_params=None)
     assert parse_params_model(obj=fn_with_no_params_scaffolder, json_params=None) == NoParams()
 

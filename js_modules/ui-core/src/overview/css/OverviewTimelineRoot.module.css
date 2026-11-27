@@ -1,0 +1,22 @@
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px var(--page-gutter, 24px);
+}
+
+.selectionInput {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile: the range controls take a second row so the selection input keeps its width. */
+:global(.dagster-mobile) .filterRow {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+:global(.dagster-mobile) .rangeControls {
+  flex-basis: 100%;
+}

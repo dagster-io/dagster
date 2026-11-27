@@ -235,7 +235,7 @@ export const ScheduleLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutatio
         {
           runConfigData: 'ops:\n  configurable_op:\n    config:\n      scheduled_date: 2023-01-29',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],

@@ -66,11 +66,11 @@ test suite so that the containers are not removed. In `tests/test_backcompat.py`
 change them to
 
 ```python
-    try:
-        yield
-    finally:
-        subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "stop"])
-      #  subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "rm", "-f"])
+try:
+    yield
+finally:
+    subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "stop"])
+#  subprocess.check_output(["docker", "compose", "-f", docker_compose_file, "rm", "-f"])
 ```
 
 When you run the backcompat test, you can view the docker containers using `docker container ls -a` and view the logs for the container in

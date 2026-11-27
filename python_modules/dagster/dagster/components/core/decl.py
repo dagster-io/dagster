@@ -294,7 +294,9 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
 
     def _load_component(self) -> "DefsFolderComponent":
         _process_attributes_with_enriched_validation_err(
-            self.source_tree, self.component_file_model, DefsFolderComponent.get_model_cls()
+            self.source_tree,
+            self.component_file_model,
+            DefsFolderComponent.get_model_cls(),
         )
         component_path = check.inst(self.loc, ComponentPath)
         return DefsFolderComponent(

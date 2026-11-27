@@ -1,6 +1,6 @@
 [project]
 name = "project_ml"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 version = "0.1.0"
 dependencies = [
     "dagster",
@@ -29,3 +29,6 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "project_ml"
 registry_modules = ["project_ml.components.*"]
+
+[tool.uv]
+exclude-newer = "48h"

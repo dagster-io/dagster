@@ -62,7 +62,7 @@ class TypedDictLoader(DagsterTypeLoader):
 
     def construct_from_config_value(self, context, config_value):
         config_value = check.dict_param(config_value, "config_value")
-        runtime_value = dict()
+        runtime_value = {}
         for key, val in config_value.items():
             runtime_value[key] = (
                 self._value_dagster_type.loader.construct_from_config_value(
@@ -81,7 +81,7 @@ class _TypedPythonDict(DagsterType):
             and isinstance(self.key_type, type(String))
         )  # True if value_type has a DagsterTypeLoader, meaning we can load the input from config,
         # otherwise False.
-        super(_TypedPythonDict, self).__init__(
+        super().__init__(
             key=f"TypedPythonDict.{key_type.key}.{value_type.key}",
             name=None,
             loader=(
@@ -102,11 +102,11 @@ class _TypedPythonDict(DagsterType):
                 description=f"Value should be a dict, got a {type(value)}",
             )
 
-        for key, value in value.items():
-            key_check = self.key_type.type_check(context, key)
+        for k, v in value.items():
+            key_check = self.key_type.type_check(context, k)
             if not key_check.success:
                 return key_check
-            value_check = self.value_type.type_check(context, value)
+            value_check = self.value_type.type_check(context, v)
             if not value_check.success:
                 return value_check
 

@@ -126,13 +126,6 @@ export const GlobalAutomaterializationContent = () => {
     [JSON.stringify(allTicks.map((tick) => `${tick.id}:${tick.status}`))],
   );
 
-  const onHoverTick = useCallback(
-    (tick: AssetDaemonTickFragment | undefined) => {
-      setIsPaused(!!tick);
-    },
-    [setIsPaused],
-  );
-
   const tableViewSwitch = (
     <ButtonGroup
       activeItems={new Set([tableView])}
@@ -199,11 +192,11 @@ export const GlobalAutomaterializationContent = () => {
           <LiveTickTimeline
             ticks={ticks}
             tickResultType="materializations"
-            onHoverTick={onHoverTick}
+            onHoverChange={setIsPaused}
             onSelectTick={setSelectedTick}
             exactRange={timeRange}
             timeRange={TWENTY_MINUTES}
-            tickGrid={FIVE_MINUTES}
+            minLabelInterval={FIVE_MINUTES}
             timeAfter={THREE_MINUTES}
           />
           <AutomaterializationTickDetailDialog

@@ -13,6 +13,7 @@ import type {PropSidebarItemCategory, PropSidebarItemLink} from '@docusaurus/plu
 
 import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import {CARD_TAGS, hasCardTag} from '../DocCardList/filters';
 
 // TODO - text for folders
 // TODO - indicator for "community supported" integration
@@ -65,7 +66,7 @@ function CardLayout({
   const logo: string | null = (item?.customProps?.logo as string) || null;
   const logoVariant: string | null = (item?.customProps?.logoVariant as string) || null;
   const isPanelLogo = logoVariant === 'panel';
-  const community: boolean = (item?.customProps?.community as boolean) || false;
+  const cardTags = CARD_TAGS.filter((tag) => hasCardTag(item, tag.key));
   const categoryItemsPlural = useCategoryItemsPlural();
   const doc = useDocById(item.type === 'link' ? (item.docId ?? undefined) : undefined);
   const logoUrl = useBaseUrl(logo || '');
@@ -115,7 +116,11 @@ function CardLayout({
                 {label}
               </Heading>
               {!hasInternalHref && <ExternalLinkIcon />}
-              {community && <span className={styles.cardTags}>Community</span>}
+              {cardTags.map((tag) => (
+                <span key={tag.key} className={styles.cardTags}>
+                  {tag.label}
+                </span>
+              ))}
             </div>
             {description && (
               <p className={styles.cardDescription} title={description}>
@@ -144,7 +149,11 @@ function CardLayout({
             {label}
           </Heading>
           {!hasInternalHref && <ExternalLinkIcon />}
-          {community && <span className={styles.cardTags}>Community</span>}
+          {cardTags.map((tag) => (
+            <span key={tag.key} className={styles.cardTags}>
+              {tag.label}
+            </span>
+          ))}
         </div>
         {description && (
           <p className={styles.cardDescription} title={description}>

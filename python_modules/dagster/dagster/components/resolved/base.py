@@ -1,4 +1,5 @@
 import inspect
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
@@ -191,6 +192,14 @@ class Resolvable:
 _Unset: Final[str] = UNSET_DEFAULT_SENTINEL
 
 
+def _humanize_class_name(name: str) -> str:
+    """``SnowflakeDestination`` -> ``Snowflake Destination``; keeps acronym runs
+    (``CSVAsset`` -> ``CSV Asset``).
+    """
+    words = re.findall(r"[A-Z]+(?=[A-Z][a-z0-9])|[A-Z][a-z0-9]*|[a-z0-9]+", name)
+    return " ".join(words) if words else name
+
+
 def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
@@ -278,8 +287,18 @@ def derive_model_type(
                 __base__=Model,
                 **model_fields,
             )
-            if schema_extra:
-                derived.model_config["json_schema_extra"] = schema_extra
+            # The component-type JSON is serialized with sort_keys=True on its
+            # way to the UI, so field declaration order must be carried
+            # explicitly. ``ui:order`` is lifted into the RJSF uiSchema by
+            # ``split_form_schema`` and honored natively by the form renderer.
+            # The humanized title replaces the derived class name (e.g.
+            # "SnowflakeDestinationModel") anywhere the schema is shown as a
+            # label — most visibly in union variant pickers.
+            derived.model_config["json_schema_extra"] = {
+                "title": _humanize_class_name(target_type.__name__),
+                "ui:order": list(model_fields.keys()),
+                **schema_extra,
+            }
             _DERIVED_MODEL_REGISTRY[target_type] = derived
         except PydanticSchemaGenerationError as e:
             raise ResolutionException(f"Unable to derive Model for {target_type}") from e

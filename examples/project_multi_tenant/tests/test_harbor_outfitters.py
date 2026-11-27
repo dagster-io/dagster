@@ -4,7 +4,6 @@ from pathlib import Path
 
 import dagster as dg
 
-from shared.io_managers import make_duckdb_io_manager
 from harbor_outfitters import defs
 from harbor_outfitters.assets.bronze import (
     raw_brand_guidelines,
@@ -20,6 +19,7 @@ from harbor_outfitters.assets.silver import (
     selected_catalog_context,
     standardized_products,
 )
+from shared.io_managers import make_duckdb_io_manager
 from tests.fakes import MockLLMResource
 
 

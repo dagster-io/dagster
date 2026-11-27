@@ -10,6 +10,7 @@ from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
 )
+from dagster_shared.utils.fs import rmtree
 from dagster_shared.yaml_utils import safe_load_yaml
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
@@ -313,7 +314,7 @@ def sync_project_to_packaged_dir(
         console.print(
             f"Removing existing contents at [bold red]{project.packaged_project_dir}[/bold red]."
         )
-        shutil.rmtree(project.packaged_project_dir)
+        rmtree(project.packaged_project_dir)
 
     # Determine if the package data dir is within the project dir, and ignore
     # that path if so.

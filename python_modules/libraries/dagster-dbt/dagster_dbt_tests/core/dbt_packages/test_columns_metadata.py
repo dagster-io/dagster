@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import subprocess
+import threading
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -22,14 +24,17 @@ from dagster import (
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_project import DbtProject
+from packaging import version
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
 from dagster_dbt_tests.dbt_projects import (
+    test_dbt_snapshot_path,
     test_dependencies_path,
     test_jaffle_shop_path,
     test_metadata_path,
@@ -812,6 +817,62 @@ def test_column_lineage_integration(
         assert len(relation_keys_passed) <= len(set(relation_keys_passed)) + REPEAT_QUERIES_PADDING
 
 
+def test_column_lineage_shares_one_scope_per_model(
+    test_metadata_manifest: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+) -> None:
+    # Without a scope, sqlglot's lineage() re-qualifies the whole query for every column,
+    # which makes lineage on wide models take minutes.
+    from dagster_dbt.core.dbt_cli_event import _build_column_lineage_metadata, lineage
+
+    # Lineage runs in a thread pool, so attribute each lineage() call to the model being
+    # built on the same thread.
+    current_model = threading.local()
+    scope_ids_by_model: dict[str | None, set[int | None]] = defaultdict(set)
+    calls_by_model: Counter[str | None] = Counter()
+
+    def build_column_lineage_metadata(**kwargs: Any) -> dict[str, Any]:
+        current_model.unique_id = kwargs["dbt_resource_props"]["unique_id"]
+        try:
+            return _build_column_lineage_metadata(**kwargs)
+        finally:
+            current_model.unique_id = None
+
+    def record_lineage(**kwargs: Any) -> Any:
+        unique_id = getattr(current_model, "unique_id", None)
+        scope = kwargs.get("scope")
+        scope_ids_by_model[unique_id].add(None if scope is None else id(scope))
+        calls_by_model[unique_id] += 1
+        return lineage(**kwargs)
+
+    mocker.patch("dagster_dbt.core.dbt_cli_event.lineage", side_effect=record_lineage)
+    for module in ("dbt_cli_event", "dbt_event_iterator"):
+        mocker.patch(
+            f"dagster_dbt.core.{module}._build_column_lineage_metadata",
+            side_effect=build_column_lineage_metadata,
+        )
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt.cli(["--quiet", "seed"]).wait()
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    assert scope_ids_by_model
+    assert None not in scope_ids_by_model
+    for unique_id, scope_ids in scope_ids_by_model.items():
+        assert len(scope_ids) == 1 and None not in scope_ids, unique_id
+    assert any(count > 1 for count in calls_by_model.values())
+
+
 @pytest.mark.parametrize(
     "command",
     ["parse", "build"],
@@ -938,4 +999,42 @@ def test_column_lineage_dependencies(
 
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
+    )
+
+
+@pytest.mark.skipif(
+    DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.12.0"),
+    reason="dbt only writes compiled SQL for snapshots in 1.12 and later.",
+)
+def test_column_lineage_snapshot(test_dbt_snapshot_manifest: dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_snapshot_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_snapshot_path))},
+    )
+    assert result.success
+
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataSet.extract(
+            event.materialization.metadata
+        ).column_lineage
+        for event in result.get_asset_materialization_events()
+    }
+
+    assert column_lineage_by_asset_key[AssetKey(["orders_snapshot"])] == TableColumnLineage(
+        deps_by_column={
+            "order_id": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")],
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["orders"]), column_name="customer_id")
+            ],
+            "status": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="status")],
+            # Appended by the snapshot materialization, so they have no upstream column.
+            "dbt_scd_id": [],
+            "dbt_updated_at": [],
+            "dbt_valid_from": [],
+            "dbt_valid_to": [],
+        }
     )

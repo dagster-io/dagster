@@ -15,11 +15,7 @@ const Template = (props: TerminationDialogProps) => (
   </MockedProvider>
 );
 
-const runIDs = [
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-];
+const runIDs = [faker.datatype.uuid(), faker.datatype.uuid(), faker.datatype.uuid()];
 
 export const ForceTerminationCheckbox = {
   render: (args: TerminationDialogProps) => <Template {...args} />,

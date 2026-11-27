@@ -739,7 +739,7 @@ class ExecutionPlan(
 
     @property
     def step_output_versions(self) -> Mapping[StepOutputHandle, str]:
-        return self.known_state.step_output_versions if self.known_state else {}
+        return self.known_state.step_output_versions
 
     @property
     def step_keys_to_execute(self) -> Sequence[str]:
@@ -833,7 +833,7 @@ class ExecutionPlan(
         step_keys_to_execute: Sequence[str],
         job_def: JobDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions: Mapping[StepOutputHandle, str | None] | None = None,
+        step_output_versions: Mapping[StepOutputHandle, str] | None = None,
     ) -> "ExecutionPlan":
         check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_output_versions = check.opt_mapping_param(

@@ -12,26 +12,38 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 # constant indicating where to store the latest defs state info in a kvs context
 DEFS_STATE_INFO_CURSOR_KEY = "__latest_defs_state_info__"
 
-_current_storage: ContextVar[Optional["DefsStateStorage"]] = ContextVar(
-    "_current_storage", default=None
-)
+
+class _StorageEntry:
+    """One `set_defs_state_storage` block, shared by every context copied while it is active."""
+
+    __slots__ = ("exited", "storage")
+
+    def __init__(self, storage: Optional["DefsStateStorage"]):
+        self.storage = storage
+        self.exited = False
+
+
+_active_storages: ContextVar[tuple[_StorageEntry, ...]] = ContextVar("_active_storages", default=())
+
+
+def _without_exited(entries: tuple[_StorageEntry, ...]) -> tuple[_StorageEntry, ...]:
+    return tuple(entry for entry in entries if not entry.exited)
 
 
 @contextmanager
 def set_defs_state_storage(storage: Optional["DefsStateStorage"]):
     """Context manager to set the current DefsStateStorage, accessible via `DefsStateStorage.get()`."""
-    token = _current_storage.set(storage)
+    entry = _StorageEntry(storage)
+    _active_storages.set((*_without_exited(_active_storages.get()), entry))
 
     try:
         yield
     finally:
-        try:
-            _current_storage.reset(token)
-        except ValueError:
-            # in certain async contexts, we exit the context manager in a separate
-            # async task from the one that created the token. in these cases, we
-            # can't reset the token value, so we just set it to None
-            _current_storage.set(None)
+        # Mark the shared entry rather than restoring the value seen on entry: exits can come out
+        # of order (e.g. a context finalized by GC), and copied contexts never see this reset.
+        entry.exited = True
+        entry.storage = None
+        _active_storages.set(_without_exited(_active_storages.get()))
 
 
 class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -133,4 +145,9 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @classmethod
     def get(cls) -> Optional["DefsStateStorage"]:
         """Get the current StateStorage, if it has been set."""
-        return _current_storage.get()
+        for entry in reversed(_active_storages.get()):
+            # read storage before the flag: an exit on another thread sets exited, then clears storage
+            storage = entry.storage
+            if not entry.exited:
+                return storage
+        return None

@@ -1,9 +1,11 @@
 import inspect
 import json
 import pickle
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import dagster as dg
 import fsspec.implementations.local
@@ -83,7 +85,7 @@ def daily(start: datetime):
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
 def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     class JSONIOManager(dg.UPathIOManager):
-        extension: str = ".json"
+        extension = ".json"
 
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
             with path.open("w") as file:
@@ -757,3 +759,31 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     assert dg.materialize(
         [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
     ).success
+
+
+def test_upath_io_manager_storage_options():
+    base_path = UPath("memory://dagster-storage-options/base", some_option="value")
+
+    # `UPath._kwargs` warns on universal-pathlib 0.2.x and no longer exists on >=0.3.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        storage_options = DummyIOManager(base_path=base_path).storage_options
+
+    assert storage_options == {"some_option": "value"}
+
+    storage_options["some_option"] = "changed"
+    assert DummyIOManager(base_path=base_path).storage_options == {"some_option": "value"}
+
+
+def test_upath_io_manager_storage_options_before_0_2():
+    # universal-pathlib < 0.2.0 has no `storage_options` and exposes the options as `_kwargs`
+    legacy_kwargs = {"some_option": "value"}
+    legacy_path = mock.Mock(spec=UPath)
+    del legacy_path.storage_options
+    legacy_path._kwargs = legacy_kwargs  # noqa: SLF001
+
+    storage_options = DummyIOManager(base_path=legacy_path).storage_options
+    assert storage_options == {"some_option": "value"}
+
+    storage_options["some_option"] = "changed"
+    assert legacy_kwargs == {"some_option": "value"}

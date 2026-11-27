@@ -1,8 +1,20 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetHealthQueryVariables = Types.Exact<{
+export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type AssetHealthQueryVariables = Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
@@ -41,6 +53,18 @@ export type AssetHealthQuery = {
                   numMissingPartitions: number;
                   totalNumPartitions: number;
                   latestRunId: string | null;
+                }
+              | {
+                  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+                  failedRunId: string | null;
+                }
+              | {
+                  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+                  numUpForRetryPartitions: number;
+                  numMissingPartitions: number;
+                  totalNumPartitions: number;
+                  latestRunId: string | null;
+                  latestFailedRunId: string | null;
                 }
               | null;
             assetChecksStatusMetadata:
@@ -111,6 +135,18 @@ export type AssetHealthFragment = {
           totalNumPartitions: number;
           latestRunId: string | null;
         }
+      | {
+          __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+          failedRunId: string | null;
+        }
+      | {
+          __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+          numUpForRetryPartitions: number;
+          numMissingPartitions: number;
+          totalNumPartitions: number;
+          latestRunId: string | null;
+          latestFailedRunId: string | null;
+        }
       | null;
     assetChecksStatusMetadata:
       | {
@@ -157,6 +193,20 @@ export type AssetHealthMaterializationDegradedNotPartitionedMetaFragment = {
   failedRunId: string | null;
 };
 
+export type AssetHealthMaterializationWarningPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+  numUpForRetryPartitions: number;
+  numMissingPartitions: number;
+  totalNumPartitions: number;
+  latestRunId: string | null;
+  latestFailedRunId: string | null;
+};
+
+export type AssetHealthMaterializationWarningNotPartitionedMetaFragment = {
+  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+  failedRunId: string | null;
+};
+
 export type AssetHealthCheckDegradedMetaFragment = {
   __typename: 'AssetHealthCheckDegradedMeta';
   numFailedChecks: number;
@@ -181,4 +231,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = 'e06ca48f7c8e64526e1178b901ba13db9697654e42f861ddba39e1b0045ba4ad';
+export const AssetHealthQueryVersion = '4fa08d7ab1b2237a6f7b4b18ea5b24bf6d7c19398e7cd68c618175de3c12f7c0';

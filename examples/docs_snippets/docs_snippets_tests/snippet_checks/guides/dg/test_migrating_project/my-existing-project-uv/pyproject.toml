@@ -2,7 +2,7 @@
 name = "my_existing_project"
 version = "0.1.0"
 description = "Add your description here"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster",
 ]
@@ -16,3 +16,6 @@ dev = [
 [build-system]
 requires = ["hatchling>=1.19.0"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+exclude-newer = "48h"

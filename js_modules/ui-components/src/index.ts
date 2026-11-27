@@ -12,6 +12,7 @@ export * from './components/ConfigTypeSchema';
 export * from './components/Countdown';
 export * from './components/CursorControls';
 export * from './components/CustomTooltipProvider';
+export * from './components/DagsterLogo';
 export * from './components/DayPickerWrapper';
 export * from './components/Delayed';
 export * from './components/Dialog';

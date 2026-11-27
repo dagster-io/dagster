@@ -20,6 +20,12 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     help="Slash-separated asset key (e.g., my/asset)",
 )
 @click.option(
+    "--limit",
+    type=int,
+    default=10,
+    help="Maximum number of asset checks to return (default: 10)",
+)
+@click.option(
     "--json",
     "output_json",
     is_flag=True,
@@ -32,6 +38,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
 def list_asset_checks_command(
     ctx: click.Context,
     asset_key: str,
+    limit: int,
     output_json: bool,
     organization: str,
     deployment: str,
@@ -59,7 +66,7 @@ def list_asset_checks_command(
     api = DgApiAssetCheckApi(client)
 
     with handle_api_errors(ctx, output_json):
-        checks = api.list_asset_checks(asset_key=asset_key)
+        checks = api.list_asset_checks(asset_key=asset_key, limit=limit)
         output = format_asset_checks(checks, as_json=output_json)
         click.echo(output)
 
@@ -95,7 +102,8 @@ def list_asset_checks_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_rest_resources.schemas.asset_check", cls="DgApiAssetCheckExecutionList"
+    module="dagster_rest_resources.schemas.asset_check",
+    cls="DgApiAssetCheckExecutionList",
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper

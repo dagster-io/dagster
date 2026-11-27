@@ -1,6 +1,6 @@
 [project]
 name = "multi-platform-data-local"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 version = "0.1.0"
 dependencies = [
     "dagster>=1.9.0",
@@ -10,3 +10,6 @@ dependencies = [
 
 [tool.hatch.build]
 only-include = []
+
+[tool.uv]
+exclude-newer = "48h"

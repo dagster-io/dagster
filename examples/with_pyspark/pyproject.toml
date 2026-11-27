@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "with_pyspark"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "dagster",
     "dagster-spark",
@@ -28,6 +28,9 @@ test = [
     "dagster-spark",
     "dagster-pyspark",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true }

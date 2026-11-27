@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -74,6 +74,9 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
 
         """
         return self._partition_keys
+
+    def filter_valid_partition_keys(self, partition_keys: set[str]) -> AbstractSet[str]:
+        return set(self._partition_keys) & partition_keys
 
     def get_paginated_partition_keys(
         self,

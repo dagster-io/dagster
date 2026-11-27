@@ -23,7 +23,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   dagster-cloud-deploy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.

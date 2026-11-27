@@ -168,3 +168,64 @@ def validate_repo_has_defined_sensors(repo: "RemoteRepository") -> None:
 def validate_repo_has_defined_schedules(repo: "RemoteRepository") -> None:
     if not repo.get_schedules():
         raise click.UsageError(f"There are no schedules defined for repository {repo.name}.")
+
+
+DEFS_STATE_INFO_OVERRIDE_PATH_ENV = "DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH"
+
+
+def resolve_serialized_defs_state_info(
+    serialized_arg: str | None,
+    logger: logging.Logger,
+) -> str | None:
+    """Return the serialized DefsStateInfo to use at server boot.
+
+    If DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH is set and the file at that path
+    is readable, its contents are authoritative and win over the
+    --defs-state-info CLI arg — including when the file is empty, which means
+    "explicitly no pin." The CLI arg is only used when the env var is unset or
+    the file is unreadable/missing.
+
+    Empty must mean "no pin" rather than "fall back to the arg": the launcher
+    that writes the file may have moved the pin from some value to None after
+    the pod spec was created, and the spec args still carry the old value. A
+    restart that fell back to the arg would silently revive the stale pin.
+
+    This lets a launcher (e.g. K8sUserCodeLauncher) update the pin via a
+    ConfigMap-mounted file without rewriting the pod's spec args — which
+    would otherwise trigger a rolling restart and defeat in-place reload.
+    Reads at boot only; live updates flow through the gRPC ReloadCodeWithState
+    RPC, not the file.
+    """
+    override_path = os.environ.get(DEFS_STATE_INFO_OVERRIDE_PATH_ENV)
+    if not override_path:
+        return serialized_arg
+    try:
+        with open(override_path, encoding="utf-8") as f:
+            content = f.read().strip()
+    except FileNotFoundError:
+        logger.info(
+            "%s set to %s but file not found; falling back to --defs-state-info arg.",
+            DEFS_STATE_INFO_OVERRIDE_PATH_ENV,
+            override_path,
+        )
+        return serialized_arg
+    except OSError as e:
+        logger.warning(
+            "Could not read defs_state_info override at %s: %s; "
+            "falling back to --defs-state-info arg.",
+            override_path,
+            e,
+        )
+        return serialized_arg
+    if not content:
+        logger.info(
+            "Defs state override file %s present but empty; booting with no defs_state_info pin.",
+            override_path,
+        )
+        return None
+    logger.info(
+        "Loaded defs_state_info from override file %s (len=%d).",
+        override_path,
+        len(content),
+    )
+    return content

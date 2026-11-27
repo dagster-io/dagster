@@ -50,6 +50,22 @@ export const humanCronString = (cronSchedule: string, timezoneConfig?: CronTimez
     .join('; ');
 };
 
+/**
+ * Whether ``cronSchedule`` is an expression the app can parse — judged by the
+ * same ``cronstrue`` engine that ``humanCronString`` renders with. Lives here
+ * so cron validity is decided consistently everywhere, rather than by ad-hoc
+ * regexes that reject valid forms (named days, ``L``/``W``/``?``, ``@`` macros,
+ * second/year fields, …).
+ */
+export const isValidCronString = (cronSchedule: string): boolean => {
+  try {
+    cronstrue.toString(convertIfSpecial(cronSchedule.trim()));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const cronScheduleToArray = (cronSchedule: string) => {
   // The supplied string, if a cron union, will use single quotes for the array
   // elements. This is not valid JSON, so try to make it valid.

@@ -8,7 +8,7 @@ The `dg` CLI includes built-in commands for authenticating with Dagster+ and man
 
 :::note Prerequisites
 
-- Python 3.10+
+- Python 3.11+
 - The `dg` CLI installed. See the [dg CLI reference](/api/clis/dg-cli/dg-cli-reference) for installation instructions.
 
 :::

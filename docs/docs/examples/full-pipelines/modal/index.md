@@ -11,7 +11,9 @@ slug: '/examples/full-pipelines/modal'
 ---
 
 :::note
-To see [video of this example](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
+
+See a [video of this example](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s).
+
 :::
 
 In this example, you'll build a pipeline with Dagster that:
@@ -25,7 +27,7 @@ In this example, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.10+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.11+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
 
 ## Step 1: Set up your Dagster environment
 

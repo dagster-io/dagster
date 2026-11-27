@@ -12,6 +12,7 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {ReexecutionStrategy} from '../graphql/types';
 import {isNewTabClick} from '../hooks/useOpenInNewTab';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
@@ -28,6 +29,7 @@ interface RunActionButtonsProps {
 export const CancelRunButton = ({run}: {run: RunFragment}) => {
   const {id: runId, canTerminate, hasTerminatePermission} = run;
   const [showDialog, setShowDialog] = useState<boolean>(false);
+  const isMobile = useIsMobile();
   const closeDialog = useCallback(() => setShowDialog(false), []);
 
   const onComplete = useCallback(
@@ -53,10 +55,11 @@ export const CancelRunButton = ({run}: {run: RunFragment}) => {
     <Button
       icon={<Icon name="cancel" />}
       intent="danger"
+      aria-label={isMobile ? 'Terminate' : undefined}
       disabled={showDialog || !hasTerminatePermission}
       onClick={() => setShowDialog(true)}
     >
-      Terminate
+      {isMobile ? null : 'Terminate'}
     </Button>
   );
 
@@ -124,6 +127,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   );
 
   const reexecute = useJobReexecution();
+  const isMobile = useIsMobile();
   const reexecuteWithSelection = async (selection: StepSelection) => {
     if (!run || !repoMatch || !run.pipelineSnapshotId) {
       return;
@@ -274,6 +278,17 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     return run.hasReExecutePermission ? undefined : DEFAULT_DISABLED_REASON;
   };
 
+  const title = () => {
+    // Short on mobile to fit beside the page's tabs; drops the step scope, keeps the strategy.
+    if (isMobile) {
+      return primary === full ? 'Re-execute' : primary.title;
+    }
+    if (primary.scope === '*') {
+      return `Re-execute all (*)`;
+    }
+    return primary.scope ? `Re-execute (${primary.scope})` : `Re-execute ${primary.title}`;
+  };
+
   return (
     <Box flex={{direction: 'row', gap: 8}}>
       <Box flex={{direction: 'row'}}>
@@ -281,13 +296,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
           runCount={1}
           primary={primary}
           options={options}
-          title={
-            primary.scope === '*'
-              ? `Re-execute all (*)`
-              : primary.scope
-                ? `Re-execute (${primary.scope})`
-                : `Re-execute ${primary.title}`
-          }
+          title={title()}
           tooltip={tooltip()}
           icon={jobError?.icon}
           disabled={jobError?.disabled || !run.hasReExecutePermission}

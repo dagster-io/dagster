@@ -6,23 +6,23 @@
 - **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Documentation of developer workflows in the Dagster OSS repo.
 - **UI Workflow**: [.claude/ui_workflow.md](./.claude/ui_workflow.md) - UI/TypeScript development workflows and verification commands. **ALWAYS check after UI edits.**
 - **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions. **ALWAYS check this before writing data structures - use @record instead of @dataclass.**
-- **CRITICAL**: After ANY Python code changes, ALWAYS run `make ruff` - this is mandatory and must never be skipped.
+- **CRITICAL**: After ANY Python code changes, ALWAYS run `just ruff` - this is mandatory and must never be skipped.
 
 ## Environment Setup
 
 See [docs/docs/about/contributing.md](docs/docs/about/contributing.md) for full setup instructions.
 
 ```bash
-make dev_install  # Full development environment setup
+just dev_install  # Full development environment setup
 ```
 
 ## Essential Commands
 
 ```bash
 # Code quality - RUN AFTER EVERY PYTHON EDIT
-make ruff                    # Format, lint, and autofix code - MANDATORY AFTER ANY CODE CHANGES
-make pyright                # Type checking (slow first run)
-make quick_pyright          # Type check only changed files
+just ruff                    # Format, lint, and autofix code - MANDATORY AFTER ANY CODE CHANGES
+just ty                     # Type checking (slow first run)
+just quick-ty               # Type check only changed files
 
 # Testing
 pytest path/to/tests/       # Run specific tests
@@ -38,9 +38,9 @@ yarn jest                   # Jest tests
 yarn build                  # Verify production build (ui-components changes only)
 
 # Development
-make rebuild_ui             # Rebuild React UI after changes
+just rebuild_ui             # Rebuild React UI after changes
 just generate-graphql       # Regenerate GraphQL schema and codegen clients
-make sanity_check           # Check for non-editable installs
+just sanity_check           # Check for non-editable installs
 ```
 
 ## Development Workflow
@@ -76,8 +76,8 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Code Quality Requirements
 
-- **MANDATORY**: After any code changes, ALWAYS run `make ruff` to format, lint, and autofix code
-- **MANDATORY**: If `make ruff` makes any changes, re-run tests to ensure everything still works
+- **MANDATORY**: After any code changes, ALWAYS run `just ruff` to format, lint, and autofix code
+- **MANDATORY**: If `just ruff` makes any changes, re-run tests to ensure everything still works
 - **MANDATORY**: Address any linting issues before considering a task complete
 - Never skip this step - code quality checks are essential for all contributions
 
@@ -91,9 +91,9 @@ yarn build-api-docs          # Build API docs after .rst changes
 - DO NOT search for Python code (.py files) inside of .tox folders. These are temporary environments and this will only cause confusion.
 - Always search for package dependencies in setup.py files only. This is the current source of truth for dependencies in this repository.
 
-## Make Command Guidelines
+## Just Command Guidelines
 
-- Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository
+- Whenever there is an instruction to run a just recipe, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the justfile is at the root of the repository
 
 ## Environment Variables
 

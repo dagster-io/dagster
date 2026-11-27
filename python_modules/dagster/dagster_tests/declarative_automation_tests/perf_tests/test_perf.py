@@ -46,7 +46,6 @@ def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> Non
             asset_graph=defs.resolve_asset_graph(),
             run_tags={},
             emit_backfills=False,
-            resolve_check_keys_enabled=False,
         )
         for run_request in run_requests:
             asset_job.get_subset(

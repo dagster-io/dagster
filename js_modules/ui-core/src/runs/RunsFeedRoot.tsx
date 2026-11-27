@@ -6,14 +6,19 @@ import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedTable} from './RunsFeedTable';
-import {useRunsFeedTabs, useSelectedRunsFeedTab} from './RunsFeedTabs';
+import {useRunsFeedTabs} from './RunsFeedTabs';
+import {
+  getRunsFeedQueryView,
+  getSelectedRunsFeedTab,
+  useQueryPersistedRunsFeedView,
+} from './RunsFeedUtils';
+import {useRunsFilterInput} from './RunsFilterInput';
 import {
   RunFilterToken,
   RunFilterTokenType,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-  useRunsFilterInput,
-} from './RunsFilterInput';
+} from './RunsFilterUtils';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {
@@ -24,7 +29,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RunsFeedView} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 
 const filters: RunFilterTokenType[] = [
@@ -44,15 +48,9 @@ export const RunsFeedRoot = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
 
-  const [view, setView] = useQueryPersistedState<RunsFeedView>({
-    encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
-    decode: (qs) => {
-      const value = typeof qs.view === 'string' ? qs.view : RunsFeedView.ROOTS;
-      return value.toUpperCase() as RunsFeedView;
-    },
-  });
+  const [view, setView] = useQueryPersistedRunsFeedView();
 
-  const currentTab = useSelectedRunsFeedTab(filterTokens, view);
+  const currentTab = getSelectedRunsFeedTab(filterTokens, view);
 
   const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
@@ -81,7 +79,7 @@ export const RunsFeedRoot = () => {
   const isShowingViewOption = ['all', 'failed'].includes(currentTab);
 
   const {entries, paginationProps, queryResult} = useRunsFeedEntries({
-    view: isShowingViewOption || currentTab === 'backfills' ? view : RunsFeedView.RUNS,
+    view: getRunsFeedQueryView(currentTab, view),
     filter,
     skip: false,
   });

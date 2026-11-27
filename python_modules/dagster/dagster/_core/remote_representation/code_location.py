@@ -372,6 +372,7 @@ class InProcessCodeLocation(CodeLocation):
             defs_state_info=self._instance.defs_state_storage.get_latest_defs_state_info()
             if self._instance.defs_state_storage
             else None,
+            code_location_name=self._origin.location_name,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

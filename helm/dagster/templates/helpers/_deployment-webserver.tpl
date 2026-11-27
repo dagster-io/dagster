@@ -68,7 +68,7 @@ spec:
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
-          command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+          command: ['sh', '-c', "until nslookup {{ $deployment.name }} 2>/dev/null | grep -q '^Name:'; do echo waiting for user service; sleep 2; done"]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
           {{- if $_.Values.dagsterWebserver.initContainerResources }}

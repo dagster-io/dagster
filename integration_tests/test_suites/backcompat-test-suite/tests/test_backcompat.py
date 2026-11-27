@@ -64,7 +64,7 @@ def assert_run_success(client: DagsterGraphQLClient, run_id: str) -> None:
             raise Exception("Timed out waiting for launched run to complete")
 
         status = client.get_run_status(run_id)
-        assert status and status != DagsterRunStatus.FAILURE
+        assert status != DagsterRunStatus.FAILURE
         if status == DagsterRunStatus.SUCCESS:
             break
 

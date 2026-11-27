@@ -77,10 +77,10 @@ const RepoRouteContainer = () => {
       >
         <PipelineRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/locations/:repoPath/schedules/:scheduleName/:runTab?">
+      <Route path="/locations/:repoPath/schedules/:scheduleName/:runTab?" mobile="supported">
         <ScheduleRoot repoAddress={addressForPath} />
       </Route>
-      <Route path="/locations/:repoPath/sensors/:sensorName">
+      <Route path="/locations/:repoPath/sensors/:sensorName" mobile="supported">
         <SensorRoot repoAddress={addressForPath} />
       </Route>
       <Route path="/locations/:repoPath/resources/:resourceName">
@@ -97,7 +97,7 @@ const RepoRouteContainer = () => {
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      <Route path="/locations/:repoPath" exact>
+      <Route path="/locations/:repoPath" exact mobile="supported">
         <CodeLocationOverviewRoot repoAddress={addressForPath} />
       </Route>
       <Route path="/locations/:repoPath/definitions" exact>

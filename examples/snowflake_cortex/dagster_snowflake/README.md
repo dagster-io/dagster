@@ -153,6 +153,7 @@ uv add dagster-snowflake
 from dagster_snowflake import SnowflakeResource
 from dagster_snowflake_ai.defs.resources import get_snowflake_connection_with_schema
 
+
 @dg.asset
 def my_asset(context, snowflake: SnowflakeResource):
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
@@ -165,6 +166,7 @@ def my_asset(context, snowflake: SnowflakeResource):
 
 ```python
 from dagster_snowflake_ai.defs.partitions import daily_partitions
+
 
 @dg.asset(partitions_def=daily_partitions)
 def partitioned_asset(context, snowflake: SnowflakeResource):

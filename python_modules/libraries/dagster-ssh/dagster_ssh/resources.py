@@ -1,3 +1,4 @@
+import contextlib
 import getpass
 import logging
 import os
@@ -10,6 +11,7 @@ from dagster import (
     IntSource,
     StringSource,
     _check as check,
+    get_dagster_logger,
     resource,
 )
 from dagster._annotations import beta
@@ -21,6 +23,17 @@ from paramiko.client import SSHClient
 from paramiko.config import SSH_PORT
 from pydantic import Field, PrivateAttr
 from sshtunnel import SSHTunnelForwarder
+
+from dagster_ssh.host_keys import (
+    AcceptCheckedHostKeyPolicy,
+    KnownHostTunnelForwarder,
+    client_transport_factory,
+    known_hosts_name,
+)
+from dagster_ssh.known_hosts import KnownHostKeys, known_keys
+from dagster_ssh.ssh_config import lookup_ssh_config
+
+SYSTEM_KNOWN_HOSTS_FILE = "/etc/ssh/ssh_known_hosts"
 
 
 def key_from_str(key_str):
@@ -61,8 +74,18 @@ class SSHResource(ConfigurableResource):
         timeout (int, optional): Connection timeout in seconds. Defaults to 10.
         keepalive_interval (int, optional): Interval for sending SSH keepalive packets. (Defaults to 30 seconds.)
         compress (bool, optional): Whether to compress the SSH transport stream. Defaults to True.
-        no_host_key_check (bool, optional): Disable host key verification.
-        allow_host_key_change (bool, optional): Allow connections to hosts with changed host keys. (Defaults to False.)
+        known_hosts_file (Optional[str]): Path to an extra known_hosts file to trust, in addition to
+            ``~/.ssh/known_hosts`` and ``/etc/ssh/ssh_known_hosts``.
+        no_host_key_check (bool, optional): Accept a host that has no known_hosts entry, and skip
+            known_hosts files that cannot be read. A key that differs from the host's entry, or
+            that is marked ``@revoked``, is still rejected. Unsafe: a machine on the network can
+            impersonate a host that is not in known_hosts. Defaults to False.
+        allow_host_key_change (bool, optional): Ignored. A host whose key differs from its
+            known_hosts entry is always rejected, with or without ``no_host_key_check``.
+
+    By default, ``get_connection``, ``get_tunnel``, ``sftp_get``, and ``sftp_put`` verify the host
+    key against ``/etc/ssh/ssh_known_hosts``, ``~/.ssh/known_hosts``, and ``known_hosts_file``, and
+    reject a host that is not listed there.
 
     Example:
         Creating an SSH resource with key-based authentication:
@@ -72,6 +95,17 @@ class SSHResource(ConfigurableResource):
             ssh_resource = SSHResource(
                 remote_host="example.com",
                 username="myuser", key_file="/path/to/private/key"
+            )
+
+        Trusting a host whose key is in a known_hosts file you provide:
+
+        .. code-block:: python
+
+            ssh_resource = SSHResource(
+                remote_host="example.com",
+                username="myuser",
+                key_file="/path/to/private/key",
+                known_hosts_file="/path/to/known_hosts",
             )
 
         Creating an SSH resource with password authentication:
@@ -111,104 +145,153 @@ class SSHResource(ConfigurableResource):
         description="Send a keepalive packet to remote host every keepalive_interval seconds",
     )
     compress: bool = Field(default=True, description="Compress the transport stream")
-    no_host_key_check: bool = Field(
-        default=True,
+    known_hosts_file: str | None = Field(
+        default=None,
         description=(
-            "If True, the host key will not be verified. This is unsafe and not recommended"
+            "Extra known_hosts file to trust, in addition to ~/.ssh/known_hosts and"
+            " /etc/ssh/ssh_known_hosts"
+        ),
+    )
+    no_host_key_check: bool = Field(
+        default=False,
+        description=(
+            "If True, accept a host that has no known_hosts entry and skip known_hosts files that"
+            " cannot be read. A changed or @revoked key is still rejected. Unsafe: a machine on"
+            " the network can impersonate a host that is not in known_hosts"
         ),
     )
     allow_host_key_change: bool = Field(
         default=False,
-        description="If True, allow connecting to hosts whose host key has changed",
+        description=(
+            "Ignored. A host whose key differs from its known_hosts entry is always rejected,"
+            " with or without no_host_key_check"
+        ),
     )
 
     _logger: logging.Logger | None = PrivateAttr(default=None)
-    _host_proxy: paramiko.ProxyCommand | None = PrivateAttr(default=None)
-    _key_obj: paramiko.RSAKey | None = PrivateAttr(default=None)
 
     def set_logger(self, logger: logging.Logger) -> None:
         self._logger = logger
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._logger = context.log
-        self._host_proxy = None
 
-        # Create RSAKey object from private key string
-        self._key_obj = key_from_str(self.key_string) if self.key_string is not None else None
+    def _proxy(self) -> paramiko.ProxyCommand | None:
+        # A ProxyCommand runs its command when created, so each connection needs its own. Tunnels
+        # start their own, per transport.
+        proxy_command = lookup_ssh_config(self.remote_host).get("proxycommand")
+        return paramiko.ProxyCommand(proxy_command) if proxy_command else None
 
-        # Auto detecting username values from system
-        if not self.username:
-            if self._logger:
-                self._logger.debug(
-                    f"username to ssh to host: {self.remote_host} is not specified. Using system's default provided"
-                    " by getpass.getuser()"
-                )
-            self.username = getpass.getuser()
+    def _parsed_key_string(self) -> paramiko.RSAKey | None:
+        return key_from_str(self.key_string) if self.key_string is not None else None
 
-        user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
-        if os.path.isfile(user_ssh_config_filename):
-            ssh_conf = paramiko.SSHConfig()
-            ssh_conf.parse(open(user_ssh_config_filename, encoding="utf8"))
-            host_info = ssh_conf.lookup(self.remote_host)
+    def _resolved_username(self) -> str:
+        # Passed explicitly because sshtunnel would prefer the ssh config's User and paramiko
+        # would not, so tunnels and connections could log in as different users.
+        return self.username or getpass.getuser()
 
-            proxy_command = host_info.get("proxycommand")
-            if host_info and proxy_command:
-                self._host_proxy = paramiko.ProxyCommand(proxy_command)
+    def _uses_password(self) -> bool:
+        return bool(self.password and self.password.strip())
 
-            if not (self.password or self.key_file):
-                identify_file = host_info.get("identityfile")
-                if host_info and identify_file:
-                    self.key_file = identify_file[0]
+    def _resolved_key_file(self) -> str | None:
+        """``key_file``, or the host's ssh config IdentityFile when no other credential is set."""
+        if self.key_file or self._uses_password() or self.key_string:
+            return self.key_file
+        identity_files = lookup_ssh_config(self.remote_host).get("identityfile")
+        return identity_files[0] if identity_files else None
 
     @property
     def log(self) -> logging.Logger:
-        return check.not_none(self._logger)
+        return self._logger or get_dagster_logger()
+
+    def _known_host_keys(self, known_hosts_entry: str) -> KnownHostKeys:
+        """The keys known_hosts lists for the host.
+
+        A missing ``known_hosts_file`` is an error unless ``no_host_key_check`` is set, which skips
+        any file that cannot be read.
+        """
+        candidates = [
+            (SYSTEM_KNOWN_HOSTS_FILE, False),
+            (os.path.expanduser("~/.ssh/known_hosts"), False),
+        ]
+        if self.known_hosts_file:
+            candidates.append((os.path.expanduser(self.known_hosts_file), True))
+        return known_keys(
+            [path for path, required in candidates if self._reads_known_hosts(path, required)],
+            known_hosts_entry,
+        )
+
+    def _reads_known_hosts(self, path: str, required: bool) -> bool:
+        if self.no_host_key_check:
+            return os.path.isfile(path) and os.access(path, os.R_OK)
+        return required or os.path.isfile(path)
+
+    def _warn_about_host_key_options(self) -> None:
+        if self.allow_host_key_change:
+            self.log.warning(
+                "allow_host_key_change is ignored: a host whose key differs from its known_hosts"
+                " entry is always rejected"
+            )
+        if self.no_host_key_check:
+            self.log.warning(
+                "no_host_key_check=True accepts a host that is not in known_hosts. This won't"
+                " protect that host against Man-In-The-Middle attacks"
+            )
 
     def get_connection(self) -> SSHClient:
         """Opens a SSH connection to the remote host.
 
         :rtype: paramiko.client.SSHClient
         """
+        self._warn_about_host_key_options()
+        known_hosts_entry = known_hosts_name(self.remote_host, self.remote_port or SSH_PORT)
+        # The transport checks the host key against known_hosts, because paramiko's own loader
+        # rejects marker lines and keeps only one key per type.
+        transport_factory = client_transport_factory(
+            known_hosts_entry, self._known_host_keys(known_hosts_entry), self.no_host_key_check
+        )
         client = paramiko.SSHClient()
-        client.load_system_host_keys()
+        client.set_missing_host_key_policy(AcceptCheckedHostKeyPolicy())
 
-        if not self.allow_host_key_change:
-            self.log.warning(
-                "Remote Identification Change is not verified. This won't protect against "
-                "Man-In-The-Middle attacks"
-            )
-            client.load_system_host_keys()
-        if self.no_host_key_check:
-            self.log.warning(
-                "No Host Key Verification. This won't protect against Man-In-The-Middle attacks"
-            )
-            # Default is RejectPolicy
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        if self.password and self.password.strip():
-            client.connect(
-                hostname=self.remote_host,
-                username=self.username,
-                password=self.password,
-                key_filename=self.key_file,
-                pkey=self._key_obj,
-                timeout=self.timeout,
-                compress=self.compress,
-                port=self.remote_port,  # type: ignore
-                sock=self._host_proxy,
-                look_for_keys=False,
-            )
-        else:
-            client.connect(
-                hostname=self.remote_host,
-                username=self.username,
-                key_filename=self.key_file,
-                pkey=self._key_obj,
-                timeout=self.timeout,
-                compress=self.compress,
-                port=self.remote_port,  # type: ignore
-                sock=self._host_proxy,
-            )
+        key_file = self._resolved_key_file()
+        pkey = self._parsed_key_string()
+        proxy = self._proxy()
+        try:
+            if self._uses_password():
+                client.connect(
+                    hostname=self.remote_host,
+                    username=self._resolved_username(),
+                    password=self.password,
+                    key_filename=key_file,
+                    pkey=pkey,
+                    timeout=self.timeout,
+                    compress=self.compress,
+                    port=self.remote_port,  # type: ignore
+                    sock=proxy,
+                    look_for_keys=False,
+                    transport_factory=transport_factory,
+                )
+            else:
+                client.connect(
+                    hostname=self.remote_host,
+                    username=self._resolved_username(),
+                    key_filename=key_file,
+                    pkey=pkey,
+                    timeout=self.timeout,
+                    compress=self.compress,
+                    port=self.remote_port,  # type: ignore
+                    sock=proxy,
+                    transport_factory=transport_factory,
+                )
+        except BaseException:
+            # The proxy may be closed already, through its transport, and closing it again can
+            # fail, so a cleanup error must not replace the connect error.
+            with contextlib.suppress(OSError):
+                client.close()
+            if proxy is not None:
+                with contextlib.suppress(OSError):
+                    proxy.close()
+            raise
 
         if self.keepalive_interval:
             client.get_transport().set_keepalive(self.keepalive_interval)  # type: ignore
@@ -218,6 +301,12 @@ class SSHResource(ConfigurableResource):
     def get_tunnel(
         self, remote_port, remote_host="localhost", local_port=None
     ) -> SSHTunnelForwarder:
+        """Returns an unstarted tunnel to ``remote_host:remote_port`` through the SSH host.
+
+        Unless ``no_host_key_check`` is set, this raises if the SSH host is not in known_hosts.
+        The tunnel's ``start()`` raises ``HostKeyRejectedError`` before authenticating if the host
+        presents a key that differs from its known_hosts entry or is marked ``@revoked``.
+        """
         check.int_param(remote_port, "remote_port")
         check.str_param(remote_host, "remote_host")
         check.opt_int_param(local_port, "local_port")
@@ -228,35 +317,41 @@ class SSHResource(ConfigurableResource):
             local_bind_address = ("localhost",)
 
         # Will prefer key string if specified, otherwise use the key file
-        if self._key_obj and self.key_file:
+        key_file = self._resolved_key_file()
+        key_obj = self._parsed_key_string()
+        if key_obj and key_file:
             self.log.warning(
                 "SSHResource: key_string and key_file both specified as config. Using key_string."
             )
-        pkey = self._key_obj if self._key_obj else self.key_file
+        pkey = key_obj if key_obj else key_file
 
-        if self.password and self.password.strip():
-            client = SSHTunnelForwarder(
+        self._warn_about_host_key_options()
+
+        if self._uses_password():
+            client = KnownHostTunnelForwarder(
                 self.remote_host,
                 ssh_port=self.remote_port,
-                ssh_username=self.username,
+                ssh_username=self._resolved_username(),
                 ssh_password=self.password,
                 ssh_pkey=pkey,
-                ssh_proxy=self._host_proxy,
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
                 logger=self._logger,
+                known_host_keys=self._known_host_keys,
+                accept_unknown=self.no_host_key_check,
             )
         else:
-            client = SSHTunnelForwarder(
+            client = KnownHostTunnelForwarder(
                 self.remote_host,
                 ssh_port=self.remote_port,
-                ssh_username=self.username,
+                ssh_username=self._resolved_username(),
                 ssh_pkey=pkey,
-                ssh_proxy=self._host_proxy,
                 local_bind_address=local_bind_address,
                 remote_bind_address=(remote_host, remote_port),
                 host_pkey_directories=[],
                 logger=self._logger,
+                known_host_keys=self._known_host_keys,
+                accept_unknown=self.no_host_key_check,
             )
 
         return client
@@ -335,9 +430,32 @@ class SSHResource(ConfigurableResource):
             default_value=30,
         ),
         "compress": DagsterField(BoolSource, is_required=False, default_value=True),
-        "no_host_key_check": DagsterField(BoolSource, is_required=False, default_value=True),
+        "known_hosts_file": DagsterField(
+            StringSource,
+            description=(
+                "extra known_hosts file to trust, in addition to ~/.ssh/known_hosts and"
+                " /etc/ssh/ssh_known_hosts"
+            ),
+            is_required=False,
+        ),
+        "no_host_key_check": DagsterField(
+            BoolSource,
+            description=(
+                "if True, accept a host that has no known_hosts entry and skip known_hosts files"
+                " that cannot be read. A changed or @revoked key is still rejected. Unsafe: a"
+                " machine on the network can impersonate a host that is not in known_hosts"
+            ),
+            is_required=False,
+            default_value=False,
+        ),
         "allow_host_key_change": DagsterField(
-            BoolSource, description="[Deprecated]", is_required=False, default_value=False
+            BoolSource,
+            description=(
+                "[Deprecated] Ignored. A host whose key differs from its known_hosts entry is"
+                " always rejected, with or without no_host_key_check"
+            ),
+            is_required=False,
+            default_value=False,
         ),
     }
 )

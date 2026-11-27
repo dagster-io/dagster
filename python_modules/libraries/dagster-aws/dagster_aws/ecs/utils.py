@@ -61,7 +61,9 @@ def run_ecs_task(ecs, run_task_kwargs) -> Mapping[str, Any]:
 
         failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
 
-        if "Capacity is unavailable at this time" in failure_message:
+        if any(failure.get("reason") == "AGENT" for failure in failures) or (
+            "Capacity is unavailable at this time" in failure_message
+        ):
             raise RetryableEcsException(failure_message)
 
         raise Exception(failure_message)

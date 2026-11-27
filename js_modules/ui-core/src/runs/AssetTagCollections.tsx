@@ -20,8 +20,8 @@ import {
   labelForAssetCheck,
   renderItemAssetCheck,
   renderItemAssetKey,
-  sortItemAssetCheck,
-  sortItemAssetKey,
+  sortedAssetChecks,
+  sortedAssetKeys,
 } from '../assets/AssetListUtils';
 import {
   assetDetailsPathForAssetCheck,
@@ -184,8 +184,8 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
   const previewComplete = !lazy || (assetKeys?.length ?? 0) >= lazy.totalCount;
 
   const {slicedSortedAssetKeys, fullAssetKeys} = React.useMemo(() => {
-    const sortedPreview = assetKeys?.slice().sort(sortItemAssetKey) ?? [];
-    const sortedAll = lazy?.allItems ? lazy.allItems.slice().sort(sortItemAssetKey) : null;
+    const sortedPreview = assetKeys ? sortedAssetKeys(assetKeys) : [];
+    const sortedAll = lazy?.allItems ? sortedAssetKeys(lazy.allItems) : null;
     return {
       slicedSortedAssetKeys: sortedPreview.slice(0, rendered),
       // The complete, sorted list: the preview when it already holds everything, otherwise the
@@ -345,8 +345,8 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
   const previewComplete = !lazy || (assetChecks?.length ?? 0) >= lazy.totalCount;
 
   const {slicedSortedAssetChecks, fullAssetChecks} = React.useMemo(() => {
-    const sortedPreview = assetChecks?.slice().sort(sortItemAssetCheck) ?? [];
-    const sortedAll = lazy?.allItems ? lazy.allItems.slice().sort(sortItemAssetCheck) : null;
+    const sortedPreview = assetChecks ? sortedAssetChecks(assetChecks) : [];
+    const sortedAll = lazy?.allItems ? sortedAssetChecks(lazy.allItems) : null;
     return {
       slicedSortedAssetChecks: sortedPreview.slice(0, rendered),
       fullAssetChecks: previewComplete ? sortedPreview : sortedAll,

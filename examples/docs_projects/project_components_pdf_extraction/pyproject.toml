@@ -1,6 +1,6 @@
 [project]
 name = "project_components_pdf_extraction"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 version = "0.1.0"
 dependencies = [
     "dagster-dg-cli",
@@ -33,6 +33,9 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "project_components_pdf_extraction"
 defs_module = "project_components_pdf_extraction.defs"
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster-test = { path = '../../../python_modules/dagster-test', editable = true }

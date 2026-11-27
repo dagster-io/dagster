@@ -159,14 +159,10 @@ const AssetCatalogV2VirtualizedTableImpl = <
             }
 
             if ('header' in item) {
-              const assetsInGroup =
-                grouped[item.group]?.assets.map((asset) => tokenForAssetKey(asset.key)) ?? [];
-
-              const checkedState = assetsInGroup.every((asset) => checkedDisplayKeys.has(asset))
-                ? 'checked'
-                : assetsInGroup.some((asset) => checkedDisplayKeys.has(asset))
-                  ? 'indeterminate'
-                  : 'unchecked';
+              const checkedState = checkedStateForGroup(
+                grouped[item.group]?.assets ?? [],
+                checkedDisplayKeys,
+              );
 
               const Klass = grouped[item.group]?.renderGroupHeader;
 
@@ -213,6 +209,21 @@ const AssetCatalogV2VirtualizedTableImpl = <
     </Container>
   );
 };
+
+// Headers re-render on every scroll, so skip building the group's tokens when nothing is selected.
+function checkedStateForGroup(
+  assets: {key: {path: string[]}}[],
+  checkedDisplayKeys: Set<string>,
+): 'checked' | 'indeterminate' | 'unchecked' {
+  if (checkedDisplayKeys.size === 0) {
+    return 'unchecked';
+  }
+  const tokens = assets.map((asset) => tokenForAssetKey(asset.key));
+  if (tokens.every((token) => checkedDisplayKeys.has(token))) {
+    return 'checked';
+  }
+  return tokens.some((token) => checkedDisplayKeys.has(token)) ? 'indeterminate' : 'unchecked';
+}
 
 export const AssetCatalogV2VirtualizedTable = React.memo(
   AssetCatalogV2VirtualizedTableImpl,
@@ -283,13 +294,10 @@ const AssetRow = forwardRef(
         ? latestInfo
         : undefined;
 
-    const {assets} = useAllAssets();
+    const {assets, assetsByAssetKey} = useAllAssets();
     const definition = useMemo(
-      () =>
-        assets?.find(
-          (workspaceAsset) => tokenForAssetKey(workspaceAsset.key) === tokenForAssetKey(asset.key),
-        )?.definition,
-      [assets, asset.key],
+      () => assetsByAssetKey.get(tokenForAssetKey(asset.key))?.definition,
+      [assetsByAssetKey, asset.key],
     );
 
     const repoAddress = definition?.repository

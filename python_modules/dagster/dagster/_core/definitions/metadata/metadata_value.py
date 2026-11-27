@@ -538,7 +538,7 @@ class TextMetadataValue(MetadataValue[str]):
         text (Optional[str]): The text data.
     """
 
-    text: PublicAttr[str | None] = ""
+    text: PublicAttr[str | None] = ""  # ty: ignore[invalid-attribute-override]
 
     @public
     @property
@@ -557,7 +557,7 @@ class UrlMetadataValue(MetadataValue[str]):
         url (Optional[str]): The URL as a string.
     """
 
-    url: PublicAttr[str | None] = ""
+    url: PublicAttr[str | None] = ""  # ty: ignore[invalid-attribute-override]
 
     @public
     @property
@@ -593,7 +593,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
 
     @public
     @property
-    def path(self) -> str:
+    def path(self) -> str:  # ty: ignore[invalid-property-type-override]
         """str: The wrapped path."""
         return self.fspath
 
@@ -625,7 +625,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
 
     @public
     @property
-    def path(self) -> str:
+    def path(self) -> str:  # ty: ignore[invalid-property-type-override]
         """str: The wrapped path to the notebook as a string."""
         return self.fspath
 
@@ -966,7 +966,7 @@ class TableColumnLineageMetadataValue(
 
     @public
     @property
-    def column_lineage(self) -> TableColumnLineage:
+    def column_lineage(self) -> TableColumnLineage:  # ty: ignore[invalid-property-type-override]
         """TableColumnLineage: The wrapped column lineage."""
         return self.lineage
 
@@ -1022,7 +1022,7 @@ class PoolMetadataValue(
 
     @public
     @property
-    def pool(self) -> str:
+    def pool(self) -> str:  # ty: ignore[invalid-property-type-override]
         return self.name
 
 

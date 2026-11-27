@@ -20,6 +20,65 @@ def test_parse_asset_key_string():
     assert parse_asset_key_string("foo.bar_b-az") == ["foo", "bar_b", "az"]
 
 
+def test_key_only_asset_queries_narrow_projection_and_preserve_wipes():
+    src_dir = dg.file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+
+    # the snapshot has materializations for a-f, with a and b wiped and b rematerialized
+    @dg.op
+    def materialize():
+        # every key must be rematerialized, otherwise a null last_materialization_timestamp
+        # legitimately blocks the lazy index migration below
+        for key in ["a", "b", "c", "d", "e", "f"]:
+            yield dg.AssetMaterialization(dg.AssetKey(key))
+        yield dg.Output(None)
+
+    @dg.job
+    def my_job():
+        materialize()
+
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance.event_log_storage
+            storage.upgrade()
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
+
+            # without the index the wipe filter runs in Python, so the blob columns it reads must
+            # still be selected even though the caller only wants keys
+            rows = list(storage._fetch_raw_asset_rows(key_only=True)[0])  # ty: ignore[unresolved-attribute] # noqa: SLF001
+            assert rows
+            assert "last_materialization" in rows[0].keys()
+            assert "asset_details" in rows[0].keys()
+
+            # a was wiped and never rematerialized, so no key-only path may resurrect it
+            assert dg.AssetKey("a") not in instance.all_asset_keys()
+            assert dg.AssetKey("a") not in instance.get_asset_keys()
+            assert not storage.has_asset_key(dg.AssetKey("a"))
+            assert storage.has_asset_key(dg.AssetKey("b"))
+
+            # drive the lazy migration: key-only reads must not stop it from completing
+            storage.wipe_asset(dg.AssetKey("a"))
+            storage.wipe_asset(dg.AssetKey("b"))
+            my_job.execute_in_process(instance=instance)
+            instance.all_asset_keys()
+            assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
+
+            # with the index the wipe filter is in SQL, so the key alone is selected
+            rows = list(storage._fetch_raw_asset_rows(key_only=True)[0])  # ty: ignore[unresolved-attribute] # noqa: SLF001
+            assert rows
+            assert set(rows[0].keys()) == {"asset_key"}
+
+            # both were rematerialized after the wipe, so both are back on every key-only path
+            assert dg.AssetKey("a") in instance.all_asset_keys()
+            assert dg.AssetKey("b") in instance.get_asset_keys()
+            assert storage.has_asset_key(dg.AssetKey("a"))
+
+            # and a fresh wipe with no later materialization drops back out
+            storage.wipe_asset(dg.AssetKey("a"))
+            assert dg.AssetKey("a") not in instance.all_asset_keys()
+            assert dg.AssetKey("a") not in instance.get_asset_keys()
+            assert not storage.has_asset_key(dg.AssetKey("a"))
+
+
 def test_backcompat_asset_read():
     src_dir = dg.file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
 

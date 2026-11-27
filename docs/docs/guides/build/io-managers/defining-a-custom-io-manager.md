@@ -18,6 +18,21 @@ Here, we define a simple I/O manager that reads and writes CSV values to the fil
 
 The provided `context` argument for `handle_output` is an <PyObject section="io-managers" module="dagster" object="OutputContext" />. The provided `context` argument for `load_input` is an <PyObject section="io-managers" module="dagster" object="InputContext" />. The linked API documentation lists all the fields that are available on these objects.
 
+### Accessing asset metadata \{#accessing-metadata}
+
+I/O managers frequently need information about the asset they're storing or loading, such as the name of the destination table. You can attach this information to the asset and read it back from the context using [definition metadata](/guides/build/assets/metadata-and-tags#definition-time-metadata):
+
+- In `handle_output`, the definition metadata of the asset being stored is available on `context.definition_metadata`.
+- In `load_input`, the definition metadata of the *upstream* asset being loaded is available on `context.upstream_output.definition_metadata`. (`context.definition_metadata` in `load_input` refers only to metadata declared on the downstream <PyObject section="assets" module="dagster" object="AssetIn" /> or <PyObject section="ops" module="dagster" object="In" />, not the upstream asset.)
+
+<CodeExample path="docs_snippets/docs_snippets/guides/build/io_management/custom_io_manager.py" startAfter="start_read_definition_metadata_marker" endBefore="end_read_definition_metadata_marker" title="src/<project_name>/defs/resources.py" />
+
+:::note
+
+Only [definition metadata](/guides/build/assets/metadata-and-tags#definition-time-metadata) is available inside an I/O manager. Metadata attached with `MaterializeResult(metadata=...)` or `Output(metadata=...)`, known as [runtime metadata](/guides/build/assets/metadata-and-tags#runtime-metadata), is recorded to the event log as part of the materialization event. It is not persisted or loaded by the I/O manager, and `context.upstream_output.output_metadata` returns an empty dictionary when accessed from an `InputContext`.
+
+:::
+
 ### Using an I/O manager factory
 
 If your I/O manager is more complex, or needs to manage internal state, it may make sense to split out the I/O manager definition from its configuration. In this case, you can use <PyObject section="io-managers" module="dagster" object="ConfigurableIOManagerFactory"/>, which specifies config schema and implements a factory function that takes the config and returns an I/O manager.

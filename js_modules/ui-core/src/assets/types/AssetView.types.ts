@@ -1,8 +1,43 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetViewDefinitionQueryVariables = Types.Exact<{
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type AutoMaterializeDecisionType = 'DISCARD' | 'MATERIALIZE' | 'SKIP';
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
+
+export type AssetViewDefinitionQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
 
@@ -674,6 +709,7 @@ export type AssetViewDefinitionQuery = {
                 __typename: 'Sensor';
                 id: string;
                 name: string;
+                hasCursorUpdatePermissions: boolean;
                 sensorType: Types.SensorType;
                 sensorState: {
                   __typename: 'InstigationState';
@@ -17152,6 +17188,7 @@ export type AssetViewDefinitionNodeFragment = {
         __typename: 'Sensor';
         id: string;
         name: string;
+        hasCursorUpdatePermissions: boolean;
         sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
@@ -32766,4 +32803,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '5ae1c366703cf42f0c9bb5583fbb1789981bda3853360fec897c44dd069eea40';
+export const AssetViewDefinitionQueryVersion = 'e0952601dac2b57a25d22e547d0c5b1d8680b366011467f959bcb4a6e0223bf6';

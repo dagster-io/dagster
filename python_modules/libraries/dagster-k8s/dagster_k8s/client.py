@@ -8,7 +8,6 @@ from typing import Any, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
-import six
 import urllib3.exceptions
 from dagster import (
     DagsterInstance,
@@ -17,6 +16,8 @@ from dagster import (
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from kubernetes.client.api_client import ApiClient
 from kubernetes.client.models import V1Job, V1JobStatus
+
+from dagster_k8s.models import K8S_MODELS_ARE_PYDANTIC
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
@@ -101,36 +102,43 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 class PatchedApiClient(ApiClient):
     # Forked from ApiClient implementation to pass configuration object down into created model
     # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
-    # Intentionally circumventing private name mangling
-    # (https://docs.python.org/3/reference/expressions.html#private-name-mangling) of the __deserialize_model method on ApiClient
-    def _ApiClient__deserialize_model(self, data, klass):
-        """Deserializes list or dict to model.
+    # From kubernetes 37 on, models are pydantic and never construct a Configuration, so there is
+    # no contention to avoid and the base implementation is used unchanged.
+    if not K8S_MODELS_ARE_PYDANTIC:
+        # Intentionally circumventing private name mangling
+        # (https://docs.python.org/3/reference/expressions.html#private-name-mangling) of the __deserialize_model method on ApiClient
+        def _ApiClient__deserialize_model(self, data, klass):
+            """Deserializes list or dict to model.
 
-        :param data: dict, list.
-        :param klass: class literal.
-        :return: model object.
-        """
-        if not klass.openapi_types and not hasattr(klass, "get_real_child_model"):
-            return data
+            :param data: dict, list.
+            :param klass: class literal.
+            :return: model object.
+            """
+            if not klass.openapi_types and not hasattr(klass, "get_real_child_model"):
+                return data
 
-        # Below is the only change from the base ApiClient implementation - pass through the
-        # Configuration object to each newly created model so that each one does not have to create
-        # one and acquire a lock
-        kwargs = {"local_vars_configuration": self.configuration}
+            # Below is the only change from the base ApiClient implementation - pass through the
+            # Configuration object to each newly created model so that each one does not have to
+            # create one and acquire a lock
+            kwargs = {"local_vars_configuration": self.configuration}
 
-        if data is not None and klass.openapi_types is not None and isinstance(data, (list, dict)):
-            for attr, attr_type in six.iteritems(klass.openapi_types):
-                if klass.attribute_map[attr] in data:
-                    value = data[klass.attribute_map[attr]]
-                    kwargs[attr] = self._ApiClient__deserialize(value, attr_type)  # ty: ignore[unresolved-attribute]
+            if (
+                data is not None
+                and klass.openapi_types is not None
+                and isinstance(data, (list, dict))
+            ):
+                for attr, attr_type in klass.openapi_types.items():
+                    if klass.attribute_map[attr] in data:
+                        value = data[klass.attribute_map[attr]]
+                        kwargs[attr] = self._ApiClient__deserialize(value, attr_type)  # ty: ignore[unresolved-attribute]
 
-        instance = klass(**kwargs)
+            instance = klass(**kwargs)
 
-        if hasattr(instance, "get_real_child_model"):
-            klass_name = instance.get_real_child_model(data)
-            if klass_name:
-                instance = self._ApiClient__deserialize(data, klass_name)  # ty: ignore[unresolved-attribute]
-        return instance
+            if hasattr(instance, "get_real_child_model"):
+                klass_name = instance.get_real_child_model(data)
+                if klass_name:
+                    instance = self._ApiClient__deserialize(data, klass_name)  # ty: ignore[unresolved-attribute]
+            return instance
 
 
 def k8s_api_retry(
@@ -252,6 +260,28 @@ class KubernetesWaitingReasons:
     CrashLoopBackOff = "CrashLoopBackOff"
     RunContainerError = "RunContainerError"
     CreateContainerConfigError = "CreateContainerConfigError"
+
+
+def _init_container_will_be_retried(pod: kubernetes.client.V1Pod, container_name: str) -> bool:
+    """Whether the kubelet will restart this init container after it fails.
+
+    An init container may carry its own restart policy, which overrides the pod's - a native
+    sidecar is an init container with `restartPolicy: Always`. An unknown restart policy is
+    treated as Never so that a failure is surfaced rather than waited on indefinitely.
+    """
+    if not pod.spec:
+        return False
+
+    container_policy = next(
+        (
+            # absent on kubernetes client versions predating sidecar support
+            getattr(container, "restart_policy", None)
+            for container in (pod.spec.init_containers or [])
+            if container.name == container_name
+        ),
+        None,
+    )
+    return (container_policy or pod.spec.restart_policy) in ("OnFailure", "Always")
 
 
 class DagsterKubernetesClient:
@@ -462,7 +492,8 @@ class DagsterKubernetesClient:
                 and status.failed > 0
             ):
                 raise DagsterK8sError(
-                    f"Encountered failed job pods for job {job_name} with status: {status}, "
+                    f"Encountered failed job pods for job {job_name} with status:"
+                    f" {status.to_dict()}, "
                     f"in namespace {namespace}"
                 )
 
@@ -770,12 +801,22 @@ class DagsterKubernetesClient:
                         f' Message="{state.waiting.message}"\n{debug_info}'
                     )
                 else:
-                    raise DagsterK8sError(f"Unknown issue: {state.waiting}")
+                    raise DagsterK8sError(f"Unknown issue: {state.waiting.to_dict()}")
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstateterminated-v1-core
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
+                    if container_name in initcontainers and _init_container_will_be_retried(
+                        pod, container_name
+                    ):
+                        self.logger(
+                            f'Init container "{container_name}" in {pod_name} failed and will be'
+                            " restarted, waiting for the retry..."
+                        )
+                        self.sleeper(wait_time_between_attempts)
+                        continue
+
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
@@ -789,6 +830,15 @@ class DagsterKubernetesClient:
                     )
 
                     self.logger(msg)
+
+                    # A failed init container prevents every later container from starting, so
+                    # waiting for the remaining containers to exit would block until the timeout.
+                    if container_name in initcontainers:
+                        debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
+                        raise DagsterK8sError(
+                            f"Pod {pod_name} failed to initialize:\n{msg}\n{debug_info}"
+                        )
+
                     error_logs.append(msg)
                 elif container_name in initcontainers:
                     self.logger(

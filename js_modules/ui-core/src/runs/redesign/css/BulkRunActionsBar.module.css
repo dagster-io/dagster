@@ -1,0 +1,13 @@
+.bar {
+  padding: 8px var(--page-gutter, 24px);
+  background-color: var(--color-background-light);
+}
+
+/* Block-level so the tooltip wrapper fits the checkbox's height. */
+.checkAllBox {
+  display: flex;
+}
+
+.count {
+  flex-grow: 1;
+}

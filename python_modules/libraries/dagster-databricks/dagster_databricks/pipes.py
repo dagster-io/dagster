@@ -196,6 +196,58 @@ class BasePipesDatabricksClient(PipesClient):
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
         )
 
+    def _run_job_and_poll(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        extras: PipesExtras | None,
+        job_id: int,
+        job_parameters: Mapping[str, str] | None,
+        run_now_args: Mapping[str, Any] | None,
+        context_injector: PipesContextInjector,
+        message_reader: PipesMessageReader,
+    ) -> PipesClientCompletedInvocation:
+        """Shared implementation for triggering an existing job with `run_now` and polling.
+
+        `run_now` can't modify the job's tasks or compute, so Pipes bootstrap params are passed
+        as job parameters. Every task in the run receives the same values.
+        """
+        if run_now_args and "job_parameters" in run_now_args:
+            raise ValueError("Pass job parameters with `job_parameters`, not `run_now_args`.")
+        with open_pipes_session(
+            context=context,
+            extras=extras,
+            context_injector=context_injector,
+            message_reader=message_reader,
+        ) as pipes_session:
+            bootstrap_params = pipes_session.get_bootstrap_env_vars()
+            conflicting_keys = set(job_parameters or {}) & set(bootstrap_params)
+            if conflicting_keys:
+                raise ValueError(
+                    f"Job parameters {sorted(conflicting_keys)} are reserved for Dagster Pipes."
+                )
+
+            run_id = check.not_none(
+                self.client.jobs.run_now(
+                    job_id=job_id,
+                    job_parameters={**(job_parameters or {}), **bootstrap_params},
+                    **(run_now_args or {}),
+                ).run_id
+            )
+
+            try:
+                self._poll_til_success(context, run_id)
+            except DagsterExecutionInterruptedError as e:
+                if self.forward_termination:
+                    context.log.info("[pipes] execution interrupted, canceling Databricks job.")
+                    self.client.jobs.cancel_run(run_id)
+                    self._poll_til_terminating(run_id)
+                raise e
+
+        return PipesClientCompletedInvocation(
+            pipes_session, metadata=self._extract_dagster_metadata(run_id)
+        )
+
     def _enrich_submit_task_dict(
         self,
         context: OpExecutionContext | AssetExecutionContext,
@@ -415,6 +467,49 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             submit_args=submit_args,
             context_injector=context_injector,
             message_reader=message_reader,
+        )
+
+    @preview
+    def run_job(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        job_id: int,
+        job_parameters: Mapping[str, str] | None = None,
+        extras: PipesExtras | None = None,
+        run_now_args: Mapping[str, Any] | None = None,
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously trigger an existing Databricks job with the pipes protocol.
+
+        Pipes bootstrap params are passed as the ``DAGSTER_PIPES_CONTEXT`` and
+        ``DAGSTER_PIPES_MESSAGES`` job parameters. Notebook tasks read them with
+        :py:class:`dagster_pipes.PipesDatabricksNotebookWidgetsParamsLoader`; Python script tasks
+        must forward them as ``--dagster-pipes-context``/``--dagster-pipes-messages`` task
+        parameters and use :py:class:`dagster_pipes.PipesCliArgsParamsLoader`. Only one task per
+        run should report back with Pipes, since all tasks receive the same params.
+
+        Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
+            job_id (int): The ID of the Databricks job to run.
+            job_parameters (Optional[Mapping[str, str]]): Job parameters for this run, merged with
+                the Pipes bootstrap params.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
+            run_now_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
+                forwarded as-is to ``WorkspaceClient.jobs.run_now``.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        return self._run_job_and_poll(
+            context=context,
+            extras=extras,
+            job_id=job_id,
+            job_parameters=job_parameters,
+            run_now_args=run_now_args,
+            context_injector=self.context_injector or PipesDbfsContextInjector(client=self.client),
+            message_reader=self.message_reader or PipesDbfsMessageReader(client=self.client),
         )
 
     def _enrich_submit_task_dict(
@@ -839,6 +934,55 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
             submit_args=submit_args,
             context_injector=context_injector,
             message_reader=message_reader,
+        )
+
+    @preview
+    def run_job(
+        self,
+        *,
+        context: OpExecutionContext | AssetExecutionContext,
+        job_id: int,
+        job_parameters: Mapping[str, str] | None = None,
+        extras: PipesExtras | None = None,
+        run_now_args: Mapping[str, Any] | None = None,
+    ) -> PipesClientCompletedInvocation:
+        """Synchronously trigger an existing Databricks job with the pipes protocol.
+
+        Pipes bootstrap params are passed as the ``DAGSTER_PIPES_CONTEXT`` and
+        ``DAGSTER_PIPES_MESSAGES`` job parameters. Notebook tasks read them with
+        :py:class:`dagster_pipes.PipesDatabricksNotebookWidgetsParamsLoader`; Python script tasks
+        must forward them as ``--dagster-pipes-context``/``--dagster-pipes-messages`` task
+        parameters and use :py:class:`dagster_pipes.PipesCliArgsParamsLoader`. Only one task per
+        run should report back with Pipes, since all tasks receive the same params.
+
+        Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
+            job_id (int): The ID of the Databricks job to run.
+            job_parameters (Optional[Mapping[str, str]]): Job parameters for this run, merged with
+                the Pipes bootstrap params.
+            extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
+                subprocess.
+            run_now_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
+                forwarded as-is to ``WorkspaceClient.jobs.run_now``.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+                process.
+        """
+        return self._run_job_and_poll(
+            context=context,
+            extras=extras,
+            job_id=job_id,
+            job_parameters=job_parameters,
+            run_now_args=run_now_args,
+            context_injector=self.context_injector
+            or PipesUnityCatalogVolumesContextInjector(
+                client=self.client, volume_path=self.volume_path
+            ),
+            message_reader=self.message_reader
+            or PipesUnityCatalogVolumesMessageReader(
+                client=self.client, volume_path=self.volume_path
+            ),
         )
 
     def _enrich_submit_task_dict(

@@ -103,7 +103,7 @@ class DagsterWebserver(
                 CSP configuration file could not be found.
                 If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                 However, if you are developing dagster-webserver locally, your problem can be fixed by running
-                "make rebuild_ui" in the project root.
+                "just rebuild_ui" in the project root.
                 """
             )
 
@@ -244,7 +244,7 @@ class DagsterWebserver(
                     Can't find webapp files.
                     If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
                     However, if you are developing dagster-webserver locally, your problem can be fixed by running
-                    "make rebuild_ui" in the project root.
+                    "just rebuild_ui" in the project root.
                     """
                 )
 

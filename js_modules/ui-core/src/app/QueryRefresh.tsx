@@ -1,7 +1,7 @@
 import {RefreshableCountdown, useCountdown} from '@dagster-io/ui-components';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import {NetworkStatus, ObservableQuery, QueryResult} from '../apollo-client';
+import {ApolloError, NetworkStatus, ObservableQuery, QueryResult} from '../apollo-client';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {isSearchVisible, useSearchVisibility} from '../search/useSearchVisibility';
 
@@ -23,6 +23,19 @@ export type RefreshState<T = void> =
       loading: boolean;
     }
   | QueryRefreshState;
+
+const handleRefreshError = (error: unknown) => {
+  if (
+    error instanceof ApolloError &&
+    (error.graphQLErrors.length > 0 || error.networkError !== null) &&
+    error.protocolErrors.length === 0 &&
+    error.clientErrors.length === 0
+  ) {
+    // Request errors are already reported by the Apollo error link.
+    return;
+  }
+  console.error('Unexpected error refreshing data', error);
+};
 
 /**
  * The default pollInterval feature of Apollo's useQuery is fine, but we want to add two features:
@@ -107,17 +120,17 @@ export function useRefreshAtInterval<T = any>({
   const refreshFn = useCallback(async () => {
     setLoading(true);
     const start = Date.now();
-    const result = await refresh();
-
-    // Prevent flickering and ensure we catch both react state changes around
-    // non-async `refresh` functions by making sure we waited at least 1s.
-    const delay = 1000 - (Date.now() - start);
-    if (delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
+    try {
+      return await refresh();
+    } finally {
+      // Prevent flickering and ensure we catch both react state changes around
+      // non-async `refresh` functions by making sure we waited at least 1s.
+      const delay = 1000 - (Date.now() - start);
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+      setLoading(false);
     }
-
-    setLoading(false);
-    return result;
   }, [refresh]);
 
   useEffect(() => {
@@ -138,7 +151,7 @@ export function useRefreshAtInterval<T = any>({
         documentVisiblityDidInterrupt.current ||
         (leading && !didMakeLeadingQuery.current))
     ) {
-      refreshFn();
+      refreshFn().catch(handleRefreshError);
       documentVisiblityDidInterrupt.current = false;
       searchVisibilityDidInterrupt.current = false;
       didMakeLeadingQuery.current = true;
@@ -182,7 +195,7 @@ export function useRefreshAtInterval<T = any>({
         searchVisibilityDidInterrupt.current = true;
         return;
       }
-      refreshFn();
+      refreshFn().catch(handleRefreshError);
     }, adjustedIntervalMs);
 
     return () => {
@@ -243,7 +256,8 @@ export const QueryRefreshCountdown = ({
 }) => {
   const status = (
     'networkStatus' in refreshState
-      ? refreshState.networkStatus === NetworkStatus.ready
+      ? refreshState.networkStatus === NetworkStatus.ready ||
+        refreshState.networkStatus === NetworkStatus.error
       : !refreshState.loading
   )
     ? 'counting'
@@ -254,7 +268,7 @@ export const QueryRefreshCountdown = ({
     <RefreshableCountdown
       refreshing={status === 'idle' || timeRemaining === 0}
       seconds={Math.floor(timeRemaining / 1000)}
-      onRefresh={() => refreshState.refetch()}
+      onRefresh={() => refreshState.refetch().catch(handleRefreshError)}
       dataDescription={dataDescription}
     />
   );

@@ -1,5 +1,6 @@
 ---
-title: Assets
+title: Build your first assets
+sidebar_label: Assets
 description: Building your first assets
 sidebar_position: 20
 ---

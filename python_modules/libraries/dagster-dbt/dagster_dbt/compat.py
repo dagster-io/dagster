@@ -1,3 +1,4 @@
+import importlib.metadata
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeAlias
@@ -10,6 +11,29 @@ from packaging import version
 # after this file is loaded, the root logger's handlers will be unchanged.
 existing_root_logger_handlers = [*logging.getLogger().handlers]
 
+
+def _check_dbt_v2_and_dbt_core_not_both_installed() -> None:
+    """The `dbt` package (dbt v2) and `dbt-core` both install into the `dbt` Python package, so
+    together they overwrite each other's files and break both.
+    """
+    try:
+        dbt_v2_version = version.parse(importlib.metadata.version("dbt"))
+        importlib.metadata.version("dbt-core")
+    except importlib.metadata.PackageNotFoundError:
+        return
+    # `dbt` 1.x on PyPI is an old meta-package that just depends on dbt-core.
+    if dbt_v2_version.major >= 2:
+        raise ImportError(
+            f"Both `dbt=={dbt_v2_version}` (dbt v2) and `dbt-core` are installed in this"
+            " environment. They install into the same `dbt` Python package, so the installation is"
+            " broken. To use dbt v2, uninstall `dbt-core`, any dbt adapter packages (such as"
+            " `dbt-snowflake`, which depend on dbt-core), and the `dagster-dbt[dbt-core]` extra."
+            " To use dbt Core, uninstall `dbt` and the `dagster-dbt[dbt]` extra. Then reinstall the"
+            " one you keep."
+        )
+
+
+_check_dbt_v2_and_dbt_core_not_both_installed()
 
 try:
     from dbt.version import __version__ as dbt_version
@@ -63,6 +87,12 @@ else:
         REFABLE_NODE_TYPES = ["model", "seed", "snapshot"]
 
         class StrEnum(str, Enum):
+            # dbt's own StrEnum stringifies to the value; the default Enum.__str__ would give
+            # "NodeStatus.Pass", which silently diverges anywhere a status is formatted or
+            # used as the value of another enum member.
+            def __str__(self) -> str:
+                return self.value
+
             def _generate_next_value_(name, *_):
                 return name
 
@@ -95,13 +125,46 @@ else:
             PartialSuccess = "partial success"
             Pass = "pass"
             RuntimeErr = "runtime error"
+            NoOp = "no-op"
+            Reused = "reused"
 
         class TestStatus(StrEnum):
-            Pass = NodeStatus.Pass
-            Error = NodeStatus.Error
-            Fail = NodeStatus.Fail
-            Warn = NodeStatus.Warn
-            Skipped = NodeStatus.Skipped
+            Pass = "pass"
+            Error = "error"
+            Fail = "fail"
+            Warn = "warn"
+            Skipped = "skipped"
 
 
 logging.getLogger().handlers = existing_root_logger_handlers
+
+
+# The statuses a refable node (model, seed, snapshot) can end on without having failed.
+# Anything outside this set yields no materialization.
+#
+# Use this ONLY for refable nodes -- it is not valid for tests. `warn` is a success for a
+# refable node but a warn-severity failure for a test, and the two are indistinguishable on
+# the wire, so the test path must keep comparing against `TestStatus`.
+#
+# - `no-op` (dbt-core 1.10+) and `reused` (dbt-core 1.12+, and every `Reused*` variant in dbt
+#   Fusion) are terminal, non-error statuses meaning dbt deliberately did not rebuild the node.
+#   The relation still exists in the warehouse, so an event must be emitted or the asset
+#   silently stops updating.
+# `partial success` is deliberately absent: dbt lists it in `MARK_DEPENDENT_ERRORS_STATUSES`,
+# so dbt itself marks the node's dependents as errored and the step fails. Materializing it
+# would show the asset healthy on a partial load and let downstream automation run on it.
+# - `warn` is what dbt Fusion serializes `SucceededWithWarning` to: the node built but emitted
+#   a warning (e.g. duplicate columns). Fusion maps that status to a successful outcome, and
+#   dbt-core's `RunStatus` has no `warn` member at all, so accepting it cannot mask a dbt-core
+#   failure.
+#
+# Spelled as string literals because none of these is a `NodeStatus` member across the whole
+# dbt-core range this package supports.
+SUCCESSFUL_NODE_STATUSES: frozenset[str] = frozenset(
+    {
+        "success",
+        "no-op",
+        "reused",
+        "warn",
+    }
+)

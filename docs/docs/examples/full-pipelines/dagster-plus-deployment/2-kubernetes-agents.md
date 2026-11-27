@@ -57,11 +57,22 @@ kubectl create secret generic dagster-prod-env \
   --from-literal=WAREHOUSE_URL='snowflake://prod/warehouse'
 ```
 
-These values are automatically available as environment variables in every run pod. The assets read them with `os.getenv("SOURCE_DATABASE_URL")` and `os.getenv("WAREHOUSE_URL")`, so each environment targets its own data sources without any code changes.
+Each values file references its secret under `workspace.envSecrets`, which makes the keys available as environment variables in every pod the agent launches. The assets read them with `os.getenv("SOURCE_DATABASE_URL")` and `os.getenv("WAREHOUSE_URL")`, so each environment targets its own data sources without any code changes.
 
 ## Step 4: Configure each environment
 
 The Helm values files capture the differences between environments. Common things to tune per environment: replica count, run resource limits, server TTL, branch deployment support, and which node pool to schedule on.
+
+Two top-level values control most of this configuration:
+
+- `dagsterCloudAgent` configures the agent deployment itself — its replicas, resources, and scheduling.
+- `workspace` configures the pods the agent launches on your behalf — run pods and code servers. Run pod environment variables, resources, and node selection all live here, under `workspace.envSecrets`, `workspace.resources`, and `workspace.runK8sConfig`.
+
+:::note
+
+The `dagster-cloud-agent` chart does not accept the OSS `dagster` chart's `runLauncher` value. If you're adapting configuration from an OSS Dagster deployment, move anything under `runLauncher.config.k8sRunLauncher` to `workspace`. Helm silently ignores unrecognized top-level values, so a misplaced `runLauncher` block installs cleanly and then does nothing.
+
+:::
 
 ### Dev
 
@@ -85,7 +96,7 @@ Staging mirrors prod behavior but with lighter resources. Branch deployments are
 
 ### Prod
 
-Prod runs two agent replicas for high availability. The server TTL is long (24 h) to keep code servers warm, and a Pod Disruption Budget (PDB) prevents the agent from being evicted during node maintenance:
+Prod runs two agent replicas for high availability. The server TTL is long (24 h) to keep code servers warm, and a PodDisruptionBudget supplied through `extraManifests` keeps one agent replica serving during node maintenance. The chart has no built-in `podDisruptionBudget` value, so the PDB is declared as a raw manifest:
 
 <CodeExample
   path="docs_projects/project_dagster_plus_deployment/helm/dagster-agent/values-prod.yaml"

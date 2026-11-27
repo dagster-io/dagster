@@ -1,19 +1,10 @@
 import {Box} from '@dagster-io/ui-components';
 import {ViewBreadcrumb} from '@shared/assets/ViewBreadcrumb';
-import React, {useEffect} from 'react';
-import {useRouteMatch} from 'react-router-dom';
-import {useSetRecoilState} from 'recoil';
+import React from 'react';
 
 import {AssetCatalogTableV2} from './AssetCatalogTableV2';
-import {currentPageAtom} from '../../app/analytics';
 
 export const AssetsCatalog = React.memo(() => {
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
-  const {path} = useRouteMatch();
-  useEffect(() => {
-    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=AssetCatalogTableV2`}));
-  }, [path, setCurrentPage]);
-
   return (
     <div
       style={{

@@ -23,7 +23,8 @@ Issues appear in the **Triage** section of the [Issues list](/guides/labs/issues
 Once you've reviewed an Issue, you can resolve it by:
 
 - Dispatch an AI agent to create a fix as a pull request. For more information, see [Auto-implement with AI](/guides/labs/dagster-ai/auto-implement).
-- Invoke the `dagster-expert` skill from an agent session in your codebase to analyze the root cause and develop a solution. For more information, see the [dagster-expert skill](/getting-started/ai-tools).
+- Invoke the `dagster-expert` skill from an agent session in your codebase to analyze the root cause and develop a solution. For more information, see the [dagster-expert skill](/getting-started/ai-tools/skills).
+- Use the [Dagster+ MCP](/getting-started/ai-tools/dagster-mcp) to fetch the Issue, get run logs, and other debugging information to provide additional context to your agent.
 
 ## Coming soon
 

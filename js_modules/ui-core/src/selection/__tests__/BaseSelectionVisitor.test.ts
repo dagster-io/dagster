@@ -100,4 +100,14 @@ describe('BaseSelectionVisitor with Real Contexts', () => {
 
     expect(visitor.visitedNodes).toEqual(['visitAttributeValue: [4, 10]']);
   });
+
+  it('visits the second value of a key=value attribute when the cursor is right after it', () => {
+    const input = 'tag:team=da';
+    const tree = parseInput(input);
+
+    const visitor = new TestBaseVisitor({line: input, cursorIndex: input.length});
+    visitor.visit(tree);
+
+    expect(visitor.visitedNodes).toEqual(['visitAttributeValue: [9, 10]']);
+  });
 });

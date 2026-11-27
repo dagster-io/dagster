@@ -1,6 +1,7 @@
 ---
-title: Ingestion
-description: Ingest Data from Goodreads
+title: Ingest data from Goodreads
+sidebar_label: Ingestion
+description: Ingest data from Goodreads
 last_update:
   author: Dennis Hume
 sidebar_position: 20

@@ -1,11 +1,11 @@
 import inspect
 import os
 import sys
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from collections.abc import Callable, Iterator, Mapping
 from functools import partial
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, TypeVar, overload
 
 from typing_extensions import Self, dataclass_transform
 
@@ -256,6 +256,7 @@ def record(
 @dataclass_transform(
     kw_only_default=True,
     frozen_default=True,
+    slots_default=True,
 )
 def record(
     cls: TType | None = None,
@@ -494,6 +495,62 @@ def replace(obj: TVal, **kwargs) -> TVal:
         cls,
         **{**as_dict(obj), **kwargs},
     )
+
+
+if TYPE_CHECKING:
+
+    class _AbstractField(Generic[TVal]):
+        """Read-only descriptor type that `abstract_field` presents to type checkers."""
+
+        @overload
+        def __get__(self, obj: None, owner: Any) -> Self: ...
+        @overload
+        def __get__(self, obj: object, owner: Any) -> TVal: ...
+        def __get__(self, obj: object, owner: Any) -> "TVal | Self": ...
+
+
+def abstract_field(fn: Callable[[Any], TVal]) -> "_AbstractField[TVal]":
+    """Declare an attribute on an ABC that record subclasses provide as a field.
+
+    Use in place of `@property` + `@abstractmethod` on an ABC member that record
+    subclasses implement by declaring a field of the same name:
+
+        class Origin(ABC):
+            @abstract_field
+            def location_name(self) -> str:
+                raise NotImplementedError()
+
+        @record
+        class MyOrigin(Origin):
+            location_name: str
+
+    At runtime this is exactly `property(abstractmethod(fn))`:
+
+    - the member is abstract, so a subclass that neither declares the field nor
+      overrides it still fails to instantiate;
+    - records accept it, since they require a base property that a field shadows
+      to be abstract (see `_get_field_set_and_defaults`).
+
+    For type checkers it is a read-only descriptor rather than an abstract property:
+
+    - ty treats a field annotation as a plain instance attribute, which does not
+      implement an abstract property, so it reports every construction of the
+      record as instantiating an abstract class. This affects `@record_custom`
+      classes in particular: they have no `dataclass_transform`, so the
+      `slots_default=True` on `@record` that resolves this for plain records does
+      not apply to them.
+    - A record field, a NamedTuple field, or a plain `@property` may all override
+      a read-only descriptor, so subclasses need no changes.
+    - Accessing the member on an instance types as the getter's return type.
+
+    Caveats:
+
+    - Type checkers no longer see the member as abstract, so a subclass that fails
+      to implement it is only caught at runtime.
+    - The body is type checked as an ordinary function, so it must return or
+      raise; use `raise NotImplementedError()` rather than `...` or `pass`.
+    """
+    return property(abstractmethod(fn))  # type: ignore
 
 
 class LegacyNamedTupleMixin(ABC):

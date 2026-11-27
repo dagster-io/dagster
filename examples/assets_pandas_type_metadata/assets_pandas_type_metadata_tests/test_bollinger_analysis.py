@@ -21,4 +21,4 @@ def test_bollinger_analysis():
         jobs=[bollinger_sda],
     )
     result = defs.get_job_def("bollinger_sda").execute_in_process()
-    assert result.asset_materializations_for_node
+    assert result.asset_materializations_for_node("sp500_anomalous_events")

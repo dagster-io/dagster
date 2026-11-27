@@ -1,8 +1,32 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type ReportCheckEvaluationMutationVariables = Types.Exact<{
+export type AssetCheckSeverity = 'ERROR' | 'WARN';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type ReportAssetCheckEvaluationsParams = {
+  assetKey: AssetKeyInput;
+  checkName: string;
+  description?: string | null | undefined;
+  partitionKeys?: Array<string | null | undefined> | null | undefined;
+  passed: boolean;
+  serializedMetadata?: string | null | undefined;
+  severity?: AssetCheckSeverity | null | undefined;
+};
+
+export type ReportCheckEvaluationMutationVariables = Exact<{
   eventParams: Types.ReportAssetCheckEvaluationsParams;
 }>;
 
@@ -26,7 +50,7 @@ export type ReportCheckEvaluationMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type ReportEventPartitionDefinitionQueryVariables = Types.Exact<{
+export type ReportEventPartitionDefinitionQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
 

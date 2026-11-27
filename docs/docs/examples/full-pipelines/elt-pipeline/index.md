@@ -25,7 +25,7 @@ The entire pipeline — ingestion and transformation — is built with Dagster c
 
 To follow the steps in this guide, you'll need:
 
-- Python 3.10+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.11+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 - A GitHub [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#about-personal-access-tokens) (for the dlt GitHub ingestion).
 - A running [Postgres](https://www.postgresql.org/) instance (for the Sling ingestion).
 

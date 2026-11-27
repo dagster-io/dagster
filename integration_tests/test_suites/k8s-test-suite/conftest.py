@@ -37,7 +37,7 @@ cluster_provider = define_cluster_provider_fixture(
     additional_kind_images=[
         f"docker.io/{BUSYBOX_IMAGE}",
         "docker.io/bitnamilegacy/rabbitmq:3.8.12",
-        "docker.io/library/postgres:14.6",
+        "docker.io/library/postgres:14.25",
         f"docker.io/{LOCALSTACK_IMAGE}",
     ]
 )

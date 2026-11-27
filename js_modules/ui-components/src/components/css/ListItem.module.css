@@ -10,7 +10,11 @@
   user-select: none;
   width: 100%;
   overflow: hidden;
-  padding-left: var(--spacing-left);
+  /* A container may set --list-item-gutter to override the padding prop: the left gets the
+     full gutter and the right half of it, since rows usually end in an icon button that
+     carries its own padding. Unset, this derived value is invalid and the prop applies. */
+  --_gutter-right: calc(var(--list-item-gutter) / 2);
+  padding-left: var(--list-item-gutter, var(--spacing-left));
 }
 
 .listItem:hover {
@@ -76,7 +80,7 @@
 
 .right {
   align-self: center;
-  padding-right: var(--spacing-right);
+  padding-right: var(--_gutter-right, var(--spacing-right));
 }
 
 .right > * {

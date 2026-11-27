@@ -16,7 +16,7 @@ import {
   Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
@@ -29,10 +29,12 @@ import {
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {useTrackEvent} from '../app/analytics';
+import {showMutationErrorToast} from '../app/showMutationErrorToast';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {DELETE_DYNAMIC_PARTITIONS_MUTATION} from '../assets/DeleteDynamicPartitionsDialog';
 import {
@@ -70,6 +72,7 @@ type Props = {
   currentCursor: string;
   isOpen: boolean;
   jobName: string;
+  canUpdateCursor: boolean;
 };
 
 export const SensorDryRunDialog = (props: Props) => {
@@ -87,8 +90,20 @@ export const SensorDryRunDialog = (props: Props) => {
   );
 };
 
-const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
+const SensorDryRun = ({
+  repoAddress,
+  name,
+  currentCursor,
+  onClose,
+  jobName,
+  canUpdateCursor,
+}: Props) => {
   const trackEvent = useTrackEvent();
+
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons: {canEditDynamicPartitions: canEditDynamicPartitionsDisabledReason},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
@@ -176,36 +191,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     const {data} = await setCursorMutation({
       variables: {sensorSelector, cursor},
     });
-    if (data?.setSensorCursor.__typename === 'Sensor') {
+    if (!showMutationErrorToast(data?.setSensorCursor, 'Sensor', 'Could not set cursor value.')) {
       showToast({message: 'Cursor value updated', intent: 'success'});
       onClose();
-    } else if (data?.setSensorCursor) {
-      const error = data.setSensorCursor;
-      showToast({
-        intent: 'danger',
-        message: (
-          <Box flex={{direction: 'row', gap: 8}}>
-            <div>Could not set cursor value.</div>
-            <ButtonLink
-              color={Colors.accentReversed()}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  title: 'Python Error',
-                  body:
-                    error.__typename === 'PythonError' ? (
-                      <PythonErrorInfo error={error} />
-                    ) : (
-                      'Sensor not found'
-                    ),
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Box>
-        ),
-      });
     }
   }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation, onClose]);
 
@@ -223,17 +211,29 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       return;
     }
 
+    if (dynamicPartitionRequests?.length && !canEditDynamicPartitions) {
+      showCustomAlert({
+        title: 'Insufficient permissions',
+        body:
+          canEditDynamicPartitionsDisabledReason ||
+          'You do not have permission to create or delete dynamic partitions for this code location.',
+      });
+      return;
+    }
+
     trackEvent('launch-all-sensor');
     setLaunching(true);
 
     try {
       if (dynamicPartitionRequests?.length) {
+        const partitionErrors: Array<{title: string; body: ReactNode}> = [];
+
         await Promise.all(
           dynamicPartitionRequests.map(async (request) => {
             if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
               await Promise.all(
                 (request.partitionKeys || []).map(async (partitionKey) => {
-                  await createPartition({
+                  const result = await createPartition({
                     variables: {
                       repositorySelector: {
                         repositoryName: repoAddress.name,
@@ -243,10 +243,31 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                       partitionKey,
                     },
                   });
+                  const data = result.data?.addDynamicPartition;
+                  switch (data?.__typename) {
+                    case 'AddDynamicPartitionSuccess':
+                    // matches the daemon, which skips partitions that already exist
+                    case 'DuplicateDynamicPartitionError':
+                      return;
+                    case 'UnauthorizedError':
+                      partitionErrors.push({
+                        title: 'Insufficient permissions',
+                        body:
+                          data.message ??
+                          'You do not have permission to create dynamic partitions.',
+                      });
+                      return;
+                    case 'PythonError':
+                      partitionErrors.push({
+                        title: 'Could not add partition',
+                        body: <PythonErrorInfo error={data} />,
+                      });
+                      return;
+                  }
                 }),
               );
             } else if (request.partitionKeys && request.partitionKeys.length) {
-              await deletePartition({
+              const result = await deletePartition({
                 variables: {
                   repositorySelector: {
                     repositoryName: repoAddress.name,
@@ -256,9 +277,34 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   partitionKeys: request.partitionKeys,
                 },
               });
+              const data = result.data?.deleteDynamicPartitions;
+              switch (data?.__typename) {
+                case 'DeleteDynamicPartitionsSuccess':
+                  return;
+                case 'UnauthorizedError':
+                  partitionErrors.push({
+                    title: 'Insufficient permissions',
+                    body:
+                      data.message ?? 'You do not have permission to delete dynamic partitions.',
+                  });
+                  return;
+                case 'PythonError':
+                  partitionErrors.push({
+                    title: 'Could not delete partitions',
+                    body: <PythonErrorInfo error={data} />,
+                  });
+                  return;
+              }
             }
           }),
         );
+
+        const firstPartitionError = partitionErrors[0];
+        if (firstPartitionError) {
+          showCustomAlert({title: firstPartitionError.title, body: firstPartitionError.body});
+          setLaunching(false);
+          return;
+        }
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
@@ -272,6 +318,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     onClose();
   }, [
     canApply,
+    canEditDynamicPartitions,
+    canEditDynamicPartitionsDisabledReason,
     createPartition,
     deletePartition,
     dynamicPartitionRequests,
@@ -316,6 +364,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       const numRunRequests = runRequests?.length || 0;
       const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
       const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
+      const cannotCommitCursor =
+        !!sensorExecutionData?.evaluationResult?.cursor && !canUpdateCursor;
 
       if (error) {
         return (
@@ -328,10 +378,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Box flex={{direction: 'row', gap: 8}}>
             <Button onClick={onClose}>Close</Button>
 
-            <Tooltip content="Commits tick result" placement="top-end">
+            <Tooltip
+              content={cannotCommitCursor ? DEFAULT_DISABLED_REASON : 'Commits tick result'}
+              placement="top-end"
+            >
               <Button
                 icon={<Icon name="check_filled" />}
                 intent="primary"
+                disabled={cannotCommitCursor}
                 onClick={onCommitTickResult}
                 data-testid={testId('commit-tick-result')}
               >
@@ -386,6 +440,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     submitting,
     onClose,
     onCommitTickResult,
+    canUpdateCursor,
     canApply,
     onApply,
     submitTest,

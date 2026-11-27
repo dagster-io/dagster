@@ -27,6 +27,8 @@ import {useMutation} from '../apollo-client';
 import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
+import {useUnscopedPermissions} from '../app/Permissions';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
 import {
@@ -48,7 +50,7 @@ type VisibleDialog =
   | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
-  const canCreateIssue = useCanCreateIssueForRun(run.status);
+  const createIssue = useCanCreateIssueForRun(run.status);
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -57,6 +59,12 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const {refetch} = useContext(RunsQueryRefetchContext);
 
   const history = useHistory();
+  // Icon-only on mobile, so the actions fit beside the run's status tags.
+  const isMobile = useIsMobile();
+  const {
+    permissions: {canEditConcurrencyLimit},
+    disabledReasons,
+  } = useUnscopedPermissions();
 
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
@@ -87,17 +95,29 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
-            <Button icon={<Icon name={jobLink.icon} />} disabled>
-              {jobLink.label}
+            <Button
+              icon={<Icon name={jobLink.icon} />}
+              aria-label={isMobile ? jobLink.label : undefined}
+              disabled
+            >
+              {isMobile ? null : jobLink.label}
             </Button>
           </Tooltip>
         ) : (
-          <AnchorButton icon={<Icon name={jobLink.icon} />} to={jobLink.to}>
-            {jobLink.label}
+          <AnchorButton
+            icon={<Icon name={jobLink.icon} />}
+            aria-label={isMobile ? jobLink.label : undefined}
+            to={jobLink.to}
+          >
+            {isMobile ? null : jobLink.label}
           </AnchorButton>
         )}
-        <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
-          View tags and config
+        <Button
+          icon={<Icon name="tag" />}
+          aria-label={isMobile ? 'View tags and config' : undefined}
+          onClick={() => setVisibleDialog('config')}
+        >
+          {isMobile ? null : 'View tags and config'}
         </Button>
         {run.allPools && run.allPools.length ? (
           <Tooltip content="View pools" position="top">
@@ -112,12 +132,20 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />
-                    {canCreateIssue && (
-                      <MenuItem
-                        icon="issue"
-                        text="Create or link issue"
-                        onClick={() => setVisibleDialog('create-issue')}
-                      />
+                    {createIssue.visible && (
+                      <Tooltip
+                        content={createIssue.disabledReason}
+                        canShow={!createIssue.enabled}
+                        position="left"
+                        display="block"
+                      >
+                        <MenuItem
+                          icon="issue"
+                          text="Create or link issue"
+                          disabled={!createIssue.enabled}
+                          onClick={() => setVisibleDialog('create-issue')}
+                        />
+                      </Tooltip>
                     )}
                     <Tooltip content="Loadable in dagster-webserver-debug" position="left">
                       <MenuItem
@@ -144,11 +172,19 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                       />
                     ) : null}
                     {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
-                      <MenuItem
-                        text="Free concurrency slots"
-                        icon="lock"
-                        onClick={freeConcurrencySlots}
-                      />
+                      <Tooltip
+                        content={disabledReasons.canEditConcurrencyLimit}
+                        canShow={!canEditConcurrencyLimit}
+                        position="left"
+                        display="block"
+                      >
+                        <MenuItem
+                          text="Free concurrency slots"
+                          icon="lock"
+                          disabled={!canEditConcurrencyLimit}
+                          onClick={freeConcurrencySlots}
+                        />
+                      </Tooltip>
                     ) : null}
                   </>
                 ) : null}
@@ -209,7 +245,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             }
           }}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{[run.id]: run.canTerminate && run.hasTerminatePermission}}
         />
       ) : null}
       {run.hasTerminatePermission ? (
@@ -229,7 +265,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           onClose={() => setVisibleDialog(null)}
         />
       ) : null}
-      {canCreateIssue && (
+      {createIssue.visible && (
         <CreateIssueForRunDialog
           isOpen={visibleDialog === 'create-issue'}
           onClose={() => setVisibleDialog(null)}

@@ -141,6 +141,12 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
     return local_package_paths, deps_lines
 
 
+# grpcio-health-checking 1.82.0 ships protobuf-7 gencode but its metadata allows a protobuf 6
+# runtime, so the code server crashes on import when the resolver pairs them. Older dagster
+# releases don't exclude it, so exclude it here for every serverless build.
+_EXTRA_BUILD_CONSTRAINTS = ["grpcio-health-checking!=1.82.0"]
+
+
 def get_deps_requirements(
     code_directory, python_version: version.Version
 ) -> tuple[LocalPackages, DepsRequirements]:
@@ -150,8 +156,15 @@ def get_deps_requirements(
 
     local_package_paths, deps_lines = collect_requirements(code_directory, python_interpreter)
 
+    # Skip the extra constraints when the project uses hash-pinned requirements: pip's
+    # --require-hashes mode rejects any unhashed requirement, and a hash-pinned project is
+    # already fully version-locked (immune to the upstream drift these constraints guard against).
+    extra_constraints = (
+        [] if any("--hash" in line for line in deps_lines) else _EXTRA_BUILD_CONSTRAINTS
+    )
+
     deps_requirements_text = "\n".join(
-        sorted(set(deps_lines)) + [""]
+        sorted(set(deps_lines) | set(extra_constraints)) + [""]
     )  # empty string adds trailing newline
 
     ui.print(f"List of local packages: {local_package_paths}")

@@ -1,5 +1,6 @@
 ---
-title: Components
+title: Define custom components
+sidebar_label: Components
 description: Defining custom components
 sidebar_position: 90
 ---

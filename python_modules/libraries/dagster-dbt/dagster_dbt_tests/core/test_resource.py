@@ -78,8 +78,8 @@ def test_dbt_cli_executable() -> None:
         .is_successful()
     )
 
-    # dbt executable must exist
-    with pytest.raises(ValidationError, match="does not exist"):
+    # dbt executable must exist, and the error must say how to install one
+    with pytest.raises(ValidationError, match=r"was not found on PATH.*dagster-dbt\[dbt-core\]"):
         DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), dbt_executable="nonexistent")
 
 

@@ -13,6 +13,7 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config_utils import DEPLOYMENT_OPTION
 
 from dagster_dg_cli.utils.plus import gql
 
@@ -81,6 +82,7 @@ def _get_secret_scopes(secret: Mapping[str, Any]) -> set[EnvVarScope]:
     is_flag=True,
     help="Do not confirm the creation of the environment variable, if it already exists.",
 )
+@DEPLOYMENT_OPTION
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -91,6 +93,7 @@ def create_env_command(
     global_: bool,
     from_local_env: bool,
     skip_confirmation_prompt: bool,
+    deployment: str | None,
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -129,6 +132,7 @@ def create_env_command(
         env_value = local_env_value
 
     config = _get_config_or_error()
+    target_deployment = deployment or config.default_deployment
 
     active_scopes = set(EnvVarScope(s) for s in scope) or {
         EnvVarScope.FULL,
@@ -139,7 +143,7 @@ def create_env_command(
         url=config.organization_url,
         api_token=config.user_token,
         organization=config.organization,
-        deployment=config.default_deployment,
+        deployment=target_deployment,
     )
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
@@ -219,9 +223,9 @@ def create_env_command(
 
     if global_:
         click.echo(
-            f"\nEnvironment variable {env_name} set{scope_text} for all locations in deployment {config.default_deployment}"
+            f"\nEnvironment variable {env_name} set{scope_text} for all locations in deployment {target_deployment}"
         )
     else:
         click.echo(
-            f"\nEnvironment variable {env_name} set{scope_text}{location_suffix} in deployment {config.default_deployment}"
+            f"\nEnvironment variable {env_name} set{scope_text}{location_suffix} in deployment {target_deployment}"
         )

@@ -624,7 +624,7 @@ def build_pod_body(
     else:
         meta["labels"] = get_common_labels()
 
-    spec = {**k8s_snake_case_dict(kubernetes.client.V1PodSpec, base_pod_spec or {})}
+    spec: dict[str, Any] = {**k8s_snake_case_dict(kubernetes.client.V1PodSpec, base_pod_spec or {})}
     if "containers" not in spec:
         spec["containers"] = [{}]
 

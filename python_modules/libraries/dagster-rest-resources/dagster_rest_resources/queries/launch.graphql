@@ -5,6 +5,7 @@ mutation LaunchRun($executionParams: ExecutionParams!) {
       run {
         runId
         status
+        jobName
       }
     }
     ... on InvalidStepError {

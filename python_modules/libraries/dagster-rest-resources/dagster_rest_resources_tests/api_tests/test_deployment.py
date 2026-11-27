@@ -9,7 +9,11 @@ from dagster_rest_resources.__generated__.delete_deployment import (
     DeleteDeploymentDeleteDeploymentPythonError,
     DeleteDeploymentDeleteDeploymentUnauthorizedError,
 )
-from dagster_rest_resources.__generated__.enums import DagsterCloudDeploymentType
+from dagster_rest_resources.__generated__.enums import (
+    DagsterCloudDeploymentType,
+    DeploymentAgentType,
+    DeploymentStatus,
+)
 from dagster_rest_resources.__generated__.get_deployment import (
     GetDeployment,
     GetDeploymentDeploymentByNameDagsterCloudDeployment,
@@ -58,11 +62,19 @@ class TestListDeployments:
                     deploymentId=1,
                     deploymentName="prod",
                     deploymentType=DagsterCloudDeploymentType.PRODUCTION,
+                    deploymentStatus=DeploymentStatus.ACTIVE,
+                    agentType=DeploymentAgentType.HYBRID,
+                    isBranchDeployment=False,
+                    organizationName="test-org",
                 ),
                 ListDeploymentsFullDeployments(
                     deploymentId=2,
                     deploymentName="branch",
                     deploymentType=DagsterCloudDeploymentType.BRANCH,
+                    deploymentStatus=DeploymentStatus.ACTIVE,
+                    agentType=DeploymentAgentType.HYBRID,
+                    isBranchDeployment=False,
+                    organizationName="test-org",
                 ),
             ]
         )
@@ -92,6 +104,10 @@ class TestListBranchDeployments:
                         deploymentId=1,
                         deploymentName="test-deployment-name",
                         deploymentType=DagsterCloudDeploymentType.BRANCH,
+                        deploymentStatus=DeploymentStatus.ACTIVE,
+                        agentType=DeploymentAgentType.HYBRID,
+                        isBranchDeployment=False,
+                        organizationName="test-org",
                     ),
                 ]
             )
@@ -122,6 +138,10 @@ class TestGetDeployment:
                 deploymentId=1,
                 deploymentName="prod",
                 deploymentType=DagsterCloudDeploymentType.PRODUCTION,
+                deploymentStatus=DeploymentStatus.ACTIVE,
+                agentType=DeploymentAgentType.HYBRID,
+                isBranchDeployment=False,
+                organizationName="test-org",
             )
         )
 
@@ -284,6 +304,10 @@ class TestDeleteDeployment:
                 deploymentId=deployment_id,
                 deploymentName=name,
                 deploymentType=deployment_type,
+                deploymentStatus=DeploymentStatus.ACTIVE,
+                agentType=DeploymentAgentType.HYBRID,
+                isBranchDeployment=False,
+                organizationName="test-org",
             )
         )
 
@@ -296,6 +320,10 @@ class TestDeleteDeployment:
                 deploymentId=1,
                 deploymentName="branch",
                 deploymentType=DagsterCloudDeploymentType.BRANCH,
+                deploymentStatus=DeploymentStatus.ACTIVE,
+                agentType=DeploymentAgentType.HYBRID,
+                isBranchDeployment=False,
+                organizationName="test-org",
             )
         )
 
@@ -319,6 +347,10 @@ class TestDeleteDeployment:
                 deploymentId=1,
                 deploymentName="prod",
                 deploymentType=DagsterCloudDeploymentType.PRODUCTION,
+                deploymentStatus=DeploymentStatus.ACTIVE,
+                agentType=DeploymentAgentType.HYBRID,
+                isBranchDeployment=False,
+                organizationName="test-org",
             )
         )
 

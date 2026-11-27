@@ -91,7 +91,7 @@ const mockOngoingRuns = ({
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
       inProgressFilter: {
-        statuses: ['STARTED', 'STARTING', 'CANCELING'],
+        statuses: ['STARTED', 'STARTING', 'SUSPENDED', 'CANCELING'],
         ...runsFilter,
       },
       cursor,
@@ -257,6 +257,7 @@ describe('useRunsForTimeline', () => {
           endTime: buckets[0]![1] * 1000,
           automation: null,
           externalJobSource: null,
+          isRetry: false,
         },
       ],
     });
@@ -528,6 +529,7 @@ describe('useRunsForTimeline', () => {
       endTime: buckets[0]![1] * 1000,
       automation: null,
       externalJobSource: null,
+      isRetry: false,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -540,6 +542,7 @@ describe('useRunsForTimeline', () => {
       endTime: buckets[0]![1] * 1000,
       automation: null,
       externalJobSource: null,
+      isRetry: false,
     });
 
     mockCbs.forEach((mockFn) => {
@@ -668,6 +671,7 @@ describe('useRunsForTimeline', () => {
           status: RunStatus.SUCCESS,
           automation: null,
           externalJobSource: null,
+          isRetry: false,
         },
         {
           endTime: initialRange[1] * 1000,
@@ -676,6 +680,7 @@ describe('useRunsForTimeline', () => {
           status: RunStatus.SUCCESS,
           automation: null,
           externalJobSource: null,
+          isRetry: false,
         },
       ],
     });

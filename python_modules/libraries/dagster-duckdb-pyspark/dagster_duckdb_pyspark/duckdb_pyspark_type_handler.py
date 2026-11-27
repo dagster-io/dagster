@@ -4,7 +4,12 @@ import pyarrow as pa
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDBIOManager,
+    build_duckdb_io_manager,
+    check_table_slice_names,
+)
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
 
@@ -52,6 +57,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         connection,
     ):
         """Stores the given object at the provided filepath."""
+        check_table_slice_names(table_slice)
         if obj.isEmpty():
             context.log.warning(
                 "Skipping DuckDB write for empty DataFrame. An empty table will not be created."

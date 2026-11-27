@@ -19,19 +19,21 @@ import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {
   RunsFeedTableEntryFragment,
   RunsFeedTableEntryFragment_Run,
 } from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
+import {lazy} from '../util/lazy';
 
 interface RunsFeedTableProps {
   entries: RunsFeedTableEntryFragment[];
@@ -40,6 +42,8 @@ interface RunsFeedTableProps {
   hideTags?: string[];
   refetch: () => void;
   actionBarComponents?: React.ReactNode;
+  // For tabs in the action bar: drops the gap so the selected tab's underline meets the table.
+  flushActionBar?: boolean;
   belowActionBarComponents?: React.ReactNode;
   terminateAllRunsButton?: React.ReactNode;
   paginationProps: CursorPaginationProps;
@@ -60,6 +64,7 @@ export const RunsFeedTable = ({
   hideTags,
   refetch,
   actionBarComponents,
+  flushActionBar,
   belowActionBarComponents,
   terminateAllRunsButton,
   paginationProps,
@@ -134,6 +139,7 @@ export const RunsFeedTable = ({
           />
           {terminateAllRunsButton}
           <RunBulkActionsMenu
+            intent="primary"
             clearSelection={() => onToggleAll(false)}
             selected={selectedRuns}
             notice={
@@ -250,7 +256,7 @@ export const RunsFeedTable = ({
       padding={{vertical: 12}}
       style={scroll ? {height: '100%', minHeight: 0} : {}}
     >
-      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 12}}>
+      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: flushActionBar ? 0 : 12}}>
         {actionBar}
       </Box>
       <IndeterminateLoadingBar $loading={loading} />
@@ -259,18 +265,38 @@ export const RunsFeedTable = ({
   );
 };
 
-export const RunsFeedTableWithFilters = ({
-  filter,
-  scroll,
-  includeRunsFromBackfills,
-  ...rest
-}: {
+const MobileRunsFeedWithFilters = lazy(() => import('./redesign/MobileRunsFeedWithFilters'));
+
+type RunsFeedTableWithFiltersProps = {
   filter: RunsFilter;
   includeRunsFromBackfills: boolean;
 } & Pick<
   RunsFeedTableProps,
-  'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
->) => {
+  | 'actionBarComponents'
+  | 'flushActionBar'
+  | 'belowActionBarComponents'
+  | 'emptyState'
+  | 'hideTags'
+  | 'scroll'
+>;
+
+// The wide table doesn't fit a phone, so pages that embed a runs feed get the runs page's card
+// list in the mobile layout without any work of their own.
+export const RunsFeedTableWithFilters = (props: RunsFeedTableWithFiltersProps) => {
+  const isMobile = useIsMobile();
+  return isMobile ? (
+    <MobileRunsFeedWithFilters {...props} />
+  ) : (
+    <DesktopRunsFeedTableWithFilters {...props} />
+  );
+};
+
+const DesktopRunsFeedTableWithFilters = ({
+  filter,
+  scroll,
+  includeRunsFromBackfills,
+  ...rest
+}: RunsFeedTableWithFiltersProps) => {
   const {entries, paginationProps, queryResult} = useRunsFeedEntries({
     view: includeRunsFromBackfills ? RunsFeedView.RUNS : RunsFeedView.ROOTS,
     skip: false,

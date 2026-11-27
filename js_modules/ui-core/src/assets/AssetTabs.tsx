@@ -1,42 +1,17 @@
-import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
 
 import {AssetViewParams} from './types';
-import {TabLink} from '../ui/TabLink';
+import {RouteTabConfig, RouteTabs} from '../ui/RouteTabs';
 
 interface Props {
   selectedTab: string;
   tabs: AssetTabConfig[];
 }
 
-export const AssetTabs = (props: Props) => {
-  const {selectedTab, tabs} = props;
-
-  return (
-    <Tabs size="large" selectedTabId={selectedTab}>
-      {tabs
-        .filter((tab) => !tab.hidden)
-        .map(({id, title, to, tooltip, disabled}) => {
-          if (disabled) {
-            return (
-              <Tab
-                disabled
-                key={id}
-                id={id}
-                title={
-                  <Tooltip content={tooltip || ''} canShow={!!tooltip} placement="top">
-                    {title}
-                  </Tooltip>
-                }
-              />
-            );
-          }
-          return <TabLink key={id} id={id} title={title} to={to} disabled={disabled} />;
-        })}
-    </Tabs>
-  );
-};
+export const AssetTabs = ({selectedTab, tabs}: Props) => (
+  <RouteTabs selectedTabId={selectedTab} tabs={tabs} />
+);
 
 export const DEFAULT_ASSET_TAB_ORDER = [
   'overview',
@@ -60,13 +35,9 @@ export type AssetTabConfigInput = {
   params: AssetViewParams;
 };
 
-export type AssetTabConfig = {
-  id: string;
+export type AssetTabConfig = RouteTabConfig & {
   title: string;
-  to: string;
-  disabled?: boolean;
   tooltip?: string;
-  hidden?: boolean;
 };
 
 export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringify(params)}`;
@@ -79,6 +50,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       id: 'overview',
       title: 'Overview',
       to: buildAssetViewParams({view: 'overview'}),
+      mobile: true,
     } as AssetTabConfig,
     partitions: {
       id: 'partitions',

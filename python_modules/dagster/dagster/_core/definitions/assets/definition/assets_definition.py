@@ -11,7 +11,7 @@ from dagster_shared.record import replace
 import dagster._check as check
 from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.definitions.assets.definition.asset_graph_computation import (
     AssetGraphComputation,
@@ -344,7 +344,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         unique_partitions_defs = {
             spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
         }
-        if len(unique_partitions_defs) > 1 and not can_subset:
+        # Unexecutable assets (node_def is None) are required to have can_subset=False, so this
+        # check would be unsatisfiable for them. Nothing is subset if nothing executes.
+        if len(unique_partitions_defs) > 1 and not can_subset and node_def is not None:
             raise DagsterInvalidDefinitionError(
                 "If different AssetSpecs have different partitions_defs, can_subset must be True"
             )
@@ -372,6 +374,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
 
+    @staticmethod
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
@@ -957,7 +960,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @cached_property
-    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
+    def entity_keys_by_output_name(self) -> Mapping[str, AssetOrCheckKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -967,11 +970,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @cached_property
-    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+    def output_names_by_entity_key(self) -> Mapping[AssetOrCheckKey, str]:
         return reverse_dict(self.entity_keys_by_output_name)
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def asset_and_check_keys(self) -> AbstractSet[AssetOrCheckKey]:
         return set(self.keys).union(self.check_keys)
 
     @cached_property
@@ -1961,7 +1964,7 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(entity_keys: Iterable["EntityKey"]) -> str:
+def unique_id_from_asset_and_check_keys(entity_keys: Iterable["AssetOrCheckKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.

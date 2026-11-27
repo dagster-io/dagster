@@ -795,10 +795,10 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
 
   // First, get the roots of the selection. The root assets are the ones with none
   // of their dependencyKeys selected.
-  const roots = assets.filter((a) => {
-    const aDeps = a.dependencyKeys.map(tokenForAssetKey);
-    return !assets.some((b) => aDeps.includes(tokenForAssetKey(b.assetKey)));
-  });
+  const selectedTokens = new Set(assets.map((a) => tokenForAssetKey(a.assetKey)));
+  const roots = assets.filter(
+    (a) => !a.dependencyKeys.some((dep) => selectedTokens.has(tokenForAssetKey(dep))),
+  );
 
   const partitionedRoots = roots
     .filter((r) => !!r.partitionDefinition)
@@ -918,7 +918,7 @@ export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQue
         <ul>
           {data.assetNodeAdditionalRequiredKeys.map((assetKey, idx) => (
             <li key={idx}>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'definition'})} target="_blank">
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'overview'})} target="_blank">
                 <strong>{displayNameForAssetKey(assetKey)}</strong>
               </Link>
             </li>

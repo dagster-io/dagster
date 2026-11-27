@@ -73,3 +73,42 @@ query GetSensor($sensorSelector: SensorSelector!) {
     }
   }
 }
+
+mutation StartSensor($sensorSelector: SensorSelector!) {
+  startSensor(sensorSelector: $sensorSelector) {
+    __typename
+    ... on Sensor {
+      name
+      sensorState {
+        status
+      }
+    }
+    ... on SensorNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation StopSensor($id: String!) {
+  stopSensor(id: $id) {
+    __typename
+    ... on StopSensorMutationResult {
+      instigationState {
+        name
+        status
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

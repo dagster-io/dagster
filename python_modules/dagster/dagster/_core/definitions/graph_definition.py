@@ -1,15 +1,6 @@
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar, Union, cast  # noqa: UP035
 
 from toposort import CircularDependencyError
 from typing_extensions import Self
@@ -61,6 +52,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.executor_definition import ExecutorDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.op_definition import OpDefinition
@@ -617,6 +611,7 @@ class GraphDefinition(NodeDefinition):
         run_tags: Mapping[str, object] | None = None,
         _asset_selection_data: AssetSelectionData | None = None,
         owners: Sequence[str] | None = None,
+        automation_condition: "AutomationCondition | None" = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -674,6 +669,9 @@ class GraphDefinition(NodeDefinition):
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of a job.
             owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the job.
+            automation_condition (Optional[AutomationCondition]): An experimental, job-scoped
+                automation condition. Only supported for asset jobs; generally set via
+                `define_asset_job` rather than here.
 
         Returns:
             JobDefinition
@@ -701,6 +699,7 @@ class GraphDefinition(NodeDefinition):
             _subset_selection_data=_asset_selection_data,
             _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
             owners=owners,
+            _automation_condition=automation_condition,
         ).get_subset(op_selection=op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":

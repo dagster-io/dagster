@@ -465,7 +465,7 @@ dagster-user-deployments:
       readinessProbe:
         # Readiness probes are enabled by default.
         enabled: true
-        # If `readinessProbe` has no `exec` field, then the following default will be used:
+        # If `readinessProbe` has no `exec`, `httpGet`, `tcpSocket` or `grpc` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
         periodSeconds: 20
@@ -819,8 +819,18 @@ postgresql:
   image:
     registry: "docker.io"
     repository: "library/postgres"
-    tag: "14.6"
+    tag: "14.25"
     pullPolicy: IfNotPresent
+
+  # Image for the PostgreSQL subchart's init container that sets ownership of the data volume.
+  # Its script uses sh, mkdir, chmod, chown, find and xargs, which the PostgreSQL image has.
+  # Keep it in step with postgresql.image.
+  volumePermissions:
+    image:
+      registry: "docker.io"
+      repository: "library/postgres"
+      tag: "14.25"
+      pullPolicy: IfNotPresent
 
   # set this PostgreSQL hostname when using an external PostgreSQL database
   postgresqlHost: ""
@@ -890,8 +900,8 @@ rabbitmq:
   volumePermissions:
     enabled: true
     image:
-      repository: bitnami/minideb
-      tag: stretch
+      repository: "busybox"
+      tag: "1.37.0"
       pullPolicy: IfNotPresent
 
 ####################################################################################################
@@ -1353,7 +1363,7 @@ dagsterDaemon:
 busybox:
   image:
     repository: "docker.io/busybox"
-    tag: "1.28"
+    tag: "1.37.0"
     pullPolicy: "IfNotPresent"
 
 ####################################################################################################

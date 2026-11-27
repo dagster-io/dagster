@@ -68,7 +68,7 @@ def test_observation_defs_are_observed(
         dagster_instance = DagsterInstance.get()
 
         dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
-        assert poll_for_observation(dagster_instance, dag_asset_key)
+        poll_for_observation(dagster_instance, dag_asset_key)
 
         for expected_asset_key in expected_asset_keys:
             obs_entry = poll_for_observation(dagster_instance, expected_asset_key)

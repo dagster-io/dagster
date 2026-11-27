@@ -1,8 +1,24 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type StartSensorMutationVariables = Types.Exact<{
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type SensorSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  sensorName: string;
+};
+
+export type StartSensorMutationVariables = Exact<{
   sensorSelector: Types.SensorSelector;
 }>;
 
@@ -36,8 +52,8 @@ export type StartSensorMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type StopRunningSensorMutationVariables = Types.Exact<{
-  id: Types.Scalars['String']['input'];
+export type StopRunningSensorMutationVariables = Exact<{
+  id: string;
 }>;
 
 export type StopRunningSensorMutation = {
@@ -68,7 +84,7 @@ export type StopRunningSensorMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type ResetSensorMutationVariables = Types.Exact<{
+export type ResetSensorMutationVariables = Exact<{
   sensorSelector: Types.SensorSelector;
 }>;
 

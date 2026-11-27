@@ -219,11 +219,17 @@ export const RecentUpdatesTimelineView = ({
   const formatDateTime = useFormatDateTime();
 
   const headerRow = (
-    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+    <Box
+      className={styles.headerRow}
+      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+    >
       <Heading size={14} weight={600}>
         Asset history
       </Heading>
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Box
+        className={styles.headerControls}
+        flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+      >
         <Popover
           placement="bottom-end"
           content={

@@ -20,6 +20,8 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
     AssetHealthMaterializationDegradedPartitionedMeta,
     AssetHealthMaterializationHealthyPartitionedMeta,
     AssetHealthMaterializationMetadata,
+    AssetHealthMaterializationWarningNotPartitionedMeta,
+    AssetHealthMaterializationWarningPartitionedMeta,
     get_materialization_status_and_metadata,
 )
 
@@ -114,12 +116,32 @@ class GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(graphene.Obje
         name = "AssetHealthMaterializationDegradedNotPartitionedMeta"
 
 
+class GrapheneAssetHealthMaterializationWarningPartitionedMeta(graphene.ObjectType):
+    numUpForRetryPartitions = graphene.NonNull(graphene.Int)
+    numMissingPartitions = graphene.NonNull(graphene.Int)
+    totalNumPartitions = graphene.NonNull(graphene.Int)
+    latestRunId = graphene.String()
+    latestFailedRunId = graphene.String()
+
+    class Meta:
+        name = "AssetHealthMaterializationWarningPartitionedMeta"
+
+
+class GrapheneAssetHealthMaterializationWarningNotPartitionedMeta(graphene.ObjectType):
+    failedRunId = graphene.String()
+
+    class Meta:
+        name = "AssetHealthMaterializationWarningNotPartitionedMeta"
+
+
 class GrapheneAssetHealthMaterializationMeta(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
             GrapheneAssetHealthMaterializationHealthyPartitionedMeta,
             GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
+            GrapheneAssetHealthMaterializationWarningPartitionedMeta,
+            GrapheneAssetHealthMaterializationWarningNotPartitionedMeta,
         )
         name = "AssetHealthMaterializationMeta"
 
@@ -141,6 +163,18 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
         elif isinstance(metadata, AssetHealthMaterializationDegradedPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedPartitionedMeta(  # ty: ignore[invalid-return-type]
                 numFailedPartitions=metadata.num_failed_partitions,
+                numMissingPartitions=metadata.num_missing_partitions,
+                totalNumPartitions=metadata.total_num_partitions,
+                latestRunId=metadata.latest_run_id,
+                latestFailedRunId=metadata.latest_failed_to_materialize_run_id,
+            )
+        elif isinstance(metadata, AssetHealthMaterializationWarningNotPartitionedMeta):
+            return GrapheneAssetHealthMaterializationWarningNotPartitionedMeta(  # ty: ignore[invalid-return-type]
+                failedRunId=metadata.failed_run_id,
+            )
+        elif isinstance(metadata, AssetHealthMaterializationWarningPartitionedMeta):
+            return GrapheneAssetHealthMaterializationWarningPartitionedMeta(  # ty: ignore[invalid-return-type]
+                numUpForRetryPartitions=metadata.num_up_for_retry_partitions,
                 numMissingPartitions=metadata.num_missing_partitions,
                 totalNumPartitions=metadata.total_num_partitions,
                 latestRunId=metadata.latest_run_id,

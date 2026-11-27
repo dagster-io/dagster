@@ -54,6 +54,10 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
         return RunStatus.QUEUED;
       case 'RunStartingEvent':
         return RunStatus.STARTING;
+      case 'RunSuspendedEvent':
+        return RunStatus.SUSPENDED;
+      case 'RunResumedEvent':
+        return RunStatus.STARTED;
       case 'RunCancelingEvent':
         return RunStatus.CANCELING;
       case 'RunCanceledEvent':

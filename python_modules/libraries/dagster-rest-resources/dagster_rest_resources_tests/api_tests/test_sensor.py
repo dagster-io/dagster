@@ -29,10 +29,27 @@ from dagster_rest_resources.__generated__.list_sensors import (
     ListSensorsSensorsOrErrorSensorsResults,
     ListSensorsSensorsOrErrorSensorsResultsSensorState,
 )
+from dagster_rest_resources.__generated__.start_sensor import (
+    StartSensor,
+    StartSensorStartSensorPythonError,
+    StartSensorStartSensorSensor,
+    StartSensorStartSensorSensorNotFoundError,
+    StartSensorStartSensorSensorSensorState,
+    StartSensorStartSensorUnauthorizedError,
+)
+from dagster_rest_resources.__generated__.stop_sensor import (
+    StopSensor,
+    StopSensorStopSensorPythonError,
+    StopSensorStopSensorStopSensorMutationResult,
+    StopSensorStopSensorStopSensorMutationResultInstigationState,
+    StopSensorStopSensorUnauthorizedError,
+)
 from dagster_rest_resources.api.sensor import DgApiSensorApi
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
+    DagsterPlusClientError,
     DagsterPlusGraphqlError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.sensor import DgApiSensorList
@@ -383,3 +400,104 @@ class TestGetSensorByName:
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error listing repositories"):
             DgApiSensorApi(_client=client).get_sensor_by_name("test_sensor_name")
+
+
+class TestStartSensor:
+    def test_starts_by_selector(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_sensor.return_value = StartSensor(
+            startSensor=StartSensorStartSensorSensor(
+                __typename="Sensor",
+                name="watch_s3",
+                sensorState=StartSensorStartSensorSensorSensorState(
+                    status=InstigationStatus.RUNNING
+                ),
+            )
+        )
+
+        result = DgApiSensorApi(_client=client).action_start_sensor(
+            sensor_name="watch_s3", repository_location_name="loc", repository_name="repo"
+        )
+
+        client.start_sensor.assert_called_once_with(
+            sensor_selector=SensorSelector(
+                repositoryLocationName="loc", repositoryName="repo", sensorName="watch_s3"
+            )
+        )
+        assert result.name == "watch_s3"
+        assert result.status == InstigationStatus.RUNNING
+
+    def test_sensor_not_found_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_sensor.return_value = StartSensor(
+            startSensor=StartSensorStartSensorSensorNotFoundError(
+                __typename="SensorNotFoundError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusClientError, match="Sensor not found"):
+            DgApiSensorApi(_client=client).action_start_sensor("watch_s3", "loc", "repo")
+
+    def test_unauthorized_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_sensor.return_value = StartSensor(
+            startSensor=StartSensorStartSensorUnauthorizedError(
+                __typename="UnauthorizedError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusUnauthorizedError, match="Error starting sensor"):
+            DgApiSensorApi(_client=client).action_start_sensor("watch_s3", "loc", "repo")
+
+    def test_python_error_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.start_sensor.return_value = StartSensor(
+            startSensor=StartSensorStartSensorPythonError(__typename="PythonError", message="")
+        )
+        with pytest.raises(DagsterPlusServerError, match="Error starting sensor"):
+            DgApiSensorApi(_client=client).action_start_sensor("watch_s3", "loc", "repo")
+
+
+class TestStopSensor:
+    def test_stops_by_id(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_sensor.return_value = StopSensor(
+            stopSensor=StopSensorStopSensorStopSensorMutationResult(
+                __typename="StopSensorMutationResult",
+                instigationState=StopSensorStopSensorStopSensorMutationResultInstigationState(
+                    name="watch_s3", status=InstigationStatus.STOPPED
+                ),
+            )
+        )
+
+        result = DgApiSensorApi(_client=client).action_stop_sensor("sensor-id")
+
+        client.stop_sensor.assert_called_once_with(id="sensor-id")
+        assert result.name == "watch_s3"
+        assert result.status == InstigationStatus.STOPPED
+
+    def test_missing_state_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_sensor.return_value = StopSensor(
+            stopSensor=StopSensorStopSensorStopSensorMutationResult(
+                __typename="StopSensorMutationResult", instigationState=None
+            )
+        )
+        with pytest.raises(DagsterPlusServerError, match="no sensor state returned"):
+            DgApiSensorApi(_client=client).action_stop_sensor("sensor-id")
+
+    def test_unauthorized_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_sensor.return_value = StopSensor(
+            stopSensor=StopSensorStopSensorUnauthorizedError(
+                __typename="UnauthorizedError", message=""
+            )
+        )
+        with pytest.raises(DagsterPlusUnauthorizedError, match="Error stopping sensor"):
+            DgApiSensorApi(_client=client).action_stop_sensor("sensor-id")
+
+    def test_python_error_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.stop_sensor.return_value = StopSensor(
+            stopSensor=StopSensorStopSensorPythonError(__typename="PythonError", message="")
+        )
+        with pytest.raises(DagsterPlusServerError, match="Error stopping sensor"):
+            DgApiSensorApi(_client=client).action_stop_sensor("sensor-id")

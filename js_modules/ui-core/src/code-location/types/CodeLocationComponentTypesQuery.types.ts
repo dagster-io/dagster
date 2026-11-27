@@ -1,9 +1,15 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type CodeLocationComponentTypesQueryVariables = Types.Exact<{
-  locationName: Types.Scalars['String']['input'];
+export type CodeLocationComponentTypesQueryVariables = Exact<{
+  locationName: string;
 }>;
 
 export type CodeLocationComponentTypesQuery = {
@@ -17,7 +23,7 @@ export type CodeLocationComponentTypesQuery = {
           name: string;
           namespace: string;
           example: string;
-          schema: any | null;
+          schema: any;
           description: string | null;
           owners: Array<string> | null;
           tags: Array<string> | null;

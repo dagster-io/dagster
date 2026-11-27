@@ -40,6 +40,7 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
+from dagster._core.storage.tags import RUN_KEY_TAG
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -47,7 +48,7 @@ from dagster._core.test_utils import (
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon import get_default_daemon_logger
+from dagster._daemon import SensorDaemon, get_default_daemon_logger
 from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._record import copy
@@ -448,6 +449,16 @@ def large_sensor(_context):
 
 
 @sensor(job_name="config_job")
+def oversized_run_request_sensor(_context):
+    yield dg.RunRequest(run_key="small", run_config={"ops": {"config_op": {"config": "bar"}}})
+    for i in range(20):
+        yield dg.RunRequest(
+            run_key=f"oversized_{i}",
+            run_config={"ops": {"config_op": {"config": _random_string(100000)}}},
+        )
+
+
+@sensor(job_name="config_job")
 def many_request_sensor(_context):
     # create a gRPC response payload larger than the limit (4194304)
     REQUEST_COUNT = 15
@@ -839,6 +850,7 @@ def the_repo():
         foo_job,
         asset_and_check_job,
         large_sensor,
+        oversized_run_request_sensor,
         many_request_sensor,
         many_requests_cursor_sensor,
         simple_sensor,
@@ -1902,6 +1914,84 @@ def test_custom_interval_sensor_with_offset(
         assert sum(sleeps) == 65
 
 
+@pytest.mark.parametrize("stale_status", [InstigatorStatus.RUNNING, None])
+def test_stale_sensor_states_do_not_evaluate_a_stopped_sensor(
+    executor, instance, caplog, stale_status
+):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+    with (
+        create_test_daemon_workspace_context(
+            create_workspace_load_target(attribute="the_status_in_code_repo"),
+            instance=instance,
+        ) as workspace_context,
+        freeze_time(freeze_datetime),
+    ):
+        remote_repo = next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location.get_repository("the_status_in_code_repo")  # ty: ignore[unresolved-attribute]
+
+        # always_running_sensor is running by default, and a user has stopped it.
+        stopped_sensor = remote_repo.get_sensor("always_running_sensor")
+        instance.stop_sensor(
+            stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id, stopped_sensor
+        )
+        running_sensor = remote_repo.get_sensor("never_running_sensor")
+        instance.start_sensor(running_sensor)
+
+        # The sensor daemon sees the stopped sensor as still running, or as having no saved state,
+        # and sees never_running_sensor's state correctly.
+        stale_states = []
+        for state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR):
+            if state.instigator_name != "always_running_sensor":
+                stale_states.append(state)
+            elif stale_status:
+                stale_states.append(state.with_status(stale_status))
+
+        futures = {}
+        # Process always_running_sensor first, so skipping it must not skip the sensors after it.
+        with mock.patch(
+            "dagster._daemon.sensor.shuffled_round_robin_by_key",
+            side_effect=lambda items, key: sorted(items, key=lambda item: item.name),
+        ):
+            list(
+                execute_sensor_iteration(
+                    workspace_context,
+                    get_default_daemon_logger("SensorDaemon"),
+                    threadpool_executor=executor,
+                    submit_threadpool_executor=None,
+                    sensor_tick_futures=futures,
+                    get_sensor_states=lambda _: stale_states,
+                )
+            )
+        wait_for_futures(futures, timeout=FUTURES_TIMEOUT)
+
+    stored_state = instance.get_instigator_state(
+        stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id
+    )
+    assert stored_state and stored_state.status == InstigatorStatus.STOPPED
+    assert not instance.get_ticks(stopped_sensor.get_remote_origin_id(), stopped_sensor.selector_id)
+    running_sensor_ticks = instance.get_ticks(
+        running_sensor.get_remote_origin_id(), running_sensor.selector_id
+    )
+    assert len(running_sensor_ticks) == 1
+    skipped_missing_state = "its state already exists in storage" in caplog.text
+    assert skipped_missing_state == (stale_status is None)
+
+
+def test_sensor_daemon_iteration_uses_get_sensor_states(instance, workspace_context):
+    with (
+        SensorDaemon(settings={}) as daemon,
+        mock.patch.object(
+            daemon, "get_sensor_states", wraps=daemon.get_sensor_states
+        ) as get_sensor_states,
+    ):
+        for result in daemon.core_loop(workspace_context, threading.Event()):
+            if result == SpanMarker.END_SPAN:
+                break
+
+    get_sensor_states.assert_called_once_with(workspace_context.instance)
+
+
 def test_sensor_start_stop(executor, instance, workspace_context, remote_repo):
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):
@@ -1969,6 +2059,65 @@ def test_large_sensor(executor, instance, workspace_context, remote_repo):
             sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
+        )
+
+
+def test_oversized_run_requests_dropped_from_tick(
+    executor, submit_executor, instance, workspace_context, remote_repo
+):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27)
+    run_size_limit = 50000
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("oversized_run_request_sensor")
+        instance.start_sensor(sensor)
+        with mock.patch(
+            "dagster._core.instance.DagsterInstance.get_run_size_limit_bytes",
+            return_value=run_size_limit,
+        ):
+            evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
+
+        # the request that fits still launches
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.tags[RUN_KEY_TAG] == "small"
+
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        tick_data = ticks[0].tick_data
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [run.run_id],
+            expected_error="exceed the maximum run size",
+        )
+
+        # the oversized requests are identified in the error, capped so that the error cannot
+        # become the oversized payload itself, and their bodies never reach the tick
+        error = str(tick_data.error)
+        assert "yielded 20 run requests that exceed the maximum run size" in error
+        assert "run key oversized_0" in error
+        assert "and 10 more" in error
+        assert [run_request.run_key for run_request in tick_data.run_requests] == ["small"]
+        assert len(dg.serialize_value(tick_data)) < run_size_limit
+
+        # The sensor re-evaluates and yields the oversized request again, since a failed tick
+        # does not advance the cursor. What must not happen is the failed tick being cloned
+        # into a fresh one: with no unlaunched requests left there is nothing to resume, so
+        # each evaluation costs one small tick rather than another copy of the dropped body.
+        with freeze_time(freeze_datetime + datetime.timedelta(seconds=60)):
+            with mock.patch(
+                "dagster._core.instance.DagsterInstance.get_run_size_limit_bytes",
+                return_value=run_size_limit,
+            ):
+                evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
+
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        assert all(
+            [run_request.run_key for run_request in tick.tick_data.run_requests] == ["small"]
+            for tick in ticks
         )
 
 

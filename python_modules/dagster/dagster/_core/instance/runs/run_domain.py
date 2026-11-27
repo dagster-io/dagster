@@ -49,6 +49,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_key import AssetOrCheckKey
     from dagster._core.definitions.assets.graph.base_asset_graph import (
         AssetCheckNode,
         BaseAssetGraph,
@@ -60,7 +61,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
-    from dagster._core.definitions.utils import EntityKey
     from dagster._core.events import DagsterEvent
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
@@ -722,27 +722,22 @@ class RunDomain:
         or if it was associated with an asset that will be re-executed.
         """
         from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-        from dagster._core.events import (
-            AssetCheckEvaluation,
-            DagsterEventType,
-            StepMaterializationData,
-        )
+        from dagster._core.events import AssetCheckEvaluation, DagsterEventType
 
         # figure out the set of assets that were materialized and checks that successfully executed
+        executed_keys: set[AssetOrCheckKey] = set(
+            self._instance.get_asset_keys_for_run(
+                run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+        )
+        blocking_failure_keys: set[AssetKey] = set()
         logs = self._instance.all_logs(
             run_id=run_id,
-            of_type={
-                DagsterEventType.ASSET_MATERIALIZATION,
-                DagsterEventType.ASSET_CHECK_EVALUATION,
-            },
+            of_type=DagsterEventType.ASSET_CHECK_EVALUATION,
         )
-        executed_keys: set[EntityKey] = set()
-        blocking_failure_keys: set[AssetKey] = set()
         for log in logs:
             event_data = log.dagster_event.event_specific_data if log.dagster_event else None
-            if isinstance(event_data, StepMaterializationData):
-                executed_keys.add(event_data.materialization.asset_key)
-            elif isinstance(event_data, AssetCheckEvaluation):
+            if isinstance(event_data, AssetCheckEvaluation):
                 # blocking asset checks did not "successfully execute", so we keep track
                 # of them and their associated assets
                 if event_data.blocking and not event_data.passed:
@@ -754,7 +749,7 @@ class RunDomain:
         to_not_reexecute = executed_keys - blocking_failure_keys
 
         # find the set of planned assets and checks
-        to_reexecute: set[EntityKey] = set()
+        to_reexecute: set[AssetOrCheckKey] = set()
         for step in execution_plan_snapshot.steps:
             if step.key not in execution_plan_snapshot.step_keys_to_execute:
                 continue
@@ -791,9 +786,17 @@ class RunDomain:
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
     ) -> Optional["AssetCheckNode"]: ...
 
+    @overload
     def _get_repo_scoped_entity_node(
         self,
-        key: "EntityKey",
+        key: "AssetOrCheckKey",
+        asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    ) -> Optional["BaseEntityNode"]: ...
+
+    def _get_repo_scoped_entity_node(
+        self,
+        key: "AssetOrCheckKey",
         asset_graph: "BaseAssetGraph",
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
     ) -> Optional["BaseEntityNode"]:
@@ -820,7 +823,7 @@ class RunDomain:
 
     def _get_partitions_def(
         self,
-        key: "EntityKey",
+        key: "AssetOrCheckKey",
         asset_graph: "BaseAssetGraph",
         remote_job_origin: Optional["RemoteJobOrigin"],
         run: "DagsterRun",

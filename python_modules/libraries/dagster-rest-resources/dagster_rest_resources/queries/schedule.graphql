@@ -76,3 +76,45 @@ query GetSchedule($scheduleSelector: ScheduleSelector!) {
     }
   }
 }
+
+mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
+  startSchedule(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on ScheduleStateResult {
+      scheduleState {
+        name
+        status
+      }
+    }
+    ... on ScheduleNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+mutation StopSchedule($id: String!) {
+  stopRunningSchedule(id: $id) {
+    __typename
+    ... on ScheduleStateResult {
+      scheduleState {
+        name
+        status
+      }
+    }
+    ... on ScheduleNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

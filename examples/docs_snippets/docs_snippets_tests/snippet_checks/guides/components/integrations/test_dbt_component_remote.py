@@ -25,7 +25,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "integrations"
-    / "dbt-component"
+    / "dbt-component-remote"
 )
 
 
@@ -47,8 +47,6 @@ def test_components_docs_dbt_project_remote(
                 MASK_USING_LOG_MESSAGE,
                 MASK_MY_PROJECT,
             ],
-            # Don't clear the snapshot dir since we're adding to existing snippets
-            clear_snapshot_dir_before_update=False,
         ) as context,
         ExitStack() as stack,
     ):

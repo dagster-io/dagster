@@ -2,7 +2,7 @@
 name = "ingestion-patterns"
 version = "0.1.0"
 description = "Dagster project demonstrating data ingestion patterns: Push, Pull, and Poll"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "dagster>=1.9.0",
     "dagster-duckdb>=0.25.0",
@@ -43,3 +43,6 @@ directory_type = "project"
 root_module = "ingestion_patterns"
 defs_module = "ingestion_patterns.defs"
 code_location_target_module = "ingestion_patterns.definitions"
+
+[tool.uv]
+exclude-newer = "48h"

@@ -12,6 +12,7 @@ from dagster._annotations import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import (
     AssetDep,
     CoercibleToAssetDep,
@@ -88,7 +89,9 @@ def asset(
     op_tags: Mapping[str, Any] | None = ...,
     group_name: str | None = ...,
     output_required: bool = ...,
-    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = ...,
     backfill_policy: BackfillPolicy | None = ...,
     retry_policy: RetryPolicy | None = ...,
     code_version: str | None = ...,
@@ -174,7 +177,9 @@ def asset(
     op_tags: Mapping[str, Any] | None = None,
     group_name: str | None = None,
     output_required: bool = True,
-    automation_condition: AutomationCondition[AssetKey] | None = None,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = None,
     freshness_policy: FreshnessPolicy | None = None,
     backfill_policy: BackfillPolicy | None = None,
     retry_policy: RetryPolicy | None = None,
@@ -786,7 +791,9 @@ def graph_asset(
     kinds: AbstractSet[str] | None = None,
     legacy_freshness_policy: LegacyFreshnessPolicy | None = ...,
     auto_materialize_policy: AutoMaterializePolicy | None = ...,
-    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = ...,
     backfill_policy: BackfillPolicy | None = ...,
     resource_defs: Mapping[str, ResourceDefinition] | None = ...,
     check_specs: Sequence[AssetCheckSpec] | None = None,
@@ -820,7 +827,9 @@ def graph_asset(
     metadata: RawMetadataMapping | None = None,
     tags: Mapping[str, str] | None = None,
     owners: Sequence[str] | None = None,
-    automation_condition: AutomationCondition[AssetKey] | None = None,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = None,
     backfill_policy: BackfillPolicy | None = None,
     resource_defs: Mapping[str, ResourceDefinition] | None = None,
     check_specs: Sequence[AssetCheckSpec] | None = None,

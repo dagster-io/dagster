@@ -108,6 +108,18 @@ class GrapheneRunCancelingEvent(graphene.ObjectType):
         name = "RunCancelingEvent"
 
 
+class GrapheneRunSuspendedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunSuspendedEvent"
+
+
+class GrapheneRunResumedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunResumedEvent"
+
+
 class GrapheneRunCanceledEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent, GrapheneErrorEvent)
@@ -660,6 +672,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneRunStartingEvent,
             GrapheneRunCancelingEvent,
             GrapheneRunCanceledEvent,
+            GrapheneRunSuspendedEvent,
+            GrapheneRunResumedEvent,
             GrapheneRunSuccessEvent,
             GrapheneStepWorkerStartedEvent,
             GrapheneStepWorkerStartingEvent,

@@ -1,0 +1,31 @@
+/* No bottom padding, so the selected tab's underline meets the border. */
+.evaluationsBar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px var(--page-gutter, 24px) 0;
+  border-bottom: 1px solid var(--color-keyline-default);
+}
+
+/* Mobile: the tabs, filter and timeline controls wrap onto rows of their own. The controls'
+   own row dissolves into the filter row, so "Live" sits beside the filter and the range
+   buttons take the next row whole. */
+:global(.dagster-mobile) .evaluationsBar,
+:global(.dagster-mobile) .evaluationsFilters {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+:global(.dagster-mobile) .evaluationsBar {
+  padding-bottom: 12px;
+}
+
+:global(.dagster-mobile) .evaluationsFilters {
+  flex-basis: 100%;
+}
+
+:global(.dagster-mobile) .timelineControls {
+  display: contents;
+}

@@ -3,6 +3,7 @@ import {Fragment, HTMLProps, ReactNode, useLayoutEffect, useState} from 'react';
 
 import styles from './css/PackageTree.module.css';
 
+import {useComponentBadge} from './ComponentBadgeContext';
 import {Contents} from './types';
 
 function extractFromPathname(pathname: string) {
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function PackageTree({contents, loading, pathname, renderLink}: Props) {
+  const renderBadge = useComponentBadge();
   const {selectedPkg, selectedComponent} = extractFromPathname(pathname);
   const [expandedPkgs, setExpandedPkgs] = useState<Set<string>>(
     () => new Set(selectedPkg ? [selectedPkg] : []),
@@ -109,6 +111,7 @@ export default function PackageTree({contents, loading, pathname, renderLink}: P
                           <>
                             <TempIcon />
                             <span className={styles.componentName}>{componentType.name}</span>
+                            {renderBadge(componentType, {compact: true})}
                           </>
                         ),
                       })}

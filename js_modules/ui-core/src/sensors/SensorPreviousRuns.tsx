@@ -25,6 +25,11 @@ export const SensorPreviousRuns = ({
     [repoAddress, sensor.name],
   );
   return (
-    <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills actionBarComponents={tabs} />
+    <RunsFeedTableWithFilters
+      filter={filter}
+      includeRunsFromBackfills
+      actionBarComponents={tabs}
+      flushActionBar
+    />
   );
 };

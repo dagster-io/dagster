@@ -161,6 +161,13 @@ class AssetMethods:
             run_id=RUNLESS_RUN_ID,
         )
 
+    @property
+    def supports_wipe_on_delete_for_multipartitioned_assets(self) -> bool:
+        """Whether deleting dynamic partitions may also wipe multi-partitioned assets that use
+        the definition as a dimension. Not supported in OSS.
+        """
+        return False
+
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
@@ -215,14 +222,21 @@ class AssetMethods:
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialization storage id for each partition for a given asset key.
         Moved from AssetDomain.get_latest_storage_id_by_partition().
 
         Returns a mapping of partition to storage id.
         """
+        # Only forward the cursor when set, so storage implementations that predate the
+        # parameter keep working for callers that don't use it.
+        if after_cursor is None:
+            return self._event_storage_impl.get_latest_storage_id_by_partition(
+                asset_key, event_type, partitions
+            )
         return self._event_storage_impl.get_latest_storage_id_by_partition(
-            asset_key, event_type, partitions
+            asset_key, event_type, partitions, after_cursor=after_cursor
         )
 
     @deprecated(breaking_version="2.0")
@@ -455,10 +469,6 @@ class AssetMethods:
     def internal_asset_freshness_enabled(self) -> bool:
         """Check if internal asset freshness is enabled - moved from AssetMixin.internal_asset_freshness_enabled()."""
         return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() != "false"
-
-    def automation_resolve_asset_check_keys_enabled(self) -> bool:
-        """Whether declarative automation explicitly resolves the asset checks recorded on its run requests."""
-        return os.getenv("DAGSTER_AUTOMATION_RESOLVE_ASSET_CHECK_KEYS", "").lower() == "true"
 
     def streamline_read_asset_health_supported(self, streamline_name: StreamlineName) -> bool:
         """Check if streamline read asset health is supported - moved from AssetMixin.streamline_read_asset_health_supported()."""

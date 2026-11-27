@@ -161,7 +161,11 @@ class UPathIOManager(IOManager):
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
-            return self._base_path._kwargs.copy()  # noqa
+            # universal-pathlib 0.2.0 added `storage_options` and deprecated `_kwargs`, which 0.3.0 removed
+            storage_options = getattr(self._base_path, "storage_options", None)
+            if storage_options is None:
+                storage_options = self._base_path._kwargs  # noqa
+            return dict(storage_options)
         elif isinstance(self._base_path, Path):
             return {}
         else:

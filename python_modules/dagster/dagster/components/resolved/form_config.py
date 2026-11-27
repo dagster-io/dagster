@@ -8,9 +8,25 @@ JSON Schema ``title``. Field-level values serialize to react-jsonschema-form's
 inline ``ui:*`` keys, which the frontend extracts into a parallel ``uiSchema``.
 """
 
+from enum import Enum
 from typing import Any
 
 from dagster_shared.record import record
+
+
+class FormWidget(str, Enum):
+    """Field-level rich-input hints for the app-managed components form editor.
+
+    Each value is emitted verbatim as the field's ``ui:widget`` and must match a
+    widget registered in the frontend form editor (``component-form/widgets.tsx``).
+    This enum is the single source of truth for the vocabulary — the frontend
+    registry and tests key off its values.
+    """
+
+    CRON = "cron"  # cron-expression editor with presets and validation
+    DATE = "date"  # date picker
+    SECRET = "secret"  # masked / password input
+
 
 # Python-side filter marking a component class as app-managed (i.e. editable
 # from the app). Not consumed by the form renderer; checked by
@@ -61,6 +77,13 @@ class ComponentFormConfig:
         placeholder: Field level only. Placeholder text for the form input.
         multiline: Field level only. If True, render a textarea instead of a
             single-line input.
+        widget: Field level only. Render a richer input for the field's value:
+            ``"cron"`` a cron-expression editor with presets and validation,
+            ``"date"`` a date picker, ``"secret"`` a masked/password input.
+            Takes precedence over ``multiline``; ignored when ``hidden`` is set.
+        advanced: Field level only. If True, the field is tucked into a
+            collapsed "Advanced" section at the bottom of the form. Use for
+            tuning knobs most users should not need to touch.
         id_source: Field level only. If True, the form uses this field's value
             as the suffix in the auto-generated component id (e.g.
             ``MyComponent[<field value>]``). Only one field per component may
@@ -72,6 +95,8 @@ class ComponentFormConfig:
     hidden: bool | None = None
     placeholder: str | None = None
     multiline: bool | None = None
+    widget: FormWidget | None = None
+    advanced: bool | None = None
     id_source: bool | None = None
 
     def to_component_json_schema_extra(self) -> dict[str, Any]:
@@ -94,12 +119,18 @@ class ComponentFormConfig:
         out: dict[str, Any] = {}
         if self.label is not None:
             out["title"] = self.label
+        # All three set ``ui:widget``. ``hidden`` wins (a hidden field renders no
+        # control at all); an explicit ``widget`` beats the ``multiline`` sugar.
         if self.hidden:
             out["ui:widget"] = "hidden"
+        elif self.widget is not None:
+            out["ui:widget"] = self.widget.value
         elif self.multiline:
             out["ui:widget"] = "textarea"
         if self.placeholder is not None:
             out["ui:placeholder"] = self.placeholder
+        if self.advanced:
+            out["ui:advanced"] = True
         if self.id_source:
             out[APP_ID_SOURCE] = True
         return out

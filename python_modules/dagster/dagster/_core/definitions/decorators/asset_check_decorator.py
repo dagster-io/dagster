@@ -8,7 +8,7 @@ from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
-from dagster._core.definitions.asset_key import AssetCheckKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.job.asset_in import AssetIn, CoercibleToAssetIn
@@ -114,7 +114,9 @@ def asset_check(
     op_tags: Mapping[str, Any] | None = None,
     retry_policy: RetryPolicy | None = None,
     metadata: Mapping[str, Any] | None = None,
-    automation_condition: AutomationCondition[AssetCheckKey] | None = None,
+    automation_condition: AutomationCondition[AssetCheckKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = None,
     pool: str | None = None,
     partitions_def: PartitionsDefinition | None = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:

@@ -1,10 +1,91 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type PipelineRunLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+export type DagsterEventType =
+  | 'ALERT_FAILURE'
+  | 'ALERT_START'
+  | 'ALERT_SUCCESS'
+  | 'ASSET_CHECK_EVALUATION'
+  | 'ASSET_CHECK_EVALUATION_PLANNED'
+  | 'ASSET_FAILED_TO_MATERIALIZE'
+  | 'ASSET_HEALTH_CHANGED'
+  | 'ASSET_MATERIALIZATION'
+  | 'ASSET_MATERIALIZATION_PLANNED'
+  | 'ASSET_OBSERVATION'
+  | 'ASSET_STORE_OPERATION'
+  | 'ASSET_WIPED'
+  | 'CODE_LOCATION_UPDATED'
+  | 'ENGINE_EVENT'
+  | 'FRESHNESS_STATE_CHANGE'
+  | 'FRESHNESS_STATE_EVALUATION'
+  | 'HANDLED_OUTPUT'
+  | 'HOOK_COMPLETED'
+  | 'HOOK_ERRORED'
+  | 'HOOK_SKIPPED'
+  | 'LOADED_INPUT'
+  | 'LOGS_CAPTURED'
+  | 'OBJECT_STORE_OPERATION'
+  | 'PIPELINE_CANCELED'
+  | 'PIPELINE_CANCELING'
+  | 'PIPELINE_DEQUEUED'
+  | 'PIPELINE_ENQUEUED'
+  | 'PIPELINE_FAILURE'
+  | 'PIPELINE_START'
+  | 'PIPELINE_STARTING'
+  | 'PIPELINE_SUCCESS'
+  | 'RESOURCE_INIT_FAILURE'
+  | 'RESOURCE_INIT_STARTED'
+  | 'RESOURCE_INIT_SUCCESS'
+  | 'RUN_CANCELED'
+  | 'RUN_CANCELING'
+  | 'RUN_DEQUEUED'
+  | 'RUN_ENQUEUED'
+  | 'RUN_FAILURE'
+  | 'RUN_RESUMED'
+  | 'RUN_START'
+  | 'RUN_STARTING'
+  | 'RUN_SUCCESS'
+  | 'RUN_SUSPENDED'
+  | 'STEP_EXPECTATION_RESULT'
+  | 'STEP_FAILURE'
+  | 'STEP_INPUT'
+  | 'STEP_OUTPUT'
+  | 'STEP_RESTARTED'
+  | 'STEP_SKIPPED'
+  | 'STEP_START'
+  | 'STEP_SUCCESS'
+  | 'STEP_UP_FOR_RETRY'
+  | 'STEP_WORKER_STARTED'
+  | 'STEP_WORKER_STARTING';
+
+export type ErrorSource = 'FRAMEWORK_ERROR' | 'INTERRUPT' | 'UNEXPECTED_ERROR' | 'USER_CODE_ERROR';
+
+export type LogLevel = 'CRITICAL' | 'DEBUG' | 'ERROR' | 'INFO' | 'WARNING';
+
+export type ObjectStoreOperationType = 'CP_OBJECT' | 'GET_OBJECT' | 'RM_OBJECT' | 'SET_OBJECT';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS'
+  | 'SUSPENDED';
+
+export type PipelineRunLogsSubscriptionVariables = Exact<{
+  runId: string;
+  cursor?: string | null | undefined;
 }>;
 
 export type PipelineRunLogsSubscription = {
@@ -3278,6 +3359,15 @@ export type PipelineRunLogsSubscription = {
               } | null;
             }
           | {
+              __typename: 'RunResumedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'RunStartEvent';
               runId: string;
               message: string;
@@ -3297,6 +3387,15 @@ export type PipelineRunLogsSubscription = {
             }
           | {
               __typename: 'RunSuccessEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'RunSuspendedEvent';
               runId: string;
               message: string;
               timestamp: string;
@@ -7064,6 +7163,15 @@ export type RunLogsSubscriptionSuccessFragment = {
         } | null;
       }
     | {
+        __typename: 'RunResumedEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
         __typename: 'RunStartEvent';
         runId: string;
         message: string;
@@ -7083,6 +7191,15 @@ export type RunLogsSubscriptionSuccessFragment = {
       }
     | {
         __typename: 'RunSuccessEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
+        __typename: 'RunSuspendedEvent';
         runId: string;
         message: string;
         timestamp: string;
@@ -7650,10 +7767,10 @@ export type PipelineRunLogsSubscriptionStatusFragment = {
   canTerminate: boolean;
 };
 
-export type RunLogsQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+export type RunLogsQueryVariables = Exact<{
+  runId: string;
+  cursor?: string | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type RunLogsQuery = {
@@ -10925,6 +11042,15 @@ export type RunLogsQuery = {
               } | null;
             }
           | {
+              __typename: 'RunResumedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'RunStartEvent';
               runId: string;
               message: string;
@@ -10944,6 +11070,15 @@ export type RunLogsQuery = {
             }
           | {
               __typename: 'RunSuccessEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'RunSuspendedEvent';
               runId: string;
               message: string;
               timestamp: string;

@@ -4,6 +4,7 @@ import {useQuery} from '../apollo-client';
 import {CodeLocationDefsStateComparison} from './CodeLocationDefsStateComparison';
 import {CODE_LOCATION_DEFS_STATE_QUERY} from './CodeLocationDefsStateQuery';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
+import styles from './css/CodeLocationDefsStateComparisonSection.module.css';
 import {
   CodeLocationDefsStateQuery,
   CodeLocationDefsStateQueryVariables,
@@ -44,10 +45,12 @@ export const CodeLocationDefsStateComparisonSection = ({locationName}: Props) =>
   return (
     <>
       <CodeLocationOverviewSectionHeader label="Defs state versions" />
-      <CodeLocationDefsStateComparison
-        latestDefsStateInfo={latestDefsStateInfo}
-        defsStateInfo={defsStateInfo}
-      />
+      <div className={styles.tableContainer}>
+        <CodeLocationDefsStateComparison
+          latestDefsStateInfo={latestDefsStateInfo}
+          defsStateInfo={defsStateInfo}
+        />
+      </div>
     </>
   );
 };
