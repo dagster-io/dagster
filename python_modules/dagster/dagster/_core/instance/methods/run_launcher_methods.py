@@ -44,7 +44,13 @@ class RunLauncherMethods:
     # These methods are provided by EventMethods mixin
     # (no abstract declarations needed since EventMethods implements them)
 
-    def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> "DagsterRun":
+    def submit_run(
+        self,
+        run_id: str,
+        workspace: "BaseWorkspaceRequestContext",
+        *,
+        run: Optional["DagsterRun"] = None,
+    ) -> "DagsterRun":
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will
@@ -56,10 +62,18 @@ class RunLauncherMethods:
 
         Args:
             run_id (str): The id of the run.
+            run (Optional[DagsterRun]): The run with id ``run_id``, if the caller just created or
+                loaded it, to avoid reloading it from storage.
         """
         from dagster._core.run_coordinator import SubmitRunContext
 
-        run = self.get_run_by_id(run_id)
+        if run is None:
+            run = self.get_run_by_id(run_id)
+        else:
+            check.invariant(
+                run.run_id == run_id,
+                f"Run {run.run_id} passed to submit_run does not match run id {run_id}",
+            )
         if run is None:
             raise DagsterInvariantViolationError(
                 f"Could not load run {run_id} that was passed to submit_run"

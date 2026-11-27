@@ -321,7 +321,11 @@ async def submit_job_entity_run(
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
     check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
 
-    instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
+    instance.submit_run(
+        run_to_submit.run_id,
+        workspace_process_context.create_request_context(),
+        run=run_to_submit,
+    )
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
     check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
@@ -344,10 +348,15 @@ async def submit_asset_run(
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
+    *,
+    run_id_is_new: bool = False,
 ) -> DagsterRun:
     """Submits a run for a run request that targets an asset selection. If the run already exists,
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
+
+    Callers that have already checked that no run with `run_id` exists (e.g. with one query for
+    many runs) can pass `run_id_is_new=True` to skip checking again.
     """
     entity_keys: Sequence[AssetOrCheckKey] = [
         *(run_request.asset_selection or []),
@@ -357,7 +366,7 @@ async def submit_asset_run(
     check.invariant(len(entity_keys) > 0)
 
     # check if the run already exists
-    existing_run = instance.get_run_by_id(run_id) if run_id else None
+    existing_run = instance.get_run_by_id(run_id) if run_id and not run_id_is_new else None
     if existing_run:
         if existing_run.status != DagsterRunStatus.NOT_STARTED:
             logger.warn(
@@ -389,7 +398,11 @@ async def submit_asset_run(
     check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
     check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
 
-    instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
+    instance.submit_run(
+        run_to_submit.run_id,
+        workspace_process_context.create_request_context(),
+        run=run_to_submit,
+    )
 
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
     check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")

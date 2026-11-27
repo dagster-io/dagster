@@ -310,6 +310,7 @@ class RunDomain:
         # created on an older version before it was being set
         if execution_plan_snapshot and asset_graph:
             adjusted_steps = []
+            steps_changed = False
             for step in execution_plan_snapshot.steps:
                 adjusted_outputs = []
                 for output in step.outputs:
@@ -343,9 +344,19 @@ class RunDomain:
 
                     adjusted_outputs.append(adjusted_output)
 
-                adjusted_steps.append(step._replace(outputs=adjusted_outputs))
+                if any(
+                    adjusted is not output
+                    for adjusted, output in zip(adjusted_outputs, step.outputs)
+                ):
+                    adjusted_steps.append(step._replace(outputs=adjusted_outputs))
+                    steps_changed = True
+                else:
+                    adjusted_steps.append(step)
 
-            execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
+            # Keep the original snapshot when nothing changed, so that its cached snapshot id
+            # (which hashes the whole plan) is reused across the many runs created from one plan.
+            if steps_changed:
+                execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
 
         execution_plan_snapshot_id = (
             self.ensure_persisted_execution_plan_snapshot(
