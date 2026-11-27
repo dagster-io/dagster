@@ -2,7 +2,9 @@ import functools
 import inspect
 import re
 import textwrap
-from collections.abc import Mapping, Sequence
+from collections.abc import Generator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from inspect import Parameter, Signature, signature
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -63,8 +65,50 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
     )
 
 
+# Building one @op/@asset/@asset_check definition calls ``inspect.signature`` and
+# ``typing.get_type_hints`` on the same callable dozens of times. The definition decorators open a
+# ``reflection_cache_scope`` for the duration of one build, and these results are memoized within
+# it. Outside a scope, nothing is cached.
+#
+# Entries are keyed by ``id`` and keep the callable alive, so the id cannot be reused while the
+# scope is open.
+_ReflectionCache: TypeAlias = dict[tuple[str, int], tuple[Callable[..., Any], Any]]
+_reflection_cache: ContextVar[_ReflectionCache | None] = ContextVar(
+    "_dagster_reflection_cache", default=None
+)
+
+
+@contextmanager
+def reflection_cache_scope() -> Generator[None]:
+    """Memoize function reflection until the outermost scope exits."""
+    if _reflection_cache.get() is not None:
+        yield
+        return
+    token = _reflection_cache.set({})
+    try:
+        yield
+    finally:
+        _reflection_cache.reset(token)
+
+
+def _cached_in_scope(
+    kind: str, fn: Callable[..., Any], compute: Callable[[Callable[..., Any]], T]
+) -> T:
+    cache = _reflection_cache.get()
+    if cache is None:
+        return compute(fn)
+    key = (kind, id(fn))
+    if key not in cache:
+        cache[key] = (fn, compute(fn))
+    return cache[key][1]
+
+
+def _compute_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
+    return tuple(signature(fn).parameters.values())
+
+
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return list(signature(fn).parameters.values())
+    return _cached_in_scope("params", fn, _compute_function_params)
 
 
 def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Mapping[str, Any]:
@@ -95,6 +139,10 @@ def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Ma
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
+    return _cached_in_scope("type_hints", fn, _compute_type_hints)
+
+
+def _compute_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     if isinstance(fn, functools.partial):
         target = fn.func
     elif inspect.isfunction(fn):
