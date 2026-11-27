@@ -17,6 +17,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import, environ, insta
 from dagster._time import get_current_datetime
 
 from dagster_aws.s3 import S3ComputeLogManager
+from dagster_aws.s3.utils import _DAGSTER_AWS_PRODUCT
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
@@ -188,6 +189,14 @@ def test_blank_compute_logs(mock_s3_bucket):
 
         assert not log_data.stdout
         assert not log_data.stderr
+
+
+def test_compute_log_manager_client_carries_product_token(mock_s3_bucket):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(bucket=mock_s3_bucket.name, local_dir=temp_dir)
+        config = manager._s3_session.meta.config  # noqa: SLF001
+        assert (config.user_agent_extra or "").strip() == _DAGSTER_AWS_PRODUCT
+        assert "Boto3/" in config.user_agent
 
 
 def test_prefix_filter(mock_s3_bucket):

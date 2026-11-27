@@ -30,6 +30,14 @@ class S3Callback:
         )
 
 
+def construct_user_agent_config(user_agent_extra: str | None = None) -> Config:
+    # Append any caller-supplied value after the product token, space-separated.
+    combined = (
+        f"{_DAGSTER_AWS_PRODUCT} {user_agent_extra}" if user_agent_extra else _DAGSTER_AWS_PRODUCT
+    )
+    return Config(user_agent_extra=combined)
+
+
 def construct_s3_client(
     max_attempts: int,
     region_name: str | None = None,
@@ -53,12 +61,8 @@ def construct_s3_client(
     check.opt_str_param(profile_name, "aws_secret_access_key")
     check.opt_str_param(profile_name, "aws_session_token")
     check.opt_str_param(user_agent_extra, "user_agent_extra")
-    # Append any caller-supplied value after the product token, space-separated.
-    combined_user_agent_extra = (
-        f"{_DAGSTER_AWS_PRODUCT} {user_agent_extra}" if user_agent_extra else _DAGSTER_AWS_PRODUCT
-    )
     config = construct_boto_client_retry_config(max_attempts).merge(
-        Config(user_agent_extra=combined_user_agent_extra)
+        construct_user_agent_config(user_agent_extra)
     )
 
     client_session = boto3.session.Session(profile_name=profile_name)
