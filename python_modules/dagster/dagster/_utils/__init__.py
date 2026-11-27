@@ -701,11 +701,21 @@ def xor(a: object, b: object) -> bool:
 
 def tail_file(path_or_fd: str | int, should_stop: Callable[[], bool]) -> Iterator[str]:
     with open(path_or_fd, encoding="utf-8") as output_stream:
+        # A line that has been partially written (no trailing newline yet) must not
+        # be yielded: readers such as PipesFileMessageReader parse each yielded
+        # line as JSON, so a fragment would raise and kill the reader thread.
+        # Buffer it until its newline arrives.
+        pending = ""
         while True:
             line = output_stream.readline()
             if line:
-                yield line
+                pending += line
+                if pending.endswith("\n"):
+                    yield pending
+                    pending = ""
             elif should_stop():
+                if pending:  # a last line without a newline, as before
+                    yield pending
                 break
             else:
                 time.sleep(0.01)
