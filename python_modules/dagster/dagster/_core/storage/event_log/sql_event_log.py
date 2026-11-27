@@ -230,9 +230,21 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             return self._has_asset_key_col_on_connection(conn, column_name)
 
+    @cached_property
+    def _known_asset_key_columns(self) -> set[str]:
+        return set()
+
     def _has_asset_key_col_on_connection(self, conn: Connection, column_name: str) -> bool:
+        # Migrations only ever add asset key columns, so a positive answer is cached for the
+        # lifetime of the storage. Without the cache, every asset record read issues schema
+        # introspection queries.
+        if column_name in self._known_asset_key_columns:
+            return True
         column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
-        return column_name in column_names
+        if column_name in column_names:
+            self._known_asset_key_columns.add(column_name)
+            return True
+        return False
 
     def has_asset_key_index_cols(self) -> bool:
         return self.has_asset_key_col("last_materialization_timestamp")
@@ -556,6 +568,7 @@ class SqlEventLogStorage(EventLogStorage):
         before_storage_id: int | None = None,
         limit: int | None = None,
         ascending: bool = False,
+        run_ids: Sequence[str] | None = None,
     ) -> Sequence[AssetEventSummaryRecord]:
         query = db_select(
             [
@@ -582,6 +595,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         if run_id is not None:
             query = query.where(SqlEventLogStorageTable.c.run_id == run_id)
+
+        if run_ids is not None:
+            query = query.where(SqlEventLogStorageTable.c.run_id.in_(run_ids))
 
         if storage_ids is not None:
             query = query.where(SqlEventLogStorageTable.c.id.in_(storage_ids))

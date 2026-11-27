@@ -136,6 +136,7 @@ class EventMethods:
         before_storage_id: int | None = None,
         limit: int | None = None,
         ascending: bool = False,
+        run_ids: Sequence[str] | None = None,
     ) -> Sequence["AssetEventSummaryRecord"]:
         """Get asset events projected onto their indexed columns, without their payloads."""
         return self._event_storage_impl.get_asset_event_summary_records(
@@ -147,6 +148,9 @@ class EventMethods:
             before_storage_id=before_storage_id,
             limit=limit,
             ascending=ascending,
+            # only forwarded when set, so storages overriding this method without `run_ids` keep
+            # working for callers that do not filter by run ids
+            **({"run_ids": run_ids} if run_ids is not None else {}),
         )
 
     def watch_event_logs(self, run_id: str, cursor: str | None, cb: "EventHandlerFn") -> None:

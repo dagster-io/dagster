@@ -315,6 +315,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         before_storage_id: int | None = None,
         limit: int | None = None,
         ascending: bool = False,
+        run_ids: Sequence[str] | None = None,
     ) -> Sequence[AssetEventSummaryRecord]:
         """Get asset events projected onto their indexed columns, without their payloads.
 
@@ -327,13 +328,21 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             event_type (AssetEventType): the asset event type to fetch.
             asset_key (Optional[AssetKey]): only return events for this asset.
             run_id (Optional[str]): only return events emitted by this run.
+            run_ids (Optional[Sequence[str]]): only return events emitted by these runs.
             storage_ids (Optional[Sequence[int]]): only return events with these storage ids.
             after_storage_id (Optional[int]): only return events with a greater storage id.
             before_storage_id (Optional[int]): only return events with a lesser storage id.
             limit (Optional[int]): Max number of rows to return.
             ascending (bool): whether to order by ascending storage id.
         """
-        if run_id is not None:
+        if run_ids is not None:
+            records = (
+                record
+                for rid in run_ids
+                if run_id is None or rid == run_id
+                for record in self._page_records_for_run(rid, event_type)
+            )
+        elif run_id is not None:
             records = self._page_records_for_run(run_id, event_type)
         else:
             records = self._page_event_records(

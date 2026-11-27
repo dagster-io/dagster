@@ -738,6 +738,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         before_storage_id: int | None = None,
         limit: int | None = None,
         ascending: bool = False,
+        run_ids: Sequence[str] | None = None,
     ) -> Sequence["AssetEventSummaryRecord"]:
         return self._storage.event_log_storage.get_asset_event_summary_records(
             event_type,
@@ -748,6 +749,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             before_storage_id,
             limit,
             ascending,
+            run_ids=run_ids,
         )
 
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
