@@ -28,6 +28,24 @@ The example below mirrors the [Amazon S3 example](/integrations/libraries/aws/s3
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/aws-s3-compatible.py" language="python" />
 
-## Drop-in compatibility with `dagster-aws`
+## IO managers and file managers
 
-`S3Resource` is the same resource consumed by every `dagster-aws` IO manager, file manager, and compute log manager. That means `S3PickleIOManager`, `S3ComputeLogManager`, `S3FileManager`, and the other resources in `dagster_aws.s3` work against Amazon S3 or any S3-compatible store through the same `endpoint_url` configuration. You do not need a provider-specific IO manager or file manager.
+`S3PickleIOManager`, `S3FileManager`, and the other resources in `dagster_aws.s3` that take an `S3Resource` work against Amazon S3 or any S3-compatible store through the same `endpoint_url` configuration. You do not need a provider-specific IO manager or file manager.
+
+## Compute logs
+
+`S3ComputeLogManager` does not use `S3Resource`. It is configured separately in `dagster.yaml` and creates its own boto3 client. Point it at an S3-compatible store with the `endpoint_url` field:
+
+```yaml
+compute_logs:
+  module: dagster_aws.s3.compute_log_manager
+  class: S3ComputeLogManager
+  config:
+    bucket: 'my-compute-logs-bucket'
+    prefix: 'dagster-compute-logs'
+    endpoint_url: 'https://s3.example-provider.com'
+    use_ssl: true
+    verify: true
+```
+
+The compute log manager does not accept credential fields. It reads credentials and the default region from the standard boto3 sources, such as the `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` environment variables or a shared AWS config file. Set these to your provider's values in the environment where the Dagster instance runs. The optional `region` field only controls the region shown in console URLs and is not passed to the boto3 client. Use `verify_cert_path` to supply a custom CA bundle when your endpoint uses a private certificate.
