@@ -267,18 +267,30 @@ def get_cloud_run_worker_statuses(
             instance.ref_for_deployment(deployment_name)
         ) as scoped_instance:
             runs = scoped_instance.get_runs(RunsFilter(statuses=ACTIVE_RUN_STATUSES))
+            launcher = scoped_instance.run_launcher
+            try:
+                health_by_run_id = launcher.check_run_worker_health_batch(
+                    [run for run in runs if is_isolated_run(run)]
+                )
+            except Exception:
+                logger.exception(
+                    "An exception occurred while checking run worker health in batch, falling"
+                    " back to checking runs individually"
+                )
+                health_by_run_id = {}
+
             statuses_for_deployment: list[CloudRunWorkerStatus] = []
             for run in runs:
                 if is_isolated_run(run):
-                    launcher = scoped_instance.run_launcher
-
-                    try:
-                        run_worker_health = launcher.check_run_worker_health(run)
-                    except Exception:
-                        logger.exception(
-                            f"An exception occurred while checking run worker health for run '{run.run_id}'"
-                        )
-                        continue
+                    run_worker_health = health_by_run_id.get(run.run_id)
+                    if run_worker_health is None:
+                        try:
+                            run_worker_health = launcher.check_run_worker_health(run)
+                        except Exception:
+                            logger.exception(
+                                f"An exception occurred while checking run worker health for run '{run.run_id}'"
+                            )
+                            continue
 
                     run_worker_debug_info = None
 

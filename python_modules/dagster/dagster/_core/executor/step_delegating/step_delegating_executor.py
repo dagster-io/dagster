@@ -3,7 +3,7 @@ import math
 import os
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
@@ -119,7 +119,7 @@ class StepDelegatingExecutor(Executor):
             ].storage_id
             self._event_cursor = EventLogCursor.from_storage_id(desired_next_storage_id).to_string()
 
-            logging.getLogger("dagster").warn(
+            logging.getLogger("dagster").warning(
                 f"Event tailer query returned a list of {self._pop_events_limit} storage IDs that had already been returned before. Setting the cursor to {desired_next_storage_id} to ensure it advances."
             )
         else:
@@ -160,6 +160,79 @@ class StepDelegatingExecutor(Executor):
             ),
             dagster_run=plan_context.dagster_run,
         )
+
+    def _check_running_steps_health(
+        self,
+        plan_context: PlanOrchestrationContext,
+        active_execution: ActiveExecution,
+        running_steps: Mapping[str, "ExecutionStep"],
+    ) -> None:
+        """Checks the health of the running steps, failing or retrying unhealthy ones.
+
+        The step handler first checks all steps with check_step_health_batch; steps missing from
+        its result are checked individually with check_step_health. Errors while checking are
+        logged as engine events and do not fail the step.
+        """
+        step_handler_contexts: dict[str, StepHandlerContext] = {}
+        context_errors: dict[str, SerializableErrorInfo] = {}
+        for step in running_steps.values():
+            try:
+                step_handler_contexts[step.key] = self._get_step_handler_context(
+                    plan_context, [step], active_execution
+                )
+            except Exception:
+                # Preserve the original per-step failure rather than retrying a context
+                # builder that may have side effects or fail differently on a second call.
+                context_errors[step.key] = serializable_error_info_from_exc_info(sys.exc_info())
+
+        try:
+            batch_health_results = self._step_handler.check_step_health_batch(
+                list(step_handler_contexts.values())
+            )
+        except Exception:
+            # Fall back to checking each step individually below.
+            batch_health_results = {}
+            DagsterEvent.engine_event(
+                plan_context,
+                "Error while checking step health in batch",
+                EngineEventData(error=serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+
+        for step in running_steps.values():
+            step_context = plan_context.for_step(step)
+            if step.key in context_errors:
+                DagsterEvent.engine_event(
+                    step_context,
+                    f"Error while checking health for step {step.key}",
+                    EngineEventData(error=context_errors[step.key]),
+                )
+                continue
+
+            try:
+                health_check_result = batch_health_results.get(step.key)
+                if health_check_result is None:
+                    health_check_result = self._step_handler.check_step_health(
+                        step_handler_contexts[step.key]
+                    )
+                if not health_check_result.is_healthy:
+                    health_check_error = SerializableErrorInfo(
+                        message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
+                        stack=[],
+                        cls_name=None,
+                    )
+
+                    self.log_failure_or_retry_event_after_error(
+                        step_context,
+                        health_check_error,
+                        active_execution.get_known_state(),
+                    )
+
+            except Exception:
+                DagsterEvent.engine_event(
+                    step_context,
+                    f"Error while checking health for step {step.key}",
+                    EngineEventData(error=serializable_error_info_from_exc_info(sys.exc_info())),
+                )
 
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
@@ -343,38 +416,9 @@ class StepDelegatingExecutor(Executor):
                             curr_time - last_check_step_health_time
                         ).total_seconds() >= self._check_step_health_interval_seconds:
                             last_check_step_health_time = curr_time
-                            for step in running_steps.values():
-                                step_context = plan_context.for_step(step)
-
-                                try:
-                                    health_check_result = self._step_handler.check_step_health(
-                                        self._get_step_handler_context(
-                                            plan_context, [step], active_execution
-                                        )
-                                    )
-                                    if not health_check_result.is_healthy:
-                                        health_check_error = SerializableErrorInfo(
-                                            message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
-                                            stack=[],
-                                            cls_name=None,
-                                        )
-
-                                        self.log_failure_or_retry_event_after_error(
-                                            step_context,
-                                            health_check_error,
-                                            active_execution.get_known_state(),
-                                        )
-
-                                except Exception:
-                                    DagsterEvent.engine_event(
-                                        step_context,
-                                        f"Error while checking health for step {step.key}",
-                                        EngineEventData(
-                                            error=serializable_error_info_from_exc_info(
-                                                sys.exc_info()
-                                            )
-                                        ),
-                                    )
+                            self._check_running_steps_health(
+                                plan_context, active_execution, running_steps
+                            )
 
                         if self._max_concurrent is not None:
                             max_steps_to_run = self._max_concurrent - len(running_steps)

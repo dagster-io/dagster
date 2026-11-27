@@ -1,6 +1,7 @@
 import json
 from unittest import mock
 
+import kubernetes
 import pytest
 from dagster import (
     DagsterInstance,
@@ -33,7 +34,8 @@ from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_k8s.job import UserDefinedDagsterK8sConfig, get_k8s_job_name
+from kubernetes.client.models import V1Job, V1JobList, V1JobStatus, V1ListMeta, V1ObjectMeta
 
 
 @job(
@@ -842,3 +844,154 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
 
     assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
+
+
+def _job_list(items, continue_token):
+    return V1JobList(items=items, metadata=V1ListMeta(_continue=continue_token))
+
+
+@job(
+    executor_def=k8s_job_executor,
+    resource_defs={"io_manager": fs_io_manager},
+)
+def three_ops():
+    for name in ("running", "failed", "missing"):
+
+        @op(name=name)
+        def _op():
+            return 1
+
+        _op()
+
+
+def test_check_step_health_batch(kubeconfig_file, k8s_instance):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    handler = K8sStepHandler(
+        image="bizbuz",
+        container_context=K8sContainerContext(namespace="foo"),
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    run = create_run_for_test(
+        k8s_instance,
+        job_name="three_ops",
+        job_code_origin=reconstructable(three_ops).get_python_origin(),
+    )
+    executor = _get_executor(k8s_instance, reconstructable(three_ops))
+    contexts = {
+        step: _step_handler_context(
+            job_def=reconstructable(three_ops),
+            dagster_run=run,
+            instance=k8s_instance,
+            executor=executor,
+            step=step,
+        )
+        for step in ("running", "failed", "missing")
+    }
+
+    def _job(step: str, status: V1JobStatus) -> V1Job:
+        return V1Job(
+            metadata=V1ObjectMeta(name=f"dagster-step-{get_k8s_job_name(run.run_id, step)}"),
+            status=status,
+        )
+
+    mock_k8s_client_batch_api.list_namespaced_job.return_value = _job_list(
+        items=[
+            _job("running", V1JobStatus(active=1)),
+            _job("failed", V1JobStatus(active=0, failed=1)),
+        ],
+        continue_token=None,
+    )
+
+    results = handler.check_step_health_batch(list(contexts.values()))
+
+    # The step whose Job is not listed is left out for the executor to check individually.
+    assert set(results) == {"running", "failed"}
+    assert results["running"].is_healthy
+    assert not results["failed"].is_healthy
+    assert results["failed"].unhealthy_reason == (
+        f"Discovered failed Kubernetes job dagster-step-{get_k8s_job_name(run.run_id, 'failed')}"
+        " for step failed."
+    )
+    mock_k8s_client_batch_api.list_namespaced_job.assert_called_once()
+    call_kwargs = mock_k8s_client_batch_api.list_namespaced_job.call_args.kwargs
+    assert call_kwargs["namespace"] == "foo"
+    assert call_kwargs["label_selector"] == (
+        f"app.kubernetes.io/component=step_worker,dagster/run-id={run.run_id}"
+    )
+
+    # A single running step is checked with a GET, so no LIST is made.
+    assert handler.check_step_health_batch([contexts["running"]]) == {}
+    mock_k8s_client_batch_api.list_namespaced_job.assert_called_once()
+
+
+def test_check_step_health_batch_list_error(kubeconfig_file, k8s_instance):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    handler = K8sStepHandler(
+        image="bizbuz",
+        container_context=K8sContainerContext(namespace="foo"),
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    run = create_run_for_test(
+        k8s_instance,
+        job_name="three_ops",
+        job_code_origin=reconstructable(three_ops).get_python_origin(),
+    )
+    executor = _get_executor(k8s_instance, reconstructable(three_ops))
+    contexts = [
+        _step_handler_context(
+            job_def=reconstructable(three_ops),
+            dagster_run=run,
+            instance=k8s_instance,
+            executor=executor,
+            step=step,
+        )
+        for step in ("running", "failed")
+    ]
+    mock_k8s_client_batch_api.list_namespaced_job.side_effect = kubernetes.client.rest.ApiException(
+        status=403, reason="Forbidden"
+    )
+
+    # A forbidden LIST leaves every step out, so the executor checks each one with a GET.
+    assert handler.check_step_health_batch(contexts) == {}
+    mock_k8s_client_batch_api.list_namespaced_job.assert_called_once()
+
+
+class _CustomHealthK8sStepHandler(K8sStepHandler):
+    def check_step_health(self, step_handler_context):
+        return super().check_step_health(step_handler_context)
+
+
+def test_check_step_health_batch_skipped_when_single_check_overridden(
+    kubeconfig_file, k8s_instance
+):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    handler = _CustomHealthK8sStepHandler(
+        image="bizbuz",
+        container_context=K8sContainerContext(namespace="foo"),
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    run = create_run_for_test(
+        k8s_instance,
+        job_name="three_ops",
+        job_code_origin=reconstructable(three_ops).get_python_origin(),
+    )
+    executor = _get_executor(k8s_instance, reconstructable(three_ops))
+    contexts = [
+        _step_handler_context(
+            job_def=reconstructable(three_ops),
+            dagster_run=run,
+            instance=k8s_instance,
+            executor=executor,
+            step=step,
+        )
+        for step in ("running", "failed")
+    ]
+
+    assert handler.check_step_health_batch(contexts) == {}
+    mock_k8s_client_batch_api.list_namespaced_job.assert_not_called()

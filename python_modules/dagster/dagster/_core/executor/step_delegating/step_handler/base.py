@@ -89,6 +89,18 @@ class StepHandler(ABC):
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         pass
 
+    def check_step_health_batch(
+        self, step_handler_contexts: Sequence[StepHandlerContext]
+    ) -> Mapping[str, CheckStepHealthResult]:
+        """Check the health of several running steps, keyed by step key. Each context holds one
+        step.
+
+        Step handlers can override this to check several steps with fewer API calls. Steps
+        missing from the result are checked individually with check_step_health, so an override
+        may return only the results it can determine cheaply. The default returns no results.
+        """
+        return {}
+
     @abstractmethod
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         pass
