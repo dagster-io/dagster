@@ -1061,3 +1061,58 @@ def test_to_config_dict() -> None:
 
     config_dict = dg.RunConfig({"my_asset_job": MyConfig()}).to_config_dict()
     assert config_dict["ops"]["my_asset_job"]["config"] == {"num": 1, "enum": "RED", "arr": []}
+
+
+def test_ops_share_a_config_class_schema(monkeypatch) -> None:
+    """Ops whose config uses the same Config class infer its schema once."""
+    from dagster._config.pythonic_config import config as config_module
+
+    class SharedConfig(dg.Config):
+        value: int = 1
+
+    inferred = 0
+    original = config_module.infer_schema_from_config_class
+
+    def counting_infer(*args, **kwargs):
+        nonlocal inferred
+        inferred += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(config_module, "infer_schema_from_config_class", counting_infer)
+
+    @dg.op
+    def first(config: SharedConfig) -> int:
+        return config.value
+
+    @dg.op
+    def second(config: SharedConfig) -> int:
+        return config.value
+
+    assert inferred == 1
+    assert first.config_schema.as_field() is second.config_schema.as_field()
+
+
+def test_config_class_schema_inferred_after_model_rebuild() -> None:
+    """A Config class whose schema cannot be inferred yet gets its schema once it is rebuilt."""
+
+    class Outer(dg.Config):
+        inner: "Inner"
+
+    with pytest.raises(DagsterInvalidPythonicConfigDefinitionError):
+
+        @dg.op
+        def too_early(config: Outer) -> None: ...
+
+    class Inner(dg.Config):
+        value: int = 1
+
+    Outer.model_rebuild()
+
+    @dg.op
+    def rebuilt(config: Outer) -> int:
+        return config.inner.value
+
+    result = dg.GraphDefinition(name="g", node_defs=[rebuilt]).execute_in_process(
+        run_config={"ops": {"rebuilt": {"config": {"inner": {"value": 2}}}}}
+    )
+    assert result.output_for_node("rebuilt") == 2
