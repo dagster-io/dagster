@@ -42,6 +42,7 @@ Quick reference for Python packages in the Dagster repository.
 ## databases
 
 **dagster-postgres**: `python_modules/libraries/dagster-postgres`
+**dagster-postgres-pandas**: `python_modules/libraries/dagster-postgres-pandas`
 **dagster-mysql**: `python_modules/libraries/dagster-mysql`
 **dagster-clickhouse**: `python_modules/libraries/dagster-clickhouse`
 **dagster-clickhouse-pandas**: `python_modules/libraries/dagster-clickhouse-pandas`

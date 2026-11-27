@@ -275,6 +275,7 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_docker.PipesDockerLogsMessageReader",
     "dagster_docker.execute_docker_container",
     "dagster_duckdb_pandas.DuckDBPandasTypeHandler",
+    "dagster_postgres_pandas.PostgresPandasTypeHandler",
     "dagster_duckdb_polars.DuckDBPolarsTypeHandler",
     "dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
     "dagster_fivetran.ConnectorSelectorFn",
