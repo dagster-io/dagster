@@ -1660,6 +1660,7 @@ def open_server_process(
     enable_metrics: bool = False,
     additional_timeout_msg: str | None = None,
     defs_state_info: DefsStateInfo | None = None,
+    refresh_local_defs_state_on_load: bool = False,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1715,6 +1716,13 @@ def open_server_process(
 
     if socket and "DAGSTER_GRPC_PORT" in env:
         del env["DAGSTER_GRPC_PORT"]
+
+    if refresh_local_defs_state_on_load:
+        # This code server was started in response to a user-initiated code
+        # location reload. Signal to definitions loading code that local
+        # filesystem defs state should be regenerated from current sources
+        # instead of serving a possibly stale snapshot.
+        env["DAGSTER_REFRESH_LOCAL_DEFS_STATE_ON_LOAD"] = "1"
 
     server_process = open_ipc_subprocess(subprocess_args, cwd=cwd, env=env)
 
@@ -1786,6 +1794,7 @@ class GrpcServerProcess:
         container_context: dict[str, Any] | None = None,
         additional_timeout_msg: str | None = None,
         defs_state_info: DefsStateInfo | None = None,
+        refresh_local_defs_state_on_load: bool = False,
     ):
         self.port = None
         self.socket = None
@@ -1827,6 +1836,7 @@ class GrpcServerProcess:
         self._container_context = container_context
         self._additional_timeout_msg = additional_timeout_msg
         self._defs_state_info = defs_state_info
+        self._refresh_local_defs_state_on_load = refresh_local_defs_state_on_load
         self.socket = None
         self.port = None
         self.start_server_process()
@@ -1850,6 +1860,7 @@ class GrpcServerProcess:
             additional_timeout_msg=self._additional_timeout_msg,
             server_command=self._server_command,
             defs_state_info=self._defs_state_info,
+            refresh_local_defs_state_on_load=self._refresh_local_defs_state_on_load,
         )
 
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:
