@@ -56,3 +56,11 @@ To add tags to runs produced by a given <PyObject section="assets" module="dagst
   path="docs_snippets/docs_snippets/guides/automate/declarative_automation/sensors/run_tags.py"
   title="src/<project_name>/defs/sensors.py"
 />
+
+### Troubleshooting missed upstream materializations
+
+If an automation condition intermittently misses an upstream materialization while the event log is being updated, you can give in-flight storage transactions time to finish before evaluation. In Dagster 1.13.5 and later, set `DAGSTER_AUTOMATION_TICK_SETTLE_SECONDS` in the environment of the `dagster-daemon` process. For a sensor configured with `use_user_code_server=True`, set it in the environment of that code server instead.
+
+The default is `0.0` seconds. With a positive value, the evaluator captures the latest event record ID, waits for the configured number of seconds, and uses the captured ID as the upper bound for detecting updates during that tick. Each affected tick takes at least that much longer to evaluate.
+
+To verify the setting, restart the process with the updated environment and look for `Sleeping ... before evaluation` and `Captured max_record_id=...` in its logs. If an upstream materialization overlaps a tick, check subsequent evaluations in the **Automation** tab to see whether the update was detected and a run was requested when the full condition was met.
