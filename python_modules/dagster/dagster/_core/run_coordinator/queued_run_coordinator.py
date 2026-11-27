@@ -311,17 +311,18 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         if dagster_run.status == DagsterRunStatus.NOT_STARTED:
             enqueued_event = DagsterEvent.job_enqueue(dagster_run)
             self._instance.report_dagster_event(enqueued_event, run_id=dagster_run.run_id)
-        else:
-            # the run was already submitted, this is a no-op
-            self._logger.warning(
-                f"submit_run called for run {dagster_run.run_id} with status "
-                f"{dagster_run.status.value}, skipping enqueue."
-            )
+            # The enqueued event only changes the run's status, so update it in memory instead of
+            # reading the run back for every submitted run.
+            return dagster_run.with_status(DagsterRunStatus.QUEUED)
 
+        # the run was already submitted, this is a no-op
+        self._logger.warning(
+            f"submit_run called for run {dagster_run.run_id} with status "
+            f"{dagster_run.status.value}, skipping enqueue."
+        )
         run = self._instance.get_run_by_id(dagster_run.run_id)
         if run is None:
             check.failed(f"Failed to reload run {dagster_run.run_id}")
-        assert run
         return run
 
     def cancel_run(self, run_id: str) -> bool:

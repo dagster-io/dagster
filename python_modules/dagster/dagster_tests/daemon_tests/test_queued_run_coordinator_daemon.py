@@ -305,6 +305,46 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
         assert len(instance.run_launcher.queue()) == 6
 
+    def test_dequeue_launches_run_as_starting(
+        self, instance, workspace_context, job_handle, daemon
+    ):
+        """The run is launched as STARTING without reloading it after reporting the event."""
+        run_id = make_new_run_id()
+        self.create_queued_run(
+            instance,
+            job_handle,
+            run_id=run_id,
+            asset_graph=workspace_context.create_request_context().asset_graph,
+        )
+
+        reads_after_starting = []
+        original_launch_run = instance.run_launcher.launch_run
+        original_report = instance.report_dagster_event
+
+        def _report_dagster_event(event, *args, **kwargs):
+            result = original_report(event, *args, **kwargs)
+            if event.event_type == DagsterEventType.PIPELINE_STARTING:
+                get_run_by_id.reset_mock()
+            return result
+
+        def _launch_run(context):
+            reads_after_starting.append(get_run_by_id.call_count)
+            return original_launch_run(context)
+
+        with (
+            mock.patch.object(
+                instance, "get_run_by_id", wraps=instance.get_run_by_id
+            ) as get_run_by_id,
+            mock.patch.object(instance, "report_dagster_event", side_effect=_report_dagster_event),
+            mock.patch.object(instance.run_launcher, "launch_run", side_effect=_launch_run),
+        ):
+            list(daemon.run_iteration(workspace_context))
+
+        assert self.get_run_ids(instance.run_launcher.queue()) == [run_id]
+        assert instance.run_launcher.queue()[0].status == DagsterRunStatus.STARTING
+        assert instance.get_run_by_id(run_id).status == DagsterRunStatus.STARTING
+        assert reads_after_starting == [0]
+
     def test_priority(self, instance, workspace_context, job_handle, daemon):
         default_run_id, hi_pri_run_id, lo_pri_run_id = [make_new_run_id() for _ in range(3)]
         self.create_run(
