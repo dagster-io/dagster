@@ -1,14 +1,11 @@
-import {Box, Colors, Icon, Tag, Text, useDelayedState} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
-import {BackfillTableFragment} from './types/BackfillTable.types';
-import {QueryResult, gql, useQuery} from '../../apollo-client';
 import styles from './css/BackfillRow.module.css';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
@@ -31,70 +28,19 @@ interface BackfillRowProps {
   refetch: () => void;
 }
 
-export const BackfillRow = (props: BackfillRowProps) => {
-  const statusUnsupported =
-    props.backfill.numPartitions === null ||
-    props.backfill.partitionNames === null ||
-    props.backfill.isAssetBackfill;
-
-  if (statusUnsupported) {
-    return <BackfillRowContent {...props} statusQueryResult={null} />;
-  }
-  return (
-    <BackfillRowLoader backfillId={props.backfill.id}>
-      {(data) => <BackfillRowContent {...props} {...data} />}
-    </BackfillRowLoader>
-  );
-};
-
-interface LoadResult {
-  statusQueryResult: QueryResult<any, any> | null;
-}
-
-export const BackfillRowLoader = (props: {
-  backfillId: string;
-  children: (data: LoadResult) => React.ReactNode;
-}) => {
-  const {backfillId} = props;
-
-  // Wait 100ms before querying in case we're scrolling the table really fast
-  const shouldQuery = useDelayedState(100);
-
-  const statusQueryResult = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-    {
-      variables: {backfillId},
-      notifyOnNetworkStatusChange: true,
-      skip: !shouldQuery,
-    },
-  );
-
-  useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
-
-  return props.children({statusQueryResult});
-};
-
-export const BackfillRowContent = ({
+export const BackfillRow = ({
   backfill,
   allPartitions,
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  statusQueryResult,
-}: BackfillRowProps & LoadResult) => {
+}: BackfillRowProps) => {
   const repoAddress = backfill.partitionSet
     ? buildRepoAddress(
         backfill.partitionSet.repositoryOrigin.repositoryName,
         backfill.partitionSet.repositoryOrigin.repositoryLocationName,
       )
     : null;
-
-  const renderBackfillStatus = () =>
-    statusQueryResult?.loading ? (
-      <div style={{color: Colors.textLight()}}>Loading</div>
-    ) : (
-      <BackfillStatusTagForPage backfill={backfill} />
-    );
 
   return (
     <tr>
@@ -121,7 +67,9 @@ export const BackfillRowContent = ({
       <td style={{width: 160}}>
         <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
-      <td style={{width: 140}}>{renderBackfillStatus()}</td>
+      <td style={{width: 140}}>
+        <BackfillStatusTagForPage backfill={backfill} />
+      </td>
       <td>
         <BackfillActionsMenu backfill={backfill} refetch={refetch} />
       </td>
@@ -309,18 +257,3 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   }, [requested]);
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
-
-export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
-  query SingleBackfillQuery($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ... on PartitionBackfill {
-        id
-        cancelableRuns {
-          id
-          runId
-          status
-        }
-      }
-    }
-  }
-`;
