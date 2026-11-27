@@ -142,6 +142,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_downgrade(alembic_config, conn, rev=rev)
+        self._clear_schema_cache()
 
     def upgrade(self) -> None:
         self._check_for_version_066_migration_and_perform()

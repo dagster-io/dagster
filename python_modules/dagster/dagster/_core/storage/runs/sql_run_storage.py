@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
+from functools import cached_property
 from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP035
 
 import sqlalchemy as db
@@ -627,7 +628,7 @@ class SqlRunStorage(RunStorage):
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
-        return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
+        return self._has_snapshot_id(execution_plan_snapshot_id)
 
     def add_execution_plan_snapshot(
         self,
@@ -677,13 +678,24 @@ class SqlRunStorage(RunStorage):
         else:
             return row["run_storage_id"]
 
+    @cached_property
+    def _known_snapshot_ids(self) -> set[str]:
+        # Snapshots are content-addressed and only deleted by `wipe`, so once a snapshot is known
+        # to be stored, later existence checks (one per run created from the same job) can skip
+        # the query. Missing snapshots are not cached since another process may add them.
+        return set()
+
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
+        if snapshot_id in self._known_snapshot_ids:
+            return True
+
         query = db_select([SnapshotsTable.c.snapshot_id]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
         row = self.fetchone(query)
-
+        if row:
+            self._known_snapshot_ids.add(snapshot_id)
         return bool(row)
 
     def _get_snapshot(self, snapshot_id: str) -> JobSnap | None:
@@ -820,29 +832,39 @@ class SqlRunStorage(RunStorage):
 
     # Checking for migrations
 
-    def has_run_stats_index_cols(self) -> bool:
+    @cached_property
+    def _known_columns(self) -> set[tuple[str, str]]:
+        # (table name, column name) pairs known to exist.
+        return set()
+
+    def _has_columns(self, table: db.Table, column_names: Sequence[str]) -> bool:
+        # Migrations only ever add these columns, so only positive answers are cached: a column
+        # added by a migration in another process is still picked up on the next call. Without
+        # the cache, every run fetch and run event issues a schema introspection query.
+        if all((table.name, name) in self._known_columns for name in column_names):
+            return True
         with self.connect() as conn:
-            column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
-            return "start_time" in column_names and "end_time" in column_names
+            existing = {x.get("name") for x in db.inspect(conn).get_columns(table.name)}
+        if not all(name in existing for name in column_names):
+            return False
+        self._known_columns.update((table.name, name) for name in column_names)
+        return True
+
+    def _clear_schema_cache(self) -> None:
+        """Forget cached schema state. Call after changing the schema, e.g. downgrading it."""
+        self.__dict__.pop("_known_columns", None)
+
+    def has_run_stats_index_cols(self) -> bool:
+        return self._has_columns(RunsTable, ["start_time", "end_time"])
 
     def has_bulk_actions_selector_cols(self) -> bool:
-        with self.connect() as conn:
-            column_names = [
-                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
-            ]
-            return "selector_id" in column_names
+        return self._has_columns(BulkActionsTable, ["selector_id"])
 
     def has_backfill_id_column(self) -> bool:
-        with self.connect() as conn:
-            column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
-            return "backfill_id" in column_names
+        return self._has_columns(RunsTable, ["backfill_id"])
 
     def has_bulk_action_job_name_column(self) -> bool:
-        with self.connect() as conn:
-            column_names = [
-                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
-            ]
-            return "job_name" in column_names
+        return self._has_columns(BulkActionsTable, ["job_name"])
 
     def has_backfill_tags_table(self) -> bool:
         with self.connect() as conn:
@@ -887,6 +909,7 @@ class SqlRunStorage(RunStorage):
             conn.execute(SnapshotsTable.delete())
             conn.execute(DaemonHeartbeatsTable.delete())
             conn.execute(BulkActionsTable.delete())
+        self._known_snapshot_ids.clear()
 
     def wipe_daemon_heartbeats(self) -> None:
         with self.connect() as conn:
@@ -1106,12 +1129,10 @@ class SqlRunStorage(RunStorage):
     def update_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         backfill_id = partition_backfill.backfill_id
-        if not self.get_backfill(backfill_id):
-            raise DagsterInvariantViolationError(
-                f"Backfill {backfill_id} is not present in storage"
-            )
+        # Check existence from the updated row count rather than by reading the backfill first,
+        # which would deserialize a body that can be several megabytes for large backfills.
         with self.connect() as conn:
-            conn.execute(
+            result = conn.execute(
                 BulkActionsTable.update()
                 .where(BulkActionsTable.c.key == backfill_id)
                 .values(
@@ -1119,6 +1140,10 @@ class SqlRunStorage(RunStorage):
                     body=serialize_value(partition_backfill),
                 )
             )
+            if result.rowcount == 0:
+                raise DagsterInvariantViolationError(
+                    f"Backfill {backfill_id} is not present in storage"
+                )
 
     def get_cursor_values(self, keys: set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
