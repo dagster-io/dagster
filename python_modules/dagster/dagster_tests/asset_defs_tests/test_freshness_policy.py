@@ -156,7 +156,9 @@ def test_invalid_freshness_policies():
     with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule"):
         LegacyFreshnessPolicy(cron_schedule="xyz-123-bad-schedule", maximum_lag_minutes=60)
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule timezone"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Invalid cron schedule timezone 'Not/ATimezone'"
+    ):
         LegacyFreshnessPolicy(
             cron_schedule="0 1 * * *",
             maximum_lag_minutes=60,

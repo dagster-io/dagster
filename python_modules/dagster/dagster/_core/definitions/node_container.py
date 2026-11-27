@@ -35,7 +35,8 @@ def normalize_dependency_dict(
 
     if not isinstance(dependencies, dict):
         raise DagsterInvalidDefinitionError(
-            prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
+            prelude
+            + f"Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
     normalized_dependencies: dict[NodeInvocation, Mapping[str, IDependencyDefinition]] = {}
@@ -75,7 +76,7 @@ def normalize_dependency_dict(
         else:
             raise DagsterInvalidDefinitionError(
                 prelude + "Expected str or NodeInvocation key in the top level dict. "
-                "Received value {key} of type {type(key)}"
+                f"Received value {key} of type {type(key)}"
             )
 
     return normalized_dependencies
