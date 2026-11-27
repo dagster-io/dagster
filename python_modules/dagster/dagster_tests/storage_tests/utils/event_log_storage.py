@@ -1403,6 +1403,16 @@ class TestEventLogStorage:
             summary.storage_id for summary in _summaries(run_id=test_run_id, ascending=True)
         ] == [record.storage_id for record in records]
         assert _summaries(run_id=make_new_run_id()) == []
+        assert [
+            summary.partition
+            for summary in _summaries(
+                run_ids=[make_new_run_id(), test_run_id],
+                after_storage_id=records[0].storage_id,
+                ascending=True,
+            )
+        ] == ["2", "3"]
+        assert _summaries(run_ids=[make_new_run_id()]) == []
+        assert _summaries(run_ids=[]) == []
 
         assert [
             summary.partition

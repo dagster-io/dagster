@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
@@ -69,6 +70,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
     from dagster._core.execution.backfill import PartitionBackfill
+    from dagster._core.storage.event_log.base import AssetEventSummaryRecord
 
 
 def get_asset_backfill_run_chunk_size():
@@ -976,6 +978,18 @@ def backfill_runs_are_complete(
     return True
 
 
+def _backfill_data_unchanged(previous: AssetBackfillData, updated: AssetBackfillData) -> bool:
+    """Whether an iteration changed nothing about the backfill data except its materialization
+    scan cursor. The target subset and start time are fixed for the backfill's lifetime.
+    """
+    return (
+        updated.requested_runs_for_target_roots == previous.requested_runs_for_target_roots
+        and updated.materialized_subset == previous.materialized_subset
+        and updated.failed_and_downstream_subset == previous.failed_and_downstream_subset
+        and updated.requested_subset == previous.requested_subset
+    )
+
+
 def _backfill_is_stalled(
     *,
     backfill_id: str,
@@ -1106,6 +1120,7 @@ async def execute_asset_backfill_iteration(
                 logger.info("Backfill was canceled mid-iteration, returning")
                 return
 
+            stored_backfill = updated_backfill
             updated_backfill = (
                 updated_backfill.with_asset_backfill_data(
                     result.backfill_data,
@@ -1116,7 +1131,19 @@ async def execute_asset_backfill_iteration(
                 .with_failure_count(0)
             )
 
-            instance.update_backfill(updated_backfill)
+            # Most ticks of a backfill with runs in flight change nothing. Skip the write then,
+            # since it serializes the whole backfill and many backfills are evaluated every tick.
+            # Only the materialization scan cursor would advance. Leaving it behind is safe: the
+            # scan only reads this backfill's runs' materializations, and those since the stored
+            # cursor added nothing new, so rescanning them next tick is idempotent.
+            if (
+                result.run_requests
+                or stored_backfill.failure_count != 0
+                or not _backfill_data_unchanged(
+                    stored_backfill.get_asset_backfill_data(asset_graph), result.backfill_data
+                )
+            ):
+                instance.update_backfill(updated_backfill)
 
         if result.run_requests:
             await _submit_runs_and_update_backfill_in_chunks(
@@ -1128,9 +1155,11 @@ async def execute_asset_backfill_iteration(
                 run_tags=updated_backfill.tags,
             )
 
-        updated_backfill = cast(
-            "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
-        )
+            # submitting writes progress and checks for cancellation, so reload the backfill
+            updated_backfill = cast(
+                "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
+            )
+
         if updated_backfill.status == BulkActionStatus.REQUESTED:
             check.invariant(
                 not updated_backfill.submitting_run_requests,
@@ -1225,8 +1254,11 @@ async def execute_asset_backfill_iteration(
             f"**Failed assets and their downstream assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
             f"**Assets requested or in progress:**\n{_asset_graph_subset_to_str(updated_backfill_in_progress, asset_graph) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
+        # pass the data as an argument so that it is only rendered when debug logging is enabled
         logger.debug(
-            f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
+            "Updated asset backfill data for %s: %s",
+            updated_backfill.backfill_id,
+            updated_backfill_data,
         )
 
     elif (
@@ -1301,7 +1333,8 @@ async def execute_asset_backfill_iteration(
         )
 
         logger.debug(
-            f"Updated asset backfill data after cancellation iteration: {asset_backfill_data_after_iteration}"
+            "Updated asset backfill data after cancellation iteration: %s",
+            asset_backfill_data_after_iteration,
         )
     elif backfill.status == BulkActionStatus.CANCELED:
         # The backfill was forcibly canceled, skip iteration
@@ -1364,62 +1397,85 @@ def get_asset_backfill_iteration_materialized_subset(
     if asset_backfill_data.latest_storage_id is None:
         return asset_backfill_data.materialized_subset
 
-    recently_materialized_asset_partitions = AssetGraphSubset()
-    for asset_key in asset_backfill_data.target_subset.asset_keys:
+    # Scan the materializations of this backfill's runs rather than every materialization since
+    # the cursor: with many concurrent backfills, the latter makes each backfill's tick pay for
+    # the materializations of all the others.
+    instance = instance_queryer.instance
+    target_subset = asset_backfill_data.target_subset
+    backfill_run_ids = instance.get_run_ids(filters=RunsFilter.for_backfill(backfill_id))
+
+    candidate_rows_by_asset_key: dict[AssetKey, list[AssetEventSummaryRecord]] = defaultdict(list)
+    for i in range(0, len(backfill_run_ids), MATERIALIZATION_CHUNK_SIZE):
+        run_ids = backfill_run_ids[i : i + MATERIALIZATION_CHUNK_SIZE]
         after_storage_id = asset_backfill_data.latest_storage_id
         while True:
-            # the projection returns a plain sequence rather than a paginated result, so page off
-            # the last row's storage id
-            rows = instance_queryer.instance.get_asset_event_summary_records(
+            rows = instance.get_asset_event_summary_records(
                 DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
+                run_ids=run_ids,
                 after_storage_id=after_storage_id,
                 limit=MATERIALIZATION_CHUNK_SIZE,
                 ascending=True,
             )
+            # page until empty rather than until short: a storage may cap the page size
             if not rows:
                 break
             after_storage_id = rows[-1].storage_id
+            for row in rows:
+                if row.asset_key in target_subset.asset_keys:
+                    candidate_rows_by_asset_key[row.asset_key].append(row)
 
-            run_ids = [row.run_id for row in rows if row.run_id]
-            if run_ids:
-                run_records = instance_queryer.instance.get_run_records(
-                    filters=RunsFilter(run_ids=run_ids),
+    # The run id scan does not apply asset wipes, so drop materializations that precede the
+    # asset's last wipe.
+    instance_queryer.prefetch_asset_records(candidate_rows_by_asset_key.keys())
+    recently_materialized_partitions: set[AssetKeyPartitionKey] = set()
+    for asset_key, candidate_rows in candidate_rows_by_asset_key.items():
+        asset_record = instance_queryer.get_asset_record(asset_key)
+        if asset_record:
+            asset_details = asset_record.asset_entry.asset_details
+            wipe_timestamp = asset_details.last_wipe_timestamp if asset_details else None
+            rows = [
+                row
+                for row in candidate_rows
+                if not wipe_timestamp or row.timestamp > wipe_timestamp
+            ]
+        else:
+            # Asset records omit assets that are wiped and not materialized since, and the
+            # asset's row may not be written yet. Let the storage apply the wipe instead.
+            rows = []
+            for i in range(0, len(candidate_rows), MATERIALIZATION_CHUNK_SIZE):
+                storage_ids = [
+                    row.storage_id for row in candidate_rows[i : i + MATERIALIZATION_CHUNK_SIZE]
+                ]
+                rows.extend(
+                    instance.get_asset_event_summary_records(
+                        DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=asset_key,
+                        storage_ids=storage_ids,
+                        limit=len(storage_ids),
+                    )
                 )
-                run_ids_in_backfill = {
-                    run_record.dagster_run.run_id
-                    for run_record in run_records
-                    if run_record.dagster_run.tags.get(BACKFILL_ID_TAG) == backfill_id
-                }
 
-                rows_in_backfill = [row for row in rows if row.run_id in run_ids_in_backfill]
-
-                # Validate partition consistency for materializations in this backfill
-                asset_is_partitioned_in_target = (
-                    asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+        # Validate partition consistency for materializations in this backfill
+        asset_is_partitioned_in_target = asset_key in target_subset.partitions_subsets_by_asset_key
+        asset_is_non_partitioned_in_target = asset_key in target_subset.non_partitioned_asset_keys
+        for row in rows:
+            if asset_is_partitioned_in_target and row.partition is None:
+                raise DagsterBackfillFailedError(
+                    f"Asset {asset_key.to_user_string()} is partitioned in the backfill target "
+                    f"subset, but received an unpartitioned materialization from run {row.run_id}. "
+                    f"All materializations for this asset in this backfill must be partitioned."
                 )
-                asset_is_non_partitioned_in_target = (
-                    asset_key in asset_backfill_data.target_subset.non_partitioned_asset_keys
+            elif asset_is_non_partitioned_in_target and row.partition is not None:
+                raise DagsterBackfillFailedError(
+                    f"Asset {asset_key.to_user_string()} is unpartitioned in the backfill target "
+                    f"subset, but received a partitioned materialization (partition_key={row.partition}) "
+                    f"from run {row.run_id}. All materializations for this asset in this backfill must be unpartitioned."
                 )
+            recently_materialized_partitions.add(AssetKeyPartitionKey(asset_key, row.partition))
 
-                for row in rows_in_backfill:
-                    if asset_is_partitioned_in_target and row.partition is None:
-                        raise DagsterBackfillFailedError(
-                            f"Asset {asset_key.to_user_string()} is partitioned in the backfill target "
-                            f"subset, but received an unpartitioned materialization from run {row.run_id}. "
-                            f"All materializations for this asset in this backfill must be partitioned."
-                        )
-                    elif asset_is_non_partitioned_in_target and row.partition is not None:
-                        raise DagsterBackfillFailedError(
-                            f"Asset {asset_key.to_user_string()} is unpartitioned in the backfill target "
-                            f"subset, but received a partitioned materialization (partition_key={row.partition}) "
-                            f"from run {row.run_id}. All materializations for this asset in this backfill must be unpartitioned."
-                        )
-
-                recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
-                    {AssetKeyPartitionKey(asset_key, row.partition) for row in rows_in_backfill},
-                    asset_graph,
-                )
+    recently_materialized_asset_partitions = AssetGraphSubset.from_asset_partition_set(
+        recently_materialized_partitions, asset_graph
+    )
 
     updated_materialized_subset = (
         asset_backfill_data.materialized_subset | recently_materialized_asset_partitions

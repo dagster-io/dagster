@@ -2782,6 +2782,93 @@ def test_partition_outside_backfill_materialized():
     )
 
 
+def test_materialized_subset_scan_does_not_load_runs():
+    """Materializations from other runs are filtered out by run id in storage, without loading
+    and deserializing each run, which would make every backfill tick pay for the materializations
+    of all other backfills and jobs.
+    """
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    assets_by_repo_name = {"repo": [foo]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["2023-10-01", "2023-10-02"],
+        asset_selection=[foo.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 10, 3, 0, 0, 0).timestamp(),
+    )
+
+    backfill_data = asset_backfill_data.with_latest_storage_id(
+        instance.event_log_storage.get_maximum_record_id() or 0
+    )
+    # one materialization outside of the backfill, one inside
+    dg.materialize(assets=[foo], partition_key="2023-10-01", instance=instance)
+    dg.materialize(
+        assets=[foo],
+        partition_key="2023-10-02",
+        instance=instance,
+        tags={BACKFILL_ID_TAG: "apple"},
+    )
+
+    with patch.object(
+        instance, "get_run_records", side_effect=AssertionError("runs should not be loaded")
+    ):
+        result = get_asset_backfill_iteration_materialized_subset(
+            "apple",
+            backfill_data,
+            asset_graph,
+            _get_instance_queryer(instance, asset_graph, create_datetime(2023, 10, 3)),
+        )
+
+    assert result.get_partitions_subset(foo.key).get_partition_keys() == ["2023-10-02"]
+
+
+def test_materialized_subset_ignores_materializations_before_wipe():
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-10-01"))
+    def foo():
+        pass
+
+    assets_by_repo_name = {"repo": [foo]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["2023-10-01", "2023-10-02"],
+        asset_selection=[foo.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 10, 3, 0, 0, 0).timestamp(),
+    ).with_latest_storage_id(0)
+
+    def _materialized_partition_keys():
+        result = get_asset_backfill_iteration_materialized_subset(
+            "apple",
+            backfill_data,
+            asset_graph,
+            _get_instance_queryer(instance, asset_graph, create_datetime(2023, 10, 3)),
+        )
+        if foo.key not in result.partitions_subsets_by_asset_key:
+            return []
+        return result.get_partitions_subset(foo.key).get_partition_keys()
+
+    tags = {BACKFILL_ID_TAG: "apple"}
+    dg.materialize(assets=[foo], partition_key="2023-10-01", instance=instance, tags=tags)
+    instance.wipe_assets([foo.key])
+    # a wiped asset without a later materialization has no asset record
+    assert instance.get_asset_records([foo.key]) == []
+    assert _materialized_partition_keys() == []
+
+    dg.materialize(assets=[foo], partition_key="2023-10-02", instance=instance, tags=tags)
+    assert _materialized_partition_keys() == ["2023-10-02"]
+
+
 def test_asset_backfill_unpartitioned_downstream_of_partitioned():
     instance = DagsterInstance.ephemeral()
 

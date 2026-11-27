@@ -2072,6 +2072,64 @@ def test_asset_backfill_submit_runs_in_chunks(
     assert instance.get_runs_count() == num_partitions
 
 
+def test_asset_backfill_idle_tick_does_not_write(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    """A tick that requests no runs and finds no new materializations or failures leaves the
+    stored backfill as is, instead of rewriting it.
+    """
+    asset_graph = workspace_context.create_request_context().asset_graph
+    backfill_id = "backfill_idle_tick"
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=[dg.AssetKey("daily_1"), dg.AssetKey("daily_2")],
+            partition_names=daily_partitions_def.get_partition_keys()[0:2],
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    # The first tick requests the root runs and writes the backfill. Keep the runs in flight by
+    # not launching them, so that the following ticks have nothing to do.
+    with mock.patch.object(instance, "submit_run"):
+        assert all(
+            not error
+            for error in execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    stored = check.not_none(instance.get_backfill(backfill_id))
+
+    with mock.patch.object(
+        instance, "update_backfill", wraps=instance.update_backfill
+    ) as update_backfill:
+        assert all(
+            not error
+            for error in execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    assert update_backfill.call_count == 0
+    assert instance.get_backfill(backfill_id) == stored
+
+    # A pending retry count is still reset by an otherwise idle tick.
+    instance.update_backfill(stored.with_failure_count(1))
+    assert all(
+        not error
+        for error in execute_backfill_iteration(
+            workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    assert check.not_none(instance.get_backfill(backfill_id)).failure_count == 0
+
+
 def test_asset_backfill_mid_iteration_cancel(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, set_default_chunk_size
 ):
